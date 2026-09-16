@@ -1,7 +1,10 @@
-# אתר סטטי: אין build, מגישים את התיקייה כמו שהיא
+# אתר סטטי. בזמן הפריסה נוצרים מחדש 36 קובצי היומן מ-data.js
 [build]
   publish = "."
-  command = ""
+  command = "node gen-cal.js"
+
+[build.environment]
+  NODE_VERSION = "20"
 
 # קובצי יומן: סוג תוכן נכון ל-webcal, וקאש קצר כדי ששינויים יגיעו לטלפונים מהר
 [[headers]]
