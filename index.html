@@ -34,7 +34,8 @@ header{display:flex;justify-content:space-between;align-items:flex-start;gap:10p
 header h1{margin:0;font-size:24px;font-weight:900;letter-spacing:-.3px;line-height:1.1}
 #hSub{font-size:13px;opacity:.85;margin-top:4px;cursor:pointer}
 header .clock{font-size:34px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1}
-#calBtn,#relBtn{text-decoration:none;text-align:center;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px)}
+#calBtn,#relBtn,#cardsBtn{flex:1;text-decoration:none;text-align:center;white-space:nowrap;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px)}
+.actions{display:flex;gap:8px;margin-top:14px}
 .tabs{display:flex;gap:6px;padding:14px 0 0;overflow-x:auto;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
 .tab{flex:0 0 auto;border:1.5px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:15px;font-weight:500;cursor:pointer}
@@ -159,12 +160,13 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 <div class="top">
 <header>
   <div><h1 id="hTitle">המערכת שלי</h1><div id="hSub"></div></div>
-  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-    <div class="clock" id="clock">--:--</div>
-    <button id="calBtn">📅 ליומן</button>
-    <a id="relBtn" href="shichrur.html">🏃 שחרורון</a>
-  </div>
+  <div class="clock" id="clock">--:--</div>
 </header>
+<div class="actions">
+  <button id="calBtn">📅 ליומן</button>
+  <a id="relBtn" href="shichrur.html">🏃 שחרורון</a>
+  <a id="cardsBtn" href="cards.html">🃏 כרטיסיות</a>
+</div>
 <div class="tabs" id="tabs"></div>
 </div>
 

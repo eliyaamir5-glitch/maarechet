@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#5b6cff">
+<title>כרטיסיות</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1226; --card:#1d2247; --ink:#f4f5ff; --muted:#9aa0c7; --line:#2b3162;
+  --next:#243a8a; --break:#2a2f5c; --accent:#7c8cff; --accent-ink:#0b0e24; --free:#3ddc97; --warn:#ffd23f; --bad:#ff6b6b;
+  --grad:linear-gradient(135deg,#5b6cff 0%,#a259ff 60%,#ff6bd6 100%);
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#f3f2fb; --card:#ffffff; --ink:#191b33; --muted:#6c7093; --line:#e3e2f2; --next:#e5e9ff; --break:#eceaf7; --accent:#5b6cff; --accent-ink:#fff; --free:#1fb57a; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Rubik,"Segoe UI",Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+.top{background:var(--grad);color:#fff;padding:calc(16px + env(safe-area-inset-top)) 18px 20px;border-radius:0 0 28px 28px}
+.top a{color:#fff;text-decoration:none;font-size:14px;opacity:.9;cursor:pointer}
+.top h1{margin:6px 0 0;font-size:26px;font-weight:900}
+.top p{margin:4px 0 0;font-size:14px;opacity:.85}
+main{padding:16px 14px 40px;max-width:560px;margin:0 auto}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:22px;padding:18px;margin-bottom:14px}
+.card h2{margin:0 0 4px;font-size:19px;font-weight:900}
+.hint{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.5}
+label{display:block;font-weight:700;font-size:14px;margin:12px 0 6px}
+label small{font-weight:400;color:var(--muted)}
+.inp,textarea,select{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:16px;background:var(--bg);color:var(--ink)}
+textarea{min-height:120px;resize:vertical;direction:rtl}
+.btn{border:none;border-radius:14px;padding:13px 16px;font:inherit;font-size:16px;font-weight:900;cursor:pointer;margin-top:10px;width:100%}
+.primary{background:var(--accent);color:var(--accent-ink)}
+.ghost{background:var(--break);color:var(--ink)}
+.good{background:var(--free);color:#06301c}
+.badb{background:var(--bad);color:#fff}
+.row{display:flex;gap:8px}
+.row .btn{flex:1}
+.set{display:flex;align-items:center;gap:12px;background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:14px;margin-bottom:10px;cursor:pointer}
+.set .ic{font-size:28px}
+.set .n{font-size:17px;font-weight:700}
+.set .s{font-size:13px;color:var(--muted);margin-top:2px}
+.set .pr{margin-inline-start:auto;font-size:13px;font-weight:700;color:var(--free);white-space:nowrap}
+.sec{font-size:14px;font-weight:700;color:var(--muted);margin:16px 0 8px}
+.err{color:var(--bad);font-size:14px;margin-top:8px;min-height:18px}
+/* flashcard */
+.flip{perspective:1200px;height:260px;cursor:pointer;margin:6px 0 12px}
+.flip .in{position:relative;width:100%;height:100%;transition:transform .45s;transform-style:preserve-3d}
+.flip.on .in{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--card);border:2px solid var(--line);border-radius:22px;display:flex;align-items:center;justify-content:center;text-align:center;padding:22px;font-size:26px;font-weight:700;line-height:1.35;overflow:auto}
+.face.back{transform:rotateY(180deg);background:var(--next)}
+.face small{position:absolute;top:10px;right:14px;font-size:12px;color:var(--muted);font-weight:400}
+.prog{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:10px}
+.prog i{display:block;height:100%;background:var(--grad);border-radius:99px;transition:width .3s}
+.cnt{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:6px}
+/* quiz */
+.q{font-size:24px;font-weight:900;text-align:center;padding:22px 10px;line-height:1.35}
+.opt{display:block;width:100%;text-align:start;border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:14px;padding:13px 14px;font:inherit;font-size:17px;margin-top:8px;cursor:pointer}
+.opt.ok{border-color:var(--free);background:rgba(61,220,151,.18)}
+.opt.no{border-color:var(--bad);background:rgba(255,107,107,.18)}
+/* match */
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.tile{min-height:78px;border:2px solid var(--line);background:var(--card);border-radius:14px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;line-height:1.3}
+.tile.sel{border-color:var(--accent);background:var(--next)}
+.tile.gone{opacity:0;pointer-events:none;transform:scale(.6)}
+.tile.no{border-color:var(--bad)}
+.big{font-size:44px;font-weight:900;text-align:center;margin:6px 0}
+.center{text-align:center}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="top">
+  <a id="back">← חזרה למערכת</a>
+  <h1 id="hTitle">🃏 כרטיסיות</h1>
+  <p id="hSub">לומדים למבחן כמו ב-Quizlet</p>
+</div>
+<main>
+
+<!-- רשימת סטים -->
+<section id="vHome">
+  <button class="btn primary" id="btnNew">＋ סט חדש</button>
+  <div class="sec">הסטים שלי</div><div id="mySets"></div>
+  <div class="sec">סטים של הכיתה</div><div id="classSets"></div>
+</section>
+
+<!-- עריכת סט -->
+<section id="vEdit" class="card" hidden>
+  <h2 id="edTitle">סט חדש</h2>
+  <label>שם הסט</label><input class="inp" id="eName" placeholder="למשל: היסטוריה – מלחמת העולם הראשונה">
+  <label>מקצוע</label><input class="inp" id="eSubj" placeholder="למשל: היסטוריה" list="subjs"><datalist id="subjs"></datalist>
+  <label>הכרטיסים <small>שורה לכל כרטיס, בצורה: מונח - הגדרה</small></label>
+  <textarea id="eCards" placeholder="הצהרת בלפור - 1917&#10;קונגרס בזל - 1897&#10;photosynthesis - פוטוסינתזה"></textarea>
+  <p class="hint">אפשר להפריד גם עם טאב, נקודתיים או סימן =. הדבקה של רשימה שלמה מוואטסאפ או מ-Quizlet עובדת.</p>
+  <div class="err" id="eErr"></div>
+  <button class="btn primary" id="btnSave">שמור</button>
+  <div class="row"><button class="btn ghost" id="btnCancel">ביטול</button><button class="btn badb" id="btnDel" hidden>מחק סט</button></div>
+</section>
+
+<!-- תפריט סט -->
+<section id="vSet" hidden>
+  <div class="card">
+    <h2 id="sName"></h2><p class="hint" id="sInfo"></p>
+    <button class="btn primary" id="mFlash">🃏 כרטיסיות</button>
+    <button class="btn primary" id="mQuiz">✅ מבחן אמריקאי</button>
+    <button class="btn primary" id="mMatch">⚡ התאמה על זמן</button>
+    <div class="row"><button class="btn ghost" id="mShare">🔗 שתף</button><button class="btn ghost" id="mEdit">✏️ ערוך</button><button class="btn ghost" id="mReset">↺ אפס התקדמות</button></div>
+  </div>
+  <div class="card" id="sList"></div>
+</section>
+
+<!-- כרטיסיות -->
+<section id="vFlash" hidden>
+  <div class="cnt"><span id="fPos"></span><span id="fKnown"></span></div>
+  <div class="prog"><i id="fBar"></i></div>
+  <div class="flip" id="flip"><div class="in"><div class="face front" id="fFront"></div><div class="face back" id="fBack"></div></div></div>
+  <p class="hint center">לחיצה על הכרטיס הופכת אותו</p>
+  <div class="row"><button class="btn badb" id="fNo">✗ לא ידעתי</button><button class="btn good" id="fYes">✓ ידעתי</button></div>
+  <button class="btn ghost" id="fQuit">סיום</button>
+</section>
+
+<!-- מבחן -->
+<section id="vQuiz" hidden>
+  <div class="cnt"><span id="qPos"></span><span id="qScore"></span></div>
+  <div class="prog"><i id="qBar"></i></div>
+  <div class="card"><div class="q" id="qQ"></div><div id="qOpts"></div></div>
+  <button class="btn ghost" id="qQuit">סיום</button>
+</section>
+
+<!-- התאמה -->
+<section id="vMatch" hidden>
+  <div class="cnt"><span id="mLeft"></span><span id="mTime">0.0</span></div>
+  <div class="grid" id="mGrid"></div>
+  <button class="btn ghost" id="mQuit">סיום</button>
+</section>
+
+<!-- סיכום -->
+<section id="vDone" class="card center" hidden>
+  <div class="big" id="dBig"></div>
+  <h2 id="dTitle"></h2><p class="hint" id="dMsg"></p>
+  <button class="btn primary" id="dAgain"></button>
+  <button class="btn ghost" id="dBack">חזרה לסט</button>
+</section>
+
+<div class="hint center" style="margin-top:18px;font-size:12px">הסטים וההתקדמות נשמרים בטלפון שלך. "שתף" שולח עותק לחבר.</div>
+</main>
+
+<script src="sets.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const VIEWS=["vHome","vEdit","vSet","vFlash","vQuiz","vMatch","vDone"];
+function show(v){VIEWS.forEach(x=>$(x).hidden=x!==v);window.scrollTo(0,0);$("back").textContent=v==="vHome"?"← חזרה למערכת":"← חזרה"}
+$("back").onclick=()=>{const v=VIEWS.find(x=>!$(x).hidden);if(v==="vHome")location.href="./";else if(v==="vSet"||v==="vEdit")home();else openSet(cur.id)};
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let mySets=load("sets",[]),prog=load("cardsProg",{}),cur=null,editing=null;
+const allSets=()=>[...mySets,...CLASS_SETS.map(s=>({...s,builtin:true}))];
+const known=id=>new Set((prog[id]&&prog[id].known)||[]);
+const setKnown=(id,k)=>{prog[id]={known:[...k]};save("cardsProg",prog)};
+
+// ---- קידוד לשיתוף ----
+const b64=u8=>btoa(String.fromCharCode(...u8)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const unb64=s=>Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")),c=>c.charCodeAt(0));
+async function encSet(s){
+  const json=JSON.stringify({title:s.title,subject:s.subject,cards:s.cards});const bytes=new TextEncoder().encode(json);
+  if(window.CompressionStream){const st=new Blob([bytes]).stream().pipeThrough(new CompressionStream("gzip"));return "z"+b64(new Uint8Array(await new Response(st).arrayBuffer()))}
+  return "j"+b64(bytes);
+}
+async function decSet(str){
+  try{const bytes=unb64(str.slice(1));
+    if(str[0]==="z"){const st=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));return JSON.parse(await new Response(st).text())}
+    return JSON.parse(new TextDecoder().decode(bytes));
+  }catch(e){return null}
+}
+
+// ---- בית ----
+function home(){
+  show("vHome");
+  const item=s=>{const k=known(s.id).size,n=s.cards.length;return `<div class="set" data-id="${s.id}"><div class="ic">${s.builtin?"🏫":"🃏"}</div><div><div class="n">${esc(s.title)}</div><div class="s">${esc(s.subject||"")} · ${n} כרטיסים</div></div>${k?`<div class="pr">${Math.round(100*k/n)}% ✓</div>`:""}</div>`};
+  $("mySets").innerHTML=mySets.length?mySets.map(item).join(""):'<p class="hint">עוד אין לך סטים. צור אחד או פתח קישור שחבר שלח.</p>';
+  $("classSets").innerHTML=CLASS_SETS.length?CLASS_SETS.map(s=>item({...s,builtin:true})).join(""):'<p class="hint">עדיין אין סטים של הכיתה.</p>';
+  document.querySelectorAll(".set").forEach(el=>el.onclick=()=>openSet(el.dataset.id));
+  $("subjs").innerHTML=[...new Set(allSets().map(s=>s.subject).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join("");
+}
+$("btnNew").onclick=()=>openEdit(null);
+
+// ---- עריכה ----
+function parseCards(text){
+  return text.split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{
+    const m=l.match(/^(.+?)(?:\t| [-–—] |\s*[=:]\s+|\s*[-–—]\s*)(.+)$/);
+    return m?{t:m[1].trim(),d:m[2].trim()}:null;
+  }).filter(Boolean);
+}
+function openEdit(s){
+  editing=s;show("vEdit");
+  $("edTitle").textContent=s?"עריכת סט":"סט חדש";
+  $("eName").value=s?s.title:"";$("eSubj").value=s?s.subject||"":"";
+  $("eCards").value=s?s.cards.map(c=>`${c.t} - ${c.d}`).join("\n"):"";
+  $("btnDel").hidden=!s||s.builtin;$("eErr").textContent="";
+}
+$("btnSave").onclick=()=>{
+  const title=$("eName").value.trim(),subject=$("eSubj").value.trim(),cards=parseCards($("eCards").value);
+  if(!title)return $("eErr").textContent="חסר שם לסט.";
+  if(cards.length<2)return $("eErr").textContent="צריך לפחות 2 כרטיסים בצורה: מונח - הגדרה.";
+  if(editing&&!editing.builtin){Object.assign(editing,{title,subject,cards})}
+  else{const s={id:"s"+Date.now().toString(36),title,subject,cards,created:Date.now()};mySets.push(s);editing=s}
+  save("sets",mySets);openSet(editing.id);
+};
+$("btnCancel").onclick=()=>editing?openSet(editing.id):home();
+$("btnDel").onclick=()=>{if(!confirm("למחוק את הסט?"))return;mySets=mySets.filter(s=>s.id!==editing.id);save("sets",mySets);delete prog[editing.id];save("cardsProg",prog);home()};
+
+// ---- תפריט סט ----
+function openSet(id){
+  cur=allSets().find(s=>s.id===id);if(!cur)return home();
+  show("vSet");const k=known(id).size;
+  $("sName").textContent=cur.title;
+  $("sInfo").textContent=`${cur.subject||""} · ${cur.cards.length} כרטיסים · ידעת ${k} מתוך ${cur.cards.length}`;
+  $("sList").innerHTML=cur.cards.map((c,i)=>`<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px"><span style="color:var(--muted);min-width:22px">${i+1}.</span><b style="flex:1">${esc(c.t)}</b><span style="flex:1;color:var(--muted)">${esc(c.d)}</span>${known(id).has(i)?"<span>✓</span>":""}</div>`).join("");
+  $("mEdit").textContent=cur.builtin?"📋 העתק לעריכה":"✏️ ערוך";
+}
+$("mFlash").onclick=()=>startFlash(false);$("mQuiz").onclick=startQuiz;$("mMatch").onclick=startMatch;
+$("mEdit").onclick=()=>openEdit(cur.builtin?{...cur,builtin:true,id:null}:cur);
+$("mReset").onclick=()=>{delete prog[cur.id];save("cardsProg",prog);openSet(cur.id)};
+$("mShare").onclick=async()=>{
+  const url=location.href.split("#")[0]+"#s="+await encSet(cur);
+  const text=`סט כרטיסיות "${cur.title}" (${cur.cards.length} כרטיסים) ללמידה במערכת:\n${url}`;
+  if(navigator.share){try{await navigator.share({title:cur.title,text});return}catch(e){if(e&&e.name==="AbortError")return}}
+  try{await navigator.clipboard.writeText(url);alert("הקישור הועתק. אפשר להדביק בוואטסאפ.")}catch(e){prompt("העתק את הקישור:",url)}
+};
+
+// ---- כרטיסיות ----
+let fq=[],fi=0,fk=null,fMissed=[];
+function startFlash(onlyMissed){
+  const k=known(cur.id);const idx=cur.cards.map((_,i)=>i).filter(i=>onlyMissed?fMissed.includes(i):!k.has(i));
+  fq=shuffle(idx.length?idx:cur.cards.map((_,i)=>i));fi=0;fk=k;fMissed=[];show("vFlash");drawFlash();
+}
+function drawFlash(){
+  if(fi>=fq.length)return finish("flash");
+  const c=cur.cards[fq[fi]];$("flip").classList.remove("on");
+  $("fFront").innerHTML=`<small>מונח</small>${esc(c.t)}`;$("fBack").innerHTML=`<small>הגדרה</small>${esc(c.d)}`;
+  $("fPos").textContent=`${fi+1} / ${fq.length}`;$("fKnown").textContent=`ידעת ${fk.size} מתוך ${cur.cards.length}`;
+  $("fBar").style.width=Math.round(100*fi/fq.length)+"%";
+}
+$("flip").onclick=()=>$("flip").classList.toggle("on");
+$("fYes").onclick=()=>{fk.add(fq[fi]);setKnown(cur.id,fk);fi++;drawFlash()};
+$("fNo").onclick=()=>{fk.delete(fq[fi]);fMissed.push(fq[fi]);setKnown(cur.id,fk);fi++;drawFlash()};
+$("fQuit").onclick=()=>openSet(cur.id);
+
+// ---- מבחן אמריקאי ----
+let qq=[],qi=0,qs=0,qLock=false;
+function startQuiz(){qq=shuffle(cur.cards.map((_,i)=>i));qi=0;qs=0;show("vQuiz");drawQuiz()}
+function drawQuiz(){
+  if(qi>=qq.length)return finish("quiz");
+  const i=qq[qi],c=cur.cards[i];qLock=false;
+  const others=shuffle(cur.cards.map((_,j)=>j).filter(j=>j!==i&&cur.cards[j].d!==c.d)).slice(0,3);
+  const opts=shuffle([i,...others]);
+  $("qQ").textContent=c.t;$("qPos").textContent=`${qi+1} / ${qq.length}`;$("qScore").textContent=`נכון: ${qs}`;$("qBar").style.width=Math.round(100*qi/qq.length)+"%";
+  $("qOpts").innerHTML=opts.map(j=>`<button class="opt" data-j="${j}">${esc(cur.cards[j].d)}</button>`).join("");
+  $("qOpts").querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    if(qLock)return;qLock=true;const ok=+b.dataset.j===i;if(ok)qs++;
+    b.classList.add(ok?"ok":"no");if(!ok)$("qOpts").querySelector(`[data-j="${i}"]`).classList.add("ok");
+    const k=known(cur.id);ok?k.add(i):k.delete(i);setKnown(cur.id,k);
+    setTimeout(()=>{qi++;drawQuiz()},ok?600:1400);
+  });
+}
+$("qQuit").onclick=()=>openSet(cur.id);
+
+// ---- התאמה ----
+let mSel=null,mLeftN=0,mT0=0,mTimer=null;
+function startMatch(){
+  const pick=shuffle(cur.cards.map((_,i)=>i)).slice(0,6);mLeftN=pick.length;mSel=null;
+  const tiles=shuffle([...pick.map(i=>({i,side:"t",txt:cur.cards[i].t})),...pick.map(i=>({i,side:"d",txt:cur.cards[i].d}))]);
+  $("mGrid").innerHTML=tiles.map((t,n)=>`<div class="tile" data-i="${t.i}" data-side="${t.side}">${esc(t.txt)}</div>`).join("");
+  $("mLeft").textContent=`נשארו ${mLeftN} זוגות`;show("vMatch");
+  mT0=Date.now();clearInterval(mTimer);mTimer=setInterval(()=>$("mTime").textContent=((Date.now()-mT0)/1000).toFixed(1),100);
+  $("mGrid").querySelectorAll(".tile").forEach(el=>el.onclick=()=>{
+    if(el.classList.contains("gone"))return;
+    if(!mSel){mSel=el;el.classList.add("sel");return}
+    if(mSel===el){el.classList.remove("sel");mSel=null;return}
+    const a=mSel;mSel=null;a.classList.remove("sel");
+    if(a.dataset.i===el.dataset.i&&a.dataset.side!==el.dataset.side){
+      a.classList.add("gone");el.classList.add("gone");mLeftN--;$("mLeft").textContent=`נשארו ${mLeftN} זוגות`;
+      if(!mLeftN){clearInterval(mTimer);setTimeout(()=>finish("match"),350)}
+    }else{a.classList.add("no");el.classList.add("no");setTimeout(()=>{a.classList.remove("no");el.classList.remove("no")},400)}
+  });
+}
+$("mQuit").onclick=()=>{clearInterval(mTimer);openSet(cur.id)};
+
+// ---- סיכום ----
+function finish(mode){
+  show("vDone");const n=cur.cards.length;
+  if(mode==="flash"){const k=known(cur.id).size;$("dBig").textContent=fMissed.length?"💪":"🏆";$("dTitle").textContent=`ידעת ${k} מתוך ${n}`;
+    $("dMsg").textContent=fMissed.length?`${fMissed.length} כרטיסים עוד לא יושבים. נחזור רק עליהם?`:"כל הכרטיסים יושבים. סיימת!";
+    $("dAgain").textContent=fMissed.length?`חזור על ${fMissed.length} שלא ידעתי`:"עוד סיבוב על הכל";$("dAgain").onclick=()=>startFlash(fMissed.length>0)}
+  if(mode==="quiz"){const pct=Math.round(100*qs/n);$("dBig").textContent=pct===100?"🏆":pct>=70?"👏":"📚";$("dTitle").textContent=`${qs} מתוך ${n} נכונות (${pct}%)`;
+    $("dMsg").textContent=pct===100?"מושלם!":pct>=70?"יפה מאוד. עוד סיבוב וזה יושב.":"כדאי לעבור על הכרטיסיות ואז לנסות שוב.";$("dAgain").textContent="מבחן נוסף";$("dAgain").onclick=startQuiz}
+  if(mode==="match"){const t=((Date.now()-mT0)/1000).toFixed(1);const best=load("matchBest",{});const prev=best[cur.id];const rec=!prev||+t<prev;if(rec){best[cur.id]=+t;save("matchBest",best)}
+    $("dBig").textContent=rec?"⚡":"⏱️";$("dTitle").textContent=`${t} שניות`;$("dMsg").textContent=rec?"שיא חדש!":`השיא שלך: ${prev} שניות`;$("dAgain").textContent="עוד פעם";$("dAgain").onclick=startMatch}
+}
+$("dBack").onclick=()=>openSet(cur.id);
+
+// ---- כניסה: קישור משותף או בית ----
+(async()=>{
+  const m=location.hash.match(/^#s=(.+)$/);
+  if(m){const s=await decSet(m[1]);history.replaceState(null,"",location.pathname);
+    if(s&&s.cards&&s.cards.length){const dup=mySets.find(x=>x.title===s.title&&x.cards.length===s.cards.length);
+      if(dup&&!confirm(`כבר יש לך סט בשם "${s.title}". להוסיף עותק נוסף?`))return openSet(dup.id);
+      const ns={id:"s"+Date.now().toString(36),title:s.title,subject:s.subject||"",cards:s.cards,created:Date.now()};mySets.push(ns);save("sets",mySets);return openSet(ns.id)}
+  }
+  home();
+})();
+</script>
+</body>
+</html>
