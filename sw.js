@@ -1,7 +1,7 @@
 // Service Worker: מאפשר לאפליקציה להיפתח גם בלי אינטרנט.
 // אסטרטגיה: קודם רשת ואם אין – מהמטמון (כך עדכונים מגיעים מיד כשיש קליטה).
 // לפונטים של גוגל: קודם מטמון, כי הם לא משתנים.
-const CACHE = "maarechet-v4";
+const CACHE = "maarechet-v5";
 const PRECACHE = ["./", "./index.html", "./data.js", "./shichrur.html", "./cards.html", "./sets.js", "./board.js"];
 
 self.addEventListener("install", e => {

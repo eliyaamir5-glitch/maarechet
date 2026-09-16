@@ -2,12 +2,16 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#5b6cff">
 <title>שחרורון</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
+/* תחושת אפליקציה: בלי זום, בלי גרירה מיותרת, בלי סימון טקסט בטעות */
+html{overscroll-behavior:none;-webkit-text-size-adjust:100%}
+body{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior-y:none}
+input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text}
 :root{
   --bg:#0f1226; --card:#1d2247; --ink:#f4f5ff; --muted:#9aa0c7; --line:#2b3162;
   --next:#243a8a; --break:#2a2f5c; --accent:#7c8cff; --accent-ink:#0b0e24; --free:#3ddc97; --warn:#ffd23f;
@@ -253,6 +257,12 @@ document.fonts.ready.then(()=>{
   const m=location.hash.match(/^#p=(.+)$/);const q=m&&dec(m[1]);
   if(q&&q.v===1&&q.n&&q.d&&q.t)initParent(q);else initStudent();
 });
+</script>
+<script>
+// חסימת זום בצביטה ובלחיצה כפולה (ספארי מתעלם מ-user-scalable)
+document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
+document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
+let __lastTap=0;document.addEventListener("touchend",e=>{const n=Date.now();if(n-__lastTap<300&&!e.target.closest("input,textarea,select,button,a,.tile,.opt,.flip,.wz-opt,.tab"))e.preventDefault();__lastTap=n},{passive:false});
 </script>
 </body>
 </html>
