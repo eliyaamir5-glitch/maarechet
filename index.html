@@ -76,6 +76,15 @@ main{padding:16px 14px 40px;max-width:560px;margin:0 auto}
 .sum .chips{display:flex;flex-wrap:wrap;gap:6px}
 .sum .chips .chip{background:var(--next)}
 .foot{margin-top:22px;color:var(--muted);font-size:12px;text-align:center;line-height:1.6}
+.foot a{color:var(--accent);font-weight:700;text-decoration:none;display:inline-block;margin-top:6px;font-size:14px}
+.seg{display:flex;gap:6px;margin:4px 0 12px}
+.seg button{flex:1;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:9px 6px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.seg button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.inst .note{background:var(--next);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.5;margin-bottom:10px}
+.inst ol{margin:0;padding-inline-start:22px;font-size:16px;line-height:1.7}
+.inst li b{background:var(--break);border-radius:6px;padding:1px 6px}
+.inst .also{margin-top:10px;color:var(--muted);font-size:13px;line-height:1.5}
+.inst .ok{text-align:center;font-size:18px;font-weight:700;color:var(--free);padding:14px 0}
 dialog{border:none;border-radius:20px;padding:0;width:min(92vw,440px);background:var(--card);color:var(--ink);font:inherit;max-height:92vh}
 dialog::backdrop{background:rgba(5,6,20,.6)}
 dialog form{padding:20px}
@@ -211,6 +220,22 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 </div>
 </main>
 
+<dialog id="installDlg">
+  <form method="dialog">
+    <h3>📲 להוסיף למסך הבית</h3>
+    <p>ככה המערכת נפתחת כמו אפליקציה רגילה, בלחיצה אחת, וגם בלי קליטה.</p>
+    <div class="seg" id="instSeg">
+      <button type="button" data-d="ios">🍎 אייפון</button>
+      <button type="button" data-d="android">🤖 אנדרואיד</button>
+      <button type="button" data-d="other">💻 אחר</button>
+    </div>
+    <div class="inst" id="instBody"></div>
+    <div class="btns">
+      <button type="button" class="ghost" id="instShare">🔗 שלח קישור לחבר</button>
+      <button class="primary" value="ok">הבנתי</button>
+    </div>
+  </form>
+</dialog>
 <dialog id="dlg">
   <form method="dialog">
     <h3 id="dlgTitle"></h3>
@@ -326,6 +351,38 @@ function openEdit(n){
   dlg.showModal();
 }
 
+// ---- הוספה למסך הבית ----
+const isStandalone=()=>window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+const deviceKind=()=>/iPhone|iPad|iPod/i.test(navigator.userAgent)?"ios":/Android/i.test(navigator.userAgent)?"android":"other";
+const INSTALL_GUIDES={
+ ios:{note:"עובד רק מתוך <b>ספארי</b>. אם פתחת את הקישור מוואטסאפ, לחץ על שלוש הנקודות (או על סמל המצפן) ובחר \"פתח בספארי\".",
+  steps:["לחץ על כפתור <b>השיתוף</b> בתחתית המסך (ריבוע עם חץ למעלה)","גלול למטה ולחץ על <b>הוסף למסך הבית</b>","לחץ <b>הוסף</b> בפינה למעלה"],
+  also:"האפליקציה תופיע במסך הבית עם האייקון שלה, כמו כל אפליקציה."},
+ android:{note:"עובד מתוך <b>כרום</b>. אם הקישור נפתח בתוך וואטסאפ, לחץ על שלוש הנקודות ובחר \"פתח בכרום\".",
+  steps:["לחץ על <b>שלוש הנקודות ⋮</b> בפינה למעלה","לחץ על <b>הוסף למסך הבית</b> (או <b>התקן אפליקציה</b>)","אשר עם <b>הוסף</b>"],
+  also:"בגלקסי עם דפדפן Samsung Internet: לחץ על התפריט ☰ למטה, ואז \"הוסף דף אל\" ובחר \"מסך הבית\"."},
+ other:{note:"בכל טלפון או דפדפן אחר, חפש בתפריט הדפדפן את האפשרות <b>הוסף למסך הבית</b> או <b>התקן</b>.",
+  steps:["פתח את הקישור בדפדפן הראשי של הטלפון","פתח את תפריט הדפדפן","בחר \"הוסף למסך הבית\""],
+  also:"במחשב: בכרום יש סמל התקנה בצד שורת הכתובת, או פשוט שמור סימנייה."}
+};
+function drawInstall(kind){
+  document.querySelectorAll("#instSeg button").forEach(b=>b.classList.toggle("on",b.dataset.d===kind));
+  const body=document.getElementById("instBody");
+  if(isStandalone()){body.innerHTML='<div class="ok">✅ האפליקציה כבר מותקנת אצלך במסך הבית</div>';return}
+  const g=INSTALL_GUIDES[kind];
+  body.innerHTML=`<div class="note">${g.note}</div><ol>${g.steps.map(x=>`<li>${x}</li>`).join("")}</ol><div class="also">${g.also}</div>`;
+}
+function openInstall(){drawInstall(deviceKind());document.getElementById("installDlg").showModal()}
+document.querySelectorAll("#instSeg button").forEach(b=>b.onclick=()=>drawInstall(b.dataset.d));
+document.getElementById("instShare").onclick=async()=>{
+  const url=location.href.split("#")[0];
+  try{
+    if(navigator.share){await navigator.share({title:"המערכת",text:"המערכת שלנו – שיעור נוכחי, הבא, וציוד:",url});return}
+    await navigator.clipboard.writeText(url);toast("הקישור הועתק","עכשיו אפשר להדביק אותו בוואטסאפ");
+  }catch(e){}
+};
+document.querySelector(".foot").addEventListener("click",e=>{if(e.target.id==="installLink"){e.preventDefault();openInstall()}});
+
 // ---- פרופיל / הרשמה ראשונה ----
 function applyProfile(){
   DAYS=CLASSES[(profile&&profile.cls)||"y2"].days;
@@ -333,7 +390,7 @@ function applyProfile(){
   document.getElementById("hTitle").textContent=profile?`המערכת של ${profile.first}`:"המערכת שלי";
   document.title=(profile?`המערכת של ${profile.first}`:"המערכת שלי")+` – ${c.label}`;
   document.getElementById("hSub").textContent=`כיתה ${c.label} · ${c.rav}`+(profile?(profile.email?" · ✎ ערוך פרופיל":" · ✎ ערוך פרופיל / חבר אימייל"):"");
-  document.querySelector(".foot").textContent=`כיתה ${c.label} · לחיצה על "ציוד" בכל שיעור פותחת עריכה, והרשימה נשמרת בטלפון`;
+  document.querySelector(".foot").innerHTML=`כיתה ${c.label} · לחיצה על "ציוד" בכל שיעור פותחת עריכה, והרשימה נשמרת בטלפון`+(isStandalone()?"":`<br><a href="#" id="installLink">📲 איך מוסיפים את האפליקציה למסך הבית?</a>`);
 }
 const STEPS=[
  {k:"first",e:"👋",q:"היי! איך קוראים לך?",sub:"שם פרטי ושם משפחה, כדי שהמערכת תדע למי היא שייכת",type:"name"},
@@ -421,7 +478,7 @@ function runBuild(){
     document.getElementById("bdMsg").textContent=nice[Math.floor(Math.random()*nice.length)];
     document.getElementById("bdDone").hidden=false;
   },450+lines.length*650+300);
-  document.getElementById("bdGo").onclick=()=>{b.hidden=true;document.getElementById("bdLines").style.display="";applyProfile();render(true)};
+  document.getElementById("bdGo").onclick=()=>{b.hidden=true;document.getElementById("bdLines").style.display="";applyProfile();render(true);if(!isStandalone())setTimeout(openInstall,600)};
 }
 document.getElementById("wzNext").onclick=next;
 document.getElementById("wzBack").onclick=()=>{if(wzStep===0){if(wzEditing)document.getElementById("wiz").hidden=true;return}wzStep--;drawStep()};
