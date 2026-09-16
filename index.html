@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="המערכת">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#5b6cff">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<link rel="icon" href="data:image/png;base64,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">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22%D7%94%D7%9E%D7%A2%D7%A8%D7%9B%D7%AA%20%D7%A9%D7%9C%D7%99%22%2C%22short_name%22%3A%22%D7%94%D7%9E%D7%A2%D7%A8%D7%9B%D7%AA%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230f1226%22%2C%22theme_color%22%3A%22%235b6cff%22%2C%22dir%22%3A%22rtl%22%2C%22lang%22%3A%22he%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage/png%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAI30lEQVR4nO2cT44cNRTGn0t9BVggcQQOAiEENjML2PcijXIBOAXZzJ4FyvAnIA7APQgKElIkBi6Q1bBo0ml1uVwu%2B33Pn6vetxiNxuX29%2BzfVHe7qr7w%2BeFe7u9FJIiMfr79e6JpdED81RJNx78zeNhUsbMeBidjm8XOeggiQxdGDTxsqthZD/%2BfOfiNGnjYVLGzHk6vMz5zcBk18LCpYmc9nA80MBs18LCpYmc9XAw0RA9iMGrgYVPFznoYDzRwGjXwsKliZz1EBxoIjRp42FSxsx6mBhrYjBp42FSxsx4SAw2x5mZGDTxsqthZD%2BmBBh6jBh42Veysh9mBBhKjBh54VoXBQ85AqU2wNU0Wz6oweMgcaHITbE2TxbMqDB7yB4pvgq1psnhWhcHDooEim2BrmiyeVWHwsHSgy02wNU0Wz6oweCgYaFjrZPGsCoOHsoEuv60YGFWvgXlVGDwUDzQYG0XU0GqgLjzUDBTdPu94snhWhcFD5UDj7fOOJ4tnVRg81A80VPbnmSyeVWHwoDJQahOso8niWRUGD1oDTW6CdTRZPKvC4EFxoPgmWEeTxbMqDB50B4psgnU0WTyrwuBBfaD4E2/1Rg1q4FkVBg%2BIgSJPvNUbNaiBZ1UYPIAGim6fs08Wz6oweMANNN4%2BZ58snlVh8AAdaKjs72SslYxwutmn3qhBDTyrwuDBYKChsr%2BTsVYyQnoTjGeyeFaFwYPZQJObYDyTxbMqDB4si03FPuX0dzIsPRgXOxn7lNkfWgPPqjB4sC82/sRbfn8nw8ZDk2IjT7wt6g%2BqgWdVGDy0KvbyZp%2Bl/Z2MtZIRLp54K%2BivXgPPqjB4aFvsUNnfyVgrGUFkxzNZX%2B0fiEtERH64uW1OhoiEJ49fV/WvruHr/UfimtBPN7fS7gQZnjx%2B3YoMxyJTz2%2BeNXnrbJZ97mTk69P9lZiTIa2yz52MpXp0xoeYkBGaZJ87GWX6ZH91/MXsi5h19rmTUaOH%2ByvLr%2Bim2edORr0%2B3l/bkCHG2ecuLRmQESyzz/20oaUH%2B2vBkyH22ecuFRmQEYyzz12KMrjuYZR97tdNdPXh/vr4C46MYJN97p9GQYKSIQbZ504GSGgyBJ197mRABSUjvgmmToYjghCaDMFlnzsZBoKSEUDZ51GjLl2hyRBE9rmTYSb07rZy9nnCqEtXBtc9NLPPnQxjQckIse1zfTL8nQUhNBmilX3uZLQSjoygkn2ej7BLV1AypD773MloJTQZUpl97mS0FZSMUJN9vvQDkUtXaDKkOPvcyWAQlIxQln2%2BlAzf6kAITYYUZJ87GTyCkhFEdgZkBBH54Lescl3ZCvJKkGTIouzzcjJcGEHJCPnZ5zVkOB8IocmQzOxzJ4NWODJCTvZ5PRnOB0hQMmQ2%2B9zJoBWaDElnnzsZ5IKSESxjn1y6QpMhZrFPLoSgZIzPHBAy/M0FITQZYhb75EIISkaQ%2B50BGUv5%2BOLLhR3e6NtvFhz816vCUd5/b8HBuFrQZIjILucgMzKKp/K8%2B%2By0FmNx3n0WEYNaoGQEy9gnl67QZIhZ7FOOKv/VMl%2Bn8rSR%2BTo2tQiSjOCxT10LSoaYxT651IUmI9jEPrlAgpIhBrFP50e6FIUmQ9CxT%2BJkIAUlI0Bjn8bHuxSFJkNwsU/j413qgpIRQLFPU71cikKTIYjYp6leLnVByQjqsU/pJpei0GSIbuxTusmFEI6MoBj7lGPUpSsoGaIV%2B5RjdFaL7sYofp1Fd2MUv45BLWgygkrsU45RF0JQMuTsQWogGUtPHug7wY7/9Og7wdC1oMmQ8Z1gDck4SeucnJbW%2B0ta0FqgZISa2KdEU9SoS1doMqQ49inR5GSYCUpGKIt9SjQljLp0hSZDCmKfEk1OhrGgZFyeOQr6SwYZ/s6CEJoMWRT7lGhyMloJR0bIj31KNGUi7FIXlAzJjH1KNDkZrYQmI6Q3wVqR0ftTrOeC1gIlQ0R2BmTkI7Kap1gFXwuaDEnHPuX0VyTDtVTo3e3J2KfM/tGm0QFZWx1reorVoBaD6x7xJ97y%2B2uR4SoQlIzxmQNChr%2BzIIQmQ8ZPvC3t72Q0FJSMcPHEW0H/mMXJJpei0GTI%2BRNvZf2djIaCkhFON/sU948dMPkp2qUoNBkyEd6yoL%2BT0VbQPUzPPu9Y6N1tzz7vVQbXPTz7vGNByQiefd6v0GSIZ593LSgZl5tgIDIy%2BVjNU6yzHvKVccn%2B%2BBOyH3EZ%2B7S0vxYZrgJByQgXN/sU9I8dUP6Fdh1PsZ6bwdWCJkPe3CZY3l%2BRjJNW8BTrSdBa0LvbRtnn3x3%2BzSzYlaPfD38aXPfw7PMuZXNFzCj73D%2BWIgQlQyyzz5/5O4uSXhxeCp4MMcs%2B9zOHrgzIiG%2BCgcgIIrd%2B8qjWi8NLGzLELPv81PT94Z%2BZ6l3TsiQjWGaf%2B6WWelmSIWbZ5%2BddfvSTR5H%2BiHwOxe5u74zJOPERRD57%2Bs7kTLjOZPxucvpplH0eNfr8cHc5Da6RWpHx9sxR3P/090RTwujPhzsRefT0XXGNZLafMdW0q%2BxfQ8ap6ZfD3fH3h06J1XWTnJXdVfbPqSHf6K%2BHv2sGUvFQ/0Us7cFsoHoPk5tg9mTwT1a9h76KjW%2BCORlORoBmn/OsCoOHHotFZZ/zrAqDh06LhWSf86wKg4d%2Bi9XPPudZFQYPXRernH3OsyoMHnovVjP7nGdVGDysoFi17HOeVWHwsI5idbLPeVaFwcNqik1tgjkZWyZDEptgTsbGyZDK7HOeVWHwsL5iy7PPeVaFwcMqiy3MPudZFQYPay22JPucZ1UYPKy42MXZ5zyrwuBh3cUuyz7nWRUGD6svdkH2Oc%2BqMHjYQrG52efNjVJ52EixWdnnDEZ5PGyn2PnscxKjJB42VexM9jmPUQYPmypWjGOfup6sTRV7/MUu9qnrydpUsadfTGOfOp2sTRV73mQa%2B1RjtJWHTRV70WQd%2B1Rs1Mmw99As9ol/sjZVbLSpQexTmVEnw97D%2BLkVUqOWHjZVbKLJNPapxqiTYe/hP/x7BgZLTtxPAAAAAElFTkSuQmCC%22%2C%22sizes%22%3A%22180x180%22%2C%22type%22%3A%22image/png%22%7D%5D%7D">
+<title>המערכת שלי – י'2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1226; --bg2:#171b3a; --card:#1d2247; --ink:#f4f5ff; --muted:#9aa0c7; --line:#2b3162;
+  --now:#ffd23f; --now-ink:#221c00; --next:#243a8a; --break:#2a2f5c; --accent:#7c8cff; --accent-ink:#0b0e24; --free:#3ddc97;
+  --grad:linear-gradient(135deg,#5b6cff 0%,#a259ff 60%,#ff6bd6 100%);
+}
+:root[data-theme="light"], :root:not([data-theme="dark"]):not([data-theme="light"]) { }
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f3f2fb; --bg2:#ffffff; --card:#ffffff; --ink:#191b33; --muted:#6c7093; --line:#e3e2f2;
+    --now:#ffd23f; --now-ink:#221c00; --next:#e5e9ff; --break:#eceaf7; --accent:#5b6cff; --accent-ink:#fff; --free:#1fb57a;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Rubik,"Segoe UI",Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+body{padding-bottom:env(safe-area-inset-bottom)}
+.top{background:var(--grad);color:#fff;padding:calc(18px + env(safe-area-inset-top)) 18px 22px;border-radius:0 0 28px 28px;box-shadow:0 12px 30px rgba(90,100,255,.25)}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+header h1{margin:0;font-size:24px;font-weight:900;letter-spacing:-.3px;line-height:1.1}
+#hSub{font-size:13px;opacity:.85;margin-top:4px;cursor:pointer}
+header .clock{font-size:34px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1}
+#calBtn{background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px)}
+.tabs{display:flex;gap:6px;padding:14px 0 0;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;border:1.5px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:15px;font-weight:500;cursor:pointer}
+.tab.on{background:#fff;color:#3b3f7a;border-color:#fff}
+.tab.today::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--now);margin-inline-start:6px;vertical-align:middle}
+main{padding:16px 14px 40px;max-width:560px;margin:0 auto}
+.hero{background:var(--now);color:var(--now-ink);border-radius:24px;padding:18px 20px;margin-bottom:16px;box-shadow:0 14px 34px rgba(255,210,63,.3);position:relative;overflow:hidden}
+.hero.idle{background:var(--card);color:var(--ink);box-shadow:none;border:1.5px solid var(--line)}
+.hero .lbl{font-size:13px;font-weight:700;letter-spacing:.5px;opacity:.75;text-transform:uppercase}
+.hero .big{font-size:34px;font-weight:900;line-height:1.05;margin:6px 0 6px}
+.hero .sub{font-size:15px;opacity:.85}
+.hero .left{margin-top:10px;font-size:15px;font-weight:700}
+.bar{height:6px;background:rgba(0,0,0,.15);border-radius:99px;margin-top:10px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--now-ink);border-radius:99px}
+.hero .gear{margin-top:12px;padding-top:12px;border-top:1.5px dashed rgba(0,0,0,.25);font-size:15px}
+.hero.idle .gear{border-color:var(--line)}
+.list{display:flex;flex-direction:column;gap:8px}
+.row{display:grid;grid-template-columns:6px 60px 1fr;gap:12px;background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:12px 14px 12px 12px;align-items:start}
+.row .bar-c{width:6px;border-radius:99px;align-self:stretch;background:var(--c,var(--accent))}
+.row.now{border-color:var(--now);box-shadow:0 0 0 3px rgba(255,210,63,.25)}
+.row.next{background:var(--next);border-color:transparent}
+.row.done{opacity:.4}
+.row .t{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.4}
+.row .t b{display:block;color:var(--ink);font-size:16px}
+.row .n{font-size:17px;font-weight:700}
+.row .who{font-size:13px;color:var(--muted);margin-top:2px}
+.row .g{margin-top:8px;font-size:14px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.row.joke{background:linear-gradient(135deg,rgba(61,220,151,.15),rgba(124,140,255,.15));border-style:dashed}
+.chip{background:var(--break);border-radius:8px;padding:3px 9px;font-size:13px}
+.edit{background:none;border:1px dashed var(--muted);color:var(--muted);border-radius:8px;padding:2px 9px;font:inherit;font-size:13px;cursor:pointer}
+.gap{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--break);border:1.5px dashed var(--muted);color:var(--ink);border-radius:14px;padding:9px 12px;font-size:14px;font-weight:700}
+.gap span{color:var(--muted);font-weight:400;font-variant-numeric:tabular-nums}
+.free{background:var(--card);border:1.5px solid var(--line);border-radius:24px;padding:30px 22px;text-align:center}
+.free .emoji{font-size:70px;line-height:1}
+.free h2{margin:14px 0 8px;font-size:28px;font-weight:900;color:var(--free)}
+.free p{margin:6px 0;font-size:16px;color:var(--muted);line-height:1.5}
+.sum{margin-top:18px;background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:14px 16px}
+.sum h3{margin:0 0 8px;font-size:15px;font-weight:700}
+.sum .chips{display:flex;flex-wrap:wrap;gap:6px}
+.sum .chips .chip{background:var(--next)}
+.foot{margin-top:22px;color:var(--muted);font-size:12px;text-align:center;line-height:1.6}
+dialog{border:none;border-radius:20px;padding:0;width:min(92vw,440px);background:var(--card);color:var(--ink);font:inherit;max-height:92vh}
+dialog::backdrop{background:rgba(5,6,20,.6)}
+dialog form{padding:20px}
+dialog h3{margin:0 0 4px;font-size:20px;font-weight:900}
+dialog p{margin:0 0 12px;color:var(--muted);font-size:14px}
+dialog textarea{width:100%;min-height:90px;border:1.5px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:16px;background:var(--bg);color:var(--ink);resize:vertical}
+.inp{flex:1;min-width:0;border:1.5px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:16px;background:var(--bg);color:var(--ink)}
+.sec{font-weight:700;margin-top:10px;font-size:15px}
+.opt{display:flex;gap:10px;align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font-size:15px;cursor:pointer}
+.opt:has(input:checked){border-color:var(--accent);background:var(--next)}
+.opt input{width:18px;height:18px;margin:0;flex:0 0 auto}
+.opt small{color:var(--muted)}
+dialog .btns{display:flex;gap:8px;margin-top:14px;justify-content:flex-start;flex-wrap:wrap}
+dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font-size:15px;font-weight:700;cursor:pointer}
+.primary{background:var(--accent);color:var(--accent-ink)}
+.ghost{background:var(--break);color:var(--ink)}
+.toast{position:fixed;left:14px;right:14px;bottom:calc(18px + env(safe-area-inset-bottom));background:var(--grad);color:#fff;border-radius:18px;padding:16px 18px;font-size:15px;line-height:1.5;box-shadow:0 14px 34px rgba(0,0,0,.35);z-index:50;animation:pop .35s ease}
+.toast b{font-size:17px;display:block;margin-bottom:4px}
+@keyframes pop{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
+#wiz{position:fixed;inset:0;background:var(--grad);z-index:40;display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto}
+#wiz[hidden]{display:none}
+.wz-card{background:var(--card);color:var(--ink);border-radius:28px;padding:26px 22px;width:min(100%,440px);box-shadow:0 30px 60px rgba(0,0,0,.35);animation:pop .35s ease}
+.wz-dots{display:flex;gap:6px;justify-content:center;margin-bottom:14px}
+.wz-dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.wz-dots i.on{background:var(--accent);width:22px;border-radius:99px}
+.wz-emoji{font-size:54px;text-align:center;line-height:1}
+.wz-card h2{margin:12px 0 4px;font-size:24px;font-weight:900;text-align:center}
+.wz-card p{margin:0 0 16px;color:var(--muted);text-align:center;font-size:15px}
+.wz-opts{display:flex;flex-direction:column;gap:10px}
+.wz-opt{display:flex;align-items:center;gap:12px;border:2px solid var(--line);border-radius:16px;padding:14px;font:inherit;font-size:17px;font-weight:700;background:var(--bg);color:var(--ink);cursor:pointer;text-align:start;transition:transform .1s}
+.wz-opt:active{transform:scale(.97)}
+.wz-opt.sel{border-color:var(--accent);background:var(--next)}
+.wz-opt .ic{font-size:26px}
+.wz-opt small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.wz-nav{display:flex;justify-content:space-between;gap:8px;margin-top:18px}
+.wz-nav button{border:none;border-radius:12px;padding:12px 18px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+.wz-in{width:100%;border:2px solid var(--line);border-radius:14px;padding:14px;font:inherit;font-size:18px;background:var(--bg);color:var(--ink);text-align:center}
+.wz-in+.wz-in{margin-top:10px}
+#build{position:fixed;inset:0;background:var(--grad);z-index:45;display:flex;align-items:center;justify-content:center;padding:18px}
+#build[hidden]{display:none}
+.bd-card{background:var(--card);color:var(--ink);border-radius:28px;padding:28px 22px;width:min(100%,440px);box-shadow:0 30px 60px rgba(0,0,0,.35);text-align:center;animation:pop .35s ease}
+.bd-emoji{font-size:60px;line-height:1;animation:spin 1.4s linear infinite;display:inline-block}
+.bd-emoji.still{animation:bounce .6s ease}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes bounce{0%{transform:scale(.4)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+.bd-card h2{margin:12px 0 14px;font-size:22px;font-weight:900}
+.bd-lines{display:flex;flex-direction:column;gap:8px;text-align:start;min-height:120px;font-size:15px}
+.bd-lines div{display:flex;gap:8px;align-items:center;opacity:0;transform:translateX(12px);animation:slide .35s ease forwards}
+.bd-lines div i{font-style:normal;color:var(--free);font-weight:900}
+@keyframes slide{to{opacity:1;transform:none}}
+.bd-bar{height:8px;background:var(--line);border-radius:99px;margin-top:16px;overflow:hidden}
+.bd-bar i{display:block;height:100%;width:0;background:var(--grad);border-radius:99px;transition:width .5s ease}
+.bd-hi{font-size:26px!important;margin-top:8px!important}
+.bd-card p{color:var(--muted);font-size:15px;line-height:1.6;margin:0 0 18px}
+.bd-go{width:100%;padding:14px;border:none;border-radius:14px;font:inherit;font-size:17px;font-weight:900;cursor:pointer}
+.row{animation:rowin .4s ease both}
+@keyframes rowin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.duo{display:grid;gap:10px;margin-bottom:16px}
+.nx{background:var(--card);border:1.5px solid var(--line);border-radius:22px;padding:14px 18px}
+.nx .lbl{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--muted);text-transform:uppercase}
+.nx .big{font-size:22px;font-weight:900;margin:4px 0 2px}
+.nx .sub{font-size:14px;color:var(--muted)}
+.dur{background:rgba(0,0,0,.08);border-radius:6px;padding:1px 6px;font-size:11px;margin-top:3px;display:inline-block}
+.hero .nxt{margin-top:14px;padding:12px 14px;border-radius:16px;background:rgba(0,0,0,.08)}
+.hero.idle .nxt{background:var(--next)}
+.hero .nxt .lbl{opacity:.8}
+.hero .nxt .nb{font-size:22px;font-weight:900;margin:3px 0 2px}
+.hero .nxt .gear{margin-top:8px;padding-top:8px}
+</style>
+</head>
+<body>
+<div class="top">
+<header>
+  <div><h1 id="hTitle">המערכת שלי</h1><div id="hSub"></div></div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+    <div class="clock" id="clock">--:--</div>
+    <button id="calBtn">📅 ליומן</button>
+  </div>
+</header>
+<div class="tabs" id="tabs"></div>
+</div>
+
+<dialog id="subDlg">
+  <form method="dialog">
+    <h3>📅 המערכת שלך ליומן</h3>
+    <p>לחיצה אחת – האייפון ישאל אם להירשם ליומן, תאשר וזה בפנים. היומן מתעדכן לבד כשהמערכת משתנה, ומזכיר 10 דקות לפני כל שיעור.</p>
+    <div class="btns"><a id="subLink" class="primary" style="text-decoration:none;display:inline-block;border-radius:12px;padding:12px 18px;font-weight:700" href="#">הוסף ליומן</a><button class="ghost" value="cancel">סגור</button></div>
+  </form>
+</dialog>
+<dialog id="calDlg">
+  <form method="dialog" id="calForm">
+    <h3>הוספה ליומן</h3>
+    <p>"כל השבוע ליומן" מכניס את כל המערכת שלך (ראשון–חמישי, כולל ערבית) כאירועים שחוזרים כל שבוע עד סוף השנה, עם תזכורת 10 דקות לפני. אפשר גם לסמן רק חלק.</p>
+    <div id="calDays" style="display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow:auto;border:1.5px solid var(--line);border-radius:10px;padding:8px"></div>
+    <div class="btns">
+      <button type="button" class="primary" id="calAll">📅 כל השבוע ליומן</button>
+      <button type="button" class="ghost" id="calGo">רק מה שסימנתי</button>
+      <button class="ghost" value="cancel">סגור</button>
+    </div>
+    <p id="calMsg" style="margin-top:10px"></p>
+  </form>
+</dialog>
+<main>
+  <div id="hero"></div>
+  <div id="content"></div>
+  <div class="foot">כיתה י'2 · לחיצה על "ציוד" בכל שיעור פותחת עריכה, והרשימה נשמרת בטלפון</div>
+
+<div id="build" hidden>
+  <div class="bd-card">
+    <div class="bd-emoji" id="bdEmoji">⚙️</div>
+    <h2 id="bdTitle">בונה לך משתמש…</h2>
+    <div class="bd-lines" id="bdLines"></div>
+    <div class="bd-bar"><i id="bdBar"></i></div>
+    <div id="bdDone" hidden>
+      <h2 class="bd-hi" id="bdHi"></h2>
+      <p id="bdMsg"></p>
+      <button type="button" class="primary bd-go" id="bdGo">לפתוח את המערכת 🚀</button>
+    </div>
+  </div>
+</div>
+<div id="wiz" hidden>
+  <div class="wz-card">
+    <div class="wz-dots" id="wzDots"></div>
+    <div class="wz-emoji" id="wzEmoji"></div>
+    <h2 id="wzQ"></h2>
+    <p id="wzSub"></p>
+    <div id="wzBody"></div>
+    <div class="wz-nav">
+      <button type="button" class="ghost" id="wzBack">חזרה</button>
+      <button type="button" class="primary" id="wzNext">הבא</button>
+    </div>
+  </div>
+</div>
+</main>
+
+<dialog id="dlg">
+  <form method="dialog">
+    <h3 id="dlgTitle"></h3>
+    <p>מה צריך להביא לשיעור הזה? כל פריט בשורה נפרדת או עם פסיק.</p>
+    <textarea id="dlgText"></textarea>
+    <div class="btns">
+      <button class="primary" value="save">שמור</button>
+      <button class="ghost" value="cancel">ביטול</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+// ---- נתוני המערכת ----
+const P=(s,e,n,w)=>({s,e,n,w:w||""});
+const SHACHARIT=P("07:15","08:55","תפילת שחרית","");
+const MINCHA=P("13:30","13:45","תפילת מנחה","");
+const ARVIT=P("20:15","20:30","ערבית","");
+const ENG={bokobza:"מיקי בוקובזה (3–4 יח')",minervi:"יהודית מינרבי (4 יח')",hadad:"אתי חדד (5 יח')"};
+const MATH={toni:"טוני כהן (4 יח')",adir:"אדיר חניה (5 יח')",harel:"הראל פרלמן"};
+const E=(s,e)=>({s,e,n:"אנגלית",w:"",key:"eng"});
+const M=(s,e)=>({s,e,n:"מתמטיקה",w:"",key:"math"});
+const MEGAMA=(s,e)=>({s,e,n:"מגמה",w:"",key:"phys"});
+const DAYS_Y2=[
+ {name:"ראשון",short:"א'",lessons:[
+  P("10:30","11:15","גמרא","הרב אלישיב יהב יפרח"),
+  P("11:15","11:55","השכלה כללית – חברה","הרב אייל אריאל"),
+  P("12:00","12:45","חינוך תעבורתי (זהב)","הרב מסעוד עטר"),
+  MINCHA,
+  M("13:45","14:30"),
+  P("14:30","15:15","חינוך גופני","נדב חורי"),
+  P("15:30","16:15","לשון","פרץ דמרי"),
+  E("16:15","17:00"),
+  P("18:00","18:40","מדעי המחשב","עמי בוקריס"),
+  P("19:30","20:15","סדר ערב","הרב אלישיב יהב יפרח"),
+  ARVIT]},
+ {name:"שני",short:"ב'",lessons:[
+  SHACHARIT,
+  P("08:55","10:15","גמרא","הרב אלישיב יהב יפרח"),
+  P("10:30","11:55","לאורו נלך – התנדבות","הרב אלישיב יהב יפרח"),
+  P("12:00","12:45","מחשבת ישראל","הרב אלישיב יהב יפרח"),
+  MINCHA,
+  P("13:45","14:30","תנ\"ך","אורי זרביב"),
+  P("14:30","15:15","הלכה","הרב שחר שאלתיאל"),
+  E("15:30","16:15"),
+  M("16:15","18:00"),
+  ARVIT]},
+ {name:"שלישי",short:"ג'",lessons:[
+  SHACHARIT,
+  P("08:55","10:15","גמרא","הרב אלישיב יהב יפרח"),
+  P("10:30","11:15","היסטוריה","הרב הראל עובדיה"),
+  P("11:15","11:55","ספרות","הרב ידידיה לרנר"),
+  P("12:00","12:45","גמרא","הרב אלישיב יהב יפרח"),
+  MINCHA,
+  P("13:45","14:30","מחשבת ישראל","הרב אלישיב יהב יפרח"),
+  E("14:30","17:00"),
+  P("17:15","18:00","חינוך גופני","נדב חורי"),
+  ARVIT]},
+ {name:"רביעי",short:"ד'",lessons:[
+  SHACHARIT,
+  M("08:55","10:15"),
+  P("10:30","11:55","תנ\"ך","אורי זרביב"),
+  P("12:00","12:45","היסטוריה","הרב הראל עובדיה"),
+  MINCHA,
+  P("13:45","14:30","הלכה","הרב שחר שאלתיאל"),
+  P("14:30","15:15","השכלה כללית – מורשת","הרב שחר שאלתיאל"),
+  P("16:15","17:00","לשון","פרץ דמרי"),
+  P("17:15","18:40","מבוא למדעים","אהרון אדרי"),
+  ARVIT]},
+ {name:"חמישי",short:"ה'",lessons:[
+  SHACHARIT,
+  P("08:55","10:15","גמרא","הרב אלישיב יהב יפרח"),
+  P("10:30","11:15","שבת אחים","הרב אלישיב יהב יפרח"),
+  P("11:15","11:55","גמרא","הרב אלישיב יהב יפרח"),
+  P("12:00","12:45","חינוך","הרב אלישיב יהב יפרח"),
+  MINCHA,
+  MEGAMA("13:45","16:15"),
+  P("16:15","17:00","מדעי המחשב","עמי בוקריס"),
+  ARVIT]},
+ {name:"שישי",short:"ו'",free:true},
+ {name:"שבת",short:"ש'",shabbat:true}
+];
+const SH="הרב שחר שאלתיאל";
+const DAYS_Y1=[
+ {name:"ראשון",short:"א'",lessons:[
+  P("10:30","11:55","גמרא",SH),
+  P("12:00","12:45","תנ\"ך",SH),
+  MINCHA,
+  M("13:45","14:30"),
+  P("14:30","15:15","גמרא",SH),
+  P("15:30","16:15","חינוך",SH),
+  E("16:15","17:00"),
+  P("17:15","18:00","חינוך גופני","נדב חורי"),
+  P("18:00","18:40","מדעי המחשב","עמי בוקריס"),
+  ARVIT]},
+ {name:"שני",short:"ב'",lessons:[
+  SHACHARIT,
+  P("08:55","10:15","גמרא",SH),
+  P("10:30","11:55","לאורו נלך – התנדבות",SH),
+  P("12:00","12:45","תנ\"ך",SH),
+  MINCHA,
+  P("13:45","14:30","השכלה כללית – מורשת",SH),
+  P("14:30","15:15","היסטוריה","הרב הראל עובדיה"),
+  E("15:30","16:15"),
+  M("16:15","18:00"),
+  P("18:00","18:40","מבוא למדעים","אהרון אדרי"),
+  P("19:30","20:15","סדר ערב",SH),
+  ARVIT]},
+ {name:"שלישי",short:"ג'",lessons:[
+  SHACHARIT,
+  P("08:55","09:30","השכלה כללית – חברה","הרב אייל אריאל"),
+  P("09:30","10:15","חינוך תעבורתי (זהב)","הרב מסעוד עטר"),
+  P("10:30","11:15","ספרות","הרב ידידיה לרנר"),
+  P("11:15","12:45","מחשבת ישראל","הרב אלדר אלחייק"),
+  MINCHA,
+  P("13:45","14:30","היסטוריה","הרב הראל עובדיה"),
+  E("14:30","17:00"),
+  ARVIT]},
+ {name:"רביעי",short:"ד'",lessons:[
+  SHACHARIT,
+  M("08:55","10:15"),
+  P("10:30","11:55","גמרא",SH),
+  P("12:00","12:45","הלכה",SH),
+  MINCHA,
+  P("13:45","14:30","חינוך גופני","נדב חורי"),
+  P("14:30","16:15","לשון","פרץ דמרי"),
+  P("16:15","17:00","מבוא למדעים","אהרון אדרי"),
+  ARVIT]},
+ {name:"חמישי",short:"ה'",lessons:[
+  SHACHARIT,
+  P("08:55","10:15","גמרא",SH),
+  P("10:30","11:15","שבת אחים",SH),
+  P("11:15","11:55","תנ\"ך",SH),
+  P("12:00","12:45","הלכה",SH),
+  MINCHA,
+  MEGAMA("13:45","16:15"),
+  P("16:15","17:00","מדעי המחשב","עמי בוקריס"),
+  ARVIT]},
+ {name:"שישי",short:"ו'",free:true},
+ {name:"שבת",short:"ש'",shabbat:true}
+];
+const CLASSES={y1:{label:"י'1",rav:SH,days:DAYS_Y1},y2:{label:"י'2",rav:"הרב אלישיב יהב יפרח",days:DAYS_Y2}};
+let profile=null;
+try{profile=JSON.parse(localStorage.getItem("profile")||"null")}catch(e){profile=null}
+let DAYS=CLASSES[(profile&&profile.cls)||"y2"].days;
+const DEFAULT_GEAR={
+ "גמרא":"גמרא, מחברת","תנ\"ך":"תנ\"ך","חינוך גופני":"בגדי ספורט, נעלי ספורט, בקבוק מים",
+ "מתמטיקה":"מחשבון, מחברת חשבון","אנגלית":"מילון, מחברת","הלכה":"קיצור שולחן ערוך",
+ "מדעי המחשב":"מחשב נייד","מבוא למדעים":"מחברת","לשון":"מחברת","היסטוריה":"מחברת","ספרות":"מחברת, ספר קריאה",
+ "תפילת שחרית":"טלית ותפילין","תפילת מנחה":"","ערבית":"","מגמה":"","סדר ערב":"","מחשבת ישראל":"","חינוך":"","שבת אחים":"",
+ "השכלה כללית – חברה":"","השכלה כללית – מורשת":"","חינוך תעבורתי (זהב)":"","לאורו נלך – התנדבות":""
+};
+let gear={};
+try{gear=Object.assign({},DEFAULT_GEAR,JSON.parse(localStorage.getItem("gear")||"{}"))}catch(e){gear=Object.assign({},DEFAULT_GEAR)}
+function saveGear(){try{localStorage.setItem("gear",JSON.stringify(gear))}catch(e){}}
+
+// ---- עזרים ----
+const toMin=t=>{const[a,b]=t.split(":").map(Number);return a*60+b};
+const pad=n=>String(n).padStart(2,"0");
+const fmt=m=>`${pad(Math.floor(m/60))}:${pad(m%60)}`;
+const gearList=n=>(gear[n]||"").split(/[,\n]/).map(x=>x.trim()).filter(Boolean);
+function resolve(l){
+  const p=profile||{};
+  if(l.key==="eng")return {...l,w:ENG[p.eng]||"מיקי בוקובזה / יהודית מינרבי / אתי חדד"};
+  if(l.key==="math")return {...l,w:MATH[p.math]||"טוני כהן / הראל פרלמן / אדיר חניה"};
+  if(l.key==="phys"){
+    if(p.phys==="yes")return {...l,n:"פיזיקה",w:"יבגני קלנר"};
+    if(p.phys==="no")return {...l,n:"קבוצת פיזיקה עכשיו בפיזיקה בנתיבות 🧲",w:"אתה חופשי. תנוח, תשתה משהו, תחייך.",joke:true};
+    return {...l,w:"מנהל וכלכלה / מדעי המחשב / פיזיקה"};
+  }
+  return l;
+}
+const lessonsOf=d=>(d.lessons||[]).map(resolve);
+const hue=n=>{let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))%360;return h};
+let sel=new Date().getDay();
+const FREE_LINES=[
+ ["🛌","יום שישי – חופש רשמי","אין שיעורים, אין מבחנים, אין ערבית בישיבה.","המשימה היחידה שלך היום: לישון עד שאמא מתעצבנת, ואז לעזור להכין לשבת. בהצלחה גיבור."],
+ ["🍗","שישי = שבת'לה","התיק נשאר סגור. הגמרא נחה. אתה נח.","תריח את החמין, תזרוק כביסה למכונה שיחשבו שאתה עוזר, ותהיה בזמן למקווה."],
+ ["😎","היום אין מערכת, יש חיים","שישי טוב אלוף. הראש מותר להיות ריק.","טיפ מקצועי: מקלחת לפני שבת ולא שנייה לפני הדלקת נרות."]
+];
+
+function render(animate){
+  const now=new Date();
+  const nowMin=now.getHours()*60+now.getMinutes();
+  document.getElementById("clock").textContent=`${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const today=now.getDay();
+  const tabs=document.getElementById("tabs");
+  tabs.innerHTML=DAYS.map((d,i)=>`<button class="tab ${i===sel?"on":""} ${i===today?"today":""}" data-i="${i}">${d.name}</button>`).join("");
+  tabs.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{sel=+b.dataset.i;render()});
+  const d=DAYS[sel]; const hero=document.getElementById("hero"); const c=document.getElementById("content");
+  if(d.shabbat){
+    hero.innerHTML="";
+    c.innerHTML=`<div class="free"><div class="emoji">🕯️</div><h2>שבת שלום</h2><p>הטלפון סגור, גם המערכת. נתראה במוצ"ש.</p></div>`;
+    return;
+  }
+  if(d.free){
+    const f=FREE_LINES[Math.floor(now.getDate()/7)%FREE_LINES.length];
+    hero.innerHTML="";
+    c.innerHTML=`<div class="free"><div class="emoji">${f[0]}</div><h2>${f[1]}</h2><p>${f[2]}</p><p>${f[3]}</p></div>`;
+    return;
+  }
+  const L=lessonsOf(d).map(l=>({...l,sm:toMin(l.s),em:toMin(l.e)}));
+  let cur=-1,nxt=-1;
+  if(sel===today){
+    cur=L.findIndex(l=>nowMin>=l.sm&&nowMin<l.em);
+    nxt=L.findIndex(l=>l.sm>nowMin);
+  }
+  // hero: now + next in one card
+  const nextBlock=l=>l?`<div class="nxt"><div class="lbl">השיעור הבא · מתחיל בעוד ${l.sm-nowMin} דק'</div><div class="nb">${l.n}</div><div class="sub">${l.w?l.w+" · ":""}${l.s}–${l.e} · ${l.em-l.sm} דק'</div>${l.joke?"":gearBlock(l.n)}</div>`:"";
+  if(sel===today){
+    const nl=nxt>=0?L[nxt]:null;
+    if(cur>=0){
+      const l=L[cur];
+      hero.innerHTML=`<div class="hero"><div class="lbl">עכשיו</div><div class="big">${l.n}</div><div class="sub">${l.w?l.w+" · ":""}${l.s}–${l.e} · ${l.em-l.sm} דק'</div><div class="left">נשארו ${l.em-nowMin} דק'</div><div class="bar"><i style="width:${Math.round(100*(nowMin-l.sm)/(l.em-l.sm))}%"></i></div>${l.joke?"":gearBlock(l.n)}${nextBlock(nl)}</div>`;
+    }else if(nl){
+      hero.innerHTML=`<div class="hero idle"><div class="lbl">${nxt===0?"עוד לא התחלנו":"☕ הפסקה"}</div><div class="big">${nxt===0?"היום מתחילים ב-"+nl.s:"עד "+nl.s}</div><div class="left">עוד ${nl.sm-nowMin} דק'</div>${nextBlock(nl)}</div>`;
+    }else{
+      hero.innerHTML=`<div class="hero idle"><div class="lbl">היום</div><div class="big">סיימנו להיום 🎉</div><div class="sub">מחר: ${DAYS[(today+1)%7].name}</div></div>`;
+    }
+  }else{
+    const first=L[0],last=L[L.length-1];
+    hero.innerHTML=`<div class="hero idle"><div class="lbl">יום ${d.name}</div><div class="big">${L.length} שיעורים</div><div class="sub">${first.s} – ${last.e}</div></div>`;
+  }
+  // list
+  let html='<div class="list">';
+  L.forEach((l,i)=>{
+    if(i>0){const g=l.sm-L[i-1].em;if(g>=10)html+=`<div class="gap">☕ הפסקה ${g} דק' <span>${fmt(L[i-1].em)}–${fmt(l.sm)}</span></div>`}
+    const cls=sel===today?(i===cur?"now":i===nxt?"next":l.em<=nowMin?"done":""):"";
+    const gl=l.joke?[]:gearList(l.n);
+    html+=`<div class="row ${cls} ${l.joke?"joke":""}" style="--c:hsl(${hue(l.n)} 70% 60%)"><div class="bar-c"></div><div class="t"><b>${l.s}</b>${l.e}<span class="dur">${l.em-l.sm} דק'</span></div><div><div class="n">${l.n}</div>${l.w?`<div class="who">${l.w}</div>`:""}${l.joke?"":`<div class="g">${gl.map(x=>`<span class="chip">${x}</span>`).join("")}<button class="edit" data-n="${l.n.replace(/"/g,"&quot;")}">${gl.length?"ערוך ציוד":"+ ציוד"}</button></div>`}</div></div>`;
+  });
+  html+='</div>';
+  // summary of what to pack
+  const all=[...new Set(L.filter(l=>!l.joke).flatMap(l=>gearList(l.n)))];
+  html+=`<div class="sum"><h3>מה להביא ביום ${d.name}</h3><div class="chips">${all.length?all.map(x=>`<span class="chip">${x}</span>`).join(""):'<span style="color:var(--muted);font-size:14px">עוד לא הוגדר ציוד ליום הזה</span>'}</div></div>`;
+  c.innerHTML=html;
+  if(animate===true)c.querySelectorAll(".row").forEach((r,i)=>r.style.animationDelay=(i*70)+"ms");else c.querySelectorAll(".row").forEach(r=>r.style.animation="none");
+  c.querySelectorAll(".edit").forEach(b=>b.onclick=()=>openEdit(b.dataset.n));
+}
+function gearBlock(n){const g=gearList(n);return g.length?`<div class="gear"><b>להביא:</b> ${g.join(" · ")}</div>`:""}
+function openEdit(n){
+  const dlg=document.getElementById("dlg");
+  document.getElementById("dlgTitle").textContent=`ציוד ל${n}`;
+  const ta=document.getElementById("dlgText");ta.value=gear[n]||"";
+  dlg.onclose=()=>{if(dlg.returnValue==="save"){gear[n]=ta.value.trim();saveGear();render()}};
+  dlg.showModal();
+}
+
+// ---- פרופיל / הרשמה ראשונה ----
+function applyProfile(){
+  DAYS=CLASSES[(profile&&profile.cls)||"y2"].days;
+  const c=CLASSES[(profile&&profile.cls)||"y2"];
+  document.getElementById("hTitle").textContent=profile?`המערכת של ${profile.first}`:"המערכת שלי";
+  document.getElementById("hSub").textContent=`כיתה ${c.label} · ${c.rav}`+(profile?(profile.email?" · ✎ ערוך פרופיל":" · ✎ ערוך פרופיל / חבר אימייל"):"");
+  document.querySelector(".foot").textContent=`כיתה ${c.label} · לחיצה על "ציוד" בכל שיעור פותחת עריכה, והרשימה נשמרת בטלפון`;
+}
+const STEPS=[
+ {k:"first",e:"👋",q:"היי! איך קוראים לך?",sub:"שם פרטי ושם משפחה, כדי שהמערכת תדע למי היא שייכת",type:"name"},
+ {k:"email",e:"📬",q:"רוצה לחבר אימייל?",sub:"לא חובה. אפשר גם לדלג ולהוסיף מתי שתרצה מתוך הפרופיל",type:"email"},
+ {k:"cls",e:"🏫",q:"באיזו כיתה אתה?",sub:"",opts:[["y1","י'1","הרב שחר שאלתיאל","📘"],["y2","י'2","הרב אלישיב יהב יפרח","📗"]]},
+ {k:"eng",e:"🇬🇧",q:"כמה יחידות אנגלית?",sub:"בוחרים לפי המורה",opts:[["bokobza","3–4 יחידות","מיקי בוקובזה","🥉"],["minervi","4 יחידות","יהודית מינרבי","🥈"],["hadad","5 יחידות","אתי חדד","🥇"]]},
+ {k:"math",e:"📐",q:"וכמה יחידות מתמטיקה?",sub:"",opts:[["toni","4 יחידות","טוני כהן","🧮"],["adir","5 יחידות","אדיר חניה","🚀"],["harel","ההקבצה של הראל פרלמן","","📏"]]},
+ {k:"phys",e:"🧲",q:"אתה במגמת פיזיקה?",sub:"אם לא – לא תראה אותה במערכת",opts:[["yes","כן, אני בפיזיקה","","⚡"],["no","לא, ברוך השם","","😎"]]},
+];
+let wzStep=0,wzData={},wzEditing=false;
+function openOnb(editing){
+  wzEditing=editing;wzData=Object.assign({},profile||{});wzStep=0;
+  document.getElementById("wiz").hidden=false;drawStep();
+}
+function drawStep(){
+  const st=STEPS[wzStep];
+  document.getElementById("wzDots").innerHTML=STEPS.map((_,i)=>`<i class="${i===wzStep?"on":""}"></i>`).join("");
+  document.getElementById("wzEmoji").textContent=st.e;
+  document.getElementById("wzQ").textContent=st.k==="email"&&wzData.first?`${wzData.first}, ואיזה אימייל?`:st.q;
+  document.getElementById("wzSub").textContent=st.sub;
+  const body=document.getElementById("wzBody");
+  if(st.type==="name"){
+    body.innerHTML=`<input class="wz-in" id="wzFirst" placeholder="שם פרטי" autocomplete="given-name" value="${wzData.first||""}"><input class="wz-in" id="wzLast" placeholder="שם משפחה" autocomplete="family-name" value="${wzData.last||""}">`;
+    setTimeout(()=>wzFirst.focus(),50);
+  }else if(st.type==="email"){
+    body.innerHTML=`<input class="wz-in" id="wzEmail" type="email" dir="ltr" placeholder="you@gmail.com" autocomplete="email" value="${wzData.email||""}"><button type="button" class="wz-opt" id="wzSkip" style="margin-top:10px;justify-content:center"><span class="ic">⏭️</span><span>לא עכשיו, אולי בהמשך</span></button>`;
+    document.getElementById("wzSkip").onclick=()=>{wzData.email="";wzStep++;drawStep()};
+  }else{
+    body.innerHTML=`<div class="wz-opts">${st.opts.map(o=>`<button type="button" class="wz-opt ${wzData[st.k]===o[0]?"sel":""}" data-v="${o[0]}"><span class="ic">${o[3]}</span><span>${o[1]}${o[2]?`<small>${o[2]}</small>`:""}</span></button>`).join("")}</div>`;
+    body.querySelectorAll(".wz-opt").forEach(b=>b.onclick=()=>{wzData[st.k]=b.dataset.v;body.querySelectorAll(".wz-opt").forEach(x=>x.classList.toggle("sel",x===b));setTimeout(next,180)});
+  }
+  document.getElementById("wzBack").style.visibility=(wzStep===0&&!wzEditing)?"hidden":"visible";
+  document.getElementById("wzBack").textContent=wzStep===0?"ביטול":"חזרה";
+  document.getElementById("wzNext").textContent=wzStep===STEPS.length-1?"סיימנו 🎉":(st.type==="email"?"חבר אימייל":"הבא");
+  document.getElementById("wzNext").style.display=st.opts?"none":"";
+}
+function next(){
+  const st=STEPS[wzStep];
+  if(st.type==="name"){
+    wzData.first=wzFirst.value.trim();wzData.last=wzLast.value.trim();
+    if(!wzData.first){wzFirst.focus();wzFirst.style.borderColor="#ff6b6b";return}
+  }
+  if(st.type==="email"){
+    wzData.email=wzEmail.value.trim();
+    if(wzData.email&&!/^\S+@\S+\.\S+$/.test(wzData.email)){wzEmail.focus();wzEmail.style.borderColor="#ff6b6b";return}
+  }
+  if(st.opts&&!wzData[st.k])return;
+  if(wzStep<STEPS.length-1){wzStep++;drawStep();return}
+  finishWiz();
+}
+function finishWiz(){
+  const isNew=!profile||!profile.since;
+  profile={first:wzData.first,last:wzData.last,email:wzData.email||"",cls:wzData.cls,eng:wzData.eng,math:wzData.math,phys:wzData.phys,since:profile&&profile.since?profile.since:new Date().toISOString()};
+  try{localStorage.setItem("profile",JSON.stringify(profile))}catch(e){}
+  document.getElementById("wiz").hidden=true;
+  if(isNew)runBuild();else{applyProfile();render()}
+}
+function runBuild(){
+  const c=CLASSES[profile.cls];
+  const lines=[
+    `יוצר משתמש ל${profile.first} ${profile.last}…`,
+    `מושך את המערכת של כיתה ${c.label} מ${c.rav}…`,
+    `מסדר אנגלית עם ${ENG[profile.eng]}…`,
+    `מכוון מתמטיקה ל${MATH[profile.math]}…`,
+    profile.phys==="yes"?"מוסיף פיזיקה עם יבגני קלנר ⚡":"מוציא את הפיזיקה מהמערכת… שיהיה להם בכיף 😎",
+    "מחשב הפסקות, מנחה וערבית…",
+    "מצחצח את העיצוב ✨"
+  ];
+  const b=document.getElementById("build");b.hidden=false;
+  document.getElementById("bdDone").hidden=true;document.getElementById("bdLines").innerHTML="";
+  document.getElementById("bdEmoji").className="bd-emoji";document.getElementById("bdEmoji").textContent="⚙️";
+  document.getElementById("bdTitle").textContent="בונה לך משתמש…";
+  document.getElementById("bdBar").style.width="0";
+  lines.forEach((t,i)=>setTimeout(()=>{
+    const d=document.createElement("div");d.innerHTML=`<i>✓</i><span>${t}</span>`;
+    document.getElementById("bdLines").appendChild(d);
+    document.getElementById("bdBar").style.width=Math.round(100*(i+1)/lines.length)+"%";
+  },450+i*650));
+  setTimeout(()=>{
+    const em=document.getElementById("bdEmoji");em.className="bd-emoji still";em.textContent="🎉";
+    document.getElementById("bdTitle").textContent="";
+    document.getElementById("bdLines").style.display="none";
+    document.getElementById("bdHi").textContent=`שלום ${profile.first} ${profile.last}!`;
+    const nice=["תודה שהצטרפת. מעכשיו יש מישהו שזוכר בשבילך מה יש עכשיו, מה הבא, ומה לשים בתיק. אתה רק צריך להגיע – ואם אפשר, בזמן.","תודה שהצטרפת! בנינו לך מערכת אישית ב-4.2 שניות, כולל הפסקות. הגמרא עדיין עליך.","תודה שהצטרפת. המערכת שלך מוכנה, מדויקת, ויודעת בדיוק מתי יש הפסקה. זה כבר חצי הצלחה."];
+    document.getElementById("bdMsg").textContent=nice[Math.floor(Math.random()*nice.length)];
+    document.getElementById("bdDone").hidden=false;
+  },450+lines.length*650+300);
+  document.getElementById("bdGo").onclick=()=>{b.hidden=true;document.getElementById("bdLines").style.display="";applyProfile();render(true)};
+}
+document.getElementById("wzNext").onclick=next;
+document.getElementById("wzBack").onclick=()=>{if(wzStep===0){if(wzEditing)document.getElementById("wiz").hidden=true;return}wzStep--;drawStep()};
+document.getElementById("wiz").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();next()}});
+document.getElementById("hSub").onclick=()=>openOnb(true);
+applyProfile();
+const incomplete=!profile||!profile.eng||!profile.math||!profile.phys;
+if(incomplete)setTimeout(()=>openOnb(!!profile),150);
+function toast(t,m){const el=document.createElement("div");el.className="toast";el.innerHTML=`<b>${t}</b>${m}`;document.body.appendChild(el);el.onclick=()=>el.remove();setTimeout(()=>el.remove(),9000)}
+
+render();
+setInterval(render,30000);
+
+// ---- הוספה ליומן (קובץ ICS) ----
+const BYDAY=["SU","MO","TU","WE","TH","FR","SA"];
+const HOSTED=/^https?:$/.test(location.protocol)&&!/claude\.ai$/.test(location.hostname);
+function webcalUrl(){const p=profile||{};if(!p.cls||!p.eng||!p.math||!p.phys)return null;return `webcal://${location.host}${location.pathname.replace(/[^/]*$/,"")}cal/${p.cls}-${p.eng}-${p.math}-${p.phys}.ics`}
+document.getElementById("calBtn").onclick=()=>{
+  if(HOSTED){
+    const u=webcalUrl(); if(!u)return openOnb(true);
+    const dlg=document.getElementById("subDlg");
+    document.getElementById("subLink").href=u;
+    dlg.showModal();return;
+  }
+  const box=document.getElementById("calDays");
+  box.innerHTML=DAYS.filter(d=>d.lessons).map((d,di)=>{
+    const i=DAYS.indexOf(d);
+    return `<details ${i===new Date().getDay()?"open":""} style="border-bottom:1px solid var(--line);padding:4px 0">
+      <summary style="font-weight:700;font-size:16px;cursor:pointer"><label style="display:inline-flex;gap:8px;align-items:center"><input type="checkbox" class="dayAll" data-i="${i}" checked> יום ${d.name}</label></summary>
+      <div style="padding:6px 12px 4px;display:flex;flex-direction:column;gap:6px">
+      ${lessonsOf(d).map((l,li)=>`<label style="display:flex;gap:8px;align-items:center;font-size:15px"><input type="checkbox" class="les" data-i="${i}" data-l="${li}" checked><span style="color:var(--muted);font-variant-numeric:tabular-nums">${l.s}</span> ${l.n}</label>`).join("")}
+      </div></details>`;
+  }).join("");
+  box.querySelectorAll(".dayAll").forEach(cb=>cb.onchange=()=>box.querySelectorAll(`.les[data-i="${cb.dataset.i}"]`).forEach(x=>x.checked=cb.checked));
+  document.getElementById("calMsg").textContent="";
+  document.getElementById("calDlg").showModal();
+};
+function nextDate(dow){const d=new Date();d.setHours(0,0,0,0);const diff=(dow-d.getDay()+7)%7;d.setDate(d.getDate()+diff);return d}
+const ymd=d=>`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+const ics=s=>String(s).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+function buildICS(){
+  const chosen=[...document.querySelectorAll(".les:checked")].map(cb=>({d:+cb.dataset.i,l:+cb.dataset.l}));
+  if(!chosen.length)return null;
+  const now=new Date();const stamp=`${ymd(now)}T${pad(now.getHours())}${pad(now.getMinutes())}00`;
+  let out=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//maarechet-y2//HE","CALSCALE:GREGORIAN","X-WR-CALNAME:המערכת "+CLASSES[(profile&&profile.cls)||"y2"].label];
+  chosen.forEach(({d,l},k)=>{
+    const L=lessonsOf(DAYS[d])[l];if(L.joke)return;const dt=ymd(nextDate(d));
+    const g=gearList(L.n);
+    const desc=[L.w,g.length?"להביא: "+g.join(", "):""].filter(Boolean).join("\n");
+    out.push("BEGIN:VEVENT",
+      `UID:y2-${d}-${l}-${stamp}-${k}@maarechet`,
+      `DTSTAMP:${stamp}Z`,
+      `DTSTART;TZID=Asia/Jerusalem:${dt}T${L.s.replace(":","")}00`,
+      `DTEND;TZID=Asia/Jerusalem:${dt}T${L.e.replace(":","")}00`,
+      `RRULE:FREQ=WEEKLY;BYDAY=${BYDAY[d]};UNTIL=20270620T235959Z`,
+      `SUMMARY:${ics(L.n)}`,
+      desc?`DESCRIPTION:${ics(desc)}`:"",
+      "BEGIN:VALARM","TRIGGER:-PT10M","ACTION:DISPLAY",`DESCRIPTION:${ics(L.n)} מתחיל בעוד 10 דקות`,"END:VALARM",
+      "END:VEVENT");
+  });
+  out.push("END:VCALENDAR");
+  return out.filter(Boolean).join("\r\n");
+}
+document.getElementById("calAll").onclick=()=>{document.querySelectorAll(".les,.dayAll").forEach(x=>x.checked=true);document.getElementById("calGo").click()};
+document.getElementById("calGo").onclick=async()=>{
+  const msg=document.getElementById("calMsg");
+  const text=buildICS();
+  if(!text){msg.textContent="לא נבחר אף שיעור.";return}
+  msg.textContent="מכין את הקובץ…";
+  let dl=null;
+  try{ if(window.claude&&claude.use) dl=await claude.use("downloads"); }catch(e){dl=null}
+  if(dl){
+    try{
+      const JSZipLib=await loadJSZip();
+      const zip=new JSZipLib();zip.file("maarechet-y2.ics",text);
+      const blob=await zip.generateAsync({type:"blob"});
+      await dl.save({filename:"maarechet-y2.zip",data:blob});
+      msg.innerHTML="הקובץ נשמר. עכשיו: פתח את אפליקציית <b>קבצים</b>, לחץ על maarechet-y2.zip כדי לפרוס אותו, ואז לחץ על הקובץ maarechet-y2.ics ובחר <b>הוסף הכל</b>. השיעורים ייכנסו ליומן.";
+    }catch(e){
+      msg.textContent=e&&e.code==="declined"?"בוטל.":"לא הצלחתי לשמור את הקובץ כאן. נסה לפתוח את האפליקציה בספארי ולנסות שוב.";
+    }
+  }else{
+    const blob=new Blob([text],{type:"text/calendar;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;a.download="maarechet-y2.ics";document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
+    msg.innerHTML="הקובץ ירד. פתח אותו (מ<b>קבצים</b> או מההורדות של ספארי) ובחר <b>הוסף הכל</b> כדי להכניס את השיעורים ליומן.";
+  }
+};
+function loadJSZip(){
+  return new Promise((res,rej)=>{
+    if(window.JSZip)return res(window.JSZip);
+    const s=document.createElement("script");
+    s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+    s.onload=()=>res(window.JSZip);s.onerror=rej;document.head.appendChild(s);
+  });
+}
+</script>
+</body>
+</html>

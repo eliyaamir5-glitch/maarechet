@@ -1,0 +1,16 @@
+# אתר סטטי: אין build, מגישים את התיקייה כמו שהיא
+[build]
+  publish = "."
+  command = ""
+
+# קובצי יומן: סוג תוכן נכון ל-webcal, וקאש קצר כדי ששינויים יגיעו לטלפונים מהר
+[[headers]]
+  for = "/cal/*.ics"
+  [headers.values]
+    Content-Type = "text/calendar; charset=utf-8"
+    Cache-Control = "public, max-age=300, must-revalidate"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
