@@ -128,6 +128,8 @@ const DAYS_Y1=[
  {name:"שבת",short:"ש'",shabbat:true}
 ];
 const CLASSES_META={y1:{label:"י'1",rav:SH},y2:{label:"י'2",rav:"הרב אלישיב יהב יפרח"}};
+// התראה במייל על הרשמה חדשה (שירות Web3Forms). מחרוזת ריקה = כבוי.
+const NOTIFY_KEY="";
 const DEFAULT_GEAR={
  "גמרא":"גמרא, מחברת","תנ\"ך":"תנ\"ך","חינוך גופני":"בגדי ספורט, נעלי ספורט, בקבוק מים",
  "מתמטיקה":"מחשבון, מחברת חשבון","אנגלית":"מילון, מחברת","הלכה":"קיצור שולחן ערוך",
@@ -136,4 +138,4 @@ const DEFAULT_GEAR={
  "השכלה כללית – חברה":"","השכלה כללית – מורשת":"","חינוך תעבורתי (זהב)":"","לאורו נלך – התנדבות":""
 };
 
-if(typeof module!=="undefined"&&module.exports){module.exports={P,SHACHARIT,MINCHA,ARVIT,ENG,MATH,DAYS_Y1,DAYS_Y2,CLASSES_META,DEFAULT_GEAR};}
+if(typeof module!=="undefined"&&module.exports){module.exports={P,SHACHARIT,MINCHA,ARVIT,ENG,MATH,DAYS_Y1,DAYS_Y2,CLASSES_META,DEFAULT_GEAR,NOTIFY_KEY};}

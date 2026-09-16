@@ -446,7 +446,15 @@ function finishWiz(){
   profile={first:wzData.first,last:wzData.last,email:wzData.email||"",cls:wzData.cls,eng:wzData.eng,math:wzData.math,phys:wzData.phys,since:profile&&profile.since?profile.since:new Date().toISOString()};
   try{localStorage.setItem("profile",JSON.stringify(profile))}catch(e){}
   document.getElementById("wiz").hidden=true;
-  if(isNew)runBuild();else{applyProfile();render()}
+  if(isNew){notifySignup();runBuild()}else{applyProfile();render()}
+}
+// שולח למנהל מייל קצר על הרשמה חדשה: שם וכיתה בלבד. נכשל בשקט אם אין רשת.
+function notifySignup(){
+  if(!NOTIFY_KEY||!profile)return;
+  const cls=CLASSES[profile.cls]?CLASSES[profile.cls].label:profile.cls;
+  const body={access_key:NOTIFY_KEY,subject:`תלמיד חדש נרשם למערכת: ${profile.first} ${profile.last} (${cls})`,from_name:"המערכת",
+    "שם":`${profile.first} ${profile.last}`,"כיתה":cls,"נרשם ב":new Date().toLocaleString("he-IL",{timeZone:"Asia/Jerusalem"})};
+  try{fetch("https://api.web3forms.com/submit",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(body),keepalive:true}).catch(()=>{})}catch(e){}
 }
 function runBuild(){
   const c=CLASSES[profile.cls];
