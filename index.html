@@ -34,6 +34,13 @@ header{display:flex;justify-content:space-between;align-items:flex-start;gap:10p
 header h1{margin:0;font-size:24px;font-weight:900;letter-spacing:-.3px;line-height:1.1}
 #hSub{font-size:13px;opacity:.85;margin-top:4px;cursor:pointer}
 header .clock{font-size:34px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1}
+.hdate{font-size:12px;opacity:.85;margin-top:5px;text-align:left;white-space:nowrap}
+.board{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:12px;font-size:14px;cursor:pointer}
+.board .bi{font-size:18px}.board .bt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.board .bt b{font-weight:700}.board .bc{color:var(--muted);font-size:12px;white-space:nowrap}
+.board.test{border-color:var(--now);background:linear-gradient(90deg,rgba(255,210,63,.18),transparent)}
+.bl{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px;line-height:1.45}
+.bl .bd{min-width:64px;font-weight:700;color:var(--accent);font-size:13px;padding-top:2px}.bl .bx{color:var(--muted);font-size:13px}
+.gear-tmrw{margin-top:12px;padding-top:12px;border-top:1.5px dashed var(--line);font-size:15px}
 #calBtn,#relBtn,#cardsBtn{flex:1;text-decoration:none;text-align:center;white-space:nowrap;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px)}
 .actions{display:flex;gap:8px;margin-top:14px}
 .tabs{display:flex;gap:6px;padding:14px 0 0;overflow-x:auto;scrollbar-width:none}
@@ -160,7 +167,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 <div class="top">
 <header>
   <div><h1 id="hTitle">המערכת שלי</h1><div id="hSub"></div></div>
-  <div class="clock" id="clock">--:--</div>
+  <div><div class="clock" id="clock">--:--</div><div class="hdate" id="hDate"></div></div>
 </header>
 <div class="actions">
   <button id="calBtn">📅 ליומן</button>
@@ -191,6 +198,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
   </form>
 </dialog>
 <main>
+  <div id="board" hidden></div>
   <div id="hero"></div>
   <div id="content"></div>
   <div class="foot">כיתה י'2 · לחיצה על "ציוד" בכל שיעור פותחת עריכה, והרשימה נשמרת בטלפון</div>
@@ -239,6 +247,14 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
     </div>
   </form>
 </dialog>
+<dialog id="boardDlg">
+  <form method="dialog">
+    <h3>📌 לוח הכיתה</h3>
+    <p>מבחנים והודעות. הכל נכנס גם ליומן בטלפון.</p>
+    <div id="boardList" style="max-height:60vh;overflow:auto"></div>
+    <div class="btns"><button class="ghost" value="cancel">סגור</button></div>
+  </form>
+</dialog>
 <dialog id="dlg">
   <form method="dialog">
     <h3 id="dlgTitle"></h3>
@@ -252,6 +268,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 </dialog>
 
 <script src="data.js"></script>
+<script src="board.js"></script>
 <script>
 // ---- נתוני המערכת: ראה data.js ----
 const CLASSES={y1:{...CLASSES_META.y1,days:DAYS_Y1},y2:{...CLASSES_META.y2,days:DAYS_Y2}};
@@ -304,7 +321,7 @@ function render(animate){
   if(d.free){
     const f=FREE_LINES[Math.floor(now.getDate()/7)%FREE_LINES.length];
     hero.innerHTML="";
-    c.innerHTML=`<div class="free"><div class="emoji">${f[0]}</div><h2>${f[1]}</h2><p>${f[2]}</p><p>${f[3]}</p></div>`;
+    c.innerHTML=`<div class="free"><div class="emoji">${f[0]}</div><h2>${f[1]}</h2><p>${f[2]}</p><p>${f[3]}</p>${tomorrowGear(6).replace('class="gear-tmrw"','class="gear-tmrw" style="text-align:start"')}</div>`;
     return;
   }
   const L=lessonsOf(d).map(l=>({...l,sm:toMin(l.s),em:toMin(l.e)}));
@@ -323,7 +340,7 @@ function render(animate){
     }else if(nl){
       hero.innerHTML=`<div class="hero idle"><div class="lbl">${nxt===0?"עוד לא התחלנו":"☕ הפסקה"}</div><div class="big">${nxt===0?"היום מתחילים ב-"+nl.s:"עד "+nl.s}</div><div class="left">עוד ${nl.sm-nowMin} דק'</div>${nextBlock(nl)}</div>`;
     }else{
-      hero.innerHTML=`<div class="hero idle"><div class="lbl">היום</div><div class="big">סיימנו להיום 🎉</div><div class="sub">מחר: ${DAYS[(today+1)%7].name}</div></div>`;
+      hero.innerHTML=`<div class="hero idle"><div class="lbl">היום</div><div class="big">סיימנו להיום 🎉</div><div class="sub">מחר: ${DAYS[(today+1)%7].name}</div>${tomorrowGear(today)}</div>`;
     }
   }else{
     const first=L[0],last=L[L.length-1];
@@ -355,6 +372,52 @@ function openEdit(n){
 }
 
 // ---- הוספה למסך הבית ----
+// ---- לוח הכיתה, תאריך עברי, ציוד למחר ----
+const isoToday=()=>{const n=new Date();return `${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}`};
+const daysUntil=iso=>Math.round((new Date(iso+"T12:00:00")-new Date(isoToday()+"T12:00:00"))/864e5);
+const whenTxt=n=>n===0?"היום":n===1?"מחר":n<0?"עבר":`עוד ${n} ימים`;
+const fmtD=iso=>{const[y,m,d]=iso.split("-");return `${+d}.${+m}`};
+function boardItems(){
+  const cls=(profile&&profile.cls)||"y2",t=isoToday();
+  return (typeof BOARD==="undefined"?[]:BOARD).filter(b=>(b.cls==="all"||b.cls===cls)&&b.date&&(b.type==="test"?b.date>=t:(b.date<=t&&(b.until||b.date)>=t)||b.date>t))
+    .sort((a,b)=>a.date<b.date?-1:1);
+}
+function renderBoard(){
+  const el=document.getElementById("board");const items=boardItems();
+  if(!items.length){el.hidden=true;return}
+  const live=items.filter(b=>b.type==="notice"&&b.date<=isoToday());
+  const top=live[0]||items[0];const n=daysUntil(top.date);
+  el.className="board "+top.type;el.hidden=false;
+  el.innerHTML=`<span class="bi">${top.type==="test"?"📝":"📌"}</span><span class="bt"><b>${top.title}</b></span><span class="bc">${top.type==="test"?whenTxt(n)+" · "+fmtD(top.date):(items.length>1?"ועוד "+(items.length-1):"")}</span>`;
+  el.onclick=()=>{
+    document.getElementById("boardList").innerHTML=items.map(b=>`<div class="bl"><div class="bd">${b.type==="test"?whenTxt(daysUntil(b.date))+"<br>"+fmtD(b.date):(b.date<=isoToday()?"עכשיו":whenTxt(daysUntil(b.date))+"<br>"+fmtD(b.date))}</div><div><div>${b.type==="test"?"📝 ":"📌 "}<b>${b.title}</b></div>${b.detail?`<div class="bx">${b.detail}</div>`:""}</div></div>`).join("");
+    document.getElementById("boardDlg").showModal();
+  };
+}
+function tomorrowGear(fromDay){
+  for(let k=1;k<=7;k++){const i=(fromDay+k)%7;const d=DAYS[i];if(!d.lessons)continue;
+    const all=[...new Set(lessonsOf(d).filter(l=>!l.joke).flatMap(l=>gearList(l.n)))];
+    return `<div class="gear-tmrw">🎒 <b>ל${d.name} להביא:</b> ${all.length?all.join(" · "):"לא הוגדר ציוד"}</div>`}
+  return "";
+}
+let hebParts={date:"",parsha:""};
+function renderHebDate(){
+  const now=new Date();
+  let fallback="";try{fallback=new Intl.DateTimeFormat("he-u-ca-hebrew",{day:"numeric",month:"long"}).format(now)}catch(e){}
+  document.getElementById("hDate").textContent=[hebParts.date||fallback,hebParts.parsha].filter(Boolean).join(" · ");
+}
+async function loadParsha(){
+  try{
+    const m=await import("https://cdn.jsdelivr.net/npm/@hebcal/core@5/+esm");
+    const now=new Date();const hd=new m.HDate(now);
+    const sat=hd.onOrAfter(6);
+    try{hebParts.date=hd.renderGematriya(true)}catch(e){}
+    const str=new m.Sedra(sat.getFullYear(),true).getString(sat,"he");
+    hebParts.parsha=str.replace(/^פָּרָשַׁת|^פרשת/,"פרשת").normalize("NFD").replace(/[\u0591-\u05C7]/g,"");
+    renderHebDate();
+  }catch(e){}
+}
+renderHebDate();loadParsha();
 const isStandalone=()=>window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
 const deviceKind=()=>/iPhone|iPad|iPod/i.test(navigator.userAgent)?"ios":/Android/i.test(navigator.userAgent)?"android":"other";
 const INSTALL_GUIDES={
@@ -388,6 +451,7 @@ document.querySelector(".foot").addEventListener("click",e=>{if(e.target.id==="i
 
 // ---- פרופיל / הרשמה ראשונה ----
 function applyProfile(){
+  setTimeout(renderBoard,0);
   DAYS=CLASSES[(profile&&profile.cls)||"y2"].days;
   const c=CLASSES[(profile&&profile.cls)||"y2"];
   document.getElementById("hTitle").textContent=profile?`המערכת של ${profile.first}`:"המערכת שלי";
@@ -500,8 +564,8 @@ const incomplete=!profile||!profile.eng||!profile.math||!profile.phys;
 if(incomplete)setTimeout(()=>openOnb(!!profile),150);
 function toast(t,m){const el=document.createElement("div");el.className="toast";el.innerHTML=`<b>${t}</b>${m}`;document.body.appendChild(el);el.onclick=()=>el.remove();setTimeout(()=>el.remove(),9000)}
 
-render();
-setInterval(render,30000);
+render();renderBoard();
+setInterval(()=>{render();renderBoard()},30000);
 
 // ---- עבודה בלי אינטרנט ----
 if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost"))navigator.serviceWorker.register("sw.js").catch(()=>{});

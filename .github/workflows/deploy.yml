@@ -29,7 +29,7 @@ jobs:
       - name: Collect site files
         run: |
           mkdir -p _site
-          cp -r index.html shichrur.html cards.html data.js sets.js sw.js cal _site/
+          cp -r index.html shichrur.html cards.html data.js sets.js board.js sw.js cal _site/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

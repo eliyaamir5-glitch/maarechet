@@ -5,6 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 const { ENG, MATH, DAYS_Y1, DAYS_Y2, CLASSES_META, DEFAULT_GEAR } = require("./data.js");
+const { BOARD } = require("./board.js");
 
 const OUT_DIR = path.join(__dirname, "cal");
 const WEEK_START = new Date(2026, 8, 13);      // ראשון 13.9.2026 – השבוע הראשון של המערכת
@@ -55,6 +56,31 @@ function buildICS(p) {
         "END:VEVENT",
       );
     });
+  });
+  // 🎒 תזכורת ערב: מה להביא מחר (20:45 בערב שלפני כל יום לימודים)
+  days.forEach((d, di) => {
+    if (!d.lessons) return;
+    const eve = (di + 6) % 7;                       // הערב שלפני: ראשון ← שבת בערב
+    const date = new Date(WEEK_START); date.setDate(date.getDate() + eve);
+    const ymd = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}`;
+    const gear = [...new Set(d.lessons.map(l => resolve(l, p)).filter(Boolean).flatMap(l => gearOf(l.n)))];
+    if (!gear.length) return;
+    out.push("BEGIN:VEVENT", `UID:${combo}-gear-${di}@maarechet`, `DTSTAMP:${STAMP}`,
+      `DTSTART;TZID=Asia/Jerusalem:${ymd}T204500`, `DTEND;TZID=Asia/Jerusalem:${ymd}T205000`,
+      `RRULE:FREQ=WEEKLY;BYDAY=${BYDAY[eve]};UNTIL=${UNTIL}`,
+      `SUMMARY:🎒 מחר להביא (${d.name})`, `DESCRIPTION:${esc(gear.join(", "))}`,
+      "BEGIN:VALARM", "TRIGGER:PT0M", "ACTION:DISPLAY", `DESCRIPTION:מחר להביא: ${esc(gear.join(", "))}`, "END:VALARM", "END:VEVENT");
+  });
+  // 📝 מבחנים והודעות מלוח הכיתה (אירועי יום שלם, תזכורת בערב שלפני)
+  BOARD.filter(b => b.date && (b.cls === "all" || b.cls === p.cls)).forEach((b, i) => {
+    const ymd = b.date.replace(/-/g, "");
+    const next = new Date(b.date + "T12:00:00"); next.setDate(next.getDate() + 1);
+    const ymd2 = `${next.getFullYear()}${pad(next.getMonth() + 1)}${pad(next.getDate())}`;
+    out.push("BEGIN:VEVENT", `UID:${combo}-board-${i}-${ymd}@maarechet`, `DTSTAMP:${STAMP}`,
+      `DTSTART;VALUE=DATE:${ymd}`, `DTEND;VALUE=DATE:${ymd2}`,
+      `SUMMARY:${b.type === "test" ? "📝 " : "📌 "}${esc(b.title)}`, b.detail ? `DESCRIPTION:${esc(b.detail)}` : "",
+      ...(b.type === "test" ? ["BEGIN:VALARM", "TRIGGER:-PT4H", "ACTION:DISPLAY", `DESCRIPTION:מחר ${esc(b.title)}`, "END:VALARM"] : []),
+      "END:VEVENT");
   });
   out.push("END:VCALENDAR");
   return out.filter(Boolean).join("\r\n");
