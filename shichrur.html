@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#5b6cff">
+<title>שחרורון</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1226; --card:#1d2247; --ink:#f4f5ff; --muted:#9aa0c7; --line:#2b3162;
+  --next:#243a8a; --break:#2a2f5c; --accent:#7c8cff; --accent-ink:#0b0e24; --free:#3ddc97; --warn:#ffd23f;
+  --grad:linear-gradient(135deg,#5b6cff 0%,#a259ff 60%,#ff6bd6 100%);
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#f3f2fb; --card:#ffffff; --ink:#191b33; --muted:#6c7093; --line:#e3e2f2; --next:#e5e9ff; --break:#eceaf7; --accent:#5b6cff; --accent-ink:#fff; --free:#1fb57a; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Rubik,"Segoe UI",Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+.top{background:var(--grad);color:#fff;padding:calc(16px + env(safe-area-inset-top)) 18px 20px;border-radius:0 0 28px 28px}
+.top a{color:#fff;text-decoration:none;font-size:14px;opacity:.9}
+.top h1{margin:6px 0 0;font-size:26px;font-weight:900}
+.top p{margin:4px 0 0;font-size:14px;opacity:.85}
+main{padding:16px 14px 40px;max-width:560px;margin:0 auto}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:22px;padding:18px;margin-bottom:14px}
+.card h2{margin:0 0 4px;font-size:19px;font-weight:900}
+.card .hint{margin:0 0 14px;color:var(--muted);font-size:14px;line-height:1.5}
+label{display:block;font-weight:700;font-size:14px;margin:12px 0 6px}
+label small{font-weight:400;color:var(--muted)}
+.inp,textarea,select{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:16px;background:var(--bg);color:var(--ink)}
+textarea{min-height:80px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.info{background:var(--next);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.5;margin-top:12px}
+.info b{font-size:15px}
+.btn{width:100%;border:none;border-radius:14px;padding:14px;font:inherit;font-size:17px;font-weight:900;cursor:pointer;margin-top:14px}
+.primary{background:var(--accent);color:var(--accent-ink)}
+.ghost{background:var(--break);color:var(--ink)}
+.wa{background:#25d366;color:#0b2b17}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:15px;line-height:1.5}
+.kv div:nth-child(odd){color:var(--muted)}
+.chk{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;padding:12px;margin-top:12px;font-size:15px;line-height:1.5;cursor:pointer}
+.chk input{width:20px;height:20px;margin:2px 0 0;flex:0 0 auto}
+.sig{position:relative;margin-top:6px}
+.sig canvas{width:100%;height:160px;background:#fff;border:2px dashed var(--line);border-radius:12px;touch-action:none;display:block}
+.sig .clr{position:absolute;top:8px;left:8px;background:var(--break);color:var(--ink);border:none;border-radius:8px;padding:4px 10px;font:inherit;font-size:13px;cursor:pointer}
+.sig .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:15px;pointer-events:none}
+.err{color:#ff6b6b;font-size:14px;margin-top:8px;min-height:18px}
+.permit{width:100%;border-radius:14px;border:1.5px solid var(--line);display:block;background:#fff}
+.ok{background:rgba(61,220,151,.15);border:1.5px solid var(--free);border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.5;margin-bottom:12px}
+.foot{margin-top:18px;color:var(--muted);font-size:12px;text-align:center;line-height:1.6}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="top">
+  <a href="./">← חזרה למערכת</a>
+  <h1>🏃 שחרורון</h1>
+  <p id="topSub">בקשת יציאה מבית הספר באישור הורים</p>
+</div>
+<main>
+
+<!-- שלב 1: התלמיד -->
+<section class="card" id="stStudent" hidden>
+  <h2>1. פרטי הבקשה</h2>
+  <p class="hint">ממלאים סיבה ושעה, ושולחים להורה לאישור. ההורה חותם ושולח למורה.</p>
+  <div class="row2">
+    <div><label>שם התלמיד</label><input class="inp" id="fName" placeholder="שם מלא"></div>
+    <div><label>כיתה</label><select id="fCls"><option value="y1">י'1</option><option value="y2">י'2</option></select></div>
+  </div>
+  <div class="row2">
+    <div><label>תאריך</label><input class="inp" id="fDate" type="date"></div>
+    <div><label>שעת יציאה</label><input class="inp" id="fTime" type="time"></div>
+  </div>
+  <div class="info" id="lessonInfo">בחר שעה כדי לראות מאיזה שיעור יוצאים ולמי נשלח האישור.</div>
+  <label>סיבת היציאה</label>
+  <textarea id="fReason" placeholder="למשל: תור לרופא שיניים"></textarea>
+  <label>פירוט נוסף <small>(לא חובה)</small></label>
+  <textarea id="fDetails" placeholder="מי אוסף, אם חוזרים אחר כך, וכו'"></textarea>
+  <div class="err" id="stErr"></div>
+  <button class="btn wa" id="btnToParent">📤 שלח להורה לאישור</button>
+  <button class="btn ghost" id="btnCopy">🔗 העתק קישור לבקשה</button>
+</section>
+
+<!-- שלב 2: ההורה -->
+<section class="card" id="stParent" hidden>
+  <h2>2. אישור ההורה</h2>
+  <p class="hint">בקשת יציאה שנשלחה אליך. בדקו את הפרטים, מלאו את שמכם וחתמו באצבע.</p>
+  <div class="kv" id="reqView"></div>
+  <div class="row2">
+    <div><label>שם ההורה</label><input class="inp" id="pName" placeholder="שם מלא"></div>
+    <div><label>קרבה</label><select id="pRel"><option>אמא</option><option>אבא</option><option>אפוטרופוס</option></select></div>
+  </div>
+  <label class="chk"><input type="checkbox" id="pOk"><span id="pOkText"></span></label>
+  <label>חתימה <small>(ציירו באצבע)</small></label>
+  <div class="sig"><canvas id="sigPad"></canvas><div class="ph" id="sigPh">חתמו כאן</div><button type="button" class="clr" id="sigClr">נקה</button></div>
+  <div class="err" id="pErr"></div>
+  <button class="btn primary" id="btnSign">✅ אשר וחתום</button>
+</section>
+
+<!-- שלב 3: השחרורון המוכן -->
+<section class="card" id="stDone" hidden>
+  <div class="ok">✅ השחרורון מוכן. שלחו אותו למורה <b>מהוואטסאפ שלכם</b>, כך המורה רואה שהאישור מגיע מההורה.</div>
+  <canvas class="permit" id="permit"></canvas>
+  <button class="btn wa" id="btnToTeacher">📤 שלח למורה</button>
+  <button class="btn ghost" id="btnSave">💾 שמור תמונה</button>
+</section>
+
+<div class="foot">השחרורון נוצר בטלפון בלבד ולא נשמר בשום שרת. האמינות שלו היא בכך שההורה שולח אותו מהטלפון שלו.</div>
+</main>
+
+<script src="data.js"></script>
+<script>
+// ---- עזרים ----
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,"0");
+const toMin=t=>{const[a,b]=t.split(":").map(Number);return a*60+b};
+const enc=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const dec=s=>{try{return JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g,"+").replace(/_/g,"/")))))}catch(e){return null}};
+const fmtDate=iso=>{const[y,m,d]=iso.split("-");return `${d}.${m}.${y}`};
+const DAYNAMES=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+let profile=null;try{profile=JSON.parse(localStorage.getItem("profile")||"null")}catch(e){}
+const PHYS_TEACHER="יבגני קלנר";
+
+// מי מלמד את הכיתה בשעה נתונה
+function lessonAt(cls,dateIso,time){
+  const days=cls==="y1"?DAYS_Y1:DAYS_Y2;
+  const d=days[new Date(dateIso+"T12:00:00").getDay()];
+  if(!d||!d.lessons)return null;
+  const m=toMin(time);
+  const p=profile||{};
+  const teacher=l=>l.key==="eng"?(ENG[p.eng]||"המורה לאנגלית"):l.key==="math"?(MATH[p.math]||"המורה למתמטיקה"):l.key==="phys"?(p.phys==="yes"?PHYS_TEACHER:"המורה במגמה"):l.w;
+  const name=l=>l.key==="phys"&&p.phys==="yes"?"פיזיקה":l.n;
+  let cur=d.lessons.find(l=>m>=toMin(l.s)&&m<toMin(l.e));
+  if(cur)return {n:name(cur),w:teacher(cur),s:cur.s,e:cur.e,kind:"during"};
+  const nxt=d.lessons.find(l=>toMin(l.s)>m);
+  if(nxt)return {n:name(nxt),w:teacher(nxt),s:nxt.s,e:nxt.e,kind:"before"};
+  return null;
+}
+
+// ---- שלב 1: התלמיד ----
+function initStudent(){
+  $("stStudent").hidden=false;
+  if(profile){$("fName").value=`${profile.first||""} ${profile.last||""}`.trim();if(profile.cls)$("fCls").value=profile.cls}
+  const now=new Date();$("fDate").value=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  $("fTime").value=`${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  ["fCls","fDate","fTime"].forEach(id=>$(id).oninput=showLesson);showLesson();
+  $("btnToParent").onclick=()=>sendToParent(true);
+  $("btnCopy").onclick=()=>sendToParent(false);
+}
+function showLesson(){
+  const cls=$("fCls").value,dt=$("fDate").value,t=$("fTime").value;const box=$("lessonInfo");
+  if(!dt||!t){box.textContent="בחר שעה כדי לראות מאיזה שיעור יוצאים ולמי נשלח האישור.";return}
+  const L=lessonAt(cls,dt,t);
+  if(!L){box.innerHTML=`ביום ${DAYNAMES[new Date(dt+"T12:00:00").getDay()]} בשעה ${t} אין שיעור. האישור ייכתב למחנך הכיתה, <b>${CLASSES_META[cls].rav}</b>.`;return}
+  box.innerHTML=(L.kind==="during"?`יוצאים באמצע <b>${L.n}</b> (${L.s}–${L.e})`:`יוצאים לפני <b>${L.n}</b> (${L.s}–${L.e})`)+`<br>האישור נכתב למורה: <b>${L.w}</b>`;
+}
+function buildRequest(){
+  const n=$("fName").value.trim(),cls=$("fCls").value,dt=$("fDate").value,t=$("fTime").value,r=$("fReason").value.trim(),x=$("fDetails").value.trim();
+  if(!n)return err("stErr","חסר שם התלמיד.");if(!dt||!t)return err("stErr","חסרים תאריך או שעה.");if(!r)return err("stErr","כתוב את סיבת היציאה.");
+  err("stErr","");
+  const L=lessonAt(cls,dt,t);
+  return {v:1,n,c:CLASSES_META[cls].label,d:dt,t,r,x,l:L?L.n:"",w:L?L.w:CLASSES_META[cls].rav,ts:Date.now()};
+}
+function err(id,m){$(id).textContent=m;return null}
+async function sendToParent(viaShare){
+  const q=buildRequest();if(!q)return;
+  const url=location.href.split("#")[0]+"#p="+enc(q);
+  const text=`שלום, ${q.n} מבקש/ת אישור יציאה מבית הספר ביום ${DAYNAMES[new Date(q.d+"T12:00:00").getDay()]} ${fmtDate(q.d)} בשעה ${q.t}.\nסיבה: ${q.r}\nלאישור וחתימה לחצו כאן:\n${url}`;
+  if(!viaShare){try{await navigator.clipboard.writeText(url);err("stErr","הקישור הועתק. אפשר להדביק אותו בהודעה להורה.")}catch(e){err("stErr","לא הצלחתי להעתיק. השתמש בכפתור השליחה.")}return}
+  if(navigator.share){try{await navigator.share({title:"שחרורון",text});return}catch(e){if(e&&e.name==="AbortError")return}}
+  window.open("https://wa.me/?text="+encodeURIComponent(text),"_blank");
+}
+
+// ---- שלב 2: ההורה ----
+let req=null,strokes=[],drawing=false;
+function initParent(q){
+  req=q;$("stParent").hidden=false;$("topSub").textContent=`בקשה של ${q.n}, כיתה ${q.c}`;
+  const day=DAYNAMES[new Date(q.d+"T12:00:00").getDay()];
+  $("reqView").innerHTML=[["תלמיד/ה",q.n],["כיתה",q.c],["תאריך",`יום ${day}, ${fmtDate(q.d)}`],["שעת יציאה",q.t],["שיעור",q.l||"אחרי הלימודים"],["המורה",q.w],["סיבה",q.r],q.x?["פירוט",q.x]:null].filter(Boolean).map(([k,v])=>`<div>${k}</div><div><b>${esc(v)}</b></div>`).join("");
+  $("pOkText").textContent=`אני מאשר/ת ל${q.n} לצאת מבית הספר ביום ${day} ${fmtDate(q.d)} בשעה ${q.t}.`;
+  initSig();$("btnSign").onclick=sign;
+}
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function initSig(){
+  const c=$("sigPad"),ctx=c.getContext("2d");
+  const fit=()=>{const r=c.getBoundingClientRect();c.width=Math.round(r.width*2);c.height=Math.round(r.height*2);redraw()};
+  const pos=e=>{const r=c.getBoundingClientRect();return [(e.clientX-r.left)/r.width*c.width,(e.clientY-r.top)/r.height*c.height]};
+  function redraw(){ctx.clearRect(0,0,c.width,c.height);ctx.lineWidth=4;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#1a1a4a";strokes.forEach(s=>{ctx.beginPath();s.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke()})}
+  c.onpointerdown=e=>{drawing=true;c.setPointerCapture(e.pointerId);strokes.push([pos(e)]);$("sigPh").hidden=true;redraw()};
+  c.onpointermove=e=>{if(!drawing)return;strokes[strokes.length-1].push(pos(e));redraw()};
+  c.onpointerup=c.onpointercancel=()=>{drawing=false};
+  $("sigClr").onclick=()=>{strokes=[];$("sigPh").hidden=false;redraw()};
+  window.addEventListener("resize",fit);fit();
+}
+function sign(){
+  const pn=$("pName").value.trim();
+  if(!pn)return err("pErr","חסר שם ההורה.");if(!$("pOk").checked)return err("pErr","יש לסמן את האישור.");if(!strokes.length||strokes.every(s=>s.length<3))return err("pErr","חסרה חתימה.");
+  err("pErr","");
+  const permit={...req,pn,pr:$("pRel").value,at:Date.now()};
+  drawPermit(permit);
+  $("stParent").hidden=true;$("stDone").hidden=false;window.scrollTo(0,0);
+  $("btnToTeacher").onclick=()=>sharePermit(permit);$("btnSave").onclick=()=>savePermit(permit);
+}
+
+// ---- שלב 3: ציור השחרורון ----
+function wrap(ctx,text,max){const out=[];for(const para of String(text).split("\n")){let line="";for(const w of para.split(" ")){const t=line?line+" "+w:w;if(ctx.measureText(t).width>max&&line){out.push(line);line=w}else line=t}out.push(line)}return out}
+function drawPermit(p){
+  const c=$("permit"),W=1000,M=60;const ctx=c.getContext("2d");
+  ctx.font="500 30px Rubik, Arial";
+  const reasonLines=wrap(ctx,p.r,W-2*M-220),detailLines=p.x?wrap(ctx,p.x,W-2*M-220):[];
+  const day=DAYNAMES[new Date(p.d+"T12:00:00").getDay()];
+  ctx.font="500 27px Rubik, Arial";
+  const parentLines=wrap(ctx,`אני, ${p.pn} (${p.pr} של ${p.n}), מאשר/ת את יציאתו/ה מבית הספר ביום ${day} ${fmtDate(p.d)} בשעה ${p.t}.`,W-2*M);
+  // גובה מחושב לפי מספר השורות בפועל
+  const H=215+6*56+(reasonLines.length+detailLines.length)*40+16*(p.x?2:1)+108+parentLines.length*38+14+150+32+80;
+  c.width=W;c.height=H;
+  ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+  const g=ctx.createLinearGradient(0,0,W,0);g.addColorStop(0,"#5b6cff");g.addColorStop(.6,"#a259ff");g.addColorStop(1,"#ff6bd6");
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,150);
+  ctx.direction="rtl";ctx.textAlign="right";ctx.fillStyle="#fff";
+  ctx.font="900 54px Rubik, Arial";ctx.fillText("שחרורון",W-M,75);
+  ctx.font="500 26px Rubik, Arial";ctx.fillText("אישור יציאה מבית הספר בהסכמת הורים",W-M,120);
+  let y=215;
+  const row=(k,v,lines)=>{ctx.fillStyle="#6c7093";ctx.font="500 26px Rubik, Arial";ctx.fillText(k,W-M,y);ctx.fillStyle="#191b33";ctx.font="700 30px Rubik, Arial";(lines||[v]).forEach((ln,i)=>ctx.fillText(ln,W-M-220,y+i*40));y+=(lines?lines.length:1)*40+16};
+  row("תלמיד/ה",p.n);row("כיתה",p.c);row("תאריך",`יום ${day}, ${fmtDate(p.d)}`);row("שעת יציאה",p.t);row("מהשיעור",p.l||"אחרי הלימודים");row("למורה",p.w);
+  row("סיבה",null,reasonLines);if(p.x)row("פירוט",null,detailLines);
+  y+=10;ctx.strokeStyle="#e3e2f2";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(M,y);ctx.lineTo(W-M,y);ctx.stroke();y+=50;
+  ctx.fillStyle="#191b33";ctx.font="900 32px Rubik, Arial";ctx.fillText("אישור ההורה",W-M,y);y+=48;
+  ctx.font="500 27px Rubik, Arial";ctx.fillStyle="#191b33";
+  parentLines.forEach(ln=>{ctx.fillText(ln,W-M,y);y+=38});
+  y+=14;
+  // חתימה
+  const sw=360,sh=150;ctx.fillStyle="#f7f7fb";ctx.fillRect(W-M-sw,y,sw,sh);ctx.strokeStyle="#e3e2f2";ctx.strokeRect(W-M-sw,y,sw,sh);
+  const sp=$("sigPad");ctx.save();ctx.translate(W-M-sw,y);ctx.scale(sw/sp.width,sh/sp.height);ctx.lineWidth=4*(sp.width/sw);ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#1a1a4a";strokes.forEach(s=>{ctx.beginPath();s.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.stroke()});ctx.restore();
+  ctx.fillStyle="#6c7093";ctx.font="500 22px Rubik, Arial";ctx.fillText("חתימת ההורה",W-M,y+sh+32);
+  const at=new Date(p.at);ctx.textAlign="left";ctx.fillText(`אושר ב-${pad(at.getDate())}.${pad(at.getMonth()+1)}.${at.getFullYear()} בשעה ${pad(at.getHours())}:${pad(at.getMinutes())}`,M,y+sh+32);
+  ctx.textAlign="right";ctx.font="400 20px Rubik, Arial";ctx.fillStyle="#9aa0c7";ctx.fillText("נוצר באפליקציית המערכת · נשלח מהטלפון של ההורה",W-M,H-28);
+}
+function permitBlob(){return new Promise(res=>$("permit").toBlob(res,"image/png"))}
+async function sharePermit(p){
+  const blob=await permitBlob();const file=new File([blob],`shichrur-${p.n}-${p.d}.png`,{type:"image/png"});
+  const text=`שחרורון: ${p.n} (${p.c}) יוצא/ת היום בשעה ${p.t}. מאושר על ידי ${p.pn}.`;
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:"שחרורון",text});return}catch(e){if(e&&e.name==="AbortError")return}}
+  savePermit(p);window.open("https://wa.me/?text="+encodeURIComponent(text+"\n(התמונה נשמרה בטלפון, צרפו אותה להודעה)"),"_blank");
+}
+async function savePermit(p){
+  const blob=await permitBlob();const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download=`shichrur-${p.n}-${p.d}.png`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);
+}
+
+// ---- כניסה ----
+document.fonts.ready.then(()=>{
+  const m=location.hash.match(/^#p=(.+)$/);const q=m&&dec(m[1]);
+  if(q&&q.v===1&&q.n&&q.d&&q.t)initParent(q);else initStudent();
+});
+</script>
+</body>
+</html>
