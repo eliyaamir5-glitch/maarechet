@@ -115,6 +115,41 @@ dialog textarea{width:100%;min-height:90px;border:1.5px solid var(--line);border
 .img-btn{display:block;width:100%;margin-top:14px;border:1.5px dashed var(--accent);background:var(--card);color:var(--ink);border-radius:18px;padding:14px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
 .img-btn small{display:block;font-weight:400;color:var(--muted);font-size:13px;margin-top:2px}
 #imgPrev{width:100%;border-radius:12px;border:1.5px solid var(--line);display:block;background:#fff;margin:6px 0}
+/* חובה להגיע */
+.must{display:inline-block;margin:4px 0 0;background:#ff5d6c;color:#fff;border-radius:8px;padding:2px 8px;font-size:12px;font-weight:900;animation:mpulse 1.4s ease-in-out infinite}
+.must.imp{background:#ffb03f;color:#221c00;animation:none}
+@keyframes mpulse{0%,100%{box-shadow:0 0 0 0 rgba(255,93,108,.6)}50%{box-shadow:0 0 0 6px rgba(255,93,108,0)}}
+.row.must-row{border-color:#ff5d6c;box-shadow:0 0 0 2px rgba(255,93,108,.25)}
+/* רצף במסך הראשי */
+#streakPill{display:flex;align-items:center;gap:10px;border-radius:14px;padding:10px 14px;margin-bottom:12px;cursor:pointer;color:#fff;font-size:15px;background:linear-gradient(90deg,#3a1a55,#5a2a3a);box-shadow:0 0 18px rgba(255,140,40,.25)}
+#streakPill.blue{background:linear-gradient(90deg,#0c2a5a,#2a1a66);box-shadow:0 0 18px rgba(80,180,255,.35)}
+#streakPill.ash{background:linear-gradient(90deg,#2a2f4a,#3a3f5a);box-shadow:none}
+#streakPill .sf{font-size:26px;animation:flick 1.6s ease-in-out infinite;filter:drop-shadow(0 0 8px rgba(255,140,40,.9))}
+#streakPill.blue .sf{filter:hue-rotate(185deg) saturate(1.6) drop-shadow(0 0 10px rgba(80,180,255,1))}
+#streakPill.ash .sf{filter:grayscale(1);animation:none}
+#streakPill b{font-size:20px}#streakPill .sm{margin-inline-start:auto;font-size:12px;opacity:.85}
+@keyframes flick{0%,100%{transform:scale(1) rotate(-3deg)}50%{transform:scale(1.12,1.18) rotate(3deg)}}
+/* אווטאר */
+.who-h{display:flex;gap:10px;align-items:center;min-width:0}
+.avatar{flex:0 0 auto;width:48px;height:48px;border-radius:50%;border:2px solid rgba(255,255,255,.75);background:rgba(255,255,255,.2) center/cover no-repeat;color:#fff;font:inherit;font-size:20px;font-weight:900;cursor:pointer;padding:0}
+.avatar.big{width:96px;height:96px;font-size:40px;border-color:var(--accent);color:var(--ink);background-color:var(--break)}
+.pf-top{text-align:center}.pf-top h4{font-size:20px;margin:8px 0 2px}
+.pf-grid{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;margin-top:8px;text-align:start}
+.pf-grid span:nth-child(odd){color:var(--muted)}
+.pf-stats{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.pf-stats a,.pf-stats span{background:var(--break);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;color:var(--ink);text-decoration:none}
+.ph-pick{display:flex;flex-direction:column;align-items:center;gap:12px}
+/* היכרות */
+#intro{position:fixed;inset:0;z-index:46;background:var(--grad);display:flex;align-items:center;justify-content:center;padding:18px}
+#intro[hidden]{display:none}
+#intro .ic-card{background:var(--card);color:var(--ink);border-radius:28px;padding:28px 22px 20px;width:min(100%,420px);text-align:center;box-shadow:0 30px 60px rgba(0,0,0,.35);animation:pop .35s ease}
+#intro .ie{font-size:64px;line-height:1}
+#intro h2{margin:12px 0 8px;font-size:24px;font-weight:900}
+#intro p{margin:0;color:var(--muted);font-size:16px;line-height:1.6;min-height:78px}
+#intro .idots{display:flex;gap:6px;justify-content:center;margin:16px 0 14px}
+#intro .idots i{width:8px;height:8px;border-radius:50%;background:var(--line)}#intro .idots i.on{background:var(--accent);width:22px;border-radius:99px}
+#intro .inav{display:flex;justify-content:space-between;gap:8px}
+#intro button{border:none;border-radius:12px;padding:12px 18px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
 .pf-row{border:1.5px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}
 .pf-row h4{margin:0 0 4px;font-size:16px}
 .pf-sub{font-size:13px;color:var(--muted);line-height:1.5}
@@ -182,7 +217,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 <body>
 <div class="top">
 <header>
-  <div><h1 id="hTitle">המערכת שלי</h1><div id="hSub"></div></div>
+  <div class="who-h"><button type="button" class="avatar" id="hAvatar" aria-label="הפרופיל שלי"></button><div><h1 id="hTitle">המערכת שלי</h1><div id="hSub"></div></div></div>
   <div><div class="clock" id="clock">--:--</div><div class="hdate" id="hDate"></div></div>
 </header>
 <div class="actions">
@@ -215,6 +250,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
   </form>
 </dialog>
 <main>
+  <div id="streakPill" hidden></div>
   <div id="absAlert" hidden></div>
   <div id="board" hidden></div>
   <div id="hero"></div>
@@ -233,6 +269,15 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
       <p id="bdMsg"></p>
       <button type="button" class="primary bd-go" id="bdGo">לפתוח את המערכת 🚀</button>
     </div>
+  </div>
+</div>
+<div id="intro" hidden>
+  <div class="ic-card">
+    <div class="ie" id="inE"></div>
+    <h2 id="inT"></h2>
+    <p id="inP"></p>
+    <div class="idots" id="inDots"></div>
+    <div class="inav"><button type="button" class="ghost" id="inSkip">דלג</button><button type="button" class="primary" id="inNext">הבא</button></div>
   </div>
 </div>
 <div id="wiz" hidden>
@@ -376,12 +421,12 @@ function render(animate){
     nxt=L.findIndex(l=>l.sm>nowMin);
   }
   // hero: now + next in one card
-  const nextBlock=l=>l?`<div class="nxt"><div class="lbl">השיעור הבא · מתחיל בעוד ${l.sm-nowMin} דק'</div><div class="nb">${l.n}</div><div class="sub">${l.w?l.w+" · ":""}${l.s}–${l.e} · ${l.em-l.sm} דק'</div>${l.joke?"":gearBlock(l.n)}</div>`:"";
+  const nextBlock=l=>l?`<div class="nxt"><div class="lbl">השיעור הבא · מתחיל בעוד ${l.sm-nowMin} דק'</div><div class="nb">${l.n}</div>${mustTag(l.n)}<div class="sub">${l.w?l.w+" · ":""}${l.s}–${l.e} · ${l.em-l.sm} דק'</div>${l.joke?"":gearBlock(l.n)}</div>`:"";
   if(sel===today){
     const nl=nxt>=0?L[nxt]:null;
     if(cur>=0){
       const l=L[cur];
-      hero.innerHTML=`<div class="hero"><div class="lbl">עכשיו</div><div class="big">${l.n}</div><div class="sub">${l.w?l.w+" · ":""}${l.s}–${l.e} · ${l.em-l.sm} דק'</div><div class="left">נשארו ${l.em-nowMin} דק'</div><div class="bar"><i style="width:${Math.round(100*(nowMin-l.sm)/(l.em-l.sm))}%"></i></div>${l.joke?"":gearBlock(l.n)}${nextBlock(nl)}</div>`;
+      hero.innerHTML=`<div class="hero"><div class="lbl">עכשיו</div><div class="big">${l.n}</div>${mustTag(l.n)}<div class="sub">${l.w?l.w+" · ":""}${l.s}–${l.e} · ${l.em-l.sm} דק'</div><div class="left">נשארו ${l.em-nowMin} דק'</div><div class="bar"><i style="width:${Math.round(100*(nowMin-l.sm)/(l.em-l.sm))}%"></i></div>${l.joke?"":gearBlock(l.n)}${nextBlock(nl)}</div>`;
     }else if(nl){
       hero.innerHTML=`<div class="hero idle"><div class="lbl">${nxt===0?"עוד לא התחלנו":"☕ הפסקה"}</div><div class="big">${nxt===0?"היום מתחילים ב-"+nl.s:"עד "+nl.s}</div><div class="left">עוד ${nl.sm-nowMin} דק'</div>${nextBlock(nl)}</div>`;
     }else{
@@ -397,7 +442,7 @@ function render(animate){
     if(i>0){const g=l.sm-L[i-1].em;if(g>=10)html+=`<div class="gap">☕ הפסקה ${g} דק' <span>${fmt(L[i-1].em)}–${fmt(l.sm)}</span></div>`}
     const cls=sel===today?(i===cur?"now":i===nxt?"next":l.em<=nowMin?"done":""):"";
     const gl=l.joke?[]:gearList(l.n);
-    html+=`<div class="row ${cls} ${l.joke?"joke":""}" style="--c:hsl(${hue(l.n)} 70% 60%)"><div class="bar-c"></div><div class="t"><b>${l.s}</b>${l.e}<span class="dur">${l.em-l.sm} דק'</span></div><div><div class="n">${l.n}</div>${l.w?`<div class="who">${l.w}</div>`:""}${l.joke?"":`<div class="g">${gl.map(x=>`<span class="chip">${x}</span>`).join("")}<button class="edit" data-n="${l.n.replace(/"/g,"&quot;")}">${gl.length?"ערוך ציוד":"+ ציוד"}</button></div>`}</div></div>`;
+    html+=`<div class="row ${cls} ${l.joke?"joke":""} ${mustOf(l.n)==="must"&&!cls.includes("done")?"must-row":""}" style="--c:hsl(${hue(l.n)} 70% 60%)"><div class="bar-c"></div><div class="t"><b>${l.s}</b>${l.e}<span class="dur">${l.em-l.sm} דק'</span></div><div><div class="n">${l.n}</div>${l.w?`<div class="who">${l.w}</div>`:""}${mustTag(l.n)}${l.joke?"":`<div class="g">${gl.map(x=>`<span class="chip">${x}</span>`).join("")}<button class="edit" data-n="${l.n.replace(/"/g,"&quot;")}">${gl.length?"ערוך ציוד":"+ ציוד"}</button></div>`}</div></div>`;
   });
   html+='</div>';
   // summary of what to pack
@@ -492,7 +537,7 @@ document.getElementById("instShare").onclick=async()=>{
     await navigator.clipboard.writeText(url);toast("הקישור הועתק","עכשיו אפשר להדביק אותו בוואטסאפ");
   }catch(e){}
 };
-document.querySelector(".foot").addEventListener("click",e=>{if(e.target.id==="installLink"){e.preventDefault();openInstall()}});
+document.querySelector(".foot").addEventListener("click",e=>{if(e.target.id==="installLink"){e.preventDefault();openInstall()}if(e.target.id==="introLink"){e.preventDefault();openIntro()}});
 
 // ---- פרופיל / הרשמה ראשונה ----
 function applyProfile(){
@@ -502,10 +547,12 @@ function applyProfile(){
   document.getElementById("hTitle").textContent=profile?`המערכת של ${profile.first}`:"המערכת שלי";
   document.title=(profile?`המערכת של ${profile.first}`:"המערכת שלי")+` – ${c.label}`;
   document.getElementById("hSub").textContent=`כיתה ${c.label} · ${c.rav}`+(profile?" · 👤 פרופיל":"");
-  document.querySelector(".foot").innerHTML=`כיתה ${c.label} · לחיצה על "ציוד" בכל שיעור פותחת עריכה, והרשימה נשמרת בטלפון`+(isStandalone()?"":`<br><a href="#" id="installLink">📲 איך מוסיפים את האפליקציה למסך הבית?</a>`);
+  document.querySelector(".foot").innerHTML=`כיתה ${c.label} · לחיצה על "ציוד" בכל שיעור פותחת עריכה, והרשימה נשמרת בטלפון`+(isStandalone()?"":`<br><a href="#" id="installLink">📲 איך מוסיפים את האפליקציה למסך הבית?</a>`)+`<br><a href="about.html">ℹ️ על האפליקציה</a> · <a href="#" id="introLink">🎬 ההיכרות הקצרה</a>`;
+  renderAvatar(document.getElementById("hAvatar"));
 }
 const STEPS=[
  {k:"first",e:"👋",q:"היי! איך קוראים לך?",sub:"שם פרטי ושם משפחה, כדי שהמערכת תדע למי היא שייכת",type:"name"},
+ {k:"photo",e:"📸",q:"רוצה להוסיף תמונת פרופיל?",sub:"לא חובה. התמונה נשמרת רק בטלפון שלך, ואף אחד אחר לא רואה אותה",type:"photo"},
  {k:"email",e:"📬",q:"רוצה לחבר אימייל?",sub:"לא חובה. אפשר גם לדלג ולהוסיף מתי שתרצה מתוך הפרופיל",type:"email"},
  {k:"mashov",e:"📊",q:"לחבר את משוב?",sub:"לא חובה. כך תראה כאן את החיסורים והציונים שלך. אפשר לחבר מתי שתרצה מהפרופיל",type:"mashov"},
  {k:"cls",e:"🏫",q:"באיזו כיתה אתה?",sub:"",opts:[["y1","י'1","הרב שחר שאלתיאל","📘"],["y2","י'2","הרב אלישיב יהב יפרח","📗"]]},
@@ -534,6 +581,14 @@ function drawStep(){
   }else if(st.type==="email"){
     body.innerHTML=`<input class="wz-in" id="wzEmail" type="email" dir="ltr" placeholder="you@gmail.com" autocomplete="email" value="${wzData.email||""}"><button type="button" class="wz-opt" id="wzSkip" style="margin-top:10px;justify-content:center"><span class="ic">⏭️</span><span>לא עכשיו, אולי בהמשך</span></button>`;
     document.getElementById("wzSkip").onclick=()=>{wzData.email="";wzStep++;drawStep()};
+  }else if(st.type==="photo"){
+    body.innerHTML=`<div class="ph-pick"><button type="button" class="avatar big" id="wzAv"></button>
+      <label class="wz-opt" style="justify-content:center;width:100%"><span class="ic">🖼️</span><span>בחר תמונה</span><input type="file" accept="image/*" id="wzPh" hidden></label>
+      <button type="button" class="wz-opt" id="wzPhSkip" style="justify-content:center;width:100%"><span class="ic">⏭️</span><span>בלי תמונה, תודה</span></button></div>`;
+    const av=document.getElementById("wzAv");renderAvatar(av,wzData.first);
+    av.onclick=()=>document.getElementById("wzPh").click();
+    document.getElementById("wzPh").onchange=async e=>{if(await pickAvatar(e.target.files[0]))renderAvatar(av,wzData.first)};
+    document.getElementById("wzPhSkip").onclick=()=>{wzStep++;drawStep()};
   }else if(st.type==="mashov"){
     if(Mashov.connected()){
       const c=Mashov.conn();
@@ -620,7 +675,7 @@ function runBuild(){
     document.getElementById("bdMsg").textContent=nice[Math.floor(Math.random()*nice.length)];
     document.getElementById("bdDone").hidden=false;
   },450+lines.length*650+300);
-  document.getElementById("bdGo").onclick=()=>{b.hidden=true;document.getElementById("bdLines").style.display="";applyProfile();render(true);if(!isStandalone())setTimeout(openInstall,600)};
+  document.getElementById("bdGo").onclick=()=>{b.hidden=true;document.getElementById("bdLines").style.display="";applyProfile();render(true);setTimeout(()=>openIntro(()=>{if(!isStandalone())openInstall()}),400)};
 }
 document.getElementById("wzNext").onclick=next;
 document.getElementById("wzBack").onclick=()=>{if(wzStep===0){if(wzEditing)document.getElementById("wiz").hidden=true;return}wzStep--;drawStep()};
@@ -634,9 +689,24 @@ function openProfile(){if(!profile||!profile.major)return openOnb(!!profile);ren
 function renderProfile(){
   const b=document.getElementById("profBody"),c=CLASSES[profile.cls],mj=MAJORS[profile.major],mc=Mashov.conn();
   b.innerHTML=`
-  <div class="pf-row"><h4>${escH(profile.first)} ${escH(profile.last)}</h4>
-    <div class="pf-sub">כיתה ${c.label} · אנגלית: ${ENG[profile.eng]||"—"} · מתמטיקה: ${MATH[profile.math]||"—"} · מגמה: ${mj?mj.n:"—"}</div>
-    <div class="pf-acts"><button type="button" class="ghost" id="pfEdit">✎ עריכת פרטים</button></div></div>
+  <div class="pf-row pf-top">
+    <button type="button" class="avatar big" id="pfAv" title="החלף תמונה"></button>
+    <h4>${escH(profile.first)} ${escH(profile.last)}</h4>
+    <div class="pf-sub">כיתה ${c.label} · ${escH(c.rav)}</div>
+    <div class="pf-acts" style="justify-content:center"><label class="ghost" style="border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;background:var(--break)">📷 ${avatarData()?"החלף תמונה":"הוסף תמונה"}<input type="file" accept="image/*" id="pfPh" hidden></label>${avatarData()?`<button type="button" class="ghost" id="pfPhDel" style="padding:8px 12px;font-size:14px">הסר תמונה</button>`:""}</div>
+    <div class="pf-grid">
+      <span>אנגלית</span><span>${ENG[profile.eng]||"—"}</span>
+      <span>מתמטיקה</span><span>${MATH[profile.math]||"—"}</span>
+      <span>מגמה</span><span>${mj?mj.n+(mj.w?" · "+mj.w:""):"—"}</span>
+      <span>במערכת מאז</span><span>${profile.since?new Date(profile.since).toLocaleDateString("he-IL"):"—"}</span>
+    </div>
+    ${(()=>{const a=absState();if(!a)return `<div class="pf-stats"><a href="absences.html">📊 הנוכחות שלי ←</a></div><div class="pf-sub" style="margin-top:6px">חבר את משוב כדי לראות כאן רצף, הישגים ומצב ה-30%.</div>`;
+      const bag=a.r.subjects.filter(x=>!x.nonBagrut&&x.held>0),worst=bag[0],cnt=k=>bag.filter(x=>x.status===k).length;
+      return `<div class="pf-stats"><span>🔥 ${a.st.current} ברצף (שיא ${a.st.best})</span><span>🏅 ${a.ach.filter(x=>x.got).length}/${a.ach.length} הישגים</span>${a.pr.total?`<span>⭐ ${a.pr.total} צל"שים</span>`:""}</div>
+      <div class="pf-stats"><span>🟢 ${cnt("green")+cnt("early")} תקינים</span>${cnt("orange")?`<span>🟠 ${cnt("orange")} לשים לב</span>`:""}${cnt("red")+cnt("lost")?`<span>🔴 ${cnt("red")+cnt("lost")} מסוכנים</span>`:""}</div>
+      ${worst?`<div class="pf-sub" style="margin-top:6px">הכי קרוב ל-30%: <b>${escH(worst.name)}</b> (${Math.round(worst.pct*100)}%)</div>`:""}
+      <div class="pf-stats"><a href="absences.html">📊 לכל הפרטים ←</a></div>`})()}
+    <div class="pf-acts" style="justify-content:center"><button type="button" class="ghost" id="pfEdit">✎ עריכת פרטים והקבצות</button></div></div>
   <div class="pf-row"><h4>📬 אימייל</h4>${profile.email
     ?`<div class="pf-sub" dir="ltr" style="text-align:end">${escH(profile.email)}</div><div class="pf-acts"><button type="button" class="ghost" id="pfMailOff">נתק אימייל</button></div>`
     :`<div class="pf-sub">לא מחובר.</div><div class="pf-acts"><input class="inp" id="pfMail" type="email" dir="ltr" placeholder="you@gmail.com"><button type="button" class="primary" id="pfMailOn">חבר</button></div><div class="pf-msg" id="pfMailMsg"></div>`}</div>
@@ -646,6 +716,9 @@ function renderProfile(){
     :`<div class="pf-sub">לא מחובר. חיבור מאפשר לראות כאן חיסורים וציונים.</div><div id="pfMsForm" style="margin-top:8px"></div><div class="pf-acts"><button type="button" class="primary" id="pfMsOn">חבר משוב</button></div>`}</div>`;
   const $=id=>document.getElementById(id);
   $("pfEdit").onclick=()=>{$("profDlg").close();openOnb(true)};
+  renderAvatar($("pfAv"));$("pfAv").onclick=()=>$("pfPh").click();
+  $("pfPh").onchange=async e=>{if(await pickAvatar(e.target.files[0])){renderAvatar(document.getElementById("hAvatar"));renderProfile()}};
+  if($("pfPhDel"))$("pfPhDel").onclick=()=>{try{localStorage.removeItem("avatar")}catch(_){}renderAvatar(document.getElementById("hAvatar"));renderProfile()};
   if($("pfMailOff"))$("pfMailOff").onclick=()=>{profile.email="";saveProfile();renderProfile()};
   if($("pfMailOn"))$("pfMailOn").onclick=()=>{const v=$("pfMail").value.trim();if(!/^\S+@\S+\.\S+$/.test(v)){$("pfMailMsg").textContent="האימייל לא תקין.";return}profile.email=v;saveProfile();renderProfile()};
   if($("pfMsOff"))$("pfMsOff").onclick=()=>{if(confirm("לנתק את משוב? הנתונים שנמשכו יימחקו מהטלפון."))Mashov.disconnect(),renderProfile()};
@@ -659,6 +732,7 @@ function renderProfile(){
 applyProfile();
 const incomplete=!profile||!profile.eng||!profile.math||!profile.major;
 if(incomplete)setTimeout(()=>openOnb(!!profile),150);
+else{let seen=null;try{seen=localStorage.getItem("introSeen")}catch(e){}if(!seen)setTimeout(()=>openIntro(),500)}
 function toast(t,m){const el=document.createElement("div");el.className="toast";el.innerHTML=`<b>${t}</b>${m}`;document.body.appendChild(el);el.onclick=()=>el.remove();setTimeout(()=>el.remove(),9000)}
 
 render();renderBoard();
@@ -683,11 +757,75 @@ async function openImage(){
   document.getElementById("imgPdf").onclick=async e=>{e.target.disabled=true;msg.textContent="מכין PDF…";try{const r=await TimetableImage.pdf(canvas,name+".pdf");msg.textContent=r==="cancel"?"":"ה-PDF מוכן. פותחים ומדפיסים."}catch(err){msg.textContent="לא הצלחתי להכין PDF (צריך חיבור לאינטרנט בפעם הראשונה)."}e.target.disabled=false};
 }
 document.getElementById("imgBtn").onclick=openImage;
-function renderAbsAlert(){
-  const el=document.getElementById("absAlert");el.hidden=true;
-  const md=Mashov.data();if(!md||!profile||!profile.major)return;
+// ---- מצב חיסורים, רצף והישגים (מחושב פעם אחת לכל עדכון ממשוב) ----
+function absState(){
+  const md=Mashov.data();if(!md||!profile||!profile.major)return null;
   let countJ=true;try{countJ=localStorage.getItem("absCountJustified")!=="0"}catch(e){}
-  const r=Absences.analyze({days:CLASSES[profile.cls].days,profile,data:{ENG,MATH,MAJORS},year:SCHOOL_YEAR,behave:md.behave||[],countJustified:countJ,nonBagrut:NON_BAGRUT});
+  const key=md.at+"|"+countJ+"|"+profile.cls+profile.eng+profile.math+profile.major+"|"+new Date().toDateString();
+  const C=absState.cache||(absState.cache={key:null,val:null}); // שמור על הפונקציה עצמה: render() רץ לפני שהקוד הזה נטען
+  if(C.key===key)return C.val;
+  const days=CLASSES[profile.cls].days,D={ENG,MATH,MAJORS};
+  const r=Absences.analyze({days,profile,data:D,year:SCHOOL_YEAR,behave:md.behave||[],countJustified:countJ,nonBagrut:NON_BAGRUT});
+  const at=new Date(md.at),until=`${at.getFullYear()}-${pad(at.getMonth()+1)}-${pad(at.getDate())}`;
+  const tl=Absences.timeline({days,profile,data:D,year:SCHOOL_YEAR,behave:md.behave||[],until,untilMin:at.getHours()*60+at.getMinutes()});
+  const st=Absences.streaks(tl.blocks),pr=Absences.praiseStreak(tl.blocks);
+  const ach=Absences.achievements({blocks:tl.blocks,streak:st,praise:pr,subjects:r.subjects});
+  const must={};
+  for(const x of r.subjects){if(x.nonBagrut)continue;if(x.status==="red"||x.status==="lost")must[x.name]="must";else if(x.status==="orange"&&x.pct>=0.20)must[x.name]="important"}
+  C.key=key;C.val={r,st,pr,ach,must};return C.val;
+}
+function mustOf(n){const a=absState();return a?a.must[n]:undefined}
+function mustTag(n){const m=mustOf(n);return m==="must"?`<span class="must">⚠️ חובה להגיע (30%)</span>`:m==="important"?`<span class="must imp">חשוב להגיע</span>`:""}
+function renderStreakPill(){
+  const el=document.getElementById("streakPill"),a=absState();
+  if(!a){el.hidden=true;return}
+  const t=Absences.tierOf(a.st.current);
+  el.className=t.cls==="blue"?"blue":t.cls==="ash"?"ash":"";el.hidden=false;
+  el.innerHTML=a.st.current?`<span class="sf">🔥</span><span><b>${a.st.current}</b> שיעורים ברצף</span><span class="sm">שיא ${a.st.best} · 🏅 ${a.ach.filter(x=>x.got).length}</span>`
+    :`<span class="sf">🔥</span><span>הרצף נשבר. <b>השיעור הבא</b> מתחיל רצף חדש!</span><span class="sm">שיא ${a.st.best}</span>`;
+  el.onclick=()=>location.href="absences.html";
+}
+
+// ---- תמונת פרופיל: נשמרת רק בטלפון, מוקטנת ל-256×256 ----
+function avatarData(){try{return localStorage.getItem("avatar")}catch(e){return null}}
+function renderAvatar(el,name){
+  if(!el)return;const d=avatarData(),n=name||(profile&&profile.first)||"";
+  if(d){el.style.backgroundImage=`url("${d}")`;el.textContent=""}else{el.style.backgroundImage="";el.textContent=n?n.trim()[0]:"🙂"}
+}
+function pickAvatar(file){
+  return new Promise(res=>{
+    if(!file||!/^image\//.test(file.type)){res(false);return}
+    const img=new Image(),url=URL.createObjectURL(file);
+    img.onload=()=>{const S=256,c=document.createElement("canvas");c.width=c.height=S;const k=Math.min(img.width,img.height);
+      c.getContext("2d").drawImage(img,(img.width-k)/2,(img.height-k)/2,k,k,0,0,S,S);URL.revokeObjectURL(url);
+      try{localStorage.setItem("avatar",c.toDataURL("image/jpeg",0.85));res(true)}catch(e){alert("לא הצלחתי לשמור את התמונה. נסה תמונה אחרת.");res(false)}};
+    img.onerror=()=>{URL.revokeObjectURL(url);res(false)};img.src=url;
+  });
+}
+document.getElementById("hAvatar").onclick=()=>openProfile();
+
+// ---- היכרות קצרה (אחרי ההרשמה, ופעם אחת לכל מי שכבר רשום) ----
+var INTRO=[
+ ["👋","ברוך הבא ל\"המערכת\"","האפליקציה שיודעת מה יש לך עכשיו, גם כשאתה עוד בפיג'מה. בלי לשאול בקבוצה \"מה יש עכשיו?\" בפעם המאה."],
+ ["📅","מה יש פה?","המערכת האישית שלך: מה עכשיו, מה הבא, ומה לשים בתיק. וגם לוח מבחנים, כרטיסיות ללמידה ושחרורון להורים."],
+ ["📊","ה-30% שאסור לאבד","מעל 30% חיסורים במקצוע = ביי ביי בגרות. אנחנו נשמור עליך ונסמן לך \"⚠️ חובה להגיע\". אתה רק צריך... להגיע 😉"],
+ ["🔥","רצפים והישגים","כל שיעור שאתה מגיע אליו מוסיף לאש. פספסת? מתחילים מחדש. צל\"שים פותחים הישגים. כמו כושר, רק עם גמרא."],
+ ["🔒","הכל שלך","החיסורים, הציונים והתמונה שלך נשמרים רק בטלפון שלך. רוצה לקרוא עוד? יש \"על האפליקציה\" בתחתית המסך."],
+];
+var __introDone=null;
+function openIntro(done){
+  __introDone=done||null;let i=0;const el=document.getElementById("intro");el.hidden=false;
+  const draw=()=>{const [e,t,p]=INTRO[i];document.getElementById("inE").textContent=e;document.getElementById("inT").textContent=t;document.getElementById("inP").textContent=p;
+    document.getElementById("inDots").innerHTML=INTRO.map((_,k)=>`<i class="${k===i?"on":""}"></i>`).join("");
+    document.getElementById("inNext").textContent=i===INTRO.length-1?"יאללה, מתחילים 🚀":"הבא";document.getElementById("inSkip").style.visibility=i===INTRO.length-1?"hidden":"visible"};
+  const close=()=>{el.hidden=true;try{localStorage.setItem("introSeen","1")}catch(e){}const d=__introDone;__introDone=null;if(d)d()};
+  document.getElementById("inNext").onclick=()=>{if(i<INTRO.length-1){i++;draw()}else close()};
+  document.getElementById("inSkip").onclick=close;draw();
+}
+function renderAbsAlert(){
+  renderStreakPill();
+  const el=document.getElementById("absAlert");el.hidden=true;
+  const a=absState();if(!a)return;const r=a.r;
   const bad=r.subjects.filter(s=>!s.nonBagrut&&s.status!=="early"&&(s.status==="lost"||s.pct>=0.20));
   if(!bad.length)return;
   const top=bad[0],red=top.status==="red"||top.status==="lost";

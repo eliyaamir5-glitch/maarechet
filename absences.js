@@ -181,6 +181,148 @@
     return out;
   }
 
-  const api = { analyze, classify, matchSubject, periodsOf, isSchoolDay, periodsBetween, statusOf, LIMIT, RED, ORANGE };
+
+  // ===== רצפים, אירועי התנהגות והישגים =====
+
+  // סוג אירוע ממשוב, לצורך תגובה מתאימה ותצוגה
+  function behaviorKind(ev) {
+    const t = String(ev.type || "").replace(/["״׳']/g, "");
+    if (/צלש|שבח|חיזוק חיובי|הצטיינות|מצוינות|כל הכבוד|מחמאה|הערה חיובית/.test(t)) return "praise";
+    if (/חיסור|נעדר|היעדר|העדר|לא נכח/.test(t)) return "absence";
+    if (/איחור/.test(t)) return "late";
+    if (/הפרעה|התנהגות|הוצא|חוצפה|טלפון|נייד|אלימות|הערה שלילית/.test(t)) return "disrupt";
+    if (/שיעורי בית|שב |לא הכין|הכנת|הגשה/.test(t + " ")) return "homework";
+    if (/ציוד|ספר|מחברת/.test(t)) return "gear";
+    if (/תלבושת|לבוש/.test(t)) return "uniform";
+    return "other";
+  }
+
+  // ציר הזמן של השיעורים שהיו: כל שיעור (בלוק) עם מצב – הגיע / חיסור / מוצדק / איחור + אירועים
+  // until: תאריך אחרון (כולל), untilMin: שעה ביום האחרון (שיעור נספר רק אם הסתיים)
+  function timeline({ days, profile: p, data: D, year: Y, behave, until, untilMin = 24 * 60 }) {
+    const end = until > Y.end ? Y.end : until;
+    const blocks = [];
+    for (let iso = Y.start; iso <= end; iso = addDays(iso, 1)) {
+      if (!isSchoolDay(iso, Y)) continue;
+      for (const l of lessonsOfDay(days, dateOf(iso).getDay(), p, D)) {
+        if (iso === end && toMin(l.e) > untilMin) continue;
+        blocks.push({ date: iso, s: l.s, e: l.e, n: l.n, periods: periodsOf(l), missed: false, justified: null, late: false, events: [] });
+      }
+    }
+    const names = [...new Set(blocks.map(b => b.n))];
+    const byKey = {};
+    for (const b of blocks) (byKey[b.date + "|" + b.n] = byKey[b.date + "|" + b.n] || []).push(b);
+    const sorted = (behave || []).filter(e => e.date && e.date >= Y.start && e.date <= end)
+      .slice().sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : (Number(a.lesson) || 0) - (Number(b.lesson) || 0));
+    const used = {}; // כמה שעות חיסור כבר "נצרכו" לכל תאריך+מקצוע
+    const unmatched = [];
+    for (const ev of sorted) {
+      const kind = behaviorKind(ev);
+      const subj = matchSubject(ev.subject, names);
+      const list = subj ? byKey[ev.date + "|" + subj] : null;
+      if (!list) { unmatched.push({ ...ev, kind }); continue; }
+      const k = ev.date + "|" + subj;
+      if (kind === "absence") {
+        // מחלקים את שעות החיסור לפי סדר השיעורים באותו יום (שיעור כפול = 2 שעות)
+        const n = used[k] = (used[k] || 0) + 1;
+        let acc = 0, target = list[list.length - 1];
+        for (const b of list) { acc += b.periods; if (n <= acc) { target = b; break; } }
+        target.missed = true;
+        const j = classify(ev).justified;
+        target.justified = target.justified === false ? false : j === true ? true : (j === false ? false : target.justified);
+        target.events.push({ ...ev, kind, subject: subj });
+      } else {
+        const b = list.find(x => !x.events.some(e => e.kind === kind)) || list[0];
+        if (kind === "late") b.late = true;
+        b.events.push({ ...ev, kind, subject: subj });
+      }
+    }
+    return { blocks, unmatched };
+  }
+
+  // רצף שיעורים: חיסור לא מוצדק שובר, חיסור מוצדק מקפיא, איחור שומר בלי להוסיף
+  function streaks(blocks) {
+    let current = 0, best = 0, lastBreak = null, frozen = 0, sinceBreak = 0;
+    for (const b of blocks) {
+      if (b.missed && b.justified !== true) {
+        if (current > 0) lastBreak = { date: b.date, subject: b.n, lost: current };
+        else if (!lastBreak) lastBreak = { date: b.date, subject: b.n, lost: 0 };
+        else lastBreak = { ...lastBreak, date: b.date, subject: b.n };
+        current = 0; sinceBreak = 0;
+      } else if (b.missed) frozen++;
+      else if (!b.late) { current++; sinceBreak++; best = Math.max(best, current); }
+    }
+    const held = blocks.length, missed = blocks.filter(b => b.missed).length;
+    return { current, best, lastBreak, frozen, sinceBreak, held, attendedPct: held ? (held - missed) / held : 1 };
+  }
+
+  // רצף צל"שים: צל"שים רצופים בלי הפרעה באמצע
+  function praiseStreak(blocks) {
+    const evs = blocks.flatMap(b => b.events.filter(e => e.kind === "praise" || e.kind === "disrupt"));
+    let cur = 0, best = 0, total = 0;
+    for (const e of evs) { if (e.kind === "praise") { cur++; total++; best = Math.max(best, cur); } else cur = 0; }
+    return { current: cur, best, total };
+  }
+
+  const TIERS = [
+    { min: 30, name: "אש כחולה", cls: "blue", msg: "זה כבר לא רצף, זו אגדה. אף אחד לא עוצר אותך 💙" },
+    { min: 15, name: "בוער", cls: "big", msg: "מטורף! עוד קצת ואתה מגיע לאש הכחולה" },
+    { min: 5, name: "דולק", cls: "mid", msg: "האש תופסת! תמשיך להגיע ותראה אותה גדלה" },
+    { min: 1, name: "ניצוץ", cls: "small", msg: "התחלה טובה. כל שיעור מוסיף עוד עצים למדורה" },
+    { min: 0, name: "גחלים", cls: "ash", msg: "הרצף מחכה לך. השיעור הבא הוא ההתחלה" },
+  ];
+  const tierOf = n => TIERS.find(t => n >= t.min);
+
+  // הישגים
+  function achievements({ blocks, streak, praise, subjects }) {
+    const list = [];
+    const add = (id, icon, title, desc, got, progress) => list.push({ id, icon, title, desc, got: !!got, progress: got ? 1 : Math.max(0, Math.min(1, progress || 0)) });
+    for (const [n, icon] of [[10, "🔥"], [25, "🔥🔥"], [50, "🚀"], [100, "👑"], [200, "💎"]])
+      add("streak" + n, icon, `${n} שיעורים ברצף`, `להגיע ל-${n} שיעורים ברצף בלי חיסור`, streak.best >= n, streak.best / n);
+    // שבוע מושלם: שבוע לימודים שלם בלי אף חיסור
+    const weeks = {};
+    for (const b of blocks) { const d = dateOf(b.date); d.setDate(d.getDate() - d.getDay()); const k = isoOf(d); (weeks[k] = weeks[k] || { n: 0, miss: 0, days: new Set() }).n++; weeks[k].days.add(b.date); if (b.missed) weeks[k].miss++; }
+    const perfect = Object.values(weeks).filter(w => w.days.size >= 4 && w.miss === 0).length;
+    add("perfectWeek", "📅", "שבוע מושלם", "שבוע לימודים שלם בלי אף חיסור", perfect >= 1, 0);
+    add("perfect3", "🗓️", "שלושה שבועות מושלמים", "שלושה שבועות שלמים בלי חיסור", perfect >= 3, perfect / 3);
+    // מלך השחרית: 10 שחריות רצופות
+    let sh = 0, shBest = 0;
+    for (const b of blocks) if (/שחרית/.test(b.n)) { if (b.missed && b.justified !== true) sh = 0; else if (!b.missed && !b.late) { sh++; shBest = Math.max(shBest, sh); } }
+    if (blocks.some(b => /שחרית/.test(b.n))) add("shacharit", "🌅", "מלך השחרית", "10 שחריות ברצף בזמן", shBest >= 10, shBest / 10);
+    add("praise1", "⭐", "צל\"ש ראשון", "לקבל צל\"ש ממורה", praise.total >= 1, 0);
+    add("praisePair", "⭐⭐", "צמד צל\"שים", "שני צל\"שים ברצף בלי הפרעה באמצע", praise.best >= 2, praise.best / 2);
+    add("praiseTriple", "🌟", "שלישיית צל\"שים", "שלושה צל\"שים ברצף בלי הפרעה באמצע", praise.best >= 3, praise.best / 3);
+    add("praise5", "🏅", "חמישה צל\"שים", "לצבור 5 צל\"שים", praise.total >= 5, praise.total / 5);
+    const bag = (subjects || []).filter(s => !s.nonBagrut && s.held > 0);
+    add("allGreen", "🛡️", "שומר ה-30%", "כל מקצועות הבגרות בירוק", bag.length > 0 && bag.every(s => s.status === "green" || s.status === "early"), 0);
+    add("comeback", "💪", "קאמבק", "לבנות רצף של 10 אחרי שהרצף נשבר", streak.lastBreak && streak.lastBreak.lost > 0 && streak.sinceBreak >= 10, streak.lastBreak ? streak.sinceBreak / 10 : 0);
+    return list;
+  }
+
+  // מה עונים על כל סוג אירוע
+  const EVENT_UI = {
+    praise: { icon: "⭐", label: "צל\"ש", say: ["אלוף! המורה שם לב אליך 🌟", "צל\"ש! תשמור את זה להורים 😎", "ככה עושים את זה 👏"] },
+    disrupt: { icon: "⚠️", label: "הפרעה", say: ["קורה. מחר דף חדש", "שיעור אחד לא מגדיר אותך. בשיעור הבא תראה למורה", "שווה לעשות סבב שקט כמה שיעורים"] },
+    homework: { icon: "📚", label: "שיעורי בית", say: ["10 דקות בערב חוסכות את זה", "אפשר לבקש מחבר לשלוח צילום של המשימה"] },
+    gear: { icon: "🎒", label: "ציוד", say: ["רשימת \"מה להביא מחר\" במסך הראשי בדיוק בשביל זה", "תיק מוכן מהערב = אפס בעיות"] },
+    uniform: { icon: "👕", label: "תלבושת", say: ["שווה להכין בגדים מהערב"] },
+    late: { icon: "⏰", label: "איחור", say: ["הרצף נשמר, אבל לא גדל. בפעם הבאה בזמן", "עוד 5 דקות שינה לא שוות את זה"] },
+    absence: { icon: "❌", label: "חיסור", say: ["הרצף נשבר. בונים מחדש מהשיעור הבא", "שיעור אחד פספסת. העיקר לחזור מחר"] },
+    absenceJ: { icon: "🩺", label: "חיסור מוצדק", say: ["חיסור מוצדק: הרצף מוקפא, לא נשבר ❄️"] },
+    other: { icon: "📝", label: "", say: [""] },
+  };
+
+  // עידוד לפי מצב מקצוע
+  function cheer(s) {
+    if (s.status === "early") return "עוד מוקדם לשפוט, אבל ההתחלה טובה";
+    if (s.status === "green" && s.absences === 0) return "מושלם! אף חיסור 💯";
+    if (s.status === "green") return ["מצוין, תמשיך ככה 💪", "כל הכבוד, אתה בשליטה", "ירוק ובטוח 👌"][s.name.length % 3];
+    if (s.status === "orange") return "שים לב, זה מתחיל להתקרב. לא מפספסים השבוע";
+    if (s.status === "red") return "מצב חילוץ: כל שיעור עכשיו חשוב";
+    return "עבר את ה-30%. צריך לדבר עם המחנך עכשיו";
+  }
+
+  const api = { analyze, classify, matchSubject, periodsOf, isSchoolDay, periodsBetween, statusOf, LIMIT, RED, ORANGE,
+    behaviorKind, timeline, streaks, praiseStreak, achievements, tierOf, TIERS, EVENT_UI, cheer };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.Absences = api;
 })(typeof window !== "undefined" ? window : globalThis);

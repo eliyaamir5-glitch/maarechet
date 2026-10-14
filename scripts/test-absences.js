@@ -71,3 +71,48 @@ ok("prayers flagged as non-bagrut", r0.subjects.find(s => s.name === "תפילת
 ok("classify: justificationId>0 → justified", A.classify({ type: "חיסור", justificationId: 3 }).justified === true);
 ok("classify: 'לא מוצדק' text → unjustified", A.classify({ type: "חיסור", justificationId: 3, justification: "לא מוצדק" }).justified === false);
 ok("classify: boolean justified wins", A.classify({ type: "חיסור", justified: true, justificationId: 0 }).justified === true);
+
+// ===== רצפים, אירועים והישגים =====
+const TL = (behave, until = "2026-10-15", untilMin) => A.timeline({ days: D.DAYS_Y1, profile, data: D, year: D.SCHOOL_YEAR, behave, until, untilMin });
+const t0 = TL([]);
+ok("timeline: no lessons on holidays (Yom Kippur 21.9)", !t0.blocks.some(b => b.date === "2026-09-21"));
+ok("timeline: ends at 'until', and on that day only lessons that already ended", !t0.blocks.some(b => b.date > "2026-10-15") && !TL([], "2026-10-15", 9 * 60).blocks.some(b => b.date === "2026-10-15" && b.s >= "08:55"));
+const s0 = A.streaks(t0.blocks);
+ok("no absences → streak = all lessons held", s0.current === t0.blocks.length && s0.best === s0.current && s0.lastBreak === null, `streak=${s0.current}`);
+
+// חיסור לא מוצדק שובר
+const firstGemara = t0.blocks.find(b => b.n === "גמרא" && b.date >= "2026-10-11");
+const idx = t0.blocks.indexOf(firstGemara);
+const sBreak = A.streaks(TL([{ date: firstGemara.date, subject: "גמרא", type: "חיסור", lesson: 3 }]).blocks);
+ok("unjustified absence breaks the streak", sBreak.current === t0.blocks.length - idx - 1 && sBreak.lastBreak.lost === idx && sBreak.lastBreak.subject === "גמרא", `lost=${sBreak.lastBreak.lost} now=${sBreak.current}`);
+// מוצדק מקפיא
+const sFreeze = A.streaks(TL([{ date: firstGemara.date, subject: "גמרא", type: "חיסור", justificationId: 4, justification: "מחלה" }]).blocks);
+ok("justified absence freezes (no break, no +1)", sFreeze.lastBreak === null && sFreeze.frozen === 1 && sFreeze.current === t0.blocks.length - 1);
+// איחור שומר
+const sLate = A.streaks(TL([{ date: firstGemara.date, subject: "גמרא", type: "איחור" }]).blocks);
+ok("late keeps the streak but doesn't add", sLate.lastBreak === null && sLate.current === t0.blocks.length - 1);
+
+// שיעור כפול: ביום ראשון בי'1 יש גמרא 10:30–11:55 (2 שעות) ו-14:30–15:15 (שעה)
+const sun = "2026-10-11";
+const two = TL([1, 2].map(l => ({ date: sun, subject: "גמרא", type: "חיסור", lesson: l }))).blocks.filter(b => b.date === sun && b.n === "גמרא");
+ok("2 absence periods → only the double Gemara block is missed", two.length === 2 && two[0].missed && !two[1].missed);
+const three = TL([1, 2, 5].map(l => ({ date: sun, subject: "גמרא", type: "חיסור", lesson: l }))).blocks.filter(b => b.date === sun && b.n === "גמרא");
+ok("3 absence periods → both Gemara blocks missed", three[0].missed && three[1].missed);
+
+// סוגי אירועים
+ok("behaviorKind: צל\"ש / הפרעה / שיעורי בית / ציוד / איחור / חיסור",
+  A.behaviorKind({ type: "צל\"ש" }) === "praise" && A.behaviorKind({ type: "צל״ש" }) === "praise" && A.behaviorKind({ type: "הפרעה בשיעור" }) === "disrupt" &&
+  A.behaviorKind({ type: "אי הכנת שיעורי בית" }) === "homework" && A.behaviorKind({ type: "חוסר ציוד" }) === "gear" &&
+  A.behaviorKind({ type: "איחור" }) === "late" && A.behaviorKind({ type: "חיסור" }) === "absence");
+const evs = [["2026-10-05", "צל\"ש"], ["2026-10-07", "צל\"ש"], ["2026-10-11", "הפרעה בשיעור"], ["2026-10-12", "צל\"ש"]].map(([date, type]) => ({ date, type, subject: "גמרא", lesson: 2 }));
+const tlE = TL(evs);
+const pr = A.praiseStreak(tlE.blocks);
+ok("praise streak: 2 in a row, broken by disruption", pr.best === 2 && pr.current === 1 && pr.total === 3, JSON.stringify(pr));
+ok("events attached to the right lesson", tlE.blocks.filter(b => b.events.length).every(b => b.n === "גמרא"));
+
+// הישגים
+const ach = A.achievements({ blocks: tlE.blocks, streak: A.streaks(tlE.blocks), praise: pr, subjects: r0.subjects });
+const got = id => ach.find(a => a.id === id).got;
+ok("achievements: streak10, perfect week, praise1, praisePair earned; streak200 matches the real streak; triple and comeback not", got("streak10") && got("perfectWeek") && got("praise1") && got("praisePair") && got("streak200") === (A.streaks(tlE.blocks).best >= 200) && !got("praiseTriple") && !got("comeback"));
+ok("achievements: progress is between 0 and 1", ach.every(a => a.progress >= 0 && a.progress <= 1));
+ok("fire tiers", A.tierOf(0).cls === "ash" && A.tierOf(3).cls === "small" && A.tierOf(12).cls === "mid" && A.tierOf(20).cls === "big" && A.tierOf(40).cls === "blue");
