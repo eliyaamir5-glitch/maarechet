@@ -151,7 +151,7 @@ const SCHOOL_YEAR={start:"2026-09-01",end:"2027-06-20",off:[
 const NON_BAGRUT=["תפילת שחרית","תפילת מנחה","ערבית","סדר ערב","חינוך","שבת אחים","לאורו נלך – התנדבות","חינוך תעבורתי (זהב)"];
 // חיבור למשוב: כתובת פונקציית השרת. ריק = "/api/mashov" באותו אתר (נטליפיי).
 // באתר GitHub Pages שמים כאן את הכתובת המלאה של אתר הנטליפיי, למשל "https://maarechet.netlify.app/api/mashov"
-const MASHOV_API="";
+const MASHOV_API="https://lucent-crepe-6db22c.netlify.app/api/mashov";
 // בית הספר שיופיע מראש בטופס החיבור (סמל מוסד במשוב + שם). null = התלמיד בוחר בעצמו
 const MASHOV_SCHOOL=null;
 // התראה במייל על הרשמה חדשה (שירות Web3Forms). מחרוזת ריקה = כבוי.
