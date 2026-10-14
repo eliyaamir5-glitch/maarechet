@@ -84,6 +84,7 @@ input,select{width:100%;border:1.5px solid var(--line);border-radius:10px;paddin
       <div class="box"><h2>📢 עדכונים מהצוות</h2>
         <label class="tgl"><input type="checkbox" id="samples" checked> להציג עדכונים לדוגמה</label>
         <button class="btn wide" id="goStaff">✍️ לכתוב עדכון כמנהל (כניסת צוות)</button>
+        <button class="btn wide" id="rePop" style="margin-top:6px">🔔 להקפיץ שוב את העדכונים בפתיחה</button>
         <p class="note" style="margin:8px 0 0">בדמו כל קוד נכנס כמנהל. עדכון שנכתב יופיע מיד במסך הראשי.</p>
       </div>
 
@@ -185,8 +186,11 @@ function sampleUpdates(){
   ];
 }
 function allUpdates(){return[...(cfg.samples?sampleUpdates():[]),...host.staffUpdates]}
-host.updates=()=>{const t=now();return{status:200,body:{ok:true,now:t,updates:allUpdates().filter(u=>u.expiresAt>t).sort((a,b)=>(b.urgent-a.urgent)||(b.createdAt-a.createdAt)).map(u=>({id:u.id,text:u.text,author:u.authorName,role:u.role,audience:u.audience,urgent:!!u.urgent,createdAt:u.createdAt,expiresAt:u.expiresAt}))}}};
-host.staffUsers=[{id:"admin",name:"המנהל",role:"admin"},{id:"t1",name:"המורה לאנגלית",role:"teacher"}];
+host.views={};
+host.updates=(method,b)=>{const t=now();
+  if(method==="POST"){for(const id of (b&&b.seen)||[])host.views[id]=(host.views[id]||0)+1;return{status:200,body:{ok:true}}}
+  return{status:200,body:{ok:true,now:t,updates:allUpdates().filter(u=>u.expiresAt>t).sort((a,b)=>(b.urgent-a.urgent)||(b.createdAt-a.createdAt)).map(u=>({id:u.id,text:u.text,author:u.authorName,role:u.role,audience:u.audience,urgent:!!u.urgent,createdAt:u.createdAt,expiresAt:u.expiresAt}))}}};
+host.staffUsers=[{id:"admin",name:"המנהל",role:"admin",owner:true},{id:"t1",name:"המורה לאנגלית",role:"teacher"}];
 const newCode=()=>Array.from({length:8},()=>"ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random()*32)]).join("");
 host.staff=(method,b,token)=>{
   const ok=x=>({status:200,body:{ok:true,...x}}),err=(s,e)=>({status:s,body:{ok:false,error:e}});
@@ -198,17 +202,21 @@ host.staff=(method,b,token)=>{
   switch(b.action){
     case"me":return ok({user:me});
     case"post":{const text=String(b.text||"").trim().slice(0,600),mins=Math.round(Number(b.minutes));if(!text||!(mins>=1&&mins<=43200))return err(400,"bad_request");
-      const u={id:"d"+Math.random().toString(36).slice(2,9),text,authorId:me.id,authorName:me.name,role:me.role,audience:["all","y1","y2"].includes(b.audience)?b.audience:"all",urgent:!!b.urgent,createdAt:t,expiresAt:t+mins*60e3};host.staffUpdates.push(u);return ok({update:u})}
+      let au={authorId:me.id,authorName:me.name,role:me.role};
+      if(admin&&b.asUser){const x=host.staffUsers.find(y=>y.id===b.asUser);if(x)au={authorId:x.id,authorName:x.name,role:x.role}}
+      else if(admin&&String(b.asName||"").trim())au={authorId:me.id,authorName:String(b.asName).trim().slice(0,40),role:"staff"};
+      const u={id:"d"+Math.random().toString(36).slice(2,9),text,...au,postedBy:me.id,postedByName:me.name,audience:["all","y1","y2"].includes(b.audience)?b.audience:"all",urgent:!!b.urgent,createdAt:t,expiresAt:t+mins*60e3};host.staffUpdates.push(u);return ok({update:u})}
     case"end":case"delete":{const u=host.staffUpdates.find(x=>x.id===b.id);if(!u)return err(404,"not_found");if(!admin&&u.authorId!==me.id)return err(403,"forbidden");
       if(b.action==="delete")host.staffUpdates=host.staffUpdates.filter(x=>x.id!==b.id);else u.expiresAt=Math.min(u.expiresAt,t-1);return ok({})}
-    case"list":return ok({now:t,updates:host.staffUpdates.filter(u=>admin||u.authorId===me.id).slice().sort((a,b)=>b.createdAt-a.createdAt).map(u=>({...u,active:u.expiresAt>t}))});
+    case"list":return ok({now:t,updates:host.staffUpdates.filter(u=>admin||u.authorId===me.id).slice().sort((a,b)=>b.createdAt-a.createdAt).map(u=>({...u,active:u.expiresAt>t,views:host.views[u.id]||0}))});
+    case"extend":{const u=host.staffUpdates.find(x=>x.id===b.id);if(!u)return err(404,"not_found");if(!admin&&u.authorId!==me.id)return err(403,"forbidden");u.expiresAt=Math.max(t,u.expiresAt)+Math.round(Number(b.minutes)||60)*60e3;return ok({update:u})}
   }
   if(!admin)return err(403,"forbidden");
   switch(b.action){
     case"users":return ok({users:host.staffUsers});
-    case"addUser":{const name=String(b.name||"").trim().slice(0,40);if(!name)return err(400,"bad_request");const u={id:"u"+Math.random().toString(36).slice(2,8),name,role:"teacher"},code=newCode();host.staffUsers.push(u);host.codes[code]=u.id;return ok({user:u,code})}
+    case"addUser":{const name=String(b.name||"").trim().slice(0,40);if(!name)return err(400,"bad_request");const u={id:"u"+Math.random().toString(36).slice(2,8),name,role:b.role==="admin"?"admin":"teacher"},code=newCode();host.staffUsers.push(u);host.codes[code]=u.id;return ok({user:u,code})}
     case"resetUser":{const u=host.staffUsers.find(x=>x.id===b.id);if(!u)return err(404,"not_found");const code=newCode();for(const k in host.codes)if(host.codes[k]===u.id)delete host.codes[k];host.codes[code]=u.id;return ok({user:u,code})}
-    case"removeUser":if(b.id===me.id)return err(400,"self");host.staffUsers=host.staffUsers.filter(x=>x.id!==b.id);return ok({});
+    case"removeUser":if(b.id===me.id)return err(400,"self");if(host.staffUsers.find(x=>x.id===b.id)?.owner)return err(403,"forbidden");host.staffUsers=host.staffUsers.filter(x=>x.id!==b.id);return ok({});
   }
   return err(400,"bad_action");
 };
@@ -216,7 +224,7 @@ host.staff=(method,b,token)=>{
 // ---- בניית "הטלפון" של הדמו לפי ההגדרות ----
 function buildStore(keepExtras){
   const S=host.store,keep={};
-  if(keepExtras)for(const k of Object.keys(S))if(!["profile","mashovConn","mashovData","mashovPw","introSeen","updatesCache","updatesSeen"].includes(k))keep[k]=S[k];
+  if(keepExtras)for(const k of Object.keys(S))if(!["profile","mashovConn","mashovData","mashovPw","introSeen","updatesCache"].includes(k))keep[k]=S[k];
   for(const k of Object.keys(S))delete S[k];
   Object.assign(S,keep);
   S.profile=JSON.stringify(profileNow());
@@ -273,6 +281,7 @@ $("time").onchange=e=>{cfg.time=e.target.value||"10:40";cfg.real=false;timeChang
 $("realNow").onclick=()=>{cfg.real=true;timeChanged()};
 $("samples").onchange=e=>{cfg.samples=e.target.checked;saveCfg();delete host.store.updatesCache;reloadFrame()};
 $("goStaff").onclick=()=>go("staff.html");
+$("rePop").onclick=()=>{delete host.store.updatesSeen;go("index.html")};
 $("newStudent").onclick=()=>{for(const k of Object.keys(host.store))delete host.store[k];cfg.page="index.html";saveCfg();markNav();$("frame").src="index.html"};
 $("reset").onclick=()=>{if(!confirm("לאפס את הדמו להגדרות ההתחלה?"))return;cfg=Object.assign({},DEF,{day:cfg.day});host.staffUpdates=[];host.codes={};host.staffUsers=host.staffUsers.slice(0,2);saveCfg();panel();applyTime();buildStore(false);$("frame").src="index.html"};
 $("tglPanel").onclick=()=>{const c=$("panel").classList.toggle("closed");$("tglPanel").textContent=c?"הצג":"הסתר"};

@@ -14,26 +14,32 @@
 @media (prefers-color-scheme: light){:root{--bg:#f3f2fb;--card:#fff;--ink:#191b33;--muted:#6c7093;--line:#e3e2f2;--next:#e5e9ff;--break:#eceaf7;--accent:#5b6cff;--accent-ink:#fff;--red:#e0384a;--green:#1fb57a}}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Rubik,"Segoe UI",Arial,sans-serif}
-.top{background:var(--grad);color:#fff;padding:calc(16px + env(safe-area-inset-top)) 18px 20px;border-radius:0 0 28px 28px}
-.top .bar{display:flex;justify-content:space-between;align-items:center;gap:10px;max-width:640px;margin:0 auto}
+.top{background:var(--grad);color:#fff;padding:calc(16px + env(safe-area-inset-top)) 18px 18px;border-radius:0 0 28px 28px}
+.top .bar{display:flex;justify-content:space-between;align-items:center;gap:10px;max-width:720px;margin:0 auto}
 .top h1{margin:0;font-size:24px;font-weight:900}
 .top p{margin:4px 0 0;font-size:14px;opacity:.9}
-.top a,.top button{color:#fff;text-decoration:none;font:inherit;font-size:14px;font-weight:700;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);border-radius:999px;padding:8px 14px;cursor:pointer}
-main{padding:16px 14px 40px;max-width:640px;margin:0 auto}
-.card{background:var(--card);border:1.5px solid var(--line);border-radius:20px;padding:18px;margin-bottom:14px}
+.top button{color:#fff;font:inherit;font-size:14px;font-weight:700;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);border-radius:999px;padding:8px 14px;cursor:pointer}
+.tabs{display:flex;gap:6px;max-width:720px;margin:14px auto 0;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto;border:none;background:rgba(255,255,255,.18);color:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.tabs button.on{background:#fff;color:#2b2f6b}
+main{padding:16px 14px 40px;max-width:720px;margin:0 auto}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:20px;padding:18px;margin-bottom:14px;animation:rise .35s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
 .card h2{margin:0 0 6px;font-size:19px;font-weight:900}
 .hint{color:var(--muted);font-size:14px;line-height:1.5;margin:0 0 10px}
 label{display:block;font-weight:700;font-size:14px;margin:14px 0 6px}
 input,textarea,select{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:16px;background:var(--bg);color:var(--ink)}
 textarea{min-height:110px;resize:vertical;line-height:1.5}
-.btn{border:none;border-radius:12px;padding:12px 18px;font:inherit;font-size:16px;font-weight:700;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.btn{border:none;border-radius:12px;padding:12px 18px;font:inherit;font-size:16px;font-weight:700;cursor:pointer;background:var(--accent);color:var(--accent-ink);text-decoration:none;display:inline-block;text-align:center}
 .btn.ghost{background:var(--break);color:var(--ink)}.btn.danger{background:var(--red);color:#fff}.btn.sm{padding:7px 12px;font-size:13px;border-radius:9px}
 .btn.wa{background:#25d366;color:#0b2b17}
 .btn:disabled{opacity:.5;cursor:default}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .seg{display:flex;gap:6px;flex-wrap:wrap}
-.seg button{border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.seg button,.chip{border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
 .seg button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chip{font-size:13px;padding:6px 11px;font-weight:500}
 .count{font-size:12px;color:var(--muted);text-align:end;margin-top:4px}
 .tgl{display:flex;gap:8px;align-items:center;font-weight:700;margin-top:14px}
 .tgl input{width:20px;height:20px}
@@ -42,28 +48,47 @@ textarea{min-height:110px;resize:vertical;line-height:1.5}
 .item{border-top:1px solid var(--line);padding:12px 0}
 .item:first-of-type{border-top:none}
 .item .t{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:1.5}
-.item .m{font-size:12px;color:var(--muted);margin:4px 0 8px}
+.item .m{font-size:12px;color:var(--muted);margin:4px 0 8px;line-height:1.6}
 .pill{display:inline-block;border-radius:8px;padding:1px 8px;font-size:11px;font-weight:900;margin-inline-end:4px}
 .pill.on{background:rgba(61,220,151,.2);color:var(--green)}.pill.off{background:var(--break);color:var(--muted)}.pill.urg{background:var(--red);color:#fff}
 .code{font-family:monospace;font-size:28px;font-weight:900;letter-spacing:4px;direction:ltr;text-align:center;background:var(--bg);border-radius:12px;padding:10px;margin:8px 0}
 .preview{border:1.5px dashed var(--line);border-radius:16px;padding:12px;margin-top:12px}
 .preview .ph{font-size:12px;color:var(--muted);margin-bottom:6px}
+/* מערכת */
+.now{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.now>div{background:var(--bg);border-radius:14px;padding:12px;border:1.5px solid var(--line)}
+.now b{display:block;font-size:13px;color:var(--muted)}
+.now .n{font-size:17px;font-weight:900;margin-top:4px}
+.now .w{font-size:13px;color:var(--muted);margin-top:2px}
+.day{margin-top:14px}
+.day h3{margin:0 0 6px;font-size:16px;font-weight:900;display:flex;justify-content:space-between;align-items:baseline}
+.day h3 small{font-weight:400;color:var(--muted);font-size:12px}
+.ls{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:12px;background:var(--bg);margin-bottom:5px;border-inline-start:4px solid var(--accent)}
+.ls.pray{border-inline-start-color:var(--line);opacity:.75}
+.ls .tm{flex:0 0 92px;font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);direction:ltr;text-align:right}
+.ls .sb{flex:1;min-width:0;font-weight:700;font-size:15px}
+.ls .sb small{display:block;font-weight:400;color:var(--muted);font-size:13px;margin-top:1px}
+.cl{display:inline-block;background:var(--break);border-radius:7px;padding:0 7px;font-size:11px;font-weight:900;margin-inline-start:4px;vertical-align:1px}
+.ls.cur{background:var(--next);border-inline-start-color:var(--green)}
+.empty{color:var(--muted);font-size:14px;padding:6px 2px}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
-<div class="top"><div class="bar"><div><h1>📢 כניסת צוות</h1><p id="who">עדכונים לתלמידים · המערכת</p></div><button id="logout" hidden>יציאה</button></div></div>
+<div class="top"><div class="bar"><div><h1>📢 כניסת צוות</h1><p id="who">עדכונים לתלמידים · המערכת</p></div><button id="logout" hidden>יציאה</button></div><div class="tabs" id="tabs" hidden></div></div>
 <main id="main"><div class="card"><p class="hint">טוען…</p></div></main>
 
 <script src="data.js"></script>
 <script src="updates.js"></script>
 <script>
 const API=((typeof SERVER_BASE!=="undefined"&&SERVER_BASE)||"")+"/api/staff";
+const SITE=location.href.split("#")[0].split("?")[0];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const T={get:()=>{try{return localStorage.getItem("staffToken")}catch(e){return null}},set:v=>{try{v?localStorage.setItem("staffToken",v):localStorage.removeItem("staffToken")}catch(e){}}};
-const ERR={bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",already_setup:"כבר הוגדר מנהל.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
-let me=null;
+const ERR={bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",bad_invite:"הקישור לא תקין.",invite_used:"הקישור הזה כבר שומש.",not_found:"לא נמצא.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
+const ROLE={admin:"מנהל",teacher:"מורה",staff:"צוות"};
+let me=null,tab="write";
 
 async function api(body){
   try{
@@ -75,115 +100,244 @@ async function api(body){
 }
 const msg=(id,text,ok)=>{const el=$(id);if(!el)return;el.className="msg "+(ok?"ok":"err");el.textContent=text;el.hidden=!text};
 
+// ---- כניסה ----
+// #invite=... : קישור אישי למנהל (פעם אחת). #code=... : קישור כניסה ישירה שהמנהל שולח למורה
+const H=new URLSearchParams(location.hash.slice(1));
+const INVITE=H.get("invite"),LINKCODE=H.get("code");
+if(INVITE||LINKCODE)history.replaceState(null,"",location.pathname+location.search);
+
 async function start(){
   const st=await api();
-  if(!st.ok){$("main").innerHTML=`<div class="card"><h2>אין חיבור לשרת</h2><p class="hint">${esc(ERR.network)}</p><button class="btn" onclick="start()">נסה שוב</button></div>`;return}
-  if(st.needsSetup)return showSetup();
+  if(!st.ok){$("main").innerHTML=`<div class="card"><h2>אין חיבור לשרת</h2><p class="hint">${esc(ERR.network)}</p><button class="btn" id="retry">נסה שוב</button></div>`;$("retry").onclick=start;return}
+  if(INVITE){
+    const c=await api({action:"check_invite",invite:INVITE});
+    if(c.ok&&c.valid&&!c.used)return showSetup(c.hasAdmin);
+    if(c.ok&&c.used&&!T.get())return showLogin("הקישור האישי כבר שומש. נכנסים עם הקוד שבחרת.");
+    if(c.ok&&!c.valid&&!T.get())return showLogin("הקישור לא תקין או שהוחלף בקישור חדש.");
+  }
+  if(st.needsSetup)return showWaiting();
+  if(LINKCODE){const r=await api({action:"login",code:LINKCODE});if(r.ok){T.set(r.token);me=r.user;return showHome()}}
   if(T.get()){const r=await api({action:"me"});if(r.ok){me=r.user;return showHome()}}
   showLogin();
 }
-
-function showSetup(){
-  $("main").innerHTML=`<div class="card"><h2>הגדרה ראשונה</h2>
-    <p class="hint">עוד לא הוגדר מנהל. מי שממלא את הטופס הזה הופך למנהל: יכול להוסיף מורים, לכתוב עדכונים ולמחוק כל עדכון. עושים את זה פעם אחת בלבד.</p>
+function showWaiting(){
+  $("main").innerHTML=`<div class="card"><h2>🔒 עוד לא הוגדר מנהל</h2><p class="hint">המנהל נכנס בפעם הראשונה רק דרך הקישור האישי שנשלח אליו. אחרי זה הוא מוסיף את המורים ושולח לכל אחד קוד.</p></div>`;
+}
+function showSetup(reset){
+  $("main").innerHTML=`<div class="card"><h2>${reset?"🔑 קוד חדש למנהל":"👋 ברוך הבא, המנהל"}</h2>
+    <p class="hint">${reset?"הקישור הזה מאפשר לבחור קוד כניסה חדש. המורים והעדכונים נשארים כמו שהם.":"זה הקישור האישי שלך. בוחרים שם וקוד כניסה, ומאז נכנסים עם הקוד. הקישור עובד פעם אחת בלבד."}</p>
     <label>השם שיופיע על העדכונים</label><input id="sName" maxlength="40" placeholder="למשל: הרב כהן">
-    <label>קוד כניסה אישי (לפחות 6 תווים)</label><input id="sCode" type="password" dir="ltr" autocomplete="new-password">
+    <label>קוד כניסה אישי (לפחות 6 תווים, כדאי לרשום בצד)</label><input id="sCode" type="password" dir="ltr" autocomplete="new-password">
     <label>שוב, לאימות</label><input id="sCode2" type="password" dir="ltr" autocomplete="new-password">
-    <div class="row" style="margin-top:16px"><button class="btn" id="sGo">אני המנהל, צור</button></div><div id="sMsg" hidden></div></div>`;
+    <div class="row" style="margin-top:16px"><button class="btn" id="sGo" style="flex:1">${reset?"שמור קוד חדש":"כניסה כמנהל"}</button></div><div id="sMsg" hidden></div></div>`;
   $("sGo").onclick=async()=>{
     const name=$("sName").value.trim(),c=$("sCode").value,c2=$("sCode2").value;
     if(!name)return msg("sMsg","חסר שם.");if(c.length<6)return msg("sMsg","הקוד צריך להיות לפחות 6 תווים.");if(c!==c2)return msg("sMsg","שני הקודים לא זהים.");
-    $("sGo").disabled=true;const r=await api({action:"setup",name,code:c});$("sGo").disabled=false;
-    if(!r.ok)return msg("sMsg",ERR[r.error]||"שגיאה.");T.set(r.token);me=r.user;showHome();
+    $("sGo").disabled=true;const r=await api({action:"setup",name,code:c,invite:INVITE});$("sGo").disabled=false;
+    if(!r.ok)return msg("sMsg",ERR[r.error]||"שגיאה.");T.set(r.token);me=r.user;tab="team";showHome();
   };
 }
-
-function showLogin(){
-  $("logout").hidden=true;$("who").textContent="עדכונים לתלמידים · המערכת";
-  $("main").innerHTML=`<div class="card"><h2>כניסה</h2><p class="hint">מנהל או מורה: מקלידים את הקוד האישי שקיבלתם.</p>
+function showLogin(note){
+  $("logout").hidden=true;$("tabs").hidden=true;$("who").textContent="עדכונים לתלמידים · המערכת";
+  $("main").innerHTML=`<div class="card"><h2>כניסה</h2><p class="hint">${esc(note||"מנהל או מורה: מקלידים את הקוד האישי.")}</p>
     <input id="lCode" type="password" dir="ltr" autocomplete="current-password" placeholder="קוד כניסה" style="text-align:center;font-size:20px;letter-spacing:3px">
     <div class="row" style="margin-top:14px"><button class="btn" id="lGo" style="flex:1">כניסה</button></div><div id="lMsg" hidden></div>
-    <p class="hint" style="margin-top:14px">אין לך קוד? בקש מהמנהל. הוא יכול ליצור לך קוד מתוך המסך הזה.</p></div>`;
+    <p class="hint" style="margin-top:14px">מורה בלי קוד? המנהל יוצר לך קוד מהמסך שלו ושולח בוואטסאפ.</p></div>`;
   const go=async()=>{const code=$("lCode").value.trim();if(!code)return;$("lGo").disabled=true;const r=await api({action:"login",code});$("lGo").disabled=false;
     if(!r.ok)return msg("lMsg",ERR[r.error]||"שגיאה.");T.set(r.token);me=r.user;showHome()};
-  $("lGo").onclick=go;$("lCode").onkeydown=e=>{if(e.key==="Enter")go()};$("lCode").focus();
+  $("lGo").onclick=go;$("lCode").onkeydown=e=>{if(e.key==="Enter")go()};
 }
 
-// ---- המסך הראשי לצוות ----
-const DUR=[["15 דק'",15],["שעה",60],["3 שעות",180],["עד סוף היום","eod"],["יום",1440],["3 ימים",4320],["שבוע",10080]];
-let dur=60,aud="all",urgent=false;
-function minutesFor(v){if(v!=="eod")return v;const n=new Date(),e=new Date(n);e.setHours(23,59,0,0);return Math.max(1,Math.round((e-n)/60000))}
+// ---- המסך הראשי לצוות: לשוניות ----
 function showHome(){
-  $("logout").hidden=false;$("who").textContent=`${me.name} · ${me.role==="admin"?"מנהל":"מורה"}`;
-  $("main").innerHTML=`
-  <div class="card"><h2>✍️ עדכון חדש לתלמידים</h2><p class="hint">יופיע בראש האפליקציה אצל כל התלמידים, עם השם שלך, עד שיפוג התוקף.</p>
-    <textarea id="text" maxlength="600" placeholder="למשל: מחר מתחילים ב-9:00. להביא תנ&quot;ך."></textarea><div class="count" id="count">0/600</div>
+  $("logout").hidden=false;$("who").textContent=`${me.name} · ${ROLE[me.role]||"מורה"}`;
+  const TABS=[["write","✍️ עדכון חדש"],["list","📋 עדכונים"],["tt","🗓️ מערכת"],...(me.role==="admin"?[["team","👥 צוות"]]:[])];
+  if(!TABS.some(t=>t[0]===tab))tab="write";
+  $("tabs").hidden=false;$("tabs").innerHTML=TABS.map(([k,l])=>`<button data-t="${k}" class="${k===tab?"on":""}">${l}</button>`).join("");
+  $("tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;showHome()});
+  ({write:showWrite,list:showList,tt:showTT,team:showTeam})[tab]();
+}
+
+// ---- כתיבת עדכון ----
+const DUR=[["15 דק'",15],["שעה",60],["3 שעות",180],["עד סוף היום","eod"],["יום",1440],["3 ימים",4320],["שבוע",10080]];
+const TPL=[["🔄 שינוי במערכת","שינוי במערכת: "],["❌ שיעור מבוטל","השיעור ב… היום מבוטל. "],["📝 מבחן","תזכורת: מבחן ב… ביום … . החומר: "],["🎒 להביא מחר","מחר להביא: "],["⏰ שינוי בשעות","מחר הלימודים מתחילים ב-… "],["🎉 כל הכבוד","כל הכבוד ל"]];
+let dur=60,aud="all",urgent=false,users=null;
+function minutesFor(v){if(v!=="eod")return v;const n=new Date(),e=new Date(n);e.setHours(23,59,0,0);return Math.max(1,Math.round((e-n)/60000))}
+async function showWrite(){
+  const admin=me.role==="admin";
+  $("main").innerHTML=`<div class="card"><h2>✍️ עדכון חדש לתלמידים</h2><p class="hint">קופץ על המסך אצל כל תלמיד שפותח את האפליקציה, ואז נשאר בראש המסך עד שהזמן נגמר.</p>
+    <div class="row" style="margin-bottom:8px">${TPL.map(([l],i)=>`<button class="chip" data-tpl="${i}">${l}</button>`).join("")}</div>
+    <textarea id="text" maxlength="600" placeholder="מה רוצים להגיד לתלמידים?"></textarea><div class="count" id="count">0/600</div>
+    ${admin?`<label>בשם מי</label><select id="as"><option value="">אני (${esc(me.name)})</option></select><input id="asName" maxlength="40" placeholder="השם שיופיע, למשל: המזכירות" hidden style="margin-top:8px">`:""}
     <label>למי</label><div class="seg" id="aud"><button data-v="all" class="on">כל התלמידים</button><button data-v="y1">י'1</button><button data-v="y2">י'2</button></div>
     <label>לכמה זמן</label><div class="seg" id="dur">${DUR.map(([l,v])=>`<button data-v="${v}" class="${v===60?"on":""}">${l}</button>`).join("")}<button data-v="custom">אחר…</button></div>
     <div class="row" id="custom" hidden style="margin-top:8px"><input id="cNum" type="number" min="1" max="999" value="30" style="width:100px;flex:0 0 auto"><select id="cUnit" style="width:auto;flex:0 0 auto"><option value="1">דקות</option><option value="60">שעות</option><option value="1440">ימים</option></select></div>
-    <label class="tgl"><input type="checkbox" id="urg"> דחוף (מסומן באדום ומופיע ראשון)</label>
+    <label class="tgl"><input type="checkbox" id="urg"> דחוף (באדום, מופיע ראשון)</label>
     <div class="preview"><div class="ph">כך זה ייראה אצל התלמידים:</div><div id="prev"></div></div>
-    <div class="row" style="margin-top:14px"><button class="btn" id="post" style="flex:1">פרסם עדכון</button></div><div id="pMsg" hidden></div></div>
-  <div class="card"><h2>${me.role==="admin"?"📋 כל העדכונים":"📋 העדכונים שלי"}</h2><div id="list"><p class="hint">טוען…</p></div></div>
-  ${me.role==="admin"?`<div class="card"><h2>👥 צוות</h2><p class="hint">כל מורה מקבל קוד כניסה אישי. הקוד מוצג פעם אחת: שלח אותו למורה בוואטסאפ.</p>
-    <div class="row"><input id="uName" maxlength="40" placeholder="שם המורה, למשל: הרב לוי" style="flex:1;min-width:160px"><button class="btn" id="uAdd">הוסף מורה</button></div>
-    <div id="uMsg" hidden></div><div id="users" style="margin-top:10px"></div></div>`:""}
-  <p class="hint" style="text-align:center">כתובת הכניסה לצוות: <span dir="ltr">${esc(location.href.split("#")[0])}</span></p>`;
-
+    <div class="row" style="margin-top:14px"><button class="btn" id="post" style="flex:1">פרסם עדכון</button></div><div id="pMsg" hidden></div></div>`;
+  dur=60;aud="all";urgent=false;
   const seg=(id,cb)=>$(id).querySelectorAll("button").forEach(b=>b.onclick=()=>{$(id).querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));cb(b.dataset.v)});
   seg("aud",v=>{aud=v;preview()});
   seg("dur",v=>{$("custom").hidden=v!=="custom";dur=v==="custom"?"custom":(v==="eod"?"eod":Number(v));preview()});
+  $("main").querySelectorAll("[data-tpl]").forEach(b=>b.onclick=()=>{const t=$("text");t.value=TPL[b.dataset.tpl][1]+t.value;t.focus();t.setSelectionRange(t.value.length,t.value.length);t.oninput()});
   $("text").oninput=()=>{$("count").textContent=$("text").value.length+"/600";preview()};
   $("urg").onchange=e=>{urgent=e.target.checked;preview()};
   $("cNum").oninput=$("cUnit").onchange=preview;
   $("post").onclick=post;
-  if(me.role==="admin"){$("uAdd").onclick=addUser;loadUsers()}
-  preview();loadList();
+  if(admin){
+    const r=await api({action:"users"});users=r.ok?r.users:[];
+    const sel=$("as");if(!sel)return;
+    users.filter(u=>u.id!==me.id).forEach(u=>{const o=document.createElement("option");o.value=u.id;o.textContent=`${u.name} (${ROLE[u.role]})`;sel.append(o)});
+    const o=document.createElement("option");o.value="__name";o.textContent="שם אחר…";sel.append(o);
+    sel.onchange=()=>{$("asName").hidden=sel.value!=="__name";preview()};$("asName").oninput=preview;
+  }
+  preview();
 }
 function minutes(){return dur==="custom"?Math.round(Number($("cNum").value)*Number($("cUnit").value)):minutesFor(dur)}
+function author(){
+  const sel=$("as");if(!sel||!sel.value)return{author:me.name,role:me.role,body:{}};
+  if(sel.value==="__name"){const n=$("asName").value.trim();return n?{author:n,role:"staff",body:{asName:n}}:{author:me.name,role:me.role,body:{}}}
+  const u=(users||[]).find(x=>x.id===sel.value);return u?{author:u.name,role:u.role,body:{asUser:u.id}}:{author:me.name,role:me.role,body:{}};
+}
 function preview(){
-  const text=$("text").value.trim()||"כאן יופיע העדכון";
-  // תצוגה מקדימה בעזרת אותו רכיב שמציג באפליקציה
-  const now=Date.now(),m=minutes()||60;
-  Updates.render($("prev"),null,[{id:"preview",text,author:me.name,role:me.role,audience:aud,urgent,createdAt:now,expiresAt:now+m*60e3}]);
+  const text=$("text").value.trim()||"כאן יופיע העדכון",now=Date.now(),m=minutes()||60,a=author();
+  Updates.render($("prev"),null,[{id:"preview",text,author:a.author,role:a.role,audience:aud,urgent,createdAt:now,expiresAt:now+m*60e3}]);
 }
 async function post(){
   const text=$("text").value.trim(),m=minutes();
   if(!text)return msg("pMsg","כתוב את העדכון.");
   if(!(m>=1&&m<=43200))return msg("pMsg","משך לא תקין (עד 30 ימים).");
-  $("post").disabled=true;const r=await api({action:"post",text,minutes:m,audience:aud,urgent});$("post").disabled=false;
+  if($("as")&&$("as").value==="__name"&&!$("asName").value.trim())return msg("pMsg","כתוב את השם שיופיע.");
+  $("post").disabled=true;const r=await api({action:"post",text,minutes:m,audience:aud,urgent,...author().body});$("post").disabled=false;
   if(!r.ok){if(r.error==="auth")return showLogin();return msg("pMsg",ERR[r.error]||"שגיאה.")}
-  $("text").value="";$("count").textContent="0/600";msg("pMsg","✅ פורסם! התלמידים יראו את זה תוך דקה.",true);preview();loadList();
+  $("text").value="";$("count").textContent="0/600";msg("pMsg",`✅ פורסם${r.update.authorName!==me.name?` בשם ${r.update.authorName}`:""}! יקפוץ לתלמידים בפתיחה הבאה של האפליקציה (או תוך דקה, אם היא פתוחה).`,true);preview();
 }
+
+// ---- רשימת העדכונים ----
 const fmtT=t=>{const d=new Date(t);return `${d.getDate()}.${d.getMonth()+1} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`};
-async function loadList(){
+async function showList(){
+  $("main").innerHTML=`<div class="card"><h2>${me.role==="admin"?"📋 כל העדכונים":"📋 העדכונים שלי"}</h2><p class="hint">3 הימים האחרונים. 👁 = כמה פעמים נפתח אצל תלמידים (בערך).</p><div id="list"><p class="hint">טוען…</p></div></div>`;
   const r=await api({action:"list"});const box=$("list");if(!box)return;
-  if(!r.ok){box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;if(r.error==="auth")showLogin();return}
+  if(!r.ok){if(r.error==="auth")return showLogin();box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
   if(!r.updates.length){box.innerHTML=`<p class="hint">אין עדכונים בימים האחרונים.</p>`;return}
-  box.innerHTML=r.updates.map(u=>`<div class="item"><div class="m"><span class="pill ${u.active?"on":"off"}">${u.active?"פעיל":"הסתיים"}</span>${u.urgent?`<span class="pill urg">דחוף</span>`:""}${esc(u.authorName)} · ${u.audience==="all"?"כולם":u.audience==="y1"?"י'1":"י'2"} · ${fmtT(u.createdAt)} עד ${fmtT(u.expiresAt)}</div><div class="t">${esc(u.text)}</div>
-    <div class="row" style="margin-top:8px">${u.active?`<button class="btn sm ghost" data-end="${esc(u.id)}">סיים עכשיו</button>`:""}<button class="btn sm danger" data-del="${esc(u.id)}">מחק</button></div></div>`).join("");
-  box.querySelectorAll("[data-end]").forEach(b=>b.onclick=async()=>{await api({action:"end",id:b.dataset.end});loadList()});
-  box.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את העדכון?"))return;await api({action:"delete",id:b.dataset.del});loadList()});
+  box.innerHTML=r.updates.map(u=>`<div class="item"><div class="m"><span class="pill ${u.active?"on":"off"}">${u.active?"פעיל":"הסתיים"}</span>${u.urgent?`<span class="pill urg">דחוף</span>`:""}<b>${esc(u.authorName)}</b> · ${u.audience==="all"?"כולם":u.audience==="y1"?"י'1":"י'2"} · ${fmtT(u.createdAt)} עד ${fmtT(u.expiresAt)} · 👁 ${u.views||0}${u.postedByName&&u.postedByName!==u.authorName?`<br>נשלח ע"י ${esc(u.postedByName)}`:""}</div><div class="t">${esc(u.text)}</div>
+    <div class="row" style="margin-top:8px">${u.active?`<button class="btn sm ghost" data-end="${esc(u.id)}">סיים עכשיו</button>`:""}<button class="btn sm ghost" data-ext="${esc(u.id)}" data-m="60">+ שעה</button><button class="btn sm ghost" data-ext="${esc(u.id)}" data-m="1440">+ יום</button><button class="btn sm danger" data-del="${esc(u.id)}">מחק</button></div></div>`).join("");
+  box.querySelectorAll("[data-end]").forEach(b=>b.onclick=async()=>{b.disabled=true;await api({action:"end",id:b.dataset.end});showList()});
+  box.querySelectorAll("[data-ext]").forEach(b=>b.onclick=async()=>{b.disabled=true;await api({action:"extend",id:b.dataset.ext,minutes:Number(b.dataset.m)});showList()});
+  box.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את העדכון? הוא ייעלם מיד אצל כל התלמידים."))return;await api({action:"delete",id:b.dataset.del});showList()});
+}
+
+// ---- מערכת: לפי כיתה או לפי מורה ----
+const CLS={y1:DAYS_Y1,y2:DAYS_Y2};
+const DAYN=["ראשון","שני","שלישי","רביעי","חמישי","שישי"];
+const nameOf=t=>String(t||"").replace(/\s*\(.*\)\s*$/,"").trim();
+const groupOf=t=>(String(t||"").match(/\((.*)\)/)||[])[1]||"";
+// כל השיעורים כ"משבצות": שיעורי הקבצה ומגמה נפרשים לכל המורים שמלמדים במקביל
+function slots(){
+  const out=[];
+  for(const [c,days] of Object.entries(CLS))days.forEach((d,di)=>(d.lessons||[]).forEach(l=>{
+    if(l.key==="eng")Object.values(ENG).forEach(t=>out.push({c,d:di,s:l.s,e:l.e,n:"אנגלית",w:nameOf(t),g:groupOf(t),group:true}));
+    else if(l.key==="math")Object.values(MATH).forEach(t=>out.push({c,d:di,s:l.s,e:l.e,n:"מתמטיקה",w:nameOf(t),g:groupOf(t)||"הקבצה",group:true}));
+    else if(l.key==="major")Object.values(MAJORS).forEach(m=>out.push({c,d:di,s:l.s,e:l.e,n:"מגמת "+m.n,w:m.w,group:true}));
+    else out.push({c,d:di,s:l.s,e:l.e,n:l.n,w:l.w});
+  }));
+  return out;
+}
+const SL=slots();
+const TEACHERS=[...new Set(SL.map(x=>x.w).filter(Boolean))].sort((a,b)=>a.replace(/^הרב /,"").localeCompare(b.replace(/^הרב /,""),"he"));
+const PRAY=/תפילת|ערבית/;
+let ttMode="cls",ttCls="y1",ttT=TEACHERS[0];
+const hmNow=()=>{const d=new Date();return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`};
+function nowCard(){
+  const d=new Date().getDay(),hm=hmNow();
+  return `<div class="now">${Object.keys(CLS).map(c=>{
+    const today=SL.filter(x=>x.c===c&&x.d===d);
+    const cur=today.filter(x=>x.s<=hm&&hm<x.e),next=today.filter(x=>x.s>hm).sort((a,b)=>a.s<b.s?-1:1)[0];
+    const lbl=CLASSES_META[c].label;
+    if(cur.length){const g=cur[0].group;return `<div><b>עכשיו ב${lbl}</b><div class="n">${esc(g?cur[0].n+" (הקבצות)":cur[0].n)}</div><div class="w">${esc(g?cur.map(x=>x.w).filter(Boolean).join(", "):cur[0].w)} · עד ${cur[0].e}</div></div>`}
+    if(next)return `<div><b>${lbl} · אין שיעור כרגע</b><div class="n">הבא: ${esc(next.group?next.n+" (הקבצות)":next.n)}</div><div class="w">ב-${next.s}</div></div>`;
+    return `<div><b>${lbl}</b><div class="n">אין עוד שיעורים היום</div></div>`;
+  }).join("")}</div>`;
+}
+function showTT(){
+  $("main").innerHTML=`<div class="card"><h2>🗓️ מה קורה עכשיו</h2>${nowCard()}</div>
+  <div class="card"><h2>המערכת</h2>
+    <div class="seg" id="ttMode"><button data-v="cls" class="${ttMode==="cls"?"on":""}">לפי כיתה</button><button data-v="t" class="${ttMode==="t"?"on":""}">לפי מורה</button></div>
+    <div id="ttPick" style="margin-top:10px"></div><div id="ttBody"></div></div>`;
+  $("ttMode").querySelectorAll("button").forEach(b=>b.onclick=()=>{ttMode=b.dataset.v;showTT()});
+  if(ttMode==="cls"){
+    $("ttPick").innerHTML=`<div class="seg" id="ttC">${[...Object.keys(CLS).map(c=>[c,CLASSES_META[c].label]),["both","שתי הכיתות"]].map(([v,l])=>`<button data-v="${v}" class="${v===ttCls?"on":""}">${l}</button>`).join("")}</div>`;
+    $("ttC").querySelectorAll("button").forEach(b=>b.onclick=()=>{ttCls=b.dataset.v;showTT()});
+  }else{
+    $("ttPick").innerHTML=`<select id="ttT">${TEACHERS.map(t=>`<option ${t===ttT?"selected":""}>${esc(t)}</option>`).join("")}</select>`;
+    $("ttT").onchange=e=>{ttT=e.target.value;drawTT()};
+  }
+  drawTT();
+}
+function drawTT(){
+  const today=new Date().getDay(),hm=hmNow();
+  let list;
+  if(ttMode==="t"){
+    // השיעורים של המורה בשתי הכיתות. אותו שיעור באותה שעה לשתי הכיתות = שורה אחת
+    const m={};SL.filter(x=>x.w===ttT).forEach(x=>{const k=`${x.d}|${x.s}|${x.n}`;(m[k]=m[k]||{...x,cs:[]}).cs.push(x.c)});
+    list=Object.values(m);
+  }else{
+    const cs=ttCls==="both"?Object.keys(CLS):[ttCls],m={};
+    SL.filter(x=>cs.includes(x.c)).forEach(x=>{const k=`${x.d}|${x.s}|${x.group?x.n:x.n+x.w}|${ttCls==="both"?"":x.c}`;const o=m[k]=m[k]||{...x,cs:[],ws:[]};if(!o.cs.includes(x.c))o.cs.push(x.c);if(x.w&&!o.ws.includes(x.w))o.ws.push(x.w)});
+    list=Object.values(m);
+  }
+  const total=list.filter(x=>!PRAY.test(x.n)).length;
+  let h=ttMode==="t"?`<p class="hint" style="margin-top:12px"><b>${esc(ttT)}</b> · ${total} שיעורים בשבוע</p>`:"";
+  for(let d=0;d<6;d++){
+    const ls=list.filter(x=>x.d===d).sort((a,b)=>a.s<b.s?-1:a.s>b.s?1:0);
+    if(!ls.length&&d===5)continue;
+    h+=`<div class="day"><h3>${DAYN[d]}${d===today?" <small>· היום</small>":""}</h3>`;
+    if(!ls.length)h+=`<div class="empty">אין שיעורים</div>`;
+    for(const x of ls){
+      const cur=d===today&&x.s<=hm&&hm<x.e;
+      const cls=(ttMode==="t"||ttCls==="both")?x.cs.map(c=>`<span class="cl">${CLASSES_META[c].label}</span>`).join(""):"";
+      const who=ttMode==="t"?(x.g?`הקבצה: ${esc(x.g)}`:""):(x.group?esc((x.ws||[]).join(" · ")):esc((x.ws||[])[0]||""));
+      h+=`<div class="ls ${PRAY.test(x.n)?"pray":""} ${cur?"cur":""}"><div class="tm">${x.s}–${x.e}</div><div class="sb">${esc(x.n)}${x.group&&ttMode==="cls"&&/אנגלית|מתמטיקה/.test(x.n)?" (הקבצות)":""}${cls}${who?`<small>${who}</small>`:""}</div></div>`;
+    }
+    h+=`</div>`;
+  }
+  $("ttBody").innerHTML=h;
+}
+
+// ---- צוות (מנהל בלבד) ----
+async function showTeam(){
+  $("main").innerHTML=`<div class="card"><h2>👥 הוספת מורה</h2><p class="hint">כל מורה מקבל קוד אישי וקישור כניסה. שולחים לו בוואטסאפ, והוא נכנס בלחיצה אחת. מורה יכול לכתוב עדכונים ולנהל את שלו.</p>
+    <input id="uName" maxlength="40" placeholder="שם המורה, כמו שיופיע לתלמידים">
+    <label>תפקיד</label><div class="seg" id="uRole"><button data-v="teacher" class="on">מורה</button><button data-v="admin">מנהל נוסף (סגן, רכז)</button></div>
+    <div class="row" style="margin-top:12px"><button class="btn" id="uAdd" style="flex:1">צור קוד</button></div>
+    <div id="uMsg" hidden></div>
+    ${TEACHERS.length?`<p class="hint" style="margin-top:14px">בחירה מהירה מהמערכת:</p><div class="row">${TEACHERS.map(t=>`<button class="chip" data-n="${esc(t)}">${esc(t)}</button>`).join("")}</div>`:""}</div>
+    <div class="card"><h2>הצוות</h2><div id="users"><p class="hint">טוען…</p></div></div>`;
+  let role="teacher";
+  $("uRole").querySelectorAll("button").forEach(b=>b.onclick=()=>{$("uRole").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));role=b.dataset.v});
+  $("main").querySelectorAll("[data-n]").forEach(b=>b.onclick=()=>{$("uName").value=b.dataset.n;$("uName").scrollIntoView({block:"center",behavior:"smooth"})});
+  $("uAdd").onclick=async()=>{
+    const name=$("uName").value.trim();if(!name)return msg("uMsg","כתוב את שם המורה.");
+    $("uAdd").disabled=true;const r=await api({action:"addUser",name,role});$("uAdd").disabled=false;
+    if(!r.ok)return msg("uMsg",ERR[r.error]||"שגיאה.");$("uName").value="";showCode(r.user,r.code);loadUsers();
+  };
+  loadUsers();
 }
 async function loadUsers(){
-  const r=await api({action:"users"});const box=$("users");if(!box||!r.ok)return;
-  box.innerHTML=r.users.map(u=>`<div class="item row" style="justify-content:space-between"><span><b>${esc(u.name)}</b> <span class="pill off">${u.role==="admin"?"מנהל":"מורה"}</span></span>${u.id===me.id?"<span class=hint style=margin:0>זה אתה</span>":`<span class="row"><button class="btn sm ghost" data-reset="${esc(u.id)}">קוד חדש</button><button class="btn sm danger" data-rm="${esc(u.id)}">הסר</button></span>`}</div>`).join("");
-  box.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{if(!confirm("ליצור קוד חדש? הקוד הישן יפסיק לעבוד."))return;const x=await api({action:"resetUser",id:b.dataset.reset});if(x.ok)showCode(x.user.name,x.code)});
-  box.querySelectorAll("[data-rm]").forEach(b=>b.onclick=async()=>{if(!confirm("להסיר את המורה? הוא לא יוכל להיכנס יותר."))return;await api({action:"removeUser",id:b.dataset.rm});loadUsers()});
+  const r=await api({action:"users"});const box=$("users");if(!box)return;
+  if(!r.ok){box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
+  box.innerHTML=r.users.map(u=>`<div class="item row" style="justify-content:space-between"><span><b>${esc(u.name)}</b> <span class="pill off">${u.owner?"מנהל ראשי":ROLE[u.role]}</span></span>${u.id===me.id?`<span class="hint" style="margin:0">זה אתה</span>`:u.owner?"":`<span class="row"><button class="btn sm ghost" data-reset="${esc(u.id)}">קוד חדש</button><button class="btn sm danger" data-rm="${esc(u.id)}">הסר</button></span>`}</div>`).join("");
+  box.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{if(!confirm("ליצור קוד חדש? הקוד הישן יפסיק לעבוד."))return;const x=await api({action:"resetUser",id:b.dataset.reset});if(x.ok){showCode(x.user,x.code);$("uMsg").scrollIntoView({block:"center",behavior:"smooth"})}else alert(ERR[x.error]||"שגיאה.")});
+  box.querySelectorAll("[data-rm]").forEach(b=>b.onclick=async()=>{if(!confirm("להסיר? הוא לא יוכל להיכנס יותר."))return;const x=await api({action:"removeUser",id:b.dataset.rm});if(!x.ok)alert(ERR[x.error]||"שגיאה.");loadUsers()});
 }
-async function addUser(){
-  const name=$("uName").value.trim();if(!name)return msg("uMsg","כתוב את שם המורה.");
-  $("uAdd").disabled=true;const r=await api({action:"addUser",name});$("uAdd").disabled=false;
-  if(!r.ok)return msg("uMsg",ERR[r.error]||"שגיאה.");$("uName").value="";showCode(r.user.name,r.code);loadUsers();
-}
-function showCode(name,code){
-  const link=location.href.split("#")[0];
-  const text=`שלום ${name}, זה הקוד שלך לכתיבת עדכונים לתלמידים באפליקציית המערכת:\n${code}\nנכנסים כאן: ${link}`;
+function showCode(u,code){
+  const link=`${SITE}#code=${code}`;
+  const text=`שלום ${u.name}, הוספתי אותך לכתיבת עדכונים לתלמידים באפליקציית המערכת.\nכניסה בלחיצה: ${link}\nהקוד שלך (אם תצטרך): ${code}`;
   const box=$("uMsg");box.className="msg ok";box.hidden=false;
-  box.innerHTML=`הקוד של <b>${esc(name)}</b> (מוצג פעם אחת בלבד):<div class="code">${esc(code)}</div><div class="row"><a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">📤 שלח בוואטסאפ</a><button class="btn ghost" id="cpy">העתק</button></div>`;
+  box.innerHTML=`הקוד של <b>${esc(u.name)}</b> (מוצג רק עכשיו):<div class="code">${esc(code)}</div><div class="row"><a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">📤 שלח בוואטסאפ</a><button class="btn ghost" id="cpy">העתק הודעה</button></div>`;
   $("cpy").onclick=async()=>{try{await navigator.clipboard.writeText(text);$("cpy").textContent="הועתק ✓"}catch(e){}};
 }
-$("logout").onclick=()=>{T.set(null);me=null;showLogin()};
+$("logout").onclick=()=>{T.set(null);me=null;tab="write";showLogin()};
 start();
 </script>
 </body>

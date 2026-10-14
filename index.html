@@ -860,7 +860,12 @@ renderAbsAlert();
   if(SCHOOL_LOGO){const i=document.createElement("img");i.src=SCHOOL_LOGO;i.alt="";i.onerror=()=>i.remove();b.append(i)}
   const t=document.createElement("span");t.textContent=SCHOOL_NAME;b.append(t);b.hidden=false})();
 // עדכונים מהצוות, בראש המסך
-if(window.Updates)Updates.init(document.getElementById("updates"),()=>(profile&&profile.cls)||"y2");
+// עדכון חדש קופץ על המסך פעם אחת (לא באמצע הרשמה/היכרות/חלון פתוח), ואז עף למקום שלו
+if(window.Updates){
+  const canPop=()=>["wiz","intro","build"].every(id=>{const e=document.getElementById(id);return !e||e.hidden})&&!document.querySelector("dialog[open]");
+  Updates.init(document.getElementById("updates"),()=>(profile&&profile.cls)||"y2",canPop);
+  setInterval(()=>Updates.retryPop&&Updates.retryPop(),2500);
+}
 if(location.hash==="#profile"){history.replaceState(null,"",location.pathname);setTimeout(()=>openProfile(),300)}
 
 // ---- עבודה בלי אינטרנט ----

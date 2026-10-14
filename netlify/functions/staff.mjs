@@ -2,8 +2,12 @@
 // הנתונים נשמרים ב-Netlify Blobs (אחסון מובנה של נטליפיי, בלי שירות נוסף).
 //
 // GET  /api/updates                 → { ok, updates:[פעילים בלבד] }            (ציבורי, לאפליקציה)
+// POST /api/updates {seen:[ids]}    → ספירת צפיות אנונימית (כמה תלמידים ראו)
 // GET  /api/staff                   → { ok, needsSetup }                      (האם כבר הוגדר מנהל)
-// POST /api/staff {action, ...}     → setup | login | me | post | end | delete | list | users | addUser | resetUser | removeUser
+// POST /api/staff {action, ...}     → check_invite | setup | login | me | post | end | extend | delete | list | users | addUser | resetUser | removeUser
+//
+// הגדרת המנהל: רק עם קישור ההזמנה האישי (staff.html#invite=...). כאן נשמר רק ה-hash של המפתח שבקישור,
+// אז גם כשהקוד ציבורי אי אפשר לנחש אותו. קישור חדש (scripts/make-invite.mjs) מאפשר למנהל לאפס את הקוד שלו.
 //
 // אבטחה: קודי כניסה נשמרים רק כ-hash (scrypt). אחרי כניסה מקבלים טוקן חתום (HMAC) לשבוע.
 // הגבלת ניסיונות כניסה לפי כתובת. תוכן העדכונים הוא טקסט בלבד, והאפליקציה מציגה אותו כטקסט (לא HTML).
@@ -14,6 +18,10 @@ export const config = { path: ["/api/updates", "/api/staff"] };
 const ALLOWED = [/^https:\/\/eliyaamir5-glitch\.github\.io$/, /^https:\/\/[a-z0-9-]+\.netlify\.app$/, /^http:\/\/localhost(:\d+)?$/];
 const MAX_TEXT = 600, MAX_NAME = 40, TOKEN_DAYS = 7, MAX_DURATION_MIN = 60 * 24 * 30;
 const AUDIENCES = ["all", "y1", "y2"];
+// sha256 של מפתח ההזמנה למנהל. נוצר ע"י: node scripts/make-invite.mjs
+let INVITE_HASH = "0f017b40e5a91b4ce3087c51a09389f20968292fdb65e92eab80af18c78f4ef0";
+export function __setInviteHash(h) { INVITE_HASH = h; }
+const sha = s => crypto.createHash("sha256").update(String(s)).digest("hex");
 
 // ---- אחסון: Netlify Blobs בייצור, מפה בזיכרון בבדיקות ----
 let memStore = null;
@@ -55,7 +63,7 @@ function verify(token, secret) {
   if (!safeEq(mac, good)) return null;
   try { const p = JSON.parse(Buffer.from(body, "base64url").toString()); return p.exp > Date.now() ? p : null; } catch { return null; }
 }
-const publicUser = u => ({ id: u.id, name: u.name, role: u.role });
+const publicUser = u => ({ id: u.id, name: u.name, role: u.role, owner: !!u.owner });
 const activeUpdates = (list, now = Date.now()) => (list || []).filter(u => u.expiresAt > now).sort((a, b) => (b.urgent - a.urgent) || (b.createdAt - a.createdAt));
 
 // הגבלת ניסיונות כניסה: 8 כישלונות ב-15 דקות → נעילה ל-15 דקות
@@ -80,6 +88,19 @@ export default async (req, context) => {
 
   // ---- ציבורי: העדכונים הפעילים ----
   if (url.pathname.endsWith("/updates")) {
+    if (req.method === "POST") {
+      // צפיות: מספר משוער (בלי זיהוי תלמיד). שמור בנפרד מהעדכונים, כדי שלא יתנגש עם כתיבת עדכון
+      let b; try { b = await req.json(); } catch { b = null; }
+      const ids = Array.isArray(b?.seen) ? b.seen.map(String).filter(x => /^[\w-]{4,20}$/.test(x)).slice(0, 10) : [];
+      if (ids.length) {
+        const list = await S.get("updates") || [], known = new Set(list.map(u => u.id));
+        const v = await S.get("views") || {};
+        for (const id of ids) if (known.has(id)) v[id] = (v[id] || 0) + 1;
+        for (const k of Object.keys(v)) if (!known.has(k)) delete v[k];
+        await S.set("views", v);
+      }
+      return reply(200, { ok: true }, headers);
+    }
     if (req.method !== "GET") return reply(405, { ok: false, error: "method" }, headers);
     const list = await S.get("updates") || [];
     const updates = activeUpdates(list).map(u => ({ id: u.id, text: u.text, author: u.authorName, role: u.role, audience: u.audience, urgent: !!u.urgent, createdAt: u.createdAt, expiresAt: u.expiresAt }));
@@ -96,16 +117,30 @@ export default async (req, context) => {
   const ip = (context && context.ip) || req.headers.get("x-nf-client-connection-ip") || req.headers.get("x-forwarded-for") || "unknown";
 
   // ---- הגדרה ראשונה: רק אם עוד אין מנהל ----
+  if (action === "check_invite") {
+    const valid = !!INVITE_HASH && safeEq(sha(body.invite || ""), INVITE_HASH);
+    return reply(200, { ok: true, valid, used: valid && !!cfg && cfg.inviteUsed === INVITE_HASH, hasAdmin: !!cfg }, headers);
+  }
   if (action === "setup") {
-    if (cfg) return reply(409, { ok: false, error: "already_setup" }, headers);
+    if (await tooManyFailures(S, ip)) return reply(429, { ok: false, error: "locked" }, headers);
+    if (!INVITE_HASH || !safeEq(sha(body.invite || ""), INVITE_HASH)) { await recordFailure(S, ip); return reply(403, { ok: false, error: "bad_invite" }, headers); }
+    if (cfg && cfg.inviteUsed === INVITE_HASH) return reply(409, { ok: false, error: "invite_used" }, headers);
     const name = clean(body.name, MAX_NAME), code = String(body.code || "");
     if (!name || code.length < 6 || code.length > 64) return reply(400, { ok: false, error: "bad_request" }, headers);
     const salt = crypto.randomBytes(16).toString("hex");
-    const admin = { id: newId(), name, role: "admin", salt, hash: hashCode(code, salt), createdAt: Date.now() };
-    await S.set("config", { secret: crypto.randomBytes(32).toString("hex"), createdAt: Date.now() });
-    await S.set("users", [admin]);
-    const c2 = await S.get("config");
-    return reply(200, { ok: true, token: sign({ uid: admin.id, exp: Date.now() + TOKEN_DAYS * 864e5 }, c2.secret), user: publicUser(admin) }, headers);
+    let users = await S.get("users") || [], admin;
+    const owner = cfg && (users.find(u => u.owner) || users.find(u => u.role === "admin"));
+    if (owner) { // קישור חדש = איפוס של המנהל הראשי (המורים נשארים)
+      admin = { ...owner, name, salt, hash: hashCode(code, salt), owner: true };
+      users = users.map(u => u.id === owner.id ? admin : u);
+    } else {
+      admin = { id: newId(), name, role: "admin", owner: true, salt, hash: hashCode(code, salt), createdAt: Date.now() };
+      users = [...users, admin];
+    }
+    const conf = { ...(cfg || { secret: crypto.randomBytes(32).toString("hex"), createdAt: Date.now() }), inviteUsed: INVITE_HASH };
+    await S.set("config", conf);
+    await S.set("users", users);
+    return reply(200, { ok: true, token: sign({ uid: admin.id, exp: Date.now() + TOKEN_DAYS * 864e5 }, conf.secret), user: publicUser(admin) }, headers);
   }
   if (!cfg) return reply(409, { ok: false, error: "needs_setup" }, headers);
 
@@ -136,12 +171,33 @@ export default async (req, context) => {
     if (!text || !(minutes >= 1 && minutes <= MAX_DURATION_MIN)) return reply(400, { ok: false, error: "bad_request" }, headers);
     const now = Date.now();
     const list = (await S.get("updates") || []).filter(u => u.expiresAt > now - 7 * 864e5); // ניקוי ישנים
-    const upd = { id: newId(), text, authorId: me.id, authorName: me.name, role: me.role, audience, urgent: !!body.urgent, createdAt: now, expiresAt: now + minutes * 60e3 };
+    // מנהל יכול לשלוח בשם מורה (asUser) או בשם חופשי כמו "המזכירות" (asName)
+    let author = { authorId: me.id, authorName: me.name, role: me.role };
+    if (isAdmin && body.asUser && body.asUser !== me.id) {
+      const t = (await S.get("users") || []).find(x => x.id === body.asUser);
+      if (!t) return reply(404, { ok: false, error: "not_found" }, headers);
+      author = { authorId: t.id, authorName: t.name, role: t.role };
+    } else if (isAdmin && clean(body.asName, MAX_NAME)) {
+      author = { authorId: me.id, authorName: clean(body.asName, MAX_NAME), role: "staff" };
+    }
+    const upd = { id: newId(), text, ...author, postedBy: me.id, postedByName: me.name, audience, urgent: !!body.urgent, createdAt: now, expiresAt: now + minutes * 60e3 };
     list.push(upd);
     await S.set("updates", list);
     return reply(200, { ok: true, update: upd }, headers);
   }
 
+  if (action === "extend") {
+    const id = String(body.id || ""), add = Math.round(Number(body.minutes));
+    if (!(add >= 1 && add <= MAX_DURATION_MIN)) return reply(400, { ok: false, error: "bad_request" }, headers);
+    const list = await S.get("updates") || [];
+    const u = list.find(x => x.id === id);
+    if (!u) return reply(404, { ok: false, error: "not_found" }, headers);
+    if (!isAdmin && u.authorId !== me.id) return reply(403, { ok: false, error: "forbidden" }, headers);
+    const now = Date.now(), from = Math.max(now, u.expiresAt);
+    u.expiresAt = Math.min(from + add * 60e3, now + MAX_DURATION_MIN * 60e3);
+    await S.set("updates", list);
+    return reply(200, { ok: true, update: u }, headers);
+  }
   if (action === "end" || action === "delete") {
     const id = String(body.id || "");
     const list = await S.get("updates") || [];
@@ -156,8 +212,9 @@ export default async (req, context) => {
   if (action === "list") {
     // מנהל רואה הכל, מורה רואה את שלו. כולל עדכונים שהסתיימו ב-3 הימים האחרונים
     const now = Date.now();
+    const views = await S.get("views") || {};
     const list = (await S.get("updates") || []).filter(u => (isAdmin || u.authorId === me.id) && u.expiresAt > now - 3 * 864e5)
-      .sort((a, b) => b.createdAt - a.createdAt).map(u => ({ ...u, active: u.expiresAt > now }));
+      .sort((a, b) => b.createdAt - a.createdAt).map(u => ({ ...u, active: u.expiresAt > now, views: views[u.id] || 0 }));
     return reply(200, { ok: true, now, updates: list }, headers);
   }
 
@@ -175,12 +232,14 @@ export default async (req, context) => {
   if (action === "resetUser") {
     const u = users.find(x => x.id === body.id);
     if (!u) return reply(404, { ok: false, error: "not_found" }, headers);
+    if (u.owner && !me.owner) return reply(403, { ok: false, error: "forbidden" }, headers);
     const code = newCode(), salt = crypto.randomBytes(16).toString("hex");
     await S.set("users", users.map(x => x.id === u.id ? { ...x, salt, hash: hashCode(code, salt) } : x));
     return reply(200, { ok: true, user: publicUser(u), code }, headers);
   }
   if (action === "removeUser") {
     if (body.id === me.id) return reply(400, { ok: false, error: "self" }, headers);
+    if (users.find(x => x.id === body.id)?.owner) return reply(403, { ok: false, error: "forbidden" }, headers);
     await S.set("users", users.filter(x => x.id !== body.id));
     return reply(200, { ok: true }, headers);
   }

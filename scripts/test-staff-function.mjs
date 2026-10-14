@@ -3,6 +3,9 @@
 const mod = await import("../netlify/functions/staff.mjs");
 const raw = mod.__useMemoryStore();
 const handler = mod.default;
+const crypto = await import("node:crypto");
+const INVITE = "test-invite-key-123";
+mod.__setInviteHash(crypto.createHash("sha256").update(INVITE).digest("hex"));
 const ok = (name, cond, extra = "") => { console.log(cond ? "✅" : "❌", name, extra); if (!cond) process.exitCode = 1; };
 const ORIGIN = "https://eliyaamir5-glitch.github.io";
 async function call(path, { method = "POST", body, token, ip = "1.1.1.1", origin = ORIGIN } = {}) {
@@ -17,13 +20,19 @@ let r = await call("/api/staff", { method: "GET" });
 ok("before setup: needsSetup", r.json.needsSetup === true);
 r = await call("/api/staff", { body: { action: "login", code: "x" } });
 ok("login before setup is refused", r.status === 409);
-r = await call("/api/staff", { body: { action: "setup", name: "המנהל", code: "123" } });
+r = await call("/api/staff", { body: { action: "setup", name: "פורץ", code: "hacker-123" } });
+ok("setup without the invite link is refused", r.status === 403);
+r = await call("/api/staff", { body: { action: "setup", name: "פורץ", code: "hacker-123", invite: "guess" } });
+ok("setup with a wrong invite is refused", r.status === 403);
+r = await call("/api/staff", { body: { action: "check_invite", invite: INVITE } });
+ok("check_invite: valid and unused", r.json.valid === true && r.json.used === false);
+r = await call("/api/staff", { body: { action: "setup", name: "המנהל", code: "123", invite: INVITE } });
 ok("setup rejects a short code", r.status === 400);
-r = await call("/api/staff", { body: { action: "setup", name: "הרב המנהל", code: "admin-secret-1" } });
+r = await call("/api/staff", { body: { action: "setup", name: "הרב המנהל", code: "admin-secret-1", invite: INVITE } });
 const adminToken = r.json.token;
 ok("setup creates the admin and logs in", r.status === 200 && r.json.user.role === "admin" && !!adminToken);
-r = await call("/api/staff", { body: { action: "setup", name: "פורץ", code: "hacker-123" } });
-ok("second setup is refused", r.status === 409);
+r = await call("/api/staff", { body: { action: "setup", name: "פורץ", code: "hacker-123", invite: INVITE } });
+ok("the invite link works only once", r.status === 409 && r.json.error === "invite_used");
 ok("codes are stored only as hashes", !raw.get("users").includes("admin-secret-1"));
 
 // מורה
@@ -87,3 +96,44 @@ ok("the new code works", r.status === 200);
 r = await call("/api/staff", { body: { action: "removeUser", id: teacher.id }, token: adminToken });
 r = await call("/api/staff", { body: { action: "me" }, token: teacherToken });
 ok("removed teacher's token stops working", r.status === 401);
+
+// שליחה בשם, הארכה, צפיות
+r = await call("/api/staff", { body: { action: "addUser", name: "אורי זרביב" }, token: adminToken });
+const uri = r.json.user, uriCode = r.json.code;
+r = await call("/api/staff", { body: { action: "post", text: "בשם המורה", minutes: 30, asUser: uri.id }, token: adminToken });
+const asT = r.json.update;
+ok("principal posts in a teacher's name", r.status === 200 && asT.authorName === "אורי זרביב" && asT.role === "teacher" && asT.postedByName === "הרב המנהל");
+r = await call("/api/staff", { body: { action: "post", text: "מהמזכירות", minutes: 30, asName: "המזכירות" }, token: adminToken });
+ok("principal posts under a free name", r.status === 200 && r.json.update.authorName === "המזכירות" && r.json.update.role === "staff");
+r = await call("/api/staff", { body: { action: "login", code: uriCode }, ip: "4.4.4.4" });
+const uriToken = r.json.token;
+r = await call("/api/staff", { body: { action: "post", text: "x", minutes: 5, asName: "המנהל" }, token: uriToken });
+ok("a teacher cannot post under another name", r.status === 200 && r.json.update.authorName === "אורי זרביב");
+r = await call("/api/staff", { body: { action: "list" }, token: uriToken });
+ok("the teacher sees the update sent in his name", r.json.updates.some(u => u.id === asT.id));
+r = await call("/api/staff", { body: { action: "extend", id: asT.id, minutes: 60 }, token: uriToken });
+ok("the teacher can extend it by an hour", r.status === 200 && Math.abs(r.json.update.expiresAt - asT.expiresAt - 60 * 60e3) < 5);
+r = await call("/api/updates", { method: "POST", body: { seen: [asT.id, asT.id, "nope-id"] } });
+r = await call("/api/updates", { method: "POST", body: { seen: [asT.id] } });
+r = await call("/api/staff", { body: { action: "list" }, token: adminToken });
+ok("views are counted (unknown ids ignored)", r.json.updates.find(u => u.id === asT.id).views === 3);
+r = await call("/api/staff", { body: { action: "addUser", name: "סגן", role: "admin" }, token: adminToken });
+const vice = r.json.user;
+r = await call("/api/staff", { body: { action: "login", code: r.json.code }, ip: "5.5.5.5" });
+const viceToken = r.json.token;
+r = await call("/api/staff", { body: { action: "users" }, token: viceToken });
+const ownerId = r.json.users.find(u => u.owner).id;
+r = await call("/api/staff", { body: { action: "removeUser", id: ownerId }, token: viceToken });
+ok("a second admin cannot remove the main principal", r.status === 403 && vice.role === "admin");
+r = await call("/api/staff", { body: { action: "resetUser", id: ownerId }, token: viceToken });
+ok("…or reset his code", r.status === 403);
+
+// קישור חדש = איפוס קוד המנהל, המורים נשארים
+const INVITE2 = "second-invite-456";
+mod.__setInviteHash(crypto.createHash("sha256").update(INVITE2).digest("hex"));
+r = await call("/api/staff", { body: { action: "setup", name: "הרב המנהל", code: "new-admin-code", invite: INVITE2 }, ip: "6.6.6.6" });
+ok("a new invite resets the principal's code", r.status === 200 && r.json.user.id === ownerId);
+r = await call("/api/staff", { body: { action: "login", code: "admin-secret-1" }, ip: "6.6.6.6" });
+ok("the old principal code stops working", r.status === 401);
+r = await call("/api/staff", { body: { action: "users" }, token: viceToken });
+ok("teachers and other admins are kept", r.json.users.some(u => u.id === uri.id) && r.json.users.some(u => u.id === vice.id));
