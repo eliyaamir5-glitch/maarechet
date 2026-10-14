@@ -265,38 +265,21 @@
   }
 
   const TIERS = [
-    { min: 30, name: "אש כחולה", cls: "blue", msg: "זה כבר לא רצף, זו אגדה. אף אחד לא עוצר אותך 💙" },
-    { min: 15, name: "בוער", cls: "big", msg: "מטורף! עוד קצת ואתה מגיע לאש הכחולה" },
-    { min: 5, name: "דולק", cls: "mid", msg: "האש תופסת! תמשיך להגיע ותראה אותה גדלה" },
-    { min: 1, name: "ניצוץ", cls: "small", msg: "התחלה טובה. כל שיעור מוסיף עוד עצים למדורה" },
-    { min: 0, name: "גחלים", cls: "ash", msg: "הרצף מחכה לך. השיעור הבא הוא ההתחלה" },
+    { min: 30, name: "אש כחולה", cls: "blue", msg: "רצף אדיר 💙" },
+    { min: 15, name: "בוער", cls: "big", msg: "רצף חזק, עוד קצת לאש הכחולה" },
+    { min: 5, name: "דולק", cls: "mid", msg: "האש תופסת, תמשיך ככה" },
+    { min: 1, name: "ניצוץ", cls: "small", msg: "התחלה טובה" },
+    { min: 0, name: "גחלים", cls: "ash", msg: "השיעור הבא מתחיל רצף חדש" },
   ];
   const tierOf = n => TIERS.find(t => n >= t.min);
 
-  // הישגים
-  function achievements({ blocks, streak, praise, subjects }) {
-    const list = [];
-    const add = (id, icon, title, desc, got, progress) => list.push({ id, icon, title, desc, got: !!got, progress: got ? 1 : Math.max(0, Math.min(1, progress || 0)) });
-    for (const [n, icon] of [[10, "🔥"], [25, "🔥🔥"], [50, "🚀"], [100, "👑"], [200, "💎"]])
-      add("streak" + n, icon, `${n} שיעורים ברצף`, `להגיע ל-${n} שיעורים ברצף בלי חיסור`, streak.best >= n, streak.best / n);
-    // שבוע מושלם: שבוע לימודים שלם בלי אף חיסור
-    const weeks = {};
-    for (const b of blocks) { const d = dateOf(b.date); d.setDate(d.getDate() - d.getDay()); const k = isoOf(d); (weeks[k] = weeks[k] || { n: 0, miss: 0, days: new Set() }).n++; weeks[k].days.add(b.date); if (b.missed) weeks[k].miss++; }
-    const perfect = Object.values(weeks).filter(w => w.days.size >= 4 && w.miss === 0).length;
-    add("perfectWeek", "📅", "שבוע מושלם", "שבוע לימודים שלם בלי אף חיסור", perfect >= 1, 0);
-    add("perfect3", "🗓️", "שלושה שבועות מושלמים", "שלושה שבועות שלמים בלי חיסור", perfect >= 3, perfect / 3);
-    // מלך השחרית: 10 שחריות רצופות
-    let sh = 0, shBest = 0;
-    for (const b of blocks) if (/שחרית/.test(b.n)) { if (b.missed && b.justified !== true) sh = 0; else if (!b.missed && !b.late) { sh++; shBest = Math.max(shBest, sh); } }
-    if (blocks.some(b => /שחרית/.test(b.n))) add("shacharit", "🌅", "מלך השחרית", "10 שחריות ברצף בזמן", shBest >= 10, shBest / 10);
-    add("praise1", "⭐", "צל\"ש ראשון", "לקבל צל\"ש ממורה", praise.total >= 1, 0);
-    add("praisePair", "⭐⭐", "צמד צל\"שים", "שני צל\"שים ברצף בלי הפרעה באמצע", praise.best >= 2, praise.best / 2);
-    add("praiseTriple", "🌟", "שלישיית צל\"שים", "שלושה צל\"שים ברצף בלי הפרעה באמצע", praise.best >= 3, praise.best / 3);
-    add("praise5", "🏅", "חמישה צל\"שים", "לצבור 5 צל\"שים", praise.total >= 5, praise.total / 5);
-    const bag = (subjects || []).filter(s => !s.nonBagrut && s.held > 0);
-    add("allGreen", "🛡️", "שומר ה-30%", "כל מקצועות הבגרות בירוק", bag.length > 0 && bag.every(s => s.status === "green" || s.status === "early"), 0);
-    add("comeback", "💪", "קאמבק", "לבנות רצף של 10 אחרי שהרצף נשבר", streak.lastBreak && streak.lastBreak.lost > 0 && streak.sinceBreak >= 10, streak.lastBreak ? streak.sinceBreak / 10 : 0);
-    return list;
+  // רצף לכל מקצוע בנפרד: כל מקצוע עם הרצף, השיא והשבירה האחרונה שלו
+  function subjectStreaks(blocks) {
+    const by = {};
+    for (const b of blocks) (by[b.n] = by[b.n] || []).push(b);
+    const out = {};
+    for (const n in by) out[n] = streaks(by[n]);
+    return out;
   }
 
   // מה עונים על כל סוג אירוע
@@ -323,6 +306,6 @@
   }
 
   const api = { analyze, classify, matchSubject, periodsOf, isSchoolDay, periodsBetween, statusOf, LIMIT, RED, ORANGE,
-    behaviorKind, timeline, streaks, praiseStreak, achievements, tierOf, TIERS, EVENT_UI, cheer };
+    behaviorKind, timeline, streaks, subjectStreaks, praiseStreak, tierOf, TIERS, EVENT_UI, cheer };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.Absences = api;
 })(typeof window !== "undefined" ? window : globalThis);

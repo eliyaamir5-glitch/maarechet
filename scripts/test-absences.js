@@ -110,9 +110,9 @@ const pr = A.praiseStreak(tlE.blocks);
 ok("praise streak: 2 in a row, broken by disruption", pr.best === 2 && pr.current === 1 && pr.total === 3, JSON.stringify(pr));
 ok("events attached to the right lesson", tlE.blocks.filter(b => b.events.length).every(b => b.n === "גמרא"));
 
-// הישגים
-const ach = A.achievements({ blocks: tlE.blocks, streak: A.streaks(tlE.blocks), praise: pr, subjects: r0.subjects });
-const got = id => ach.find(a => a.id === id).got;
-ok("achievements: streak10, perfect week, praise1, praisePair earned; streak200 matches the real streak; triple and comeback not", got("streak10") && got("perfectWeek") && got("praise1") && got("praisePair") && got("streak200") === (A.streaks(tlE.blocks).best >= 200) && !got("praiseTriple") && !got("comeback"));
-ok("achievements: progress is between 0 and 1", ach.every(a => a.progress >= 0 && a.progress <= 1));
+// רצף לכל מקצוע
+const ss = A.subjectStreaks(TL([{ date: firstGemara.date, subject: "גמרא", type: "חיסור", lesson: 3 }]).blocks);
+const gemBlocks = t0.blocks.filter(b => b.n === "גמרא"), gIdx = gemBlocks.indexOf(firstGemara);
+ok("per-subject: Gemara streak breaks, other subjects untouched", ss["גמרא"].current === gemBlocks.length - gIdx - 1 && ss["גמרא"].lastBreak.lost === gIdx && ss["אנגלית"].current === t0.blocks.filter(b => b.n === "אנגלית").length && ss["אנגלית"].lastBreak === null, `gemara=${ss["גמרא"].current} english=${ss["אנגלית"].current}`);
+ok("per-subject: every subject in the timetable has a streak", Object.keys(ss).length === new Set(t0.blocks.map(b => b.n)).size);
 ok("fire tiers", A.tierOf(0).cls === "ash" && A.tierOf(3).cls === "small" && A.tierOf(12).cls === "mid" && A.tierOf(20).cls === "big" && A.tierOf(40).cls === "blue");
