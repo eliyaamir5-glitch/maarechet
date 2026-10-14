@@ -8,7 +8,7 @@
   const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
   const ERR = {
-    bad_login: "שם המשתמש או הסיסמה לא נכונים. אלה אותם פרטים של אתר משוב.",
+    bad_login: "שם המשתמש או הסיסמה לא נכונים. אלה אותם פרטים של אתר משוב. שכחת? אפשר לאפס בקישור למטה.",
     bad_request: "חסרים פרטים. צריך לבחור בית ספר ולמלא שם משתמש וסיסמה.",
     mashov_down: "משוב לא עונה כרגע. נסה שוב בעוד כמה דקות.",
     no_student: "התחברנו, אבל לא מצאנו חשבון תלמיד. חשבון הורה או מורה לא נתמך כרגע.",
@@ -111,6 +111,14 @@
         <label class="ms-rem"><input type="checkbox" id="msRem" checked> לזכור בטלפון הזה, כדי שהנתונים יתעדכנו לבד</label>
         <div class="ms-note">🔒 הפרטים נשלחים ישירות למשוב רק כדי למשוך את הנוכחות והציונים שלך. השרת שלנו לא שומר את הסיסמה. אם בחרת "לזכור", היא נשמרת רק בטלפון הזה.</div>
         <div class="ms-msg" id="msMsg"></div>
+        <details class="ms-forgot"><summary>שכחת את הסיסמה של משוב?</summary>
+          <div>את הסיסמה של משוב אפשר לאפס רק אצל משוב עצמם. כך עושים:
+            <ol><li>נכנסים ל<a href="https://web.mashov.info/students/login" target="_blank" rel="noopener">אתר משוב</a>.</li>
+            <li>בוחרים את בית הספר ולוחצים <b>שכחתי סיסמה</b>.</li>
+            <li>משוב שולחים קוד איפוס בהודעה או במייל, לפי מה שרשום אצלם.</li>
+            <li>חוזרים לכאן ומתחברים עם הסיסמה החדשה.</li></ol>
+            לא מצליח? מזכירות בית הספר או המחנך יכולים לאפס את הסיסמה במשוב.</div>
+        </details>
       </div>`;
     },
     wireForm(root) {
@@ -149,7 +157,9 @@
   .ms-school{position:relative}.ms-res{position:absolute;inset-inline:0;top:100%;z-index:5;background:var(--card);border:1.5px solid var(--line);border-radius:12px;margin-top:4px;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.25)}
   .ms-res button{display:block;width:100%;text-align:start;background:none;border:none;border-bottom:1px solid var(--line);padding:10px 12px;font:inherit;font-size:14px;color:var(--ink);cursor:pointer}
   .ms-res button small{color:var(--muted)}.ms-rem{display:flex;gap:8px;align-items:center;font-size:14px}
-  .ms-note{font-size:12px;color:var(--muted);line-height:1.5}.ms-msg{font-size:14px;font-weight:700;min-height:18px}`;
+  .ms-note{font-size:12px;color:var(--muted);line-height:1.5}.ms-msg{font-size:14px;font-weight:700;min-height:18px}
+  .ms-forgot{font-size:13px;color:var(--muted)}.ms-forgot summary{cursor:pointer;color:var(--accent);font-weight:700}
+  .ms-forgot div{margin-top:6px;line-height:1.6}.ms-forgot ol{margin:6px 0;padding-inline-start:20px}.ms-forgot a{color:var(--accent)}`;
   document.head.appendChild(css);
 
   window.Mashov = Mashov;
