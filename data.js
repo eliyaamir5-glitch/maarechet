@@ -134,6 +134,21 @@ const DAYS_Y1=[
  {name:"שבת",short:"ש'",shabbat:true}
 ];
 const CLASSES_META={y1:{label:"י'1",rav:SH},y2:{label:"י'2",rav:"הרב אלישיב יהב יפרח"}};
+// לוח שנת הלימודים תשפ"ז, לחישוב כמה שיעורים יש בשנה בכל מקצוע (כלל ה-30%).
+// החופשות חושבו לפי הלוח העברי. כדאי להשוות ללוח החופשות של בית הספר ולתקן כאן.
+const SCHOOL_YEAR={start:"2026-09-01",end:"2027-06-20",off:[
+ {from:"2026-09-11",to:"2026-09-13",label:"ראש השנה"},
+ {from:"2026-09-20",to:"2026-09-21",label:"יום כיפור"},
+ {from:"2026-09-25",to:"2026-10-04",label:"סוכות"},
+ {from:"2026-12-06",to:"2026-12-12",label:"חנוכה"},
+ {from:"2027-03-23",to:"2027-03-24",label:"פורים"},
+ {from:"2027-04-15",to:"2027-04-29",label:"פסח"},
+ {from:"2027-05-12",to:"2027-05-12",label:"יום העצמאות"},
+ {from:"2027-05-25",to:"2027-05-25",label:"ל\"ג בעומר"},
+ {from:"2027-06-10",to:"2027-06-12",label:"שבועות"}
+]};
+// מקצועות שאין בהם בגרות: מוצגים במעקב, אבל בלי אזהרת 30%
+const NON_BAGRUT=["תפילת שחרית","תפילת מנחה","ערבית","סדר ערב","חינוך","שבת אחים","לאורו נלך – התנדבות","חינוך תעבורתי (זהב)"];
 // חיבור למשוב: כתובת פונקציית השרת. ריק = "/api/mashov" באותו אתר (נטליפיי).
 // באתר GitHub Pages שמים כאן את הכתובת המלאה של אתר הנטליפיי, למשל "https://maarechet.netlify.app/api/mashov"
 const MASHOV_API="";
@@ -149,4 +164,4 @@ const DEFAULT_GEAR={
  "השכלה כללית – חברה":"","השכלה כללית – מורשת":"","חינוך תעבורתי (זהב)":"","לאורו נלך – התנדבות":""
 };
 
-if(typeof module!=="undefined"&&module.exports){module.exports={P,SHACHARIT,MINCHA,ARVIT,ENG,MATH,DAYS_Y1,DAYS_Y2,CLASSES_META,DEFAULT_GEAR,NOTIFY_KEY,MAJORS,MASHOV_API,MASHOV_SCHOOL};}
+if(typeof module!=="undefined"&&module.exports){module.exports={P,SHACHARIT,MINCHA,ARVIT,ENG,MATH,DAYS_Y1,DAYS_Y2,CLASSES_META,DEFAULT_GEAR,NOTIFY_KEY,MAJORS,MASHOV_API,MASHOV_SCHOOL,SCHOOL_YEAR,NON_BAGRUT};}

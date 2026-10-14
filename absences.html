@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5b6cff">
+<title>נוכחות וחיסורים</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+html{overscroll-behavior:none;-webkit-text-size-adjust:100%}
+body{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior-y:none}
+input{-webkit-user-select:text;user-select:text}
+:root{
+  --bg:#0f1226; --card:#1d2247; --ink:#f4f5ff; --muted:#9aa0c7; --line:#2b3162;
+  --next:#243a8a; --break:#2a2f5c; --accent:#7c8cff; --accent-ink:#0b0e24;
+  --green:#3ddc97; --orange:#ffb03f; --red:#ff5d6c; --grey:#9aa0c7;
+  --grad:linear-gradient(135deg,#5b6cff 0%,#a259ff 60%,#ff6bd6 100%);
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#f3f2fb; --card:#ffffff; --ink:#191b33; --muted:#6c7093; --line:#e3e2f2; --next:#e5e9ff; --break:#eceaf7; --accent:#5b6cff; --accent-ink:#fff; --green:#1fb57a; --orange:#e08a00; --red:#e0384a; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Rubik,"Segoe UI",Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+.top{background:var(--grad);color:#fff;padding:calc(16px + env(safe-area-inset-top)) 18px 20px;border-radius:0 0 28px 28px}
+.top a{display:inline-flex;align-items:center;gap:6px;color:#fff;text-decoration:none;font-size:16px;font-weight:700;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);border-radius:999px;padding:10px 18px;margin-bottom:6px}
+.top h1{margin:6px 0 0;font-size:26px;font-weight:900}
+.top p{margin:4px 0 0;font-size:14px;opacity:.85}
+main{padding:16px 14px 40px;max-width:560px;margin:0 auto}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:20px;padding:16px;margin-bottom:12px}
+.card h2{margin:0 0 6px;font-size:18px;font-weight:900}
+.hint{color:var(--muted);font-size:14px;line-height:1.5;margin:0 0 8px}
+.btn{border:none;border-radius:12px;padding:11px 16px;font:inherit;font-size:15px;font-weight:700;cursor:pointer;background:var(--accent);color:var(--accent-ink);text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--break);color:var(--ink)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.tgl{display:flex;gap:8px;align-items:center;font-size:14px;margin-top:8px}
+.rescue{border-color:var(--red);background:linear-gradient(135deg,rgba(255,93,108,.18),transparent)}
+.warn{border-color:var(--orange);background:linear-gradient(135deg,rgba(255,176,63,.16),transparent)}
+.good{border-color:var(--green)}
+.big{font-size:20px;font-weight:900;margin:2px 0 6px}
+.item{padding:8px 0;border-top:1px solid var(--line);font-size:15px;line-height:1.5}
+.item:first-of-type{border-top:none}
+.subj{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:12px 14px;margin-bottom:8px}
+.subj .h{display:flex;align-items:center;gap:10px}
+.dot{width:12px;height:12px;border-radius:50%;flex:0 0 auto}
+.subj .n{font-weight:700;font-size:16px;flex:1}
+.subj .p{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums}
+.meter{position:relative;height:10px;background:var(--break);border-radius:99px;margin:10px 0 6px;overflow:hidden}
+.meter i{position:absolute;inset-block:0;inset-inline-start:0;border-radius:99px}
+.meter b{position:absolute;inset-block:-2px;width:2px;background:var(--muted);opacity:.6}
+.subj .s{font-size:13px;color:var(--muted);line-height:1.6}
+.tag{display:inline-block;border-radius:8px;padding:1px 8px;font-size:12px;font-weight:700;margin-inline-start:6px}
+details summary{cursor:pointer;font-weight:700;margin:6px 0 10px}
+.demo{background:var(--next);border-radius:12px;padding:8px 12px;font-size:13px;font-weight:700;margin-bottom:12px}
+.foot{margin-top:16px;color:var(--muted);font-size:12px;text-align:center;line-height:1.6}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="top">
+  <a href="./">🏠 חזרה למערכת</a>
+  <h1>📊 נוכחות וחיסורים</h1>
+  <p>פרטי לך בלבד · כלל ה-30%</p>
+</div>
+<main id="main"></main>
+
+<script src="data.js"></script>
+<script src="mashov.js"></script>
+<script src="absences.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const pct=x=>Math.round(x*100)+"%";
+const COLOR={green:"var(--green)",orange:"var(--orange)",red:"var(--red)",lost:"var(--red)",early:"var(--grey)"};
+const LABEL={green:"תקין",orange:"לשים לב",red:"מסוכן",lost:"עבר את ה-30%",early:"מוקדם לשפוט"};
+let profile=null;try{profile=JSON.parse(localStorage.getItem("profile")||"null")}catch(e){}
+if(profile&&!profile.major&&profile.phys==="yes")profile.major="phys";
+let countJustified=true;try{countJustified=localStorage.getItem("absCountJustified")!=="0"}catch(e){}
+let demo=location.hash==="#demo";
+
+// נתוני דוגמה: כדי לראות את המסך לפני שמחברים משוב
+function demoBehave(){
+  const ev=[],add=(date,subject,lesson,type="חיסור",j=0,txt="")=>ev.push({date,subject,lesson,type,justificationId:j,justification:txt});
+  const days=["2026-09-01","2026-09-02","2026-09-06","2026-09-07","2026-09-08","2026-09-09","2026-09-14","2026-09-15","2026-09-16","2026-09-22","2026-09-23","2026-10-05","2026-10-06","2026-10-07","2026-10-11","2026-10-12","2026-10-13","2026-10-14"];
+  days.forEach((d,i)=>{if(new Date(d+"T12:00").getDay()!==0)add(d,"תפילת שחרית",0);if(i%3!==2)add(d,"גמרא",1)});
+  ["2026-09-07","2026-09-08","2026-10-05","2026-10-06","2026-10-12"].forEach(d=>add(d,"אנגלית",6));
+  add("2026-09-15","מתמטיקה",7,"חיסור",4,"מחלה");add("2026-09-16","מתמטיקה",2,"חיסור",4,"מחלה");add("2026-10-07","מתמטיקה",2,"איחור");
+  add("2026-10-08","פיזיקה",8);add("2026-10-13","כימיה",3);
+  return ev;
+}
+
+function render(){
+  const m=$("main");
+  if(!profile||!profile.major){m.innerHTML=`<div class="card"><h2>קודם נרשמים</h2><p class="hint">צריך להשלים את ההרשמה במערכת (כיתה, הקבצות ומגמה) כדי לחשב כמה שיעורים יש לך בכל מקצוע.</p><a class="btn" href="./">להרשמה</a></div>`;return}
+  const conn=Mashov.connected(), md=Mashov.data();
+  if(!conn&&!demo){
+    m.innerHTML=`<div class="card"><h2>מחברים את משוב, ורואים את המצב</h2>
+      <p class="hint">בבית הספר מי שמחסיר 30% מהשיעורים במקצוע מאבד את הזכות לבגרות בו. כאן תראה לכל מקצוע כמה חיסרת, רמזור, וכמה עוד מותר עד סוף השנה. החיסורים נמשכים ממשוב, והכל נשאר רק אצלך בטלפון.</p>
+      <div class="row"><a class="btn" href="./#profile">חבר משוב</a><button class="btn ghost" id="demoBtn">הצג דוגמה</button></div></div>`;
+    $("demoBtn").onclick=()=>{demo=true;history.replaceState(null,"","#demo");render()};
+    return;
+  }
+  const behave=demo?demoBehave():(md?.behave||[]);
+  const today=demo?"2026-10-15":undefined;
+  const r=Absences.analyze({days:profile.cls==="y1"?DAYS_Y1:DAYS_Y2,profile,data:{ENG,MATH,MAJORS},year:SCHOOL_YEAR,behave,today,countJustified,nonBagrut:NON_BAGRUT});
+  const bag=r.subjects.filter(s=>!s.nonBagrut), extra=r.subjects.filter(s=>s.nonBagrut);
+  const red=bag.filter(s=>s.status==="red"||s.status==="lost"), near=bag.filter(s=>s.status==="orange"&&s.pct>=0.20);
+  let h="";
+  if(demo)h+=`<div class="demo">👀 מצב דוגמה: אלה לא הנתונים שלך. <a href="#" id="exitDemo">יציאה מהדוגמה</a></div>`;
+  else h+=`<div class="card" style="padding:12px 16px"><div class="bar"><span>📊 משוב · ${Mashov.agoText()}${md?.partial?" · חלק מהנתונים לא נמשכו":""}</span><button class="btn ghost" id="refresh" style="padding:7px 12px;font-size:13px">רענן</button></div><div class="hint" id="refMsg" style="margin:4px 0 0"></div></div>`;
+
+  // מצב חילוץ
+  if(red.length){
+    h+=`<div class="card rescue"><h2>🚨 מצב חילוץ</h2><p class="hint">במקצועות האלה חצית את ה-25%. זה עוד לא סוף הסיפור, אבל צריך תוכנית עכשיו.</p>`;
+    for(const s of red){
+      if(s.status==="lost")h+=`<div class="item"><b>${esc(s.name)}</b>: ${s.counted} חיסורים, יותר מ-30% מכל שעות השנה (${s.limit} מתוך ${s.yearTotal}). גם אם תגיע לכל השיעורים מעכשיו, לבד זה לא יספיק. <b>מה עושים:</b> לדבר עוד השבוע עם המחנך ועם המורה, ולבדוק אילו חיסורים אפשר להצדיק באישורים.</div>`;
+      else h+=`<div class="item"><b>${esc(s.name)}</b>: ${pct(s.pct)} חיסורים. כדי לחזור מתחת ל-25% צריך להגיע ל-<b>${s.needConsecutive} שעות ברצף</b>${s.weeksToRecover?` (בערך ${s.weeksToRecover} שבועות)`:""} בלי לחסר. עד סוף השנה מותר עוד <b>${Math.max(0,s.allowedLeft)}</b> חיסורים בלבד.</div>`;
+    }
+    h+=`</div>`;
+  }else if(near.length){
+    h+=`<div class="card warn"><h2>⚠️ מתקרבים ל-25%</h2>${near.map(s=>`<div class="item"><b>${esc(s.name)}</b>: חיסרת ${pct(s.pct)} מהשיעורים שהיו עד היום. מעל 25% זה כבר מסוכן. עד סוף השנה מותר עוד ${s.allowedLeft} חיסורים בסך הכל, אז כדאי לא לפספס שיעורים בשבועות הקרובים.</div>`).join("")}</div>`;
+  }else if(bag.some(s=>s.held>0)){
+    h+=`<div class="card good"><h2>✅ הכל בסדר</h2><p class="hint" style="margin:0">אין מקצוע שמתקרב ל-25%. ככה ממשיכים.</p></div>`;
+  }
+
+  if(r.thisWeek.length)h+=`<div class="card"><h2>📅 המקצועות המסוכנים השבוע</h2>${r.thisWeek.map(w=>`<div class="item"><span class="dot" style="display:inline-block;background:${COLOR[w.status]};margin-inline-end:6px"></span><b>${esc(w.name)}</b> · ${w.when.join(" · ")}</div>`).join("")}<p class="hint" style="margin:8px 0 0">את השיעורים האלה לא מפספסים.</p></div>`;
+  if(r.tips.length)h+=`<div class="card"><h2>💡 מה יעזור לך</h2>${r.tips.map(t=>`<div class="item">${t.icon} <b>${esc(t.title)}</b><br><span class="hint">${esc(t.text)}</span></div>`).join("")}</div>`;
+
+  h+=`<div class="card" style="padding:12px 16px"><label class="tgl"><input type="checkbox" id="cj" ${countJustified?"checked":""}> לספור גם חיסורים מוצדקים</label><p class="hint" style="margin:4px 0 0">ברירת המחדל זהירה: סופרים הכל. אם בית הספר לא סופר חיסור עם אישור, אפשר לבטל.</p></div>`;
+  h+=bag.map(subjCard).join("");
+  if(extra.length)h+=`<details><summary>תפילות ופעילויות (בלי בגרות)</summary>${extra.map(subjCard).join("")}</details>`;
+  if(r.unmatched.length)h+=`<div class="card"><h2>לא שויך למקצוע</h2><p class="hint">החיסורים האלה הגיעו ממשוב עם שם מקצוע שלא נמצא במערכת שלך, ולכן לא נכנסו לחישוב:</p>${r.unmatched.map(u=>`<div class="item">${esc(u.subject)}: ${u.absences} חיסורים</div>`).join("")}</div>`;
+  h+=`<p class="foot">החישוב משוער: לפי המערכת האישית שלך ולוח החופשות של תשפ"ז, כששיעור כפול נספר כשתי שעות. האחוז הוא מהשעות שכבר היו עד היום. הכל נשאר רק בטלפון שלך.</p>`;
+  m.innerHTML=h;
+
+  if($("exitDemo"))$("exitDemo").onclick=e=>{e.preventDefault();demo=false;history.replaceState(null,"",location.pathname);render()};
+  $("cj").onchange=e=>{countJustified=e.target.checked;try{localStorage.setItem("absCountJustified",countJustified?"1":"0")}catch(_){}render()};
+  if($("refresh"))$("refresh").onclick=async e=>{e.target.disabled=true;$("refMsg").textContent="מרענן…";const x=await Mashov.refresh();e.target.disabled=false;if(x.ok)render();else $("refMsg").textContent=Mashov.message(x.error)+(x.error==="need_password"?" (בפרופיל במסך הראשי)":"")};
+}
+
+function subjCard(s){
+  const c=COLOR[s.status], w=Math.min(100,s.pct/0.4*100);
+  const mark=v=>`<b style="inset-inline-start:${v/0.4*100}%"></b>`;
+  return `<div class="subj"><div class="h"><span class="dot" style="background:${c}"></span><span class="n">${esc(s.name)}<span class="tag" style="background:${c};color:#111">${LABEL[s.status]}</span></span><span class="p" style="color:${c}">${pct(s.pct)}</span></div>
+    <div class="meter"><i style="width:${w}%;background:${c}"></i>${mark(.15)}${mark(.25)}${mark(.30)}</div>
+    <div class="s">חיסורים: <b>${s.absences}</b>${s.justified?` (${s.justified} מוצדקים)`:""}${s.lates?` · איחורים: ${s.lates}`:""} · היו ${s.held} שעות מתוך ${s.yearTotal} בשנה${s.nonBagrut?"":`<br>עוד מותר לחסר: <b>${Math.max(0,s.allowedLeft)}</b> עד סוף השנה`}</div></div>`;
+}
+
+render();
+Mashov.autoRefresh().then(()=>{}).catch(()=>{});
+document.addEventListener("mashov-updated",render);
+</script>
+<script>
+document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
+document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
+</script>
+</body>
+</html>

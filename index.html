@@ -41,12 +41,15 @@ header .clock{font-size:34px;font-weight:900;font-variant-numeric:tabular-nums;l
 .hdate{font-size:12px;opacity:.85;margin-top:5px;text-align:left;white-space:nowrap}
 .board{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:12px;font-size:14px;cursor:pointer}
 .board .bi{font-size:18px}.board .bt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.board .bt b{font-weight:700}.board .bc{color:var(--muted);font-size:12px;white-space:nowrap}
+.board.abs-red{border-color:#ff5d6c;background:linear-gradient(90deg,rgba(255,93,108,.2),transparent)}
+.board.abs-orange{border-color:#ffb03f;background:linear-gradient(90deg,rgba(255,176,63,.18),transparent)}
 .board.test{border-color:var(--now);background:linear-gradient(90deg,rgba(255,210,63,.18),transparent)}
 .bl{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px;line-height:1.45}
 .bl .bd{min-width:64px;font-weight:700;color:var(--accent);font-size:13px;padding-top:2px}.bl .bx{color:var(--muted);font-size:13px}
 .gear-tmrw{margin-top:12px;padding-top:12px;border-top:1.5px dashed var(--line);font-size:15px}
-#calBtn,#relBtn,#cardsBtn{flex:1;text-decoration:none;text-align:center;white-space:nowrap;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px)}
-.actions{display:flex;gap:8px;margin-top:14px}
+#calBtn,#relBtn,#cardsBtn,#absBtn{min-width:0;overflow:hidden;text-overflow:ellipsis;text-decoration:none;text-align:center;white-space:nowrap;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px)}
+.actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
+@media (max-width:520px){.actions{grid-template-columns:repeat(2,minmax(0,1fr))}#calBtn,#relBtn,#cardsBtn,#absBtn{padding:8px 6px}}
 .tabs{display:flex;gap:6px;padding:14px 0 0;overflow-x:auto;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
 .tab{flex:0 0 auto;border:1.5px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:15px;font-weight:500;cursor:pointer}
@@ -183,6 +186,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
   <button id="calBtn">📅 ליומן</button>
   <a id="relBtn" href="shichrur.html">🏃 שחרורון</a>
   <a id="cardsBtn" href="cards.html">🃏 כרטיסיות</a>
+  <a id="absBtn" href="absences.html">📊 נוכחות</a>
 </div>
 <div class="tabs" id="tabs"></div>
 </div>
@@ -208,6 +212,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
   </form>
 </dialog>
 <main>
+  <div id="absAlert" hidden></div>
   <div id="board" hidden></div>
   <div id="hero"></div>
   <div id="content"></div>
@@ -287,6 +292,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 <script src="data.js"></script>
 <script src="board.js"></script>
 <script src="mashov.js"></script>
+<script src="absences.js"></script>
 <script>
 // ---- נתוני המערכת: ראה data.js ----
 const CLASSES={y1:{...CLASSES_META.y1,days:DAYS_Y1},y2:{...CLASSES_META.y2,days:DAYS_Y2}};
@@ -639,7 +645,22 @@ function toast(t,m){const el=document.createElement("div");el.className="toast";
 render();renderBoard();
 setInterval(()=>{render();renderBoard()},30000);
 Mashov.autoRefresh().catch(()=>{});
-document.addEventListener("mashov-updated",()=>{render()});
+document.addEventListener("mashov-updated",()=>{render();renderAbsAlert()});
+// התראת חיסורים במסך הראשי: רק אם יש מקצוע בגרות מעל 20%
+function renderAbsAlert(){
+  const el=document.getElementById("absAlert");el.hidden=true;
+  const md=Mashov.data();if(!md||!profile||!profile.major)return;
+  let countJ=true;try{countJ=localStorage.getItem("absCountJustified")!=="0"}catch(e){}
+  const r=Absences.analyze({days:CLASSES[profile.cls].days,profile,data:{ENG,MATH,MAJORS},year:SCHOOL_YEAR,behave:md.behave||[],countJustified:countJ,nonBagrut:NON_BAGRUT});
+  const bad=r.subjects.filter(s=>!s.nonBagrut&&s.status!=="early"&&(s.status==="lost"||s.pct>=0.20));
+  if(!bad.length)return;
+  const top=bad[0],red=top.status==="red"||top.status==="lost";
+  el.className="board "+(red?"abs-red":"abs-orange");el.hidden=false;
+  el.innerHTML=`<span class="bi">${red?"🚨":"⚠️"}</span><span class="bt"><b>${top.name}: ${Math.round(top.pct*100)}% חיסורים</b>${bad.length>1?` · ועוד ${bad.length-1}`:""}</span><span class="bc">${top.status==="lost"?"עבר 30%":"עוד מותר "+Math.max(0,top.allowedLeft)}</span>`;
+  el.onclick=()=>location.href="absences.html";
+}
+renderAbsAlert();
+if(location.hash==="#profile"){history.replaceState(null,"",location.pathname);setTimeout(()=>openProfile(),300)}
 
 // ---- עבודה בלי אינטרנט ----
 if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost"))navigator.serviceWorker.register("sw.js").catch(()=>{});
