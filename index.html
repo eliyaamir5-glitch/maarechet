@@ -112,6 +112,9 @@ dialog textarea{width:100%;min-height:90px;border:1.5px solid var(--line);border
 .opt:has(input:checked){border-color:var(--accent);background:var(--next)}
 .opt input{width:18px;height:18px;margin:0;flex:0 0 auto}
 .opt small{color:var(--muted)}
+.img-btn{display:block;width:100%;margin-top:14px;border:1.5px dashed var(--accent);background:var(--card);color:var(--ink);border-radius:18px;padding:14px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+.img-btn small{display:block;font-weight:400;color:var(--muted);font-size:13px;margin-top:2px}
+#imgPrev{width:100%;border-radius:12px;border:1.5px solid var(--line);display:block;background:#fff;margin:6px 0}
 .pf-row{border:1.5px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}
 .pf-row h4{margin:0 0 4px;font-size:16px}
 .pf-sub{font-size:13px;color:var(--muted);line-height:1.5}
@@ -216,6 +219,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
   <div id="board" hidden></div>
   <div id="hero"></div>
   <div id="content"></div>
+  <button type="button" class="img-btn" id="imgBtn">🖼️ המערכת שלי כתמונה <small>לשיתוף בוואטסאפ ולהדפסה</small></button>
   <div class="foot">כיתה י'2 · לחיצה על "ציוד" בכל שיעור פותחת עריכה, והרשימה נשמרת בטלפון</div>
 
 <div id="build" hidden>
@@ -270,6 +274,20 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
     <div class="btns"><button class="ghost" value="cancel">סגור</button></div>
   </form>
 </dialog>
+<dialog id="imgDlg" style="width:min(96vw,760px)">
+  <form method="dialog">
+    <h3>🖼️ המערכת שלי</h3>
+    <p>טבלה שבועית עם מורים וציוד. אפשר לשתף, לשמור או להדפיס.</p>
+    <canvas id="imgPrev"></canvas>
+    <div class="btns">
+      <button type="button" class="primary" id="imgShare">📤 שיתוף</button>
+      <button type="button" class="ghost" id="imgSave">💾 שמירת תמונה</button>
+      <button type="button" class="ghost" id="imgPdf">📄 PDF להדפסה</button>
+      <button class="ghost" value="cancel">סגור</button>
+    </div>
+    <p id="imgMsg" style="margin-top:8px"></p>
+  </form>
+</dialog>
 <dialog id="profDlg">
   <form method="dialog">
     <h3>👤 הפרופיל שלי</h3>
@@ -293,6 +311,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 <script src="board.js"></script>
 <script src="mashov.js"></script>
 <script src="absences.js"></script>
+<script src="timetable-image.js"></script>
 <script>
 // ---- נתוני המערכת: ראה data.js ----
 const CLASSES={y1:{...CLASSES_META.y1,days:DAYS_Y1},y2:{...CLASSES_META.y2,days:DAYS_Y2}};
@@ -647,6 +666,23 @@ setInterval(()=>{render();renderBoard()},30000);
 Mashov.autoRefresh().catch(()=>{});
 document.addEventListener("mashov-updated",()=>{render();renderAbsAlert()});
 // התראת חיסורים במסך הראשי: רק אם יש מקצוע בגרות מעל 20%
+// ---- המערכת שלי כתמונה / PDF ----
+async function openImage(){
+  if(!profile)return openOnb(false);
+  const c=CLASSES[profile.cls],mj=MAJORS[profile.major];
+  const weekLessons=[0,1,2,3,4].map(i=>lessonsOf(DAYS[i]));
+  const canvas=document.getElementById("imgPrev"),msg=document.getElementById("imgMsg");msg.textContent="";
+  document.getElementById("imgDlg").showModal();
+  await TimetableImage.draw(canvas,{weekLessons,gearOf:gearList,
+    title:`המערכת של ${profile.first} ${profile.last}`,
+    subtitle:`כיתה ${c.label} · ${c.rav} · אנגלית: ${ENG[profile.eng]} · מתמטיקה: ${MATH[profile.math]}${mj?" · מגמה: "+mj.n:""}`,
+    footer:"נוצר באפליקציית המערכת · "+new Date().toLocaleDateString("he-IL")});
+  const name=`המערכת-${profile.first}`;
+  document.getElementById("imgShare").onclick=async()=>{const r=await TimetableImage.share(canvas,name+".png","המערכת שלי");msg.textContent=r==="downloaded"?"התמונה נשמרה. אפשר לצרף אותה בוואטסאפ.":""};
+  document.getElementById("imgSave").onclick=async()=>{TimetableImage.download(await TimetableImage.blobOf(canvas),name+".png");msg.textContent="התמונה נשמרה."};
+  document.getElementById("imgPdf").onclick=async e=>{e.target.disabled=true;msg.textContent="מכין PDF…";try{const r=await TimetableImage.pdf(canvas,name+".pdf");msg.textContent=r==="cancel"?"":"ה-PDF מוכן. פותחים ומדפיסים."}catch(err){msg.textContent="לא הצלחתי להכין PDF (צריך חיבור לאינטרנט בפעם הראשונה)."}e.target.disabled=false};
+}
+document.getElementById("imgBtn").onclick=openImage;
 function renderAbsAlert(){
   const el=document.getElementById("absAlert");el.hidden=true;
   const md=Mashov.data();if(!md||!profile||!profile.major)return;
