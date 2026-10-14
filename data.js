@@ -134,6 +134,11 @@ const DAYS_Y1=[
  {name:"שבת",short:"ש'",shabbat:true}
 ];
 const CLASSES_META={y1:{label:"י'1",rav:SH},y2:{label:"י'2",rav:"הרב אלישיב יהב יפרח"}};
+// חיבור למשוב: כתובת פונקציית השרת. ריק = "/api/mashov" באותו אתר (נטליפיי).
+// באתר GitHub Pages שמים כאן את הכתובת המלאה של אתר הנטליפיי, למשל "https://maarechet.netlify.app/api/mashov"
+const MASHOV_API="";
+// בית הספר שיופיע מראש בטופס החיבור (סמל מוסד במשוב + שם). null = התלמיד בוחר בעצמו
+const MASHOV_SCHOOL=null;
 // התראה במייל על הרשמה חדשה (שירות Web3Forms). מחרוזת ריקה = כבוי.
 const NOTIFY_KEY="a2ee4160-fcd1-4313-aa96-c06be6cd536f";
 const DEFAULT_GEAR={
@@ -144,4 +149,4 @@ const DEFAULT_GEAR={
  "השכלה כללית – חברה":"","השכלה כללית – מורשת":"","חינוך תעבורתי (זהב)":"","לאורו נלך – התנדבות":""
 };
 
-if(typeof module!=="undefined"&&module.exports){module.exports={P,SHACHARIT,MINCHA,ARVIT,ENG,MATH,DAYS_Y1,DAYS_Y2,CLASSES_META,DEFAULT_GEAR,NOTIFY_KEY,MAJORS};}
+if(typeof module!=="undefined"&&module.exports){module.exports={P,SHACHARIT,MINCHA,ARVIT,ENG,MATH,DAYS_Y1,DAYS_Y2,CLASSES_META,DEFAULT_GEAR,NOTIFY_KEY,MAJORS,MASHOV_API,MASHOV_SCHOOL};}

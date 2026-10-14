@@ -6,6 +6,15 @@
 [build.environment]
   NODE_VERSION = "20"
 
+# פונקציות שרת (חיבור למשוב). הכתובת /api/mashov מוגדרת בתוך הפונקציה עצמה
+[functions]
+  directory = "netlify/functions"
+
+[[headers]]
+  for = "/mashov.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
 # קובצי יומן: סוג תוכן נכון ל-webcal, וקאש קצר כדי ששינויים יגיעו לטלפונים מהר
 [[headers]]
   for = "/cal/*.ics"

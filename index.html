@@ -109,6 +109,12 @@ dialog textarea{width:100%;min-height:90px;border:1.5px solid var(--line);border
 .opt:has(input:checked){border-color:var(--accent);background:var(--next)}
 .opt input{width:18px;height:18px;margin:0;flex:0 0 auto}
 .opt small{color:var(--muted)}
+.pf-row{border:1.5px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}
+.pf-row h4{margin:0 0 4px;font-size:16px}
+.pf-sub{font-size:13px;color:var(--muted);line-height:1.5}
+.pf-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.pf-acts .inp{flex:1;min-width:140px;padding:9px 10px}
+.pf-msg{font-size:13px;font-weight:700;margin-top:6px;min-height:16px}
 dialog .btns{display:flex;gap:8px;margin-top:14px;justify-content:flex-start;flex-wrap:wrap}
 dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font-size:15px;font-weight:700;cursor:pointer}
 .primary{background:var(--accent);color:var(--accent-ink)}
@@ -259,6 +265,13 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
     <div class="btns"><button class="ghost" value="cancel">סגור</button></div>
   </form>
 </dialog>
+<dialog id="profDlg">
+  <form method="dialog">
+    <h3>👤 הפרופיל שלי</h3>
+    <div id="profBody"></div>
+    <div class="btns"><button class="ghost" value="cancel">סגור</button></div>
+  </form>
+</dialog>
 <dialog id="dlg">
   <form method="dialog">
     <h3 id="dlgTitle"></h3>
@@ -273,6 +286,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 
 <script src="data.js"></script>
 <script src="board.js"></script>
+<script src="mashov.js"></script>
 <script>
 // ---- נתוני המערכת: ראה data.js ----
 const CLASSES={y1:{...CLASSES_META.y1,days:DAYS_Y1},y2:{...CLASSES_META.y2,days:DAYS_Y2}};
@@ -462,18 +476,19 @@ function applyProfile(){
   const c=CLASSES[(profile&&profile.cls)||"y2"];
   document.getElementById("hTitle").textContent=profile?`המערכת של ${profile.first}`:"המערכת שלי";
   document.title=(profile?`המערכת של ${profile.first}`:"המערכת שלי")+` – ${c.label}`;
-  document.getElementById("hSub").textContent=`כיתה ${c.label} · ${c.rav}`+(profile?(profile.email?" · ✎ ערוך פרופיל":" · ✎ ערוך פרופיל / חבר אימייל"):"");
+  document.getElementById("hSub").textContent=`כיתה ${c.label} · ${c.rav}`+(profile?" · 👤 פרופיל":"");
   document.querySelector(".foot").innerHTML=`כיתה ${c.label} · לחיצה על "ציוד" בכל שיעור פותחת עריכה, והרשימה נשמרת בטלפון`+(isStandalone()?"":`<br><a href="#" id="installLink">📲 איך מוסיפים את האפליקציה למסך הבית?</a>`);
 }
 const STEPS=[
  {k:"first",e:"👋",q:"היי! איך קוראים לך?",sub:"שם פרטי ושם משפחה, כדי שהמערכת תדע למי היא שייכת",type:"name"},
  {k:"email",e:"📬",q:"רוצה לחבר אימייל?",sub:"לא חובה. אפשר גם לדלג ולהוסיף מתי שתרצה מתוך הפרופיל",type:"email"},
+ {k:"mashov",e:"📊",q:"לחבר את משוב?",sub:"לא חובה. כך תראה כאן את החיסורים והציונים שלך. אפשר לחבר מתי שתרצה מהפרופיל",type:"mashov"},
  {k:"cls",e:"🏫",q:"באיזו כיתה אתה?",sub:"",opts:[["y1","י'1","הרב שחר שאלתיאל","📘"],["y2","י'2","הרב אלישיב יהב יפרח","📗"]]},
  {k:"eng",e:"🇬🇧",q:"כמה יחידות אנגלית?",sub:"בוחרים לפי המורה",opts:[["bokobza","3–4 יחידות","מיקי בוקובזה","🥉"],["minervi","4 יחידות","יהודית מינרבי","🥈"],["hadad","5 יחידות","אתי חדד","🥇"]]},
  {k:"math",e:"📐",q:"וכמה יחידות מתמטיקה?",sub:"",opts:[["toni","4 יחידות","טוני כהן","🧮"],["adir","5 יחידות","אדיר חניה","🚀"],["harel","ההקבצה של הראל פרלמן","","📏"]]},
  {k:"major",e:"🎓",q:"באיזו מגמה אתה?",sub:"ביום חמישי 13:45–16:15 תראה רק את המגמה שלך",opts:[["econ",MAJORS.econ.n,MAJORS.econ.w,"📊"],["cs",MAJORS.cs.n,MAJORS.cs.w,"💻"],["phys",MAJORS.phys.n,MAJORS.phys.w,"⚡"]]},
 ];
-let wzStep=0,wzData={},wzEditing=false;
+let wzStep=0,wzData={},wzEditing=false,wzMashovSubmit=null,wzBusy=false;
 function openOnb(editing){
   wzEditing=editing;wzData=Object.assign({},profile||{});
   // משתמש קיים שחסר לו רק פרט אחד (למשל מגמה) מתחיל ישר מהשאלה החסרה
@@ -490,17 +505,27 @@ function drawStep(){
   const body=document.getElementById("wzBody");
   if(st.type==="name"){
     body.innerHTML=`<input class="wz-in" id="wzFirst" placeholder="שם פרטי" autocomplete="given-name" value="${wzData.first||""}"><input class="wz-in" id="wzLast" placeholder="שם משפחה" autocomplete="family-name" value="${wzData.last||""}">`;
-    setTimeout(()=>wzFirst.focus(),50);
+    setTimeout(()=>{const f=document.getElementById("wzFirst");if(f)f.focus()},50);
   }else if(st.type==="email"){
     body.innerHTML=`<input class="wz-in" id="wzEmail" type="email" dir="ltr" placeholder="you@gmail.com" autocomplete="email" value="${wzData.email||""}"><button type="button" class="wz-opt" id="wzSkip" style="margin-top:10px;justify-content:center"><span class="ic">⏭️</span><span>לא עכשיו, אולי בהמשך</span></button>`;
     document.getElementById("wzSkip").onclick=()=>{wzData.email="";wzStep++;drawStep()};
+  }else if(st.type==="mashov"){
+    if(Mashov.connected()){
+      const c=Mashov.conn();
+      body.innerHTML=`<div class="wz-opt sel" style="justify-content:center;cursor:default"><span class="ic">✅</span><span>מחובר ל${c.schoolName}<small>אפשר לנתק מתוך הפרופיל</small></span></div>`;
+      wzMashovSubmit=null;
+    }else{
+      body.innerHTML=Mashov.formHTML()+`<button type="button" class="wz-opt" id="wzMsSkip" style="margin-top:10px;justify-content:center"><span class="ic">⏭️</span><span>לא עכשיו, אולי בהמשך</span></button>`;
+      wzMashovSubmit=Mashov.wireForm(body);
+      document.getElementById("wzMsSkip").onclick=()=>{wzStep++;drawStep()};
+    }
   }else{
     body.innerHTML=`<div class="wz-opts">${st.opts.map(o=>`<button type="button" class="wz-opt ${wzData[st.k]===o[0]?"sel":""}" data-v="${o[0]}"><span class="ic">${o[3]}</span><span>${o[1]}${o[2]?`<small>${o[2]}</small>`:""}</span></button>`).join("")}</div>`;
     body.querySelectorAll(".wz-opt").forEach(b=>b.onclick=()=>{wzData[st.k]=b.dataset.v;body.querySelectorAll(".wz-opt").forEach(x=>x.classList.toggle("sel",x===b));setTimeout(next,180)});
   }
   document.getElementById("wzBack").style.visibility=(wzStep===0&&!wzEditing)?"hidden":"visible";
   document.getElementById("wzBack").textContent=wzStep===0?"ביטול":"חזרה";
-  document.getElementById("wzNext").textContent=wzStep===STEPS.length-1?"סיימנו 🎉":(st.type==="email"?"חבר אימייל":"הבא");
+  document.getElementById("wzNext").textContent=wzStep===STEPS.length-1?"סיימנו 🎉":(st.type==="email"?"חבר אימייל":st.type==="mashov"&&!Mashov.connected()?"חבר משוב":"הבא");
   document.getElementById("wzNext").style.display=st.opts?"none":"";
 }
 function next(){
@@ -512,6 +537,14 @@ function next(){
   if(st.type==="email"){
     wzData.email=wzEmail.value.trim();
     if(wzData.email&&!/^\S+@\S+\.\S+$/.test(wzData.email)){wzEmail.focus();wzEmail.style.borderColor="#ff6b6b";return}
+  }
+  if(st.type==="mashov"&&wzMashovSubmit){
+    const u=document.getElementById("msUser").value.trim(),pw=document.getElementById("msPass").value;
+    if(u||pw){ // מילא פרטים: מנסים להתחבר, ומתקדמים רק בהצלחה
+      if(wzBusy)return; wzBusy=true; const btn=document.getElementById("wzNext"); btn.disabled=true;
+      wzMashovSubmit().then(ok=>{wzBusy=false;btn.disabled=false;if(ok){wzStep<STEPS.length-1?(wzStep++,drawStep()):finishWiz()}});
+      return;
+    }
   }
   if(st.opts&&!wzData[st.k])return;
   if(wzStep<STEPS.length-1){wzStep++;drawStep();return}
@@ -567,7 +600,37 @@ function runBuild(){
 document.getElementById("wzNext").onclick=next;
 document.getElementById("wzBack").onclick=()=>{if(wzStep===0){if(wzEditing)document.getElementById("wiz").hidden=true;return}wzStep--;drawStep()};
 document.getElementById("wiz").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();next()}});
-document.getElementById("hSub").onclick=()=>openOnb(true);
+document.getElementById("hSub").onclick=()=>openProfile();
+
+// ---- פרופיל: עריכת פרטים, אימייל ומשוב (חיבור וניתוק בכל רגע) ----
+const escH=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+function saveProfile(){try{localStorage.setItem("profile",JSON.stringify(profile))}catch(e){}}
+function openProfile(){if(!profile||!profile.major)return openOnb(!!profile);renderProfile();document.getElementById("profDlg").showModal()}
+function renderProfile(){
+  const b=document.getElementById("profBody"),c=CLASSES[profile.cls],mj=MAJORS[profile.major],mc=Mashov.conn();
+  b.innerHTML=`
+  <div class="pf-row"><h4>${escH(profile.first)} ${escH(profile.last)}</h4>
+    <div class="pf-sub">כיתה ${c.label} · אנגלית: ${ENG[profile.eng]||"—"} · מתמטיקה: ${MATH[profile.math]||"—"} · מגמה: ${mj?mj.n:"—"}</div>
+    <div class="pf-acts"><button type="button" class="ghost" id="pfEdit">✎ עריכת פרטים</button></div></div>
+  <div class="pf-row"><h4>📬 אימייל</h4>${profile.email
+    ?`<div class="pf-sub" dir="ltr" style="text-align:end">${escH(profile.email)}</div><div class="pf-acts"><button type="button" class="ghost" id="pfMailOff">נתק אימייל</button></div>`
+    :`<div class="pf-sub">לא מחובר.</div><div class="pf-acts"><input class="inp" id="pfMail" type="email" dir="ltr" placeholder="you@gmail.com"><button type="button" class="primary" id="pfMailOn">חבר</button></div><div class="pf-msg" id="pfMailMsg"></div>`}</div>
+  <div class="pf-row"><h4>📊 משוב</h4>${mc
+    ?`<div class="pf-sub">מחובר ל${escH(mc.schoolName)} כ-<span dir="ltr">${escH(mc.username)}</span> · ${Mashov.agoText()}${Mashov.remembers()?"":" · הסיסמה לא שמורה בטלפון"}</div>
+      <div class="pf-acts">${Mashov.remembers()?"":`<input class="inp" id="pfMsPw" type="password" dir="ltr" placeholder="סיסמה של משוב">`}<button type="button" class="primary" id="pfMsRefresh">רענן עכשיו</button><button type="button" class="ghost" id="pfMsOff">נתק משוב</button></div><div class="pf-msg" id="pfMsMsg"></div>`
+    :`<div class="pf-sub">לא מחובר. חיבור מאפשר לראות כאן חיסורים וציונים.</div><div id="pfMsForm" style="margin-top:8px"></div><div class="pf-acts"><button type="button" class="primary" id="pfMsOn">חבר משוב</button></div>`}</div>`;
+  const $=id=>document.getElementById(id);
+  $("pfEdit").onclick=()=>{$("profDlg").close();openOnb(true)};
+  if($("pfMailOff"))$("pfMailOff").onclick=()=>{profile.email="";saveProfile();renderProfile()};
+  if($("pfMailOn"))$("pfMailOn").onclick=()=>{const v=$("pfMail").value.trim();if(!/^\S+@\S+\.\S+$/.test(v)){$("pfMailMsg").textContent="האימייל לא תקין.";return}profile.email=v;saveProfile();renderProfile()};
+  if($("pfMsOff"))$("pfMsOff").onclick=()=>{if(confirm("לנתק את משוב? הנתונים שנמשכו יימחקו מהטלפון."))Mashov.disconnect(),renderProfile()};
+  if($("pfMsRefresh"))$("pfMsRefresh").onclick=async e=>{e.target.disabled=true;$("pfMsMsg").textContent="מרענן…";const r=await Mashov.refresh($("pfMsPw")?$("pfMsPw").value:undefined);e.target.disabled=false;if(r.ok)renderProfile();else $("pfMsMsg").textContent=Mashov.message(r.error)};
+  if($("pfMsOn")){let submit=null;$("pfMsOn").onclick=async e=>{
+    if(!submit){$("pfMsForm").innerHTML=Mashov.formHTML();submit=Mashov.wireForm($("pfMsForm"));e.target.textContent="התחבר";return}
+    e.target.disabled=true;const ok=await submit();e.target.disabled=false;if(ok)renderProfile();
+  }}
+  b.querySelectorAll("input").forEach(i=>i.addEventListener("keydown",ev=>{if(ev.key==="Enter")ev.preventDefault()}));
+}
 applyProfile();
 const incomplete=!profile||!profile.eng||!profile.math||!profile.major;
 if(incomplete)setTimeout(()=>openOnb(!!profile),150);
@@ -575,6 +638,8 @@ function toast(t,m){const el=document.createElement("div");el.className="toast";
 
 render();renderBoard();
 setInterval(()=>{render();renderBoard()},30000);
+Mashov.autoRefresh().catch(()=>{});
+document.addEventListener("mashov-updated",()=>{render()});
 
 // ---- עבודה בלי אינטרנט ----
 if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost"))navigator.serviceWorker.register("sw.js").catch(()=>{});

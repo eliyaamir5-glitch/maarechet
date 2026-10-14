@@ -1,0 +1,75 @@
+// בדיקת פונקציית משוב מול שרת משוב מדומה (לא נוגע במשוב האמיתי ולא בחשבון אמיתי).
+//   node scripts/test-mashov-function.mjs
+import http from "node:http";
+
+const GUID = "11111111-2222-3333-4444-555555555555";
+let lastAuthHeaders = null, loginBody = null, logoutCalled = false;
+const server = http.createServer((req, res) => {
+  let body = "";
+  req.on("data", c => body += c);
+  req.on("end", () => {
+    const send = (code, obj, headers = {}) => { res.writeHead(code, { "Content-Type": "application/json", ...headers }); res.end(JSON.stringify(obj)); };
+    if (req.url === "/api/login" && req.method === "POST") {
+      loginBody = JSON.parse(body);
+      if (loginBody.username === "good" && loginBody.password === "pw") {
+        res.setHeader("Set-Cookie", ["MashovAuthToken=abc123; Path=/; HttpOnly", "uniquId=u-1; Path=/"]);
+        return send(200, { credential: { userId: GUID }, accessToken: { displayName: "ישראל ישראלי" } }, { "x-csrf-token": "tok-1" });
+      }
+      return send(401, { message: "bad" });
+    }
+    if (req.url === "/api/logout") { logoutCalled = true; return send(200, {}); }
+    const m = req.url.match(/^\/api\/students\/([^/]+)\/(\w+)$/);
+    if (m) {
+      lastAuthHeaders = { csrf: req.headers["x-csrf-token"], cookie: req.headers["cookie"] };
+      if (m[1] !== GUID || req.headers["x-csrf-token"] !== "tok-1" || !String(req.headers.cookie).includes("MashovAuthToken=abc123")) return send(401, {});
+      const data = {
+        behave: [
+          { lessonDate: "2026-09-14T00:00:00", lesson: 1, subject: "גמרא", groupId: 5, achvaName: "חיסור", justificationId: 0, justification: "", extraField: "should be dropped" },
+          { lessonDate: "2026-09-15T00:00:00", lesson: 3, subject: "אנגלית", groupId: 7, achvaName: "חיסור", justificationId: 4, justification: "מחלה" },
+        ],
+        grades: [{ eventDate: "2026-09-20T00:00:00", subjectName: "מתמטיקה", gradingEvent: "בוחן", grade: 92, teacherName: "אדיר חניה", groupId: 9 }],
+        groups: [{ groupId: 5, groupName: "גמרא י1", subjectName: "גמרא", teacherName: "הרב שחר" }],
+        lessonsCount: [{ groupId: 5, lessonCount: 20, weeklyHours: 6 }],
+      }[m[2]];
+      return data ? send(200, data) : send(404, {});
+    }
+    send(404, {});
+  });
+});
+await new Promise(r => server.listen(8899, r));
+process.env.MASHOV_BASE = "http://localhost:8899/api";
+const { default: handler } = await import("../netlify/functions/mashov.mjs");
+
+const call = (body, origin = "https://eliyaamir5-glitch.github.io", method = "POST") =>
+  handler(new Request("http://localhost/api/mashov", { method, headers: { "Content-Type": "application/json", origin }, body: method === "POST" ? JSON.stringify(body) : undefined }));
+const ok = (name, cond, extra = "") => { console.log(cond ? "✅" : "❌", name, extra); if (!cond) process.exitCode = 1; };
+
+const r1 = await call({ username: "good", password: "pw", semel: 144758, year: 2027 });
+const j1 = await r1.json();
+ok("good login returns data", r1.status === 200 && j1.ok && j1.behave.length === 2 && j1.grades[0].grade === 92, JSON.stringify(j1).slice(0, 120));
+ok("student name extracted", j1.student?.name === "ישראל ישראלי");
+ok("behave slimmed (extra fields dropped, date cut)", j1.behave[0].date === "2026-09-14" && !("extraField" in j1.behave[0]) && j1.behave[1].justification === "מחלה");
+ok("csrf token and cookies forwarded", lastAuthHeaders.csrf === "tok-1" && lastAuthHeaders.cookie.includes("MashovAuthToken=abc123") && lastAuthHeaders.cookie.includes("uniquId=u-1"));
+ok("login body has semel/year/username as numbers/strings", loginBody.semel === 144758 && loginBody.year === 2027 && loginBody.username === "good");
+ok("logged out after fetching", logoutCalled);
+ok("no password in response", !JSON.stringify(j1).includes("pw\""));
+ok("CORS allowed for the GitHub Pages site", r1.headers.get("access-control-allow-origin") === "https://eliyaamir5-glitch.github.io");
+ok("never cached", r1.headers.get("cache-control") === "no-store");
+
+const r2 = await call({ username: "good", password: "wrong", semel: 144758, year: 2027 });
+ok("wrong password → bad_login", r2.status === 401 && (await r2.json()).error === "bad_login");
+const r3 = await call({ username: "good", password: "pw", semel: "abc", year: 2027 });
+ok("bad semel → bad_request", r3.status === 400 && (await r3.json()).error === "bad_request");
+const r4 = await call({ username: "good", password: "pw", semel: 144758, year: 2027 }, "https://evil.example.com");
+ok("unknown origin gets no CORS header", !r4.headers.get("access-control-allow-origin"));
+const r5 = await call(null, "https://eliyaamir5-glitch.github.io", "OPTIONS");
+ok("preflight answered", r5.status === 204);
+const r6 = await call(null, "https://eliyaamir5-glitch.github.io", "GET");
+ok("GET rejected", r6.status === 405);
+
+process.env.MASHOV_BASE = "http://localhost:1/api"; // שרת שלא קיים
+const { default: handler2 } = await import("../netlify/functions/mashov.mjs?down");
+const r7 = await handler2(new Request("http://localhost/api/mashov", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: "a", password: "b", semel: 144758, year: 2027 }) }));
+ok("mashov unreachable → mashov_down", r7.status === 502 && (await r7.json()).error === "mashov_down");
+
+server.close();
