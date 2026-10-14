@@ -1,16 +1,16 @@
-// מחולל קובצי היומן: מייצר את cal/<כיתה>-<אנגלית>-<מתמטיקה>-<פיזיקה>.ics
+// מחולל קובצי היומן: מייצר את cal/<כיתה>-<אנגלית>-<מתמטיקה>-<מגמה>.ics
+// (וגם את הקבצים הישנים <...>-yes/no.ics, כדי שמנויים שנרשמו לפני המעבר למגמות לא יישברו)
 // מאותם נתונים שהאפליקציה משתמשת בהם (data.js). רץ אוטומטית בפריסה לנטליפיי.
 //   node gen-cal.js            – יצירה
 //   node gen-cal.js --check    – רק בדיקה שהקבצים בתיקייה מעודכנים (יוצא עם שגיאה אם לא)
 const fs = require("fs");
 const path = require("path");
-const { ENG, MATH, DAYS_Y1, DAYS_Y2, CLASSES_META, DEFAULT_GEAR } = require("./data.js");
+const { ENG, MATH, DAYS_Y1, DAYS_Y2, CLASSES_META, DEFAULT_GEAR, MAJORS } = require("./data.js");
 const { BOARD } = require("./board.js");
 
 const OUT_DIR = path.join(__dirname, "cal");
 const WEEK_START = new Date(2026, 8, 13);      // ראשון 13.9.2026 – השבוע הראשון של המערכת
 const UNTIL = "20270620T235959Z";               // סוף שנת הלימודים
-const PHYS_TEACHER = "יבגני קלנר";
 const BYDAY = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
 // חותמת זמן אחת לכל ריצה. אפשר לקבע עם ICS_STAMP=20260916T080000Z
 const STAMP = process.env.ICS_STAMP || new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
@@ -22,13 +22,13 @@ const gearOf = n => (DEFAULT_GEAR[n] || "").split(/[,\n]/).map(x => x.trim()).fi
 function resolve(l, p) {
   if (l.key === "eng") return { ...l, w: ENG[p.eng] };
   if (l.key === "math") return { ...l, w: MATH[p.math] };
-  if (l.key === "phys") return p.phys === "yes" ? { ...l, n: "פיזיקה", w: PHYS_TEACHER } : null; // בלי פיזיקה – אין אירוע
+  if (l.key === "major") { const m = MAJORS[p.major]; return m ? { ...l, n: m.n, w: m.w } : null; } // בלי מגמה ידועה – אין אירוע
   return l;
 }
 
 function buildICS(p) {
   const days = p.cls === "y1" ? DAYS_Y1 : DAYS_Y2;
-  const combo = `${p.cls}-${p.eng}-${p.math}-${p.phys}`;
+  const combo = `${p.cls}-${p.eng}-${p.math}-${p.tag}`;
   const out = [
     "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//maarechet//HE", "CALSCALE:GREGORIAN",
     `X-WR-CALNAME:המערכת ${CLASSES_META[p.cls].label}`, "X-WR-TIMEZONE:Asia/Jerusalem",
@@ -92,14 +92,14 @@ let written = 0, stale = 0;
 for (const cls of Object.keys(CLASSES_META))
   for (const eng of Object.keys(ENG))
     for (const math of Object.keys(MATH))
-      for (const phys of ["yes", "no"]) {
-        const file = path.join(OUT_DIR, `${cls}-${eng}-${math}-${phys}.ics`);
-        const text = buildICS({ cls, eng, math, phys });
+      for (const [tag, major] of [...Object.keys(MAJORS).map(k => [k, k]), ["yes", "phys"], ["no", null]]) {
+        const file = path.join(OUT_DIR, `${cls}-${eng}-${math}-${tag}.ics`);
+        const text = buildICS({ cls, eng, math, major, tag });
         if (check) {
           const cur = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
           const strip = t => t.replace(/^DTSTAMP:.*$/gm, "");
           if (strip(cur) !== strip(text)) { stale++; console.error("stale:", path.basename(file)); }
         } else { fs.writeFileSync(file, text); written++; }
       }
-if (check) { console.log(stale ? `${stale} files out of date` : "all 36 calendar files up to date"); process.exit(stale ? 1 : 0); }
+if (check) { console.log(stale ? `${stale} files out of date` : "all calendar files up to date"); process.exit(stale ? 1 : 0); }
 console.log(`wrote ${written} calendar files to cal/`);

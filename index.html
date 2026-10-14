@@ -278,6 +278,8 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 const CLASSES={y1:{...CLASSES_META.y1,days:DAYS_Y1},y2:{...CLASSES_META.y2,days:DAYS_Y2}};
 let profile=null;
 try{profile=JSON.parse(localStorage.getItem("profile")||"null")}catch(e){profile=null}
+// מעבר מהשאלה הישנה (פיזיקה כן/לא) לבחירת מגמה
+if(profile&&!profile.major&&profile.phys==="yes"){profile.major="phys";try{localStorage.setItem("profile",JSON.stringify(profile))}catch(e){}}
 let DAYS=CLASSES[(profile&&profile.cls)||"y2"].days;
 let gear={};
 try{gear=Object.assign({},DEFAULT_GEAR,JSON.parse(localStorage.getItem("gear")||"{}"))}catch(e){gear=Object.assign({},DEFAULT_GEAR)}
@@ -292,10 +294,10 @@ function resolve(l){
   const p=profile||{};
   if(l.key==="eng")return {...l,w:ENG[p.eng]||"מיקי בוקובזה / יהודית מינרבי / אתי חדד"};
   if(l.key==="math")return {...l,w:MATH[p.math]||"טוני כהן / הראל פרלמן / אדיר חניה"};
-  if(l.key==="phys"){
-    if(p.phys==="yes")return {...l,n:"פיזיקה",w:"יבגני קלנר"};
-    if(p.phys==="no")return {...l,n:"קבוצת פיזיקה עכשיו בפיזיקה בנתיבות 🧲",w:"אתה חופשי. תנוח, תשתה משהו, תחייך.",joke:true};
-    return {...l,w:"מנהל וכלכלה / מדעי המחשב / פיזיקה"};
+  if(l.key==="major"){
+    const m=MAJORS[p.major];
+    if(m)return {...l,n:m.n,w:m.w};
+    return {...l,w:Object.values(MAJORS).map(x=>x.n).join(" / ")};
   }
   return l;
 }
@@ -469,11 +471,14 @@ const STEPS=[
  {k:"cls",e:"🏫",q:"באיזו כיתה אתה?",sub:"",opts:[["y1","י'1","הרב שחר שאלתיאל","📘"],["y2","י'2","הרב אלישיב יהב יפרח","📗"]]},
  {k:"eng",e:"🇬🇧",q:"כמה יחידות אנגלית?",sub:"בוחרים לפי המורה",opts:[["bokobza","3–4 יחידות","מיקי בוקובזה","🥉"],["minervi","4 יחידות","יהודית מינרבי","🥈"],["hadad","5 יחידות","אתי חדד","🥇"]]},
  {k:"math",e:"📐",q:"וכמה יחידות מתמטיקה?",sub:"",opts:[["toni","4 יחידות","טוני כהן","🧮"],["adir","5 יחידות","אדיר חניה","🚀"],["harel","ההקבצה של הראל פרלמן","","📏"]]},
- {k:"phys",e:"🧲",q:"אתה במגמת פיזיקה?",sub:"אם לא – לא תראה אותה במערכת",opts:[["yes","כן, אני בפיזיקה","","⚡"],["no","לא, ברוך השם","","😎"]]},
+ {k:"major",e:"🎓",q:"באיזו מגמה אתה?",sub:"ביום חמישי 13:45–16:15 תראה רק את המגמה שלך",opts:[["econ",MAJORS.econ.n,MAJORS.econ.w,"📊"],["cs",MAJORS.cs.n,MAJORS.cs.w,"💻"],["phys",MAJORS.phys.n,MAJORS.phys.w,"⚡"]]},
 ];
 let wzStep=0,wzData={},wzEditing=false;
 function openOnb(editing){
-  wzEditing=editing;wzData=Object.assign({},profile||{});wzStep=0;
+  wzEditing=editing;wzData=Object.assign({},profile||{});
+  // משתמש קיים שחסר לו רק פרט אחד (למשל מגמה) מתחיל ישר מהשאלה החסרה
+  const miss=STEPS.findIndex(s=>s.opts&&!wzData[s.k]);
+  wzStep=editing&&wzData.first&&miss>0?miss:0;
   document.getElementById("wiz").hidden=false;drawStep();
 }
 function drawStep(){
@@ -514,7 +519,7 @@ function next(){
 }
 function finishWiz(){
   const isNew=!profile||!profile.since;
-  profile={first:wzData.first,last:wzData.last,email:wzData.email||"",cls:wzData.cls,eng:wzData.eng,math:wzData.math,phys:wzData.phys,since:profile&&profile.since?profile.since:new Date().toISOString()};
+  profile={first:wzData.first,last:wzData.last,email:wzData.email||"",cls:wzData.cls,eng:wzData.eng,math:wzData.math,major:wzData.major,since:profile&&profile.since?profile.since:new Date().toISOString()};
   try{localStorage.setItem("profile",JSON.stringify(profile))}catch(e){}
   document.getElementById("wiz").hidden=true;
   if(isNew){notifySignup();runBuild()}else{applyProfile();render()}
@@ -534,7 +539,7 @@ function runBuild(){
     `מושך את המערכת של כיתה ${c.label} מ${c.rav}…`,
     `מסדר אנגלית עם ${ENG[profile.eng]}…`,
     `מכוון מתמטיקה ל${MATH[profile.math]}…`,
-    profile.phys==="yes"?"מוסיף פיזיקה עם יבגני קלנר ⚡":"מוציא את הפיזיקה מהמערכת… שיהיה להם בכיף 😎",
+    `מוסיף את מגמת ${MAJORS[profile.major].n}${MAJORS[profile.major].w?" עם "+MAJORS[profile.major].w:""} 🎓`,
     "מחשב הפסקות, מנחה וערבית…",
     "מצחצח את העיצוב ✨"
   ];
@@ -564,7 +569,7 @@ document.getElementById("wzBack").onclick=()=>{if(wzStep===0){if(wzEditing)docum
 document.getElementById("wiz").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();next()}});
 document.getElementById("hSub").onclick=()=>openOnb(true);
 applyProfile();
-const incomplete=!profile||!profile.eng||!profile.math||!profile.phys;
+const incomplete=!profile||!profile.eng||!profile.math||!profile.major;
 if(incomplete)setTimeout(()=>openOnb(!!profile),150);
 function toast(t,m){const el=document.createElement("div");el.className="toast";el.innerHTML=`<b>${t}</b>${m}`;document.body.appendChild(el);el.onclick=()=>el.remove();setTimeout(()=>el.remove(),9000)}
 
@@ -577,7 +582,7 @@ if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostnam
 // ---- הוספה ליומן (קובץ ICS) ----
 const BYDAY=["SU","MO","TU","WE","TH","FR","SA"];
 const HOSTED=/^https?:$/.test(location.protocol)&&!/claude\.ai$/.test(location.hostname);
-function webcalUrl(){const p=profile||{};if(!p.cls||!p.eng||!p.math||!p.phys)return null;return `webcal://${location.host}${location.pathname.replace(/[^/]*$/,"")}cal/${p.cls}-${p.eng}-${p.math}-${p.phys}.ics`}
+function webcalUrl(){const p=profile||{};if(!p.cls||!p.eng||!p.math||!p.major)return null;return `webcal://${location.host}${location.pathname.replace(/[^/]*$/,"")}cal/${p.cls}-${p.eng}-${p.math}-${p.major}.ics`}
 document.getElementById("calBtn").onclick=()=>{
   if(HOSTED){
     const u=webcalUrl(); if(!u)return openOnb(true);

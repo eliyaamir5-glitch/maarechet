@@ -133,8 +133,9 @@ function lessonAt(cls,dateIso,time){
   if(!d||!d.lessons)return null;
   const m=toMin(time);
   const p=profile||{};
-  const teacher=l=>l.key==="eng"?(ENG[p.eng]||"המורה לאנגלית"):l.key==="math"?(MATH[p.math]||"המורה למתמטיקה"):l.key==="phys"?(p.phys==="yes"?PHYS_TEACHER:"המורה במגמה"):l.w;
-  const name=l=>l.key==="phys"&&p.phys==="yes"?"פיזיקה":l.n;
+  const mj=MAJORS[p.major||(p.phys==="yes"?"phys":"")];
+  const teacher=l=>l.key==="eng"?(ENG[p.eng]||"המורה לאנגלית"):l.key==="math"?(MATH[p.math]||"המורה למתמטיקה"):l.key==="major"?((mj&&mj.w)||"המורה במגמה"):l.w;
+  const name=l=>l.key==="major"&&mj?mj.n:l.n;
   let cur=d.lessons.find(l=>m>=toMin(l.s)&&m<toMin(l.e));
   if(cur)return {n:name(cur),w:teacher(cur),s:cur.s,e:cur.e,kind:"during"};
   const nxt=d.lessons.find(l=>toMin(l.s)>m);

@@ -1,5 +1,5 @@
 // נתוני המערכת – מקור אחד לאפליקציה (index.html) ולמחולל היומנים (gen-cal.js)
-// עריכה כאן מעדכנת גם את המסך וגם את 36 קובצי ה-ics בפריסה הבאה.
+// עריכה כאן מעדכנת גם את המסך וגם את קובצי ה-ics בפריסה הבאה.
 const P=(s,e,n,w)=>({s,e,n,w:w||""});
 const SHACHARIT=P("07:15","08:55","תפילת שחרית","");
 const MINCHA=P("13:30","13:45","תפילת מנחה","");
@@ -8,7 +8,13 @@ const ENG={bokobza:"מיקי בוקובזה (3–4 יח')",minervi:"יהודית
 const MATH={toni:"טוני כהן (4 יח')",adir:"אדיר חניה (5 יח')",harel:"הראל פרלמן"};
 const E=(s,e)=>({s,e,n:"אנגלית",w:"",key:"eng"});
 const M=(s,e)=>({s,e,n:"מתמטיקה",w:"",key:"math"});
-const MEGAMA=(s,e)=>({s,e,n:"מגמה",w:"",key:"phys"});
+const MEGAMA=(s,e)=>({s,e,n:"מגמה",w:"",key:"major"});
+// שלוש המגמות שלומדות במקביל ביום חמישי 13:45–16:15. w = שם המורה (ריק = עוד לא ידוע, מוצג רק שם המגמה)
+const MAJORS={
+ econ:{n:"מנהל וכלכלה",w:""},
+ cs:{n:"מדעי המחשב",w:""},
+ phys:{n:"פיזיקה",w:"יבגני קלנר"}
+};
 const DAYS_Y2=[
  {name:"ראשון",short:"א'",lessons:[
   P("10:30","11:15","גמרא","הרב אלישיב יהב יפרח"),
@@ -138,4 +144,4 @@ const DEFAULT_GEAR={
  "השכלה כללית – חברה":"","השכלה כללית – מורשת":"","חינוך תעבורתי (זהב)":"","לאורו נלך – התנדבות":""
 };
 
-if(typeof module!=="undefined"&&module.exports){module.exports={P,SHACHARIT,MINCHA,ARVIT,ENG,MATH,DAYS_Y1,DAYS_Y2,CLASSES_META,DEFAULT_GEAR,NOTIFY_KEY};}
+if(typeof module!=="undefined"&&module.exports){module.exports={P,SHACHARIT,MINCHA,ARVIT,ENG,MATH,DAYS_Y1,DAYS_Y2,CLASSES_META,DEFAULT_GEAR,NOTIFY_KEY,MAJORS};}
