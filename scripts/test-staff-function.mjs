@@ -4,8 +4,8 @@ const mod = await import("../netlify/functions/staff.mjs");
 const raw = mod.__useMemoryStore();
 const handler = mod.default;
 const crypto = await import("node:crypto");
-const INVITE = "test-invite-key-123";
-mod.__setInviteHash(crypto.createHash("sha256").update(INVITE).digest("hex"));
+const INVITE = "ABCD-EFGH-JKLM";
+mod.__setInviteHash(crypto.createHash("sha256").update("ABCDEFGHJKLM").digest("hex"));
 const ok = (name, cond, extra = "") => { console.log(cond ? "✅" : "❌", name, extra); if (!cond) process.exitCode = 1; };
 const ORIGIN = "https://eliyaamir5-glitch.github.io";
 async function call(path, { method = "POST", body, token, ip = "1.1.1.1", origin = ORIGIN } = {}) {
@@ -129,11 +129,36 @@ r = await call("/api/staff", { body: { action: "resetUser", id: ownerId }, token
 ok("…or reset his code", r.status === 403);
 
 // קישור חדש = איפוס קוד המנהל, המורים נשארים
-const INVITE2 = "second-invite-456";
-mod.__setInviteHash(crypto.createHash("sha256").update(INVITE2).digest("hex"));
+const INVITE2 = "WXYZ-2345-6789";
+mod.__setInviteHash(crypto.createHash("sha256").update("WXYZ23456789").digest("hex"));
 r = await call("/api/staff", { body: { action: "setup", name: "הרב המנהל", code: "new-admin-code", invite: INVITE2 }, ip: "6.6.6.6" });
 ok("a new invite resets the principal's code", r.status === 200 && r.json.user.id === ownerId);
 r = await call("/api/staff", { body: { action: "login", code: "admin-secret-1" }, ip: "6.6.6.6" });
 ok("the old principal code stops working", r.status === 401);
 r = await call("/api/staff", { body: { action: "users" }, token: viceToken });
 ok("teachers and other admins are kept", r.json.users.some(u => u.id === uri.id) && r.json.users.some(u => u.id === vice.id));
+
+// קוד ההזמנה כקוד כניסה: כניסה ראשונה יוצרת את המנהל, ואז אפשר לשנות קוד ושם
+const INVITE3 = "QRST-UVWX-YZ23";
+mod.__setInviteHash(crypto.createHash("sha256").update("QRSTUVWXYZ23").digest("hex"));
+r = await call("/api/staff", { body: { action: "login", code: "qrst uvwx yz23" }, ip: "7.7.7.7" });
+const t3 = r.json.token;
+ok("typing the principal code (any case/spaces) signs him in as the main principal", r.status === 200 && r.json.first === true && r.json.user.id === ownerId && r.json.user.owner);
+r = await call("/api/staff", { body: { action: "login", code: INVITE3 }, ip: "7.7.7.7" });
+ok("the same code keeps working afterwards", r.status === 200 && !r.json.first && r.json.user.id === ownerId);
+r = await call("/api/staff", { body: { action: "updateMe", name: "הרב יוסף", code: "my-own-code" }, token: t3 });
+ok("he changes his name and code", r.status === 200 && r.json.user.name === "הרב יוסף");
+r = await call("/api/staff", { body: { action: "login", code: INVITE3 }, ip: "7.7.7.7" });
+ok("after changing, the original code stops working", r.status === 401);
+r = await call("/api/staff", { body: { action: "login", code: "my-own-code" }, ip: "8.8.8.8" });
+ok("the new code works", r.status === 200 && r.json.user.name === "הרב יוסף");
+r = await call("/api/staff", { body: { action: "updateMe", code: "123" }, token: t3 });
+ok("a too-short code is refused", r.status === 400);
+
+// מאפס: התקנה חדשה, הקוד הראשון יוצר את המנהל
+const fresh = await import("../netlify/functions/staff.mjs?fresh=1");
+fresh.__useMemoryStore();
+fresh.__setInviteHash(crypto.createHash("sha256").update("ABCDEFGHJKLM").digest("hex"));
+const res = await fresh.default(new Request("http://localhost/api/staff", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "login", code: "ABCD-EFGH-JKLM" }) }), { ip: "9.1.1.1" });
+const j = await res.json();
+ok("on a fresh install the principal code creates the account", res.status === 200 && j.user.role === "admin" && j.user.name === "המנהל");

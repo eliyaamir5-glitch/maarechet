@@ -4,10 +4,11 @@
 // GET  /api/updates                 → { ok, updates:[פעילים בלבד] }            (ציבורי, לאפליקציה)
 // POST /api/updates {seen:[ids]}    → ספירת צפיות אנונימית (כמה תלמידים ראו)
 // GET  /api/staff                   → { ok, needsSetup }                      (האם כבר הוגדר מנהל)
-// POST /api/staff {action, ...}     → check_invite | setup | login | me | post | end | extend | delete | list | users | addUser | resetUser | removeUser
+// POST /api/staff {action, ...}     → check_invite | setup | login | me | updateMe | post | end | extend | delete | list | users | addUser | resetUser | removeUser
 //
-// הגדרת המנהל: רק עם קישור ההזמנה האישי (staff.html#invite=...). כאן נשמר רק ה-hash של המפתח שבקישור,
-// אז גם כשהקוד ציבורי אי אפשר לנחש אותו. קישור חדש (scripts/make-invite.mjs) מאפשר למנהל לאפס את הקוד שלו.
+// כניסת המנהל: קוד ההזמנה האישי (נוצר ע"י scripts/make-invite.mjs ונשלח למנהל, גם כקישור staff.html#invite=...).
+// בכניסה הראשונה עם הקוד נוצר חשבון המנהל הראשי, והקוד הזה הוא הקוד שלו (אפשר לשנות ב"החשבון שלי").
+// כאן נשמר רק ה-hash של הקוד, אז גם כשהקוד ציבורי אי אפשר לנחש אותו. קוד הזמנה חדש מאפס את המנהל הראשי.
 //
 // אבטחה: קודי כניסה נשמרים רק כ-hash (scrypt). אחרי כניסה מקבלים טוקן חתום (HMAC) לשבוע.
 // הגבלת ניסיונות כניסה לפי כתובת. תוכן העדכונים הוא טקסט בלבד, והאפליקציה מציגה אותו כטקסט (לא HTML).
@@ -19,9 +20,11 @@ const ALLOWED = [/^https:\/\/eliyaamir5-glitch\.github\.io$/, /^https:\/\/[a-z0-
 const MAX_TEXT = 600, MAX_NAME = 40, TOKEN_DAYS = 7, MAX_DURATION_MIN = 60 * 24 * 30;
 const AUDIENCES = ["all", "y1", "y2"];
 // sha256 של מפתח ההזמנה למנהל. נוצר ע"י: node scripts/make-invite.mjs
-let INVITE_HASH = "0f017b40e5a91b4ce3087c51a09389f20968292fdb65e92eab80af18c78f4ef0";
+let INVITE_HASH = "3cfc136db2d1d5b4403c8de0b99eaa57623b01b6eaa1b1110e191d4f63f9d20d";
 export function __setInviteHash(h) { INVITE_HASH = h; }
 const sha = s => crypto.createHash("sha256").update(String(s)).digest("hex");
+const norm = c => String(c || "").replace(/[\s-]/g, "").toUpperCase(); // "abcd-efgh" = "ABCDEFGH"
+const isInvite = c => !!INVITE_HASH && !!norm(c) && safeEq(sha(norm(c)), INVITE_HASH);
 
 // ---- אחסון: Netlify Blobs בייצור, מפה בזיכרון בבדיקות ----
 let memStore = null;
@@ -55,6 +58,23 @@ function sign(payload, secret) {
   const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
   const mac = crypto.createHmac("sha256", secret).update(body).digest("base64url");
   return `${body}.${mac}`;
+}
+// יצירת המנהל הראשי (או איפוס שלו, אם כבר קיים) עם קוד ההזמנה הנוכחי
+async function claim(S, cfg, name, code) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  let users = await S.get("users") || [], admin;
+  const owner = cfg && (users.find(u => u.owner) || users.find(u => u.role === "admin"));
+  if (owner) { // קוד הזמנה חדש = איפוס של המנהל הראשי (המורים נשארים)
+    admin = { ...owner, name, salt, hash: hashCode(code, salt), owner: true };
+    users = users.map(u => u.id === owner.id ? admin : u);
+  } else {
+    admin = { id: newId(), name, role: "admin", owner: true, salt, hash: hashCode(code, salt), createdAt: Date.now() };
+    users = [...users, admin];
+  }
+  const conf = { ...(cfg || { secret: crypto.randomBytes(32).toString("hex"), createdAt: Date.now() }), inviteUsed: INVITE_HASH };
+  await S.set("config", conf);
+  await S.set("users", users);
+  return { conf, admin };
 }
 function verify(token, secret) {
   const [body, mac] = String(token || "").split(".");
@@ -118,29 +138,25 @@ export default async (req, context) => {
 
   // ---- הגדרה ראשונה: רק אם עוד אין מנהל ----
   if (action === "check_invite") {
-    const valid = !!INVITE_HASH && safeEq(sha(body.invite || ""), INVITE_HASH);
+    const valid = isInvite(body.invite);
     return reply(200, { ok: true, valid, used: valid && !!cfg && cfg.inviteUsed === INVITE_HASH, hasAdmin: !!cfg }, headers);
   }
   if (action === "setup") {
     if (await tooManyFailures(S, ip)) return reply(429, { ok: false, error: "locked" }, headers);
-    if (!INVITE_HASH || !safeEq(sha(body.invite || ""), INVITE_HASH)) { await recordFailure(S, ip); return reply(403, { ok: false, error: "bad_invite" }, headers); }
+    if (!isInvite(body.invite)) { await recordFailure(S, ip); return reply(403, { ok: false, error: "bad_invite" }, headers); }
     if (cfg && cfg.inviteUsed === INVITE_HASH) return reply(409, { ok: false, error: "invite_used" }, headers);
     const name = clean(body.name, MAX_NAME), code = String(body.code || "");
     if (!name || code.length < 6 || code.length > 64) return reply(400, { ok: false, error: "bad_request" }, headers);
-    const salt = crypto.randomBytes(16).toString("hex");
-    let users = await S.get("users") || [], admin;
-    const owner = cfg && (users.find(u => u.owner) || users.find(u => u.role === "admin"));
-    if (owner) { // קישור חדש = איפוס של המנהל הראשי (המורים נשארים)
-      admin = { ...owner, name, salt, hash: hashCode(code, salt), owner: true };
-      users = users.map(u => u.id === owner.id ? admin : u);
-    } else {
-      admin = { id: newId(), name, role: "admin", owner: true, salt, hash: hashCode(code, salt), createdAt: Date.now() };
-      users = [...users, admin];
-    }
-    const conf = { ...(cfg || { secret: crypto.randomBytes(32).toString("hex"), createdAt: Date.now() }), inviteUsed: INVITE_HASH };
-    await S.set("config", conf);
-    await S.set("users", users);
+    const { conf, admin } = await claim(S, cfg, name, code);
     return reply(200, { ok: true, token: sign({ uid: admin.id, exp: Date.now() + TOKEN_DAYS * 864e5 }, conf.secret), user: publicUser(admin) }, headers);
+  }
+  // כניסה ראשונה של המנהל עם קוד ההזמנה (מהקישור או בהקלדה): יוצר את החשבון שלו
+  if (action === "login" && isInvite(body.code) && !(cfg && cfg.inviteUsed === INVITE_HASH)) {
+    if (await tooManyFailures(S, ip)) return reply(429, { ok: false, error: "locked" }, headers);
+    const users = await S.get("users") || [];
+    const owner = users.find(u => u.owner);
+    const { conf, admin } = await claim(S, cfg, owner ? owner.name : "המנהל", norm(body.code));
+    return reply(200, { ok: true, first: true, token: sign({ uid: admin.id, exp: Date.now() + TOKEN_DAYS * 864e5 }, conf.secret), user: publicUser(admin) }, headers);
   }
   if (!cfg) return reply(409, { ok: false, error: "needs_setup" }, headers);
 
@@ -150,7 +166,8 @@ export default async (req, context) => {
     const code = String(body.code || "").trim();
     const users = await S.get("users") || [];
     // קודים של מורים הם באותיות גדולות, אז מקבלים גם הקלדה באותיות קטנות
-    const u = code && users.find(x => safeEq(hashCode(code, x.salt), x.hash) || (code.toUpperCase() !== code && safeEq(hashCode(code.toUpperCase(), x.salt), x.hash)));
+    const tries = [...new Set([code, code.toUpperCase(), norm(code)])].filter(Boolean);
+    const u = code && users.find(x => tries.some(c => safeEq(hashCode(c, x.salt), x.hash)));
     if (!u) { await recordFailure(S, ip); return reply(401, { ok: false, error: "bad_code" }, headers); }
     return reply(200, { ok: true, token: sign({ uid: u.id, exp: Date.now() + TOKEN_DAYS * 864e5 }, cfg.secret), user: publicUser(u) }, headers);
   }
@@ -163,6 +180,17 @@ export default async (req, context) => {
   const isAdmin = me.role === "admin";
 
   if (action === "me") return reply(200, { ok: true, user: publicUser(me) }, headers);
+
+  // "החשבון שלי": שינוי שם ו/או קוד כניסה (לכל אחד, על עצמו)
+  if (action === "updateMe") {
+    const name = body.name != null ? clean(body.name, MAX_NAME) : me.name;
+    const code = body.code != null ? String(body.code) : null;
+    if (!name || (code != null && (code.trim().length < 6 || code.length > 64))) return reply(400, { ok: false, error: "bad_request" }, headers);
+    let next = { ...me, name };
+    if (code != null) { const salt = crypto.randomBytes(16).toString("hex"); next = { ...next, salt, hash: hashCode(code.trim(), salt) }; }
+    await S.set("users", users.map(x => x.id === me.id ? next : x));
+    return reply(200, { ok: true, user: publicUser(next) }, headers);
+  }
 
   if (action === "post") {
     const text = clean(body.text, MAX_TEXT);

@@ -88,7 +88,7 @@ const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>
 const T={get:()=>{try{return localStorage.getItem("staffToken")}catch(e){return null}},set:v=>{try{v?localStorage.setItem("staffToken",v):localStorage.removeItem("staffToken")}catch(e){}}};
 const ERR={bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",bad_invite:"הקישור לא תקין.",invite_used:"הקישור הזה כבר שומש.",not_found:"לא נמצא.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
 const ROLE={admin:"מנהל",teacher:"מורה",staff:"צוות"};
-let me=null,tab="write";
+let me=null,tab="write",welcome=false;
 
 async function api(body){
   try{
@@ -109,11 +109,12 @@ if(INVITE||LINKCODE)history.replaceState(null,"",location.pathname+location.sear
 async function start(){
   const st=await api();
   if(!st.ok){$("main").innerHTML=`<div class="card"><h2>אין חיבור לשרת</h2><p class="hint">${esc(ERR.network)}</p><button class="btn" id="retry">נסה שוב</button></div>`;$("retry").onclick=start;return}
+  // קישור המנהל: הקוד שבקישור הוא קוד הכניסה שלו
   if(INVITE){
-    const c=await api({action:"check_invite",invite:INVITE});
-    if(c.ok&&c.valid&&!c.used)return showSetup(c.hasAdmin);
-    if(c.ok&&c.used&&!T.get())return showLogin("הקישור האישי כבר שומש. נכנסים עם הקוד שבחרת.");
-    if(c.ok&&!c.valid&&!T.get())return showLogin("הקישור לא תקין או שהוחלף בקישור חדש.");
+    const r=await api({action:"login",code:INVITE});
+    if(r.ok){T.set(r.token);me=r.user;welcome=!!r.first;return showHome()}
+    if(r.error==="locked")return showLogin(ERR.locked);
+    if(!T.get())return showLogin("הקוד שבקישור כבר לא בתוקף (אולי שינית אותו). נכנסים עם הקוד שלך.");
   }
   if(st.needsSetup)return showWaiting();
   if(LINKCODE){const r=await api({action:"login",code:LINKCODE});if(r.ok){T.set(r.token);me=r.user;return showHome()}}
@@ -121,41 +122,38 @@ async function start(){
   showLogin();
 }
 function showWaiting(){
-  $("main").innerHTML=`<div class="card"><h2>🔒 עוד לא הוגדר מנהל</h2><p class="hint">המנהל נכנס בפעם הראשונה רק דרך הקישור האישי שנשלח אליו. אחרי זה הוא מוסיף את המורים ושולח לכל אחד קוד.</p></div>`;
-}
-function showSetup(reset){
-  $("main").innerHTML=`<div class="card"><h2>${reset?"🔑 קוד חדש למנהל":"👋 ברוך הבא, המנהל"}</h2>
-    <p class="hint">${reset?"הקישור הזה מאפשר לבחור קוד כניסה חדש. המורים והעדכונים נשארים כמו שהם.":"זה הקישור האישי שלך. בוחרים שם וקוד כניסה, ומאז נכנסים עם הקוד. הקישור עובד פעם אחת בלבד."}</p>
-    <label>השם שיופיע על העדכונים</label><input id="sName" maxlength="40" placeholder="למשל: הרב כהן">
-    <label>קוד כניסה אישי (לפחות 6 תווים, כדאי לרשום בצד)</label><input id="sCode" type="password" dir="ltr" autocomplete="new-password">
-    <label>שוב, לאימות</label><input id="sCode2" type="password" dir="ltr" autocomplete="new-password">
-    <div class="row" style="margin-top:16px"><button class="btn" id="sGo" style="flex:1">${reset?"שמור קוד חדש":"כניסה כמנהל"}</button></div><div id="sMsg" hidden></div></div>`;
-  $("sGo").onclick=async()=>{
-    const name=$("sName").value.trim(),c=$("sCode").value,c2=$("sCode2").value;
-    if(!name)return msg("sMsg","חסר שם.");if(c.length<6)return msg("sMsg","הקוד צריך להיות לפחות 6 תווים.");if(c!==c2)return msg("sMsg","שני הקודים לא זהים.");
-    $("sGo").disabled=true;const r=await api({action:"setup",name,code:c,invite:INVITE});$("sGo").disabled=false;
-    if(!r.ok)return msg("sMsg",ERR[r.error]||"שגיאה.");T.set(r.token);me=r.user;tab="team";showHome();
-  };
+  $("main").innerHTML=`<div class="card"><h2>🔒 עוד לא הוגדר מנהל</h2><p class="hint">המנהל נכנס בפעם הראשונה עם הקוד האישי שנשלח אליו (או בלחיצה על הקישור שבהודעה). אחרי זה הוא מוסיף את המורים ושולח לכל אחד קוד.</p>
+    <input id="lCode" dir="ltr" autocomplete="off" placeholder="הקוד מההודעה" style="text-align:center;font-size:20px;letter-spacing:2px">
+    <div class="row" style="margin-top:14px"><button class="btn" id="lGo" style="flex:1">כניסה</button></div><div id="lMsg" hidden></div></div>`;
+  wireLogin();
 }
 function showLogin(note){
   $("logout").hidden=true;$("tabs").hidden=true;$("who").textContent="עדכונים לתלמידים · המערכת";
-  $("main").innerHTML=`<div class="card"><h2>כניסה</h2><p class="hint">${esc(note||"מנהל או מורה: מקלידים את הקוד האישי.")}</p>
+  $("main").innerHTML=`<div class="card"><h2>כניסה</h2><p class="hint">${esc(note||"מנהל או מורה: מקלידים את הקוד האישי שקיבלתם בהודעה.")}</p>
     <input id="lCode" type="password" dir="ltr" autocomplete="current-password" placeholder="קוד כניסה" style="text-align:center;font-size:20px;letter-spacing:3px">
     <div class="row" style="margin-top:14px"><button class="btn" id="lGo" style="flex:1">כניסה</button></div><div id="lMsg" hidden></div>
     <p class="hint" style="margin-top:14px">מורה בלי קוד? המנהל יוצר לך קוד מהמסך שלו ושולח בוואטסאפ.</p></div>`;
+  wireLogin();
+}
+function wireLogin(){
   const go=async()=>{const code=$("lCode").value.trim();if(!code)return;$("lGo").disabled=true;const r=await api({action:"login",code});$("lGo").disabled=false;
-    if(!r.ok)return msg("lMsg",ERR[r.error]||"שגיאה.");T.set(r.token);me=r.user;showHome()};
+    if(!r.ok)return msg("lMsg",ERR[r.error]||"שגיאה.");T.set(r.token);me=r.user;welcome=!!r.first;showHome()};
   $("lGo").onclick=go;$("lCode").onkeydown=e=>{if(e.key==="Enter")go()};
 }
 
 // ---- המסך הראשי לצוות: לשוניות ----
 function showHome(){
   $("logout").hidden=false;$("who").textContent=`${me.name} · ${ROLE[me.role]||"מורה"}`;
-  const TABS=[["write","✍️ עדכון חדש"],["list","📋 עדכונים"],["tt","🗓️ מערכת"],...(me.role==="admin"?[["team","👥 צוות"]]:[])];
+  const TABS=[["write","✍️ עדכון חדש"],["list","📋 עדכונים"],["tt","🗓️ מערכת"],...(me.role==="admin"?[["team","👥 צוות"]]:[]),["me","⚙️ החשבון שלי"]];
   if(!TABS.some(t=>t[0]===tab))tab="write";
   $("tabs").hidden=false;$("tabs").innerHTML=TABS.map(([k,l])=>`<button data-t="${k}" class="${k===tab?"on":""}">${l}</button>`).join("");
   $("tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;showHome()});
-  ({write:showWrite,list:showList,tt:showTT,team:showTeam})[tab]();
+  ({write:showWrite,list:showList,tt:showTT,team:showTeam,me:showMe})[tab]();
+  if(welcome&&tab==="write"){
+    const w=document.createElement("div");w.className="card";w.style.borderColor="var(--green)";
+    w.innerHTML=`<h2>👋 ברוך הבא, נכנסת כמנהל ראשי</h2><p class="hint" style="margin:0">מכאן כותבים עדכונים לתלמידים, רואים את המערכת של כל כיתה ומורה, ומוסיפים מורים (לשונית 👥 צוות). רוצה קוד כניסה משלך? לשונית <b>⚙️ החשבון שלי</b>.</p><div class="row" style="margin-top:12px"><button class="btn" id="wMe">לבחור קוד משלי</button><button class="btn ghost" id="wX">אחר כך</button></div>`;
+    $("main").prepend(w);$("wMe").onclick=()=>{welcome=false;tab="me";showHome()};$("wX").onclick=()=>{welcome=false;w.remove()};
+  }
 }
 
 // ---- כתיבת עדכון ----
@@ -302,6 +300,26 @@ function drawTT(){
     h+=`</div>`;
   }
   $("ttBody").innerHTML=h;
+}
+
+// ---- החשבון שלי: שינוי שם וקוד ----
+function showMe(){
+  $("main").innerHTML=`<div class="card"><h2>⚙️ החשבון שלי</h2><p class="hint">${esc(me.name)} · ${me.owner?"מנהל ראשי":ROLE[me.role]}</p>
+    <label>השם שמופיע על העדכונים</label><input id="mName" maxlength="40" value="${esc(me.name)}">
+    <div class="row" style="margin-top:10px"><button class="btn ghost" id="mNameGo">שמור שם</button></div><div id="mNameMsg" hidden></div></div>
+  <div class="card"><h2>🔑 קוד כניסה חדש</h2><p class="hint">בוחרים קוד שקל לך לזכור (לפחות 6 תווים). מרגע השמירה נכנסים רק איתו, והקוד הקודם מפסיק לעבוד.</p>
+    <label>הקוד החדש</label><input id="mCode" type="password" dir="ltr" autocomplete="new-password">
+    <label>שוב, לאימות</label><input id="mCode2" type="password" dir="ltr" autocomplete="new-password">
+    <label class="tgl"><input type="checkbox" id="mShow"> להציג את הקוד</label>
+    <div class="row" style="margin-top:12px"><button class="btn" id="mCodeGo" style="flex:1">שמור קוד חדש</button></div><div id="mCodeMsg" hidden></div></div>`;
+  $("mShow").onchange=e=>{$("mCode").type=$("mCode2").type=e.target.checked?"text":"password"};
+  $("mNameGo").onclick=async()=>{const name=$("mName").value.trim();if(!name)return msg("mNameMsg","חסר שם.");
+    const r=await api({action:"updateMe",name});if(!r.ok)return msg("mNameMsg",ERR[r.error]||"שגיאה.");
+    me={...me,...r.user};$("who").textContent=`${me.name} · ${ROLE[me.role]||"מורה"}`;msg("mNameMsg","✅ נשמר. עדכונים חדשים יופיעו בשם הזה.",true)};
+  $("mCodeGo").onclick=async()=>{const c=$("mCode").value.trim(),c2=$("mCode2").value.trim();
+    if(c.length<6)return msg("mCodeMsg","הקוד צריך להיות לפחות 6 תווים.");if(c!==c2)return msg("mCodeMsg","שני הקודים לא זהים.");
+    $("mCodeGo").disabled=true;const r=await api({action:"updateMe",code:c});$("mCodeGo").disabled=false;
+    if(!r.ok)return msg("mCodeMsg",ERR[r.error]||"שגיאה.");$("mCode").value=$("mCode2").value="";msg("mCodeMsg","✅ הקוד הוחלף. מעכשיו נכנסים עם הקוד החדש.",true)};
 }
 
 // ---- צוות (מנהל בלבד) ----

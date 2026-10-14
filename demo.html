@@ -201,6 +201,7 @@ host.staff=(method,b,token)=>{
   const admin=me.role==="admin",t=now();
   switch(b.action){
     case"me":return ok({user:me});
+    case"updateMe":{const n=b.name!=null?String(b.name).trim().slice(0,40):me.name;if(!n||(b.code!=null&&String(b.code).trim().length<6))return err(400,"bad_request");me.name=n;return ok({user:me})}
     case"post":{const text=String(b.text||"").trim().slice(0,600),mins=Math.round(Number(b.minutes));if(!text||!(mins>=1&&mins<=43200))return err(400,"bad_request");
       let au={authorId:me.id,authorName:me.name,role:me.role};
       if(admin&&b.asUser){const x=host.staffUsers.find(y=>y.id===b.asUser);if(x)au={authorId:x.id,authorName:x.name,role:x.role}}
