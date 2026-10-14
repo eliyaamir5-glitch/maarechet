@@ -24,12 +24,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Generate calendar files
-        run: node gen-cal.js
-      - name: Collect site files
-        run: |
-          mkdir -p _site
-          cp -r index.html shichrur.html cards.html data.js sets.js board.js mashov.js mashov-schools.json absences.js absences.html timetable-image.js about.html sw.js cal _site/
+      - name: Build site (calendars + copy files to _site)
+        run: node scripts/build.js
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

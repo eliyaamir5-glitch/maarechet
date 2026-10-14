@@ -1,10 +1,10 @@
-# אתר סטטי. בזמן הפריסה נוצרים מחדש 36 קובצי היומן מ-data.js
+# אתר סטטי + פונקציות. בזמן הפריסה: קובצי היומן נוצרים מ-data.js, והאתר מועתק ל-_site (scripts/build.js)
 [build]
-  publish = "."
-  command = "node gen-cal.js"
+  publish = "_site"
+  command = "node scripts/build.js"
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "22"
 
 # פונקציות שרת (חיבור למשוב). הכתובת /api/mashov מוגדרת בתוך הפונקציה עצמה
 [functions]

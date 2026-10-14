@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#5b6cff">
+<meta name="robots" content="noindex">
+<title>דמו · המערכת</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0e22;--panel:#161a3a;--card:#1d2247;--ink:#f4f5ff;--muted:#9aa0c7;--line:#2b3162;--accent:#7c8cff;--accent-ink:#0b0e24;--grad:linear-gradient(135deg,#5b6cff 0%,#a259ff 60%,#ff6bd6 100%)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Rubik,"Segoe UI",Arial,sans-serif}
+.wrap{display:flex;height:100%;gap:0}
+.panel{flex:0 0 360px;background:var(--panel);border-inline-end:1.5px solid var(--line);overflow:auto;padding:16px 16px 30px}
+.stage{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 30%,#1c2150,#0b0e22 70%)}
+.phone{width:390px;height:820px;border-radius:46px;background:#000;padding:12px;box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 2px #2b3162;transform-origin:center center;flex:0 0 auto}
+.phone iframe{width:100%;height:100%;border:0;border-radius:36px;background:#0f1226;display:block}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.brand h1{margin:0;font-size:22px;font-weight:900}
+.brand .tag{background:var(--grad);color:#fff;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:900}
+.note{color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 12px}
+.box{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:12px;margin-bottom:12px}
+.box h2{margin:0 0 8px;font-size:15px;font-weight:900}
+label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px;font-weight:700}
+input,select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 10px;font:inherit;font-size:15px;background:var(--bg);color:var(--ink)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button,.nav button,.btn{border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:7px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.nav{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.nav button{border-radius:12px;text-align:start;padding:9px 10px}
+.nav button.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.row{display:flex;gap:6px;align-items:center}
+.row>*{flex:1}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.wide{width:100%;border-radius:12px;padding:10px}
+.sc small{display:block;font-weight:400;font-size:11px;opacity:.85}
+.seg.sc button{border-radius:12px;text-align:start;flex:1 1 45%}
+.clock{font-size:13px;color:var(--muted);margin-top:8px}
+.clock b{color:var(--ink)}
+.tgl{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;margin:4px 0 8px;cursor:pointer}
+.tgl input{width:18px;height:18px}
+.mobile-top{display:none}
+@media (max-width:820px){
+  .wrap{flex-direction:column;height:auto}
+  .panel{flex:none;border-inline-end:none;border-bottom:1.5px solid var(--line)}
+  .panel.closed .inner{display:none}
+  .mobile-top{display:flex;justify-content:space-between;align-items:center}
+  .inner>.brand{display:none}
+  .stage{flex:none;height:calc(100vh - 64px);height:calc(100dvh - 64px);background:none}
+  .phone{width:100%;height:100%;border-radius:0;padding:0;box-shadow:none;transform:none!important}
+  .phone iframe{border-radius:0}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside class="panel" id="panel">
+    <div class="mobile-top"><div class="brand"><h1>🎛️ לוח בקרה</h1><span class="tag">דמו</span></div><button class="btn" id="tglPanel">הסתר</button></div>
+    <div class="inner">
+      <div class="brand"><h1>🎛️ לוח בקרה</h1><span class="tag">דמו</span></div>
+      <p class="note">כאן מראים את כל האפליקציה בלי לגעת באתר האמיתי. כל מה שקורה בדמו (הרשמה, משוב, עדכונים, כרטיסיות) נשאר בדמו ונמחק כשסוגרים.</p>
+
+      <div class="box"><h2>👤 התלמיד</h2>
+        <div class="row"><div><label>שם פרטי</label><input id="first" maxlength="20"></div><div><label>שם משפחה</label><input id="last" maxlength="20"></div></div>
+        <label>כיתה</label><div class="seg" id="cls"></div>
+        <label>אנגלית</label><select id="eng"></select>
+        <label>מתמטיקה</label><select id="math"></select>
+        <label>מגמה</label><select id="major"></select>
+      </div>
+
+      <div class="box"><h2>📊 מצב בנוכחות (משוב)</h2>
+        <div class="seg sc" id="scenario"></div>
+      </div>
+
+      <div class="box"><h2>🕐 יום ושעה</h2>
+        <div class="seg" id="day"></div>
+        <div class="row" style="margin-top:8px"><input id="time" type="time" value="10:40" style="flex:0 0 120px"><button class="btn" id="realNow">השעה האמיתית</button></div>
+        <div class="seg" style="margin-top:8px" id="presets"></div>
+        <div class="clock" id="clockInfo"></div>
+      </div>
+
+      <div class="box"><h2>📢 עדכונים מהצוות</h2>
+        <label class="tgl"><input type="checkbox" id="samples" checked> להציג עדכונים לדוגמה</label>
+        <button class="btn wide" id="goStaff">✍️ לכתוב עדכון כמנהל (כניסת צוות)</button>
+        <p class="note" style="margin:8px 0 0">בדמו כל קוד נכנס כמנהל. עדכון שנכתב יופיע מיד במסך הראשי.</p>
+      </div>
+
+      <div class="box"><h2>🧭 מעבר למסך</h2>
+        <div class="nav" id="nav"></div>
+      </div>
+
+      <div class="box"><h2>🔁 התחלה מחדש</h2>
+        <div class="row"><button class="btn" id="newStudent">תלמיד חדש (הרשמה)</button><button class="btn" id="reset">איפוס הדמו</button></div>
+      </div>
+      <p class="note">הכתובת של הדמו: <span dir="ltr" id="selfUrl"></span></p>
+    </div>
+  </aside>
+  <div class="stage" id="stage"><div class="phone" id="phone"><iframe id="frame" title="האפליקציה בדמו"></iframe></div></div>
+</div>
+
+<script src="data.js"></script>
+<script src="absences.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,"0");
+const isoOf=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const DAYN=["ראשון","שני","שלישי","רביעי","חמישי","שישי"];
+
+// ---- הגדרות הדמו (נשמרות רק בדפדפן הזה, בשם נפרד מהאפליקציה) ----
+const DEF={first:"יוסי",last:"כהן",cls:"y2",eng:Object.keys(ENG)[1]||Object.keys(ENG)[0],math:Object.keys(MATH)[0],major:"phys",scenario:"good",day:null,time:"10:40",real:false,samples:true,page:"index.html"};
+let cfg;try{cfg=Object.assign({},DEF,JSON.parse(localStorage.getItem("demoPanel")||"{}"))}catch(e){cfg=Object.assign({},DEF)}
+const saveCfg=()=>{try{localStorage.setItem("demoPanel",JSON.stringify(cfg))}catch(e){}};
+if(cfg.day==null){const wd=new Date().getDay();cfg.day=wd<=4?wd:0}
+
+// ---- המארח: מה שהדפים בתוך הדמו "רואים" במקום הטלפון והשרת ----
+const host=window.__DEMO_HOST={store:{},offset:0,staffUsers:[],staffUpdates:[],codes:{},onFrameLoad:null};
+const now=()=>Date.now()+host.offset;
+
+// זמן: היום שנבחר בשבוע הנוכחי (או הקרוב שהוא יום לימודים), בשעה שנבחרה
+function targetDate(){
+  if(cfg.real)return new Date();
+  const base=new Date();base.setHours(12,0,0,0);
+  if(base.getDay()>4)base.setDate(base.getDate()+(7-base.getDay())); // שישי/שבת → השבוע הבא
+  base.setDate(base.getDate()-base.getDay()+cfg.day);
+  for(let i=0;i<8&&cfg.day<=4&&!Absences.isSchoolDay(isoOf(base),SCHOOL_YEAR);i++)base.setDate(base.getDate()+7);
+  const [h,m]=cfg.time.split(":").map(Number);base.setHours(h||0,m||0,0,0);return base;
+}
+
+// ---- נתוני משוב מדומים לפי התרחיש ----
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const SCEN={
+  great:{t:"מצטיין 🔥",d:"רצפים ארוכים, צל\"שים",base:.02,pray:.04},
+  good:{t:"רגיל",d:"כמה חיסורים, הכל תקין",base:.07,pray:.12},
+  near:{t:"מתקרב ל-25% ⚠️",d:"מקצוע אחד בסכנה",base:.07,pray:.15,focus:.22},
+  rescue:{t:"מצב חילוץ 🚨",d:"מקצוע מעל 25%",base:.09,pray:.2,focus:.29,second:.21},
+  none:{t:"בלי משוב",d:"כמו תלמיד שלא חיבר"},
+};
+function profileNow(){return{first:cfg.first||"יוסי",last:cfg.last||"",email:"",cls:cfg.cls,eng:cfg.eng,math:cfg.math,major:cfg.major,since:"2026-09-01T08:00:00.000Z"}}
+function genBehave(p,scKey,at){
+  const sc=SCEN[scKey];if(!sc||sc.base==null)return[];
+  const r=rng(7+scKey.length*31+(p.cls==="y1"?3:0));
+  const days=p.cls==="y1"?DAYS_Y1:DAYS_Y2;
+  const {blocks}=Absences.timeline({days,profile:p,data:{ENG,MATH,MAJORS},year:SCHOOL_YEAR,behave:[],until:isoOf(at),untilMin:at.getHours()*60+at.getMinutes()});
+  const by={},hour={},dayN={};
+  blocks.forEach(b=>{(by[b.n]=by[b.n]||[]).push(b);dayN[b.date]=(dayN[b.date]||0)+b.periods;hour[b.date+b.s]=dayN[b.date]-b.periods+1}); // מספר שעה ביום, כמו במשוב
+  const names=Object.keys(by),bag=names.filter(n=>!NON_BAGRUT.includes(n));
+  const pick=re=>bag.find(n=>re.test(n));
+  const focus=pick(/אנגלית/)||bag[0],second=pick(/מתמטיקה/)||bag[1];
+  const ev=[],add=(b,type,j,k)=>ev.push({date:b.date,subject:b.n,lesson:hour[b.date+b.s]+(k||0),type,justificationId:j?4:0,justification:j?"מחלה":""});
+  for(const n of names){
+    const list=by[n],tot=list.reduce((a,b)=>a+b.periods,0);
+    let rate=NON_BAGRUT.includes(n)?sc.pray:sc.base;
+    if(n===focus&&sc.focus)rate=sc.focus;else if(n===second&&sc.second)rate=sc.second;
+    let need=Math.round(rate*tot);
+    // מצטיין: חיסורים רק בהתחלה (כדי שהרצף יהיה ארוך). בסכנה: גם לאחרונה
+    const isFocus=(n===focus&&sc.focus)||(n===second&&sc.second);
+    const pool=scKey==="great"?list.slice(0,Math.ceil(list.length*.45)):isFocus?list.slice():list.slice(0,Math.ceil(list.length*.7));
+    const order=pool.map(b=>[r(),b]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+    if(n===focus&&sc.focus)order.sort((a,b)=>a.date<b.date?1:-1); // חיסורים אחרונים במקצוע שבסכנה
+    for(const b of order){if(need<=0)break;const j=n!==focus&&r()<.3;for(let k=0;k<b.periods&&need>0;k++,need--)add(b,"חיסור",j,k)}
+  }
+  const recent=blocks.slice(-Math.min(blocks.length,80)).filter(b=>!NON_BAGRUT.includes(b.n));
+  const some=(k,type)=>{for(let i=0;i<k&&recent.length;i++)add(recent[Math.floor(r()*recent.length)],type,false)};
+  if(scKey==="great")some(4,'צל"ש');
+  if(scKey==="good"){some(2,'צל"ש');some(2,"איחור")}
+  if(scKey==="near"){some(1,'צל"ש');some(3,"איחור");some(1,"חוסר ציוד")}
+  if(scKey==="rescue"){some(1,'צל"ש');some(2,"איחור");some(1,"הפרעה בשיעור")}
+  return ev;
+}
+function mashovPayload(at){
+  const sc=cfg.scenario==="none"?"good":cfg.scenario;
+  return{ok:true,fetchedAt:at.toISOString(),student:{name:`${cfg.first} ${cfg.last}`.trim()},behave:genBehave(profileNow(),sc,at),grades:[],groups:[],lessonsCount:[]};
+}
+host.mashov=()=>{const at=new Date(now());return{status:200,body:mashovPayload(at)}};
+
+// ---- עדכוני צוות בדמו ----
+function sampleUpdates(){
+  const t=now(),m=60e3,at=(days,h)=>{const d=new Date(t);d.setDate(d.getDate()+days);d.setHours(h,0,0,0);return d.getTime()};
+  return[
+    {id:"s1",text:"מחר הלימודים מסתיימים ב-13:00 בגלל כנס מחנכים. ההסעות יוצאות ב-13:15.",authorId:"admin",authorName:"המנהל",role:"admin",audience:"all",urgent:true,createdAt:t-25*m,expiresAt:at(1,15)},
+    {id:"s2",text:"המבחן באנגלית נדחה ליום ראשון. החומר: יחידות 3–4 ואוצר המילים מהדף.",authorId:"t1",authorName:"המורה לאנגלית",role:"teacher",audience:"all",urgent:false,createdAt:t-2*60*m,expiresAt:t+3*24*60*m},
+    {id:"s3",text:"להביא מחר את חוברת התרגילים בגמרא, נעבוד עליה בשיעור הראשון.",authorId:"t2",authorName:"הר\"מ של י'1",role:"teacher",audience:"y1",urgent:false,createdAt:t-50*m,expiresAt:at(1,10)},
+  ];
+}
+function allUpdates(){return[...(cfg.samples?sampleUpdates():[]),...host.staffUpdates]}
+host.updates=()=>{const t=now();return{status:200,body:{ok:true,now:t,updates:allUpdates().filter(u=>u.expiresAt>t).sort((a,b)=>(b.urgent-a.urgent)||(b.createdAt-a.createdAt)).map(u=>({id:u.id,text:u.text,author:u.authorName,role:u.role,audience:u.audience,urgent:!!u.urgent,createdAt:u.createdAt,expiresAt:u.expiresAt}))}}};
+host.staffUsers=[{id:"admin",name:"המנהל",role:"admin"},{id:"t1",name:"המורה לאנגלית",role:"teacher"}];
+const newCode=()=>Array.from({length:8},()=>"ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random()*32)]).join("");
+host.staff=(method,b,token)=>{
+  const ok=x=>({status:200,body:{ok:true,...x}}),err=(s,e)=>({status:s,body:{ok:false,error:e}});
+  if(method==="GET")return ok({needsSetup:false});
+  b=b||{};
+  if(b.action==="login"){const id=host.codes[String(b.code||"").trim().toUpperCase()]||"admin";const u=host.staffUsers.find(x=>x.id===id)||host.staffUsers[0];return ok({token:"demo:"+u.id,user:u})}
+  const me=host.staffUsers.find(x=>"demo:"+x.id===token);if(!me)return err(401,"auth");
+  const admin=me.role==="admin",t=now();
+  switch(b.action){
+    case"me":return ok({user:me});
+    case"post":{const text=String(b.text||"").trim().slice(0,600),mins=Math.round(Number(b.minutes));if(!text||!(mins>=1&&mins<=43200))return err(400,"bad_request");
+      const u={id:"d"+Math.random().toString(36).slice(2,9),text,authorId:me.id,authorName:me.name,role:me.role,audience:["all","y1","y2"].includes(b.audience)?b.audience:"all",urgent:!!b.urgent,createdAt:t,expiresAt:t+mins*60e3};host.staffUpdates.push(u);return ok({update:u})}
+    case"end":case"delete":{const u=host.staffUpdates.find(x=>x.id===b.id);if(!u)return err(404,"not_found");if(!admin&&u.authorId!==me.id)return err(403,"forbidden");
+      if(b.action==="delete")host.staffUpdates=host.staffUpdates.filter(x=>x.id!==b.id);else u.expiresAt=Math.min(u.expiresAt,t-1);return ok({})}
+    case"list":return ok({now:t,updates:host.staffUpdates.filter(u=>admin||u.authorId===me.id).slice().sort((a,b)=>b.createdAt-a.createdAt).map(u=>({...u,active:u.expiresAt>t}))});
+  }
+  if(!admin)return err(403,"forbidden");
+  switch(b.action){
+    case"users":return ok({users:host.staffUsers});
+    case"addUser":{const name=String(b.name||"").trim().slice(0,40);if(!name)return err(400,"bad_request");const u={id:"u"+Math.random().toString(36).slice(2,8),name,role:"teacher"},code=newCode();host.staffUsers.push(u);host.codes[code]=u.id;return ok({user:u,code})}
+    case"resetUser":{const u=host.staffUsers.find(x=>x.id===b.id);if(!u)return err(404,"not_found");const code=newCode();for(const k in host.codes)if(host.codes[k]===u.id)delete host.codes[k];host.codes[code]=u.id;return ok({user:u,code})}
+    case"removeUser":if(b.id===me.id)return err(400,"self");host.staffUsers=host.staffUsers.filter(x=>x.id!==b.id);return ok({});
+  }
+  return err(400,"bad_action");
+};
+
+// ---- בניית "הטלפון" של הדמו לפי ההגדרות ----
+function buildStore(keepExtras){
+  const S=host.store,keep={};
+  if(keepExtras)for(const k of Object.keys(S))if(!["profile","mashovConn","mashovData","mashovPw","introSeen","updatesCache","updatesSeen"].includes(k))keep[k]=S[k];
+  for(const k of Object.keys(S))delete S[k];
+  Object.assign(S,keep);
+  S.profile=JSON.stringify(profileNow());
+  S.introSeen="1";
+  if(cfg.scenario!=="none"){
+    const at=new Date(now()-25*60e3); // "עודכן לפני 25 דק'"
+    const p=mashovPayload(at);
+    S.mashovConn=JSON.stringify({semel:"000000",schoolName:SCHOOL_NAME||"דמו",username:"demo",year:2027,name:`${cfg.first} ${cfg.last}`.trim(),connectedAt:at.toISOString()});
+    S.mashovPw=JSON.stringify({p:"demo"});
+    S.mashovData=JSON.stringify({at:p.fetchedAt,behave:p.behave,grades:[],groups:[],lessonsCount:[],partial:false});
+  }
+}
+function applyTime(){host.offset=targetDate().getTime()-Date.now()}
+
+// ---- ציור לוח הבקרה ----
+function seg(id,items,val,cb){const el=$(id);el.innerHTML="";for(const [v,html] of items){const b=document.createElement("button");b.type="button";b.innerHTML=html;b.className=v===val?"on":"";b.onclick=()=>{el.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));cb(v)};el.append(b)}}
+function fill(id,obj,val,label){const el=$(id);el.innerHTML="";for(const [k,v] of Object.entries(obj)){const o=document.createElement("option");o.value=k;o.textContent=label?label(v):v;el.append(o)}el.value=val}
+function panel(){
+  $("first").value=cfg.first;$("last").value=cfg.last;
+  seg("cls",Object.entries(CLASSES_META).map(([k,v])=>[k,v.label]),cfg.cls,v=>{cfg.cls=v;changed()});
+  fill("eng",ENG,cfg.eng);fill("math",MATH,cfg.math);fill("major",MAJORS,cfg.major,v=>v.n);
+  seg("scenario",Object.entries(SCEN).map(([k,v])=>[k,`${v.t}<small>${v.d}</small>`]),cfg.scenario,v=>{cfg.scenario=v;changed("absences.html")});
+  seg("day",[...DAYN.map((n,i)=>[i,n])],cfg.real?-1:cfg.day,v=>{cfg.day=v;cfg.real=false;timeChanged()});
+  seg("presets",[["07:20","תפילה 07:20"],["10:40","באמצע שיעור"],["13:05","הפסקה"],["20:50","ערב 20:50"]],null,v=>{cfg.time=v;cfg.real=false;$("time").value=v;timeChanged()});
+  $("time").value=cfg.time;$("samples").checked=cfg.samples;
+  const NAV=[["index.html","🏠 מסך ראשי"],["absences.html","📊 נוכחות"],["index.html#profile","👤 פרופיל"],["cards.html","🃏 כרטיסיות"],["shichrur.html","🏃 שחרורון"],["staff.html","📢 כניסת צוות"],["about.html","ℹ️ על האפליקציה"],["intro","🎬 ההיכרות"]];
+  $("nav").innerHTML="";for(const [p,t] of NAV){const b=document.createElement("button");b.type="button";b.textContent=t;b.dataset.p=p;b.onclick=()=>go(p);$("nav").append(b)}
+  markNav();clockInfo();
+}
+function markNav(){$("nav").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.p===cfg.page))}
+function clockInfo(){const d=new Date(now());$("clockInfo").innerHTML=`בדמו עכשיו: <b>יום ${["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"][d.getDay()]} ${d.getDate()}.${d.getMonth()+1}, ${pad(d.getHours())}:${pad(d.getMinutes())}</b>${cfg.real?" (שעה אמיתית)":""}`}
+setInterval(clockInfo,15e3);
+
+function go(p){
+  if(p==="intro"){delete host.store.introSeen;p="index.html"}
+  cfg.page=p.split("#")[0];saveCfg();markNav();
+  // תמיד טעינה מחדש (גם כשרק ה-# משתנה, למשל פתיחת הפרופיל)
+  const [file,hash]=p.split("#");$("frame").src=`${file}?d=${Date.now()}${hash?"#"+hash:""}`;
+}
+function reloadFrame(){
+  try{const w=$("frame").contentWindow,file=(w.location.pathname.split("/").pop()||"index.html");$("frame").src=file+(w.location.hash||"")}catch(e){$("frame").src=cfg.page}
+}
+function changed(page){saveCfg();buildStore(true);if(page){cfg.page=page;saveCfg();markNav();$("frame").src=page}else reloadFrame()}
+function timeChanged(){saveCfg();applyTime();clockInfo();
+  seg("day",[...DAYN.map((n,i)=>[i,n])],cfg.real?-1:cfg.day,v=>{cfg.day=v;cfg.real=false;timeChanged()});
+  delete host.store.updatesCache;reloadFrame()}
+host.onFrameLoad=file=>{cfg.page=file;saveCfg();markNav()};
+
+$("first").oninput=$("last").oninput=()=>{cfg.first=$("first").value.trim()||"יוסי";cfg.last=$("last").value.trim();clearTimeout(window.__nt);window.__nt=setTimeout(()=>changed(),600)};
+$("eng").onchange=e=>{cfg.eng=e.target.value;changed()};
+$("math").onchange=e=>{cfg.math=e.target.value;changed()};
+$("major").onchange=e=>{cfg.major=e.target.value;changed()};
+$("time").onchange=e=>{cfg.time=e.target.value||"10:40";cfg.real=false;timeChanged()};
+$("realNow").onclick=()=>{cfg.real=true;timeChanged()};
+$("samples").onchange=e=>{cfg.samples=e.target.checked;saveCfg();delete host.store.updatesCache;reloadFrame()};
+$("goStaff").onclick=()=>go("staff.html");
+$("newStudent").onclick=()=>{for(const k of Object.keys(host.store))delete host.store[k];cfg.page="index.html";saveCfg();markNav();$("frame").src="index.html"};
+$("reset").onclick=()=>{if(!confirm("לאפס את הדמו להגדרות ההתחלה?"))return;cfg=Object.assign({},DEF,{day:cfg.day});host.staffUpdates=[];host.codes={};host.staffUsers=host.staffUsers.slice(0,2);saveCfg();panel();applyTime();buildStore(false);$("frame").src="index.html"};
+$("tglPanel").onclick=()=>{const c=$("panel").classList.toggle("closed");$("tglPanel").textContent=c?"הצג":"הסתר"};
+$("selfUrl").textContent=location.href.split("#")[0];
+
+// התאמת גודל הטלפון למסך
+function fit(){const s=$("stage"),ph=$("phone");if(innerWidth<=820){ph.style.transform="";return}const k=Math.min(1,(s.clientHeight-30)/820,(s.clientWidth-30)/390);ph.style.transform=`scale(${k})`}
+addEventListener("resize",fit);
+
+panel();applyTime();buildStore(false);fit();
+$("frame").src=cfg.page||"index.html";
+</script>
+</body>
+</html>

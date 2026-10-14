@@ -149,11 +149,17 @@ const SCHOOL_YEAR={start:"2026-09-01",end:"2027-06-20",off:[
 ]};
 // מקצועות שאין בהם בגרות: מוצגים במעקב, אבל בלי אזהרת 30%
 const NON_BAGRUT=["תפילת שחרית","תפילת מנחה","ערבית","סדר ערב","חינוך","שבת אחים","לאורו נלך – התנדבות","חינוך תעבורתי (זהב)"];
+// כתובת השרת בנטליפיי (פונקציות: משוב ועדכוני צוות). ריק = אותו אתר
+const SERVER_BASE="https://lucent-crepe-6db22c.netlify.app";
+// שם בית הספר, מוצג בעדינות בראש האפליקציה. ריק = לא מוצג
+const SCHOOL_NAME="ישיבת בני עקיבא בית יהודה · כפר מימון";
+// לוגו (קובץ בתיקיית האתר). אם הקובץ חסר, פשוט לא מוצג
+const SCHOOL_LOGO="logo.png";
 // חיבור למשוב: כתובת פונקציית השרת. ריק = "/api/mashov" באותו אתר (נטליפיי).
 // באתר GitHub Pages שמים כאן את הכתובת המלאה של אתר הנטליפיי, למשל "https://maarechet.netlify.app/api/mashov"
 const MASHOV_API="https://lucent-crepe-6db22c.netlify.app/api/mashov";
 // בית הספר שיופיע מראש בטופס החיבור (סמל מוסד במשוב + שם). null = התלמיד בוחר בעצמו
-const MASHOV_SCHOOL=null;
+const MASHOV_SCHOOL={semel:640151,name:"יב\"ע בית יהודה- כפר מימון"};
 // התראה במייל על הרשמה חדשה (שירות Web3Forms). מחרוזת ריקה = כבוי.
 const NOTIFY_KEY="a2ee4160-fcd1-4313-aa96-c06be6cd536f";
 const DEFAULT_GEAR={
@@ -164,4 +170,4 @@ const DEFAULT_GEAR={
  "השכלה כללית – חברה":"","השכלה כללית – מורשת":"","חינוך תעבורתי (זהב)":"","לאורו נלך – התנדבות":""
 };
 
-if(typeof module!=="undefined"&&module.exports){module.exports={P,SHACHARIT,MINCHA,ARVIT,ENG,MATH,DAYS_Y1,DAYS_Y2,CLASSES_META,DEFAULT_GEAR,NOTIFY_KEY,MAJORS,MASHOV_API,MASHOV_SCHOOL,SCHOOL_YEAR,NON_BAGRUT};}
+if(typeof module!=="undefined"&&module.exports){module.exports={P,SHACHARIT,MINCHA,ARVIT,ENG,MATH,DAYS_Y1,DAYS_Y2,CLASSES_META,DEFAULT_GEAR,NOTIFY_KEY,MAJORS,MASHOV_API,MASHOV_SCHOOL,SCHOOL_YEAR,NON_BAGRUT,SERVER_BASE,SCHOOL_NAME,SCHOOL_LOGO};}

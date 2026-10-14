@@ -1,0 +1,12 @@
+{
+  "name": "maarechet",
+  "private": true,
+  "description": "המערכת – אפליקציית מערכת שעות לתלמידים. אתר סטטי + פונקציות נטליפיי (משוב, עדכוני צוות).",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "test": "node scripts/test-absences.js && node scripts/test-mashov-function.mjs && node scripts/test-staff-function.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^11.1.4"
+  }
+}

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#5b6cff">
+<meta name="robots" content="noindex">
+<title>כניסת צוות · המערכת</title>
+<script src="demo-shim.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1226;--card:#1d2247;--ink:#f4f5ff;--muted:#9aa0c7;--line:#2b3162;--next:#243a8a;--break:#2a2f5c;--accent:#7c8cff;--accent-ink:#0b0e24;--red:#ff5d6c;--green:#3ddc97;--grad:linear-gradient(135deg,#5b6cff 0%,#a259ff 60%,#ff6bd6 100%)}
+@media (prefers-color-scheme: light){:root{--bg:#f3f2fb;--card:#fff;--ink:#191b33;--muted:#6c7093;--line:#e3e2f2;--next:#e5e9ff;--break:#eceaf7;--accent:#5b6cff;--accent-ink:#fff;--red:#e0384a;--green:#1fb57a}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Rubik,"Segoe UI",Arial,sans-serif}
+.top{background:var(--grad);color:#fff;padding:calc(16px + env(safe-area-inset-top)) 18px 20px;border-radius:0 0 28px 28px}
+.top .bar{display:flex;justify-content:space-between;align-items:center;gap:10px;max-width:640px;margin:0 auto}
+.top h1{margin:0;font-size:24px;font-weight:900}
+.top p{margin:4px 0 0;font-size:14px;opacity:.9}
+.top a,.top button{color:#fff;text-decoration:none;font:inherit;font-size:14px;font-weight:700;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);border-radius:999px;padding:8px 14px;cursor:pointer}
+main{padding:16px 14px 40px;max-width:640px;margin:0 auto}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:20px;padding:18px;margin-bottom:14px}
+.card h2{margin:0 0 6px;font-size:19px;font-weight:900}
+.hint{color:var(--muted);font-size:14px;line-height:1.5;margin:0 0 10px}
+label{display:block;font-weight:700;font-size:14px;margin:14px 0 6px}
+input,textarea,select{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:16px;background:var(--bg);color:var(--ink)}
+textarea{min-height:110px;resize:vertical;line-height:1.5}
+.btn{border:none;border-radius:12px;padding:12px 18px;font:inherit;font-size:16px;font-weight:700;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:var(--break);color:var(--ink)}.btn.danger{background:var(--red);color:#fff}.btn.sm{padding:7px 12px;font-size:13px;border-radius:9px}
+.btn.wa{background:#25d366;color:#0b2b17}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.seg button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.count{font-size:12px;color:var(--muted);text-align:end;margin-top:4px}
+.tgl{display:flex;gap:8px;align-items:center;font-weight:700;margin-top:14px}
+.tgl input{width:20px;height:20px}
+.msg{border-radius:12px;padding:10px 14px;font-size:14px;margin:12px 0 0;line-height:1.5}
+.msg.ok{background:rgba(61,220,151,.15);border:1.5px solid var(--green)}.msg.err{background:rgba(255,93,108,.15);border:1.5px solid var(--red)}
+.item{border-top:1px solid var(--line);padding:12px 0}
+.item:first-of-type{border-top:none}
+.item .t{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:1.5}
+.item .m{font-size:12px;color:var(--muted);margin:4px 0 8px}
+.pill{display:inline-block;border-radius:8px;padding:1px 8px;font-size:11px;font-weight:900;margin-inline-end:4px}
+.pill.on{background:rgba(61,220,151,.2);color:var(--green)}.pill.off{background:var(--break);color:var(--muted)}.pill.urg{background:var(--red);color:#fff}
+.code{font-family:monospace;font-size:28px;font-weight:900;letter-spacing:4px;direction:ltr;text-align:center;background:var(--bg);border-radius:12px;padding:10px;margin:8px 0}
+.preview{border:1.5px dashed var(--line);border-radius:16px;padding:12px;margin-top:12px}
+.preview .ph{font-size:12px;color:var(--muted);margin-bottom:6px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="top"><div class="bar"><div><h1>📢 כניסת צוות</h1><p id="who">עדכונים לתלמידים · המערכת</p></div><button id="logout" hidden>יציאה</button></div></div>
+<main id="main"><div class="card"><p class="hint">טוען…</p></div></main>
+
+<script src="data.js"></script>
+<script src="updates.js"></script>
+<script>
+const API=((typeof SERVER_BASE!=="undefined"&&SERVER_BASE)||"")+"/api/staff";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const T={get:()=>{try{return localStorage.getItem("staffToken")}catch(e){return null}},set:v=>{try{v?localStorage.setItem("staffToken",v):localStorage.removeItem("staffToken")}catch(e){}}};
+const ERR={bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",already_setup:"כבר הוגדר מנהל.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
+let me=null;
+
+async function api(body){
+  try{
+    const r=await fetch(API,{method:body?"POST":"GET",headers:{"Content-Type":"application/json",...(T.get()?{Authorization:"Bearer "+T.get()}:{})},body:body?JSON.stringify(body):undefined,cache:"no-store"});
+    const j=await r.json().catch(()=>({ok:false,error:"network"}));
+    if(j.error==="auth"){T.set(null);me=null}
+    return j;
+  }catch(e){return {ok:false,error:"network"}}
+}
+const msg=(id,text,ok)=>{const el=$(id);if(!el)return;el.className="msg "+(ok?"ok":"err");el.textContent=text;el.hidden=!text};
+
+async function start(){
+  const st=await api();
+  if(!st.ok){$("main").innerHTML=`<div class="card"><h2>אין חיבור לשרת</h2><p class="hint">${esc(ERR.network)}</p><button class="btn" onclick="start()">נסה שוב</button></div>`;return}
+  if(st.needsSetup)return showSetup();
+  if(T.get()){const r=await api({action:"me"});if(r.ok){me=r.user;return showHome()}}
+  showLogin();
+}
+
+function showSetup(){
+  $("main").innerHTML=`<div class="card"><h2>הגדרה ראשונה</h2>
+    <p class="hint">עוד לא הוגדר מנהל. מי שממלא את הטופס הזה הופך למנהל: יכול להוסיף מורים, לכתוב עדכונים ולמחוק כל עדכון. עושים את זה פעם אחת בלבד.</p>
+    <label>השם שיופיע על העדכונים</label><input id="sName" maxlength="40" placeholder="למשל: הרב כהן">
+    <label>קוד כניסה אישי (לפחות 6 תווים)</label><input id="sCode" type="password" dir="ltr" autocomplete="new-password">
+    <label>שוב, לאימות</label><input id="sCode2" type="password" dir="ltr" autocomplete="new-password">
+    <div class="row" style="margin-top:16px"><button class="btn" id="sGo">אני המנהל, צור</button></div><div id="sMsg" hidden></div></div>`;
+  $("sGo").onclick=async()=>{
+    const name=$("sName").value.trim(),c=$("sCode").value,c2=$("sCode2").value;
+    if(!name)return msg("sMsg","חסר שם.");if(c.length<6)return msg("sMsg","הקוד צריך להיות לפחות 6 תווים.");if(c!==c2)return msg("sMsg","שני הקודים לא זהים.");
+    $("sGo").disabled=true;const r=await api({action:"setup",name,code:c});$("sGo").disabled=false;
+    if(!r.ok)return msg("sMsg",ERR[r.error]||"שגיאה.");T.set(r.token);me=r.user;showHome();
+  };
+}
+
+function showLogin(){
+  $("logout").hidden=true;$("who").textContent="עדכונים לתלמידים · המערכת";
+  $("main").innerHTML=`<div class="card"><h2>כניסה</h2><p class="hint">מנהל או מורה: מקלידים את הקוד האישי שקיבלתם.</p>
+    <input id="lCode" type="password" dir="ltr" autocomplete="current-password" placeholder="קוד כניסה" style="text-align:center;font-size:20px;letter-spacing:3px">
+    <div class="row" style="margin-top:14px"><button class="btn" id="lGo" style="flex:1">כניסה</button></div><div id="lMsg" hidden></div>
+    <p class="hint" style="margin-top:14px">אין לך קוד? בקש מהמנהל. הוא יכול ליצור לך קוד מתוך המסך הזה.</p></div>`;
+  const go=async()=>{const code=$("lCode").value.trim();if(!code)return;$("lGo").disabled=true;const r=await api({action:"login",code});$("lGo").disabled=false;
+    if(!r.ok)return msg("lMsg",ERR[r.error]||"שגיאה.");T.set(r.token);me=r.user;showHome()};
+  $("lGo").onclick=go;$("lCode").onkeydown=e=>{if(e.key==="Enter")go()};$("lCode").focus();
+}
+
+// ---- המסך הראשי לצוות ----
+const DUR=[["15 דק'",15],["שעה",60],["3 שעות",180],["עד סוף היום","eod"],["יום",1440],["3 ימים",4320],["שבוע",10080]];
+let dur=60,aud="all",urgent=false;
+function minutesFor(v){if(v!=="eod")return v;const n=new Date(),e=new Date(n);e.setHours(23,59,0,0);return Math.max(1,Math.round((e-n)/60000))}
+function showHome(){
+  $("logout").hidden=false;$("who").textContent=`${me.name} · ${me.role==="admin"?"מנהל":"מורה"}`;
+  $("main").innerHTML=`
+  <div class="card"><h2>✍️ עדכון חדש לתלמידים</h2><p class="hint">יופיע בראש האפליקציה אצל כל התלמידים, עם השם שלך, עד שיפוג התוקף.</p>
+    <textarea id="text" maxlength="600" placeholder="למשל: מחר מתחילים ב-9:00. להביא תנ&quot;ך."></textarea><div class="count" id="count">0/600</div>
+    <label>למי</label><div class="seg" id="aud"><button data-v="all" class="on">כל התלמידים</button><button data-v="y1">י'1</button><button data-v="y2">י'2</button></div>
+    <label>לכמה זמן</label><div class="seg" id="dur">${DUR.map(([l,v])=>`<button data-v="${v}" class="${v===60?"on":""}">${l}</button>`).join("")}<button data-v="custom">אחר…</button></div>
+    <div class="row" id="custom" hidden style="margin-top:8px"><input id="cNum" type="number" min="1" max="999" value="30" style="width:100px;flex:0 0 auto"><select id="cUnit" style="width:auto;flex:0 0 auto"><option value="1">דקות</option><option value="60">שעות</option><option value="1440">ימים</option></select></div>
+    <label class="tgl"><input type="checkbox" id="urg"> דחוף (מסומן באדום ומופיע ראשון)</label>
+    <div class="preview"><div class="ph">כך זה ייראה אצל התלמידים:</div><div id="prev"></div></div>
+    <div class="row" style="margin-top:14px"><button class="btn" id="post" style="flex:1">פרסם עדכון</button></div><div id="pMsg" hidden></div></div>
+  <div class="card"><h2>${me.role==="admin"?"📋 כל העדכונים":"📋 העדכונים שלי"}</h2><div id="list"><p class="hint">טוען…</p></div></div>
+  ${me.role==="admin"?`<div class="card"><h2>👥 צוות</h2><p class="hint">כל מורה מקבל קוד כניסה אישי. הקוד מוצג פעם אחת: שלח אותו למורה בוואטסאפ.</p>
+    <div class="row"><input id="uName" maxlength="40" placeholder="שם המורה, למשל: הרב לוי" style="flex:1;min-width:160px"><button class="btn" id="uAdd">הוסף מורה</button></div>
+    <div id="uMsg" hidden></div><div id="users" style="margin-top:10px"></div></div>`:""}
+  <p class="hint" style="text-align:center">כתובת הכניסה לצוות: <span dir="ltr">${esc(location.href.split("#")[0])}</span></p>`;
+
+  const seg=(id,cb)=>$(id).querySelectorAll("button").forEach(b=>b.onclick=()=>{$(id).querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));cb(b.dataset.v)});
+  seg("aud",v=>{aud=v;preview()});
+  seg("dur",v=>{$("custom").hidden=v!=="custom";dur=v==="custom"?"custom":(v==="eod"?"eod":Number(v));preview()});
+  $("text").oninput=()=>{$("count").textContent=$("text").value.length+"/600";preview()};
+  $("urg").onchange=e=>{urgent=e.target.checked;preview()};
+  $("cNum").oninput=$("cUnit").onchange=preview;
+  $("post").onclick=post;
+  if(me.role==="admin"){$("uAdd").onclick=addUser;loadUsers()}
+  preview();loadList();
+}
+function minutes(){return dur==="custom"?Math.round(Number($("cNum").value)*Number($("cUnit").value)):minutesFor(dur)}
+function preview(){
+  const text=$("text").value.trim()||"כאן יופיע העדכון";
+  // תצוגה מקדימה בעזרת אותו רכיב שמציג באפליקציה
+  const now=Date.now(),m=minutes()||60;
+  Updates.render($("prev"),null,[{id:"preview",text,author:me.name,role:me.role,audience:aud,urgent,createdAt:now,expiresAt:now+m*60e3}]);
+}
+async function post(){
+  const text=$("text").value.trim(),m=minutes();
+  if(!text)return msg("pMsg","כתוב את העדכון.");
+  if(!(m>=1&&m<=43200))return msg("pMsg","משך לא תקין (עד 30 ימים).");
+  $("post").disabled=true;const r=await api({action:"post",text,minutes:m,audience:aud,urgent});$("post").disabled=false;
+  if(!r.ok){if(r.error==="auth")return showLogin();return msg("pMsg",ERR[r.error]||"שגיאה.")}
+  $("text").value="";$("count").textContent="0/600";msg("pMsg","✅ פורסם! התלמידים יראו את זה תוך דקה.",true);preview();loadList();
+}
+const fmtT=t=>{const d=new Date(t);return `${d.getDate()}.${d.getMonth()+1} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`};
+async function loadList(){
+  const r=await api({action:"list"});const box=$("list");if(!box)return;
+  if(!r.ok){box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;if(r.error==="auth")showLogin();return}
+  if(!r.updates.length){box.innerHTML=`<p class="hint">אין עדכונים בימים האחרונים.</p>`;return}
+  box.innerHTML=r.updates.map(u=>`<div class="item"><div class="m"><span class="pill ${u.active?"on":"off"}">${u.active?"פעיל":"הסתיים"}</span>${u.urgent?`<span class="pill urg">דחוף</span>`:""}${esc(u.authorName)} · ${u.audience==="all"?"כולם":u.audience==="y1"?"י'1":"י'2"} · ${fmtT(u.createdAt)} עד ${fmtT(u.expiresAt)}</div><div class="t">${esc(u.text)}</div>
+    <div class="row" style="margin-top:8px">${u.active?`<button class="btn sm ghost" data-end="${esc(u.id)}">סיים עכשיו</button>`:""}<button class="btn sm danger" data-del="${esc(u.id)}">מחק</button></div></div>`).join("");
+  box.querySelectorAll("[data-end]").forEach(b=>b.onclick=async()=>{await api({action:"end",id:b.dataset.end});loadList()});
+  box.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את העדכון?"))return;await api({action:"delete",id:b.dataset.del});loadList()});
+}
+async function loadUsers(){
+  const r=await api({action:"users"});const box=$("users");if(!box||!r.ok)return;
+  box.innerHTML=r.users.map(u=>`<div class="item row" style="justify-content:space-between"><span><b>${esc(u.name)}</b> <span class="pill off">${u.role==="admin"?"מנהל":"מורה"}</span></span>${u.id===me.id?"<span class=hint style=margin:0>זה אתה</span>":`<span class="row"><button class="btn sm ghost" data-reset="${esc(u.id)}">קוד חדש</button><button class="btn sm danger" data-rm="${esc(u.id)}">הסר</button></span>`}</div>`).join("");
+  box.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{if(!confirm("ליצור קוד חדש? הקוד הישן יפסיק לעבוד."))return;const x=await api({action:"resetUser",id:b.dataset.reset});if(x.ok)showCode(x.user.name,x.code)});
+  box.querySelectorAll("[data-rm]").forEach(b=>b.onclick=async()=>{if(!confirm("להסיר את המורה? הוא לא יוכל להיכנס יותר."))return;await api({action:"removeUser",id:b.dataset.rm});loadUsers()});
+}
+async function addUser(){
+  const name=$("uName").value.trim();if(!name)return msg("uMsg","כתוב את שם המורה.");
+  $("uAdd").disabled=true;const r=await api({action:"addUser",name});$("uAdd").disabled=false;
+  if(!r.ok)return msg("uMsg",ERR[r.error]||"שגיאה.");$("uName").value="";showCode(r.user.name,r.code);loadUsers();
+}
+function showCode(name,code){
+  const link=location.href.split("#")[0];
+  const text=`שלום ${name}, זה הקוד שלך לכתיבת עדכונים לתלמידים באפליקציית המערכת:\n${code}\nנכנסים כאן: ${link}`;
+  const box=$("uMsg");box.className="msg ok";box.hidden=false;
+  box.innerHTML=`הקוד של <b>${esc(name)}</b> (מוצג פעם אחת בלבד):<div class="code">${esc(code)}</div><div class="row"><a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">📤 שלח בוואטסאפ</a><button class="btn ghost" id="cpy">העתק</button></div>`;
+  $("cpy").onclick=async()=>{try{await navigator.clipboard.writeText(text);$("cpy").textContent="הועתק ✓"}catch(e){}};
+}
+$("logout").onclick=()=>{T.set(null);me=null;showLogin()};
+start();
+</script>
+</body>
+</html>
