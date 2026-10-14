@@ -15,8 +15,9 @@
     const m = Math.round((Date.now() - t) / 60000);
     if (m < 1) return "עכשיו";
     if (m < 60) return `לפני ${m} דק'`;
-    if (m < 1440) return `לפני ${Math.round(m / 60)} שע'`;
-    return `לפני ${Math.round(m / 1440)} ימים`;
+    if (m < 1440) { const h = Math.round(m / 60); return h <= 1 ? "לפני שעה" : `לפני ${h} שע'`; }
+    const d = Math.round(m / 1440);
+    return d <= 1 ? "לפני יום" : d === 2 ? "לפני יומיים" : `לפני ${d} ימים`;
   }
   function until(t) {
     const d = new Date(t), now = new Date(), hm = `${pad(d.getHours())}:${pad(d.getMinutes())}`;

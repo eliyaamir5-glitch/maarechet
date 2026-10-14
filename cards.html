@@ -155,9 +155,10 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
 <script>
 const $=id=>document.getElementById(id);
 const VIEWS=["vHome","vEdit","vSet","vFlash","vQuiz","vMatch","vDone"];
-function show(v){VIEWS.forEach(x=>$(x).hidden=x!==v);window.scrollTo(0,0);$("back").textContent=v==="vHome"?"🏠 חזרה למערכת":"→ חזרה"}
+let qTimer=null;
+function show(v){clearTimeout(qTimer);if(v!=="vMatch")clearInterval(mTimer);VIEWS.forEach(x=>$(x).hidden=x!==v);window.scrollTo(0,0);$("back").textContent=v==="vHome"?"🏠 חזרה למערכת":"→ חזרה"}
 $("back").onclick=()=>{const v=VIEWS.find(x=>!$(x).hidden);if(v==="vHome")location.href="./";else if(v==="vSet"||v==="vEdit")home();else openSet(cur.id)};
-const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
 const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
@@ -210,7 +211,7 @@ $("btnSave").onclick=()=>{
   const title=$("eName").value.trim(),subject=$("eSubj").value.trim(),cards=parseCards($("eCards").value);
   if(!title)return $("eErr").textContent="חסר שם לסט.";
   if(cards.length<2)return $("eErr").textContent="צריך לפחות 2 כרטיסים בצורה: מונח - הגדרה.";
-  if(editing&&!editing.builtin){Object.assign(editing,{title,subject,cards})}
+  if(editing&&!editing.builtin){if(JSON.stringify(editing.cards)!==JSON.stringify(cards)){delete prog[editing.id];save("cardsProg",prog)}Object.assign(editing,{title,subject,cards})}
   else{const s={id:"s"+Date.now().toString(36),title,subject,cards,created:Date.now()};mySets.push(s);editing=s}
   save("sets",mySets);openSet(editing.id);
 };
@@ -268,7 +269,7 @@ function drawQuiz(){
     if(qLock)return;qLock=true;const ok=+b.dataset.j===i;if(ok)qs++;
     b.classList.add(ok?"ok":"no");if(!ok)$("qOpts").querySelector(`[data-j="${i}"]`).classList.add("ok");
     const k=known(cur.id);ok?k.add(i):k.delete(i);setKnown(cur.id,k);
-    setTimeout(()=>{qi++;drawQuiz()},ok?600:1400);
+    clearTimeout(qTimer);qTimer=setTimeout(()=>{if($("vQuiz").hidden)return;qi++;drawQuiz()},ok?600:1400);
   });
 }
 $("qQuit").onclick=()=>openSet(cur.id);
@@ -288,7 +289,7 @@ function startMatch(){
     const a=mSel;mSel=null;a.classList.remove("sel");
     if(a.dataset.i===el.dataset.i&&a.dataset.side!==el.dataset.side){
       a.classList.add("gone");el.classList.add("gone");mLeftN--;$("mLeft").textContent=`נשארו ${mLeftN} זוגות`;
-      if(!mLeftN){clearInterval(mTimer);setTimeout(()=>finish("match"),350)}
+      if(!mLeftN){clearInterval(mTimer);setTimeout(()=>{if(!$("vMatch").hidden)finish("match")},350)}
     }else{a.classList.add("no");el.classList.add("no");setTimeout(()=>{a.classList.remove("no");el.classList.remove("no")},400)}
   });
 }
@@ -314,6 +315,7 @@ $("dBack").onclick=()=>openSet(cur.id);
     if(s&&s.cards&&s.cards.length){const dup=mySets.find(x=>x.title===s.title&&x.cards.length===s.cards.length);
       if(dup&&!confirm(`כבר יש לך סט בשם "${s.title}". להוסיף עותק נוסף?`))return openSet(dup.id);
       const ns={id:"s"+Date.now().toString(36),title:s.title,subject:s.subject||"",cards:s.cards,created:Date.now()};mySets.push(ns);save("sets",mySets);return openSet(ns.id)}
+    setTimeout(()=>alert("לא הצלחנו לפתוח את הסט מהקישור. אולי הקישור נחתך בהעתקה, או שהדפדפן ישן מדי. בקשו מהחבר לשלוח שוב, או לעדכן את הדפדפן."),300);
   }
   home();
 })();

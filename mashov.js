@@ -45,9 +45,15 @@
       if (!r.ok) return r;
       save(K.conn, { semel, schoolName, username, year, name: r.student?.name || "", connectedAt: new Date().toISOString() });
       save(K.pw, remember ? { p: password } : null);
-      save(K.data, { at: r.fetchedAt, behave: r.behave, grades: r.grades, groups: r.groups, lessonsCount: r.lessonsCount, partial: !!r.partial });
+      save(K.data, this._merge(r));
       document.dispatchEvent(new CustomEvent("mashov-updated"));
       return { ok: true };
+    },
+    // חלק שלא נמשך (null) לא מחליף את מה שכבר שמור בטלפון
+    _merge(r) {
+      const old = this.data() || {};
+      const pick = k => Array.isArray(r[k]) ? r[k] : (old[k] || []);
+      return { at: r.fetchedAt, behave: pick("behave"), grades: pick("grades"), groups: pick("groups"), lessonsCount: pick("lessonsCount"), partial: !!r.partial };
     },
 
     async refresh(password) {
@@ -56,7 +62,7 @@
       if (!pw) return { ok: false, error: "need_password" };
       const r = await this._call({ semel: c.semel, year: this.schoolYear(), username: c.username, password: pw });
       if (!r.ok) return r;
-      save(K.data, { at: r.fetchedAt, behave: r.behave, grades: r.grades, groups: r.groups, lessonsCount: r.lessonsCount, partial: !!r.partial });
+      save(K.data, this._merge(r));
       document.dispatchEvent(new CustomEvent("mashov-updated"));
       return { ok: true };
     },
@@ -81,7 +87,7 @@
     _schools: null,
     async schools() {
       if (this._schools) return this._schools;
-      try { this._schools = await (await fetch("mashov-schools.json")).json(); } catch (e) { this._schools = []; }
+      try { const res = await fetch("mashov-schools.json"); if (!res.ok) return []; this._schools = await res.json(); } catch (e) { return []; }
       return this._schools;
     },
     norm(s) { return String(s || "").replace(/["'״׳`.,()\-–]/g, " ").replace(/[ךםןףץ]/g, c => ({ "ך": "כ", "ם": "מ", "ן": "נ", "ף": "פ", "ץ": "צ" })[c]).replace(/\s+/g, " ").trim(); },

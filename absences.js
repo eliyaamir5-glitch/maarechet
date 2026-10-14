@@ -66,7 +66,11 @@
     if (exact) return exact;
     const contains = ourNames.filter(n => { const o = norm(n); return o.length > 2 && (m.includes(o) || o.includes(m)); });
     if (contains.length === 1) return contains[0];
-    if (contains.length > 1) return contains.sort((a, b) => b.length - a.length)[0];
+    if (contains.length > 1) {
+      // שם כללי שמתאים לכמה מקצועות (למשל "השכלה כללית") – לא מנחשים
+      if (contains.filter(n => norm(n).includes(m)).length > 1) return null;
+      return contains.sort((a, b) => b.length - a.length)[0];
+    }
     if (/תפיל|שחרית/.test(m)) return ourNames.find(n => /שחרית/.test(n)) || null;
     return null;
   }
@@ -86,11 +90,11 @@
     const per = {}; const unmatched = {};
     const absEvents = [];
     for (const ev of behave || []) {
-      if (!ev.date || ev.date < Y.start || ev.date > Y.end) continue;
+      if (!ev.date || ev.date < Y.start || ev.date > Y.end || !isSchoolDay(ev.date, Y)) continue;
       const c = classify(ev);
       if (c.kind === "other") continue;
       const subj = matchSubject(ev.subject, names);
-      if (!subj) { const k = ev.subject || "לא ידוע"; unmatched[k] = (unmatched[k] || 0) + (c.kind === "absence" ? 1 : 0); continue; }
+      if (!subj) { if (c.kind === "absence") { const k = ev.subject || "לא ידוע"; unmatched[k] = (unmatched[k] || 0) + 1; } continue; }
       const s = per[subj] || (per[subj] = { absences: 0, justified: 0, unjustified: 0, unknownJust: 0, lates: 0 });
       if (c.kind === "late") { s.lates++; continue; }
       s.absences++;
@@ -152,7 +156,7 @@
     let morning = 0, afternoon = 0;
     for (const e of ev) {
       byWeekday[dateOf(e.date).getDay()]++;
-      const lesson = Number(e.lesson);
+      const lesson = e.lesson == null || e.lesson === "" ? NaN : Number(e.lesson);
       if (/שחרית/.test(e.subject) || (!isNaN(lesson) && lesson <= 1)) morning++;
       else if (!isNaN(lesson) && lesson >= 8) afternoon++;
     }

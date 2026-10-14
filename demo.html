@@ -187,6 +187,14 @@ function sampleUpdates(){
 }
 function allUpdates(){return[...(cfg.samples?sampleUpdates():[]),...host.staffUpdates]}
 host.views={};
+// פניות מתלמידים בדמו (עם כמה דוגמאות)
+const HR=60*60e3;
+host.fb=[
+  {id:"f1",kind:"idea",text:"אפשר להוסיף תזכורת יום לפני מבחן? ככה לא נשכח ללמוד.",name:"נועם לוי",cls:"י'1",page:"מסך ראשי",device:"",at:Date.now()-2*HR,done:false},
+  {id:"f2",kind:"bug",text:"כשאני פותח את הכרטיסיות בטלפון ישן, הכרטיס לא מתהפך.",name:"איתי כהן",cls:"י'2",page:"מסך ראשי",device:"Android 9 | Chrome",at:Date.now()-5*HR,done:false},
+  {id:"f3",kind:"idea",text:"מצב כהה גם לתמונה של המערכת 🙏",name:"",cls:"",page:"מסך ראשי",device:"",at:Date.now()-26*HR,done:true},
+];
+host.feedback=b=>{const text=String((b&&b.text)||"").trim();if(!text)return{status:400,body:{ok:false,error:"bad_request"}};host.fb.unshift({id:"f"+Math.random().toString(36).slice(2,8),kind:b.kind||"other",text,name:b.name||"",cls:b.cls||"",page:b.page||"",device:b.device||"",at:Date.now(),done:false});return{status:200,body:{ok:true}}};
 host.updates=(method,b)=>{const t=now();
   if(method==="POST"){for(const id of (b&&b.seen)||[])host.views[id]=(host.views[id]||0)+1;return{status:200,body:{ok:true}}}
   return{status:200,body:{ok:true,now:t,updates:allUpdates().filter(u=>u.expiresAt>t).sort((a,b)=>(b.urgent-a.urgent)||(b.createdAt-a.createdAt)).map(u=>({id:u.id,text:u.text,author:u.authorName,role:u.role,audience:u.audience,urgent:!!u.urgent,createdAt:u.createdAt,expiresAt:u.expiresAt}))}}};
@@ -215,6 +223,9 @@ host.staff=(method,b,token)=>{
   if(!admin)return err(403,"forbidden");
   switch(b.action){
     case"users":return ok({users:host.staffUsers});
+    case"feedback":return ok({feedback:host.fb});
+    case"feedbackDone":host.fb=host.fb.map(x=>x.id===b.id?{...x,done:!x.done}:x);return ok({});
+    case"feedbackDelete":host.fb=host.fb.filter(x=>x.id!==b.id);return ok({});
     case"addUser":{const name=String(b.name||"").trim().slice(0,40);if(!name)return err(400,"bad_request");const u={id:"u"+Math.random().toString(36).slice(2,8),name,role:b.role==="admin"?"admin":"teacher"},code=newCode();host.staffUsers.push(u);host.codes[code]=u.id;return ok({user:u,code})}
     case"resetUser":{const u=host.staffUsers.find(x=>x.id===b.id);if(!u)return err(404,"not_found");const code=newCode();for(const k in host.codes)if(host.codes[k]===u.id)delete host.codes[k];host.codes[code]=u.id;return ok({user:u,code})}
     case"removeUser":if(b.id===me.id)return err(400,"self");if(host.staffUsers.find(x=>x.id===b.id)?.owner)return err(403,"forbidden");host.staffUsers=host.staffUsers.filter(x=>x.id!==b.id);return ok({});

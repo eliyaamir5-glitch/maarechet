@@ -191,11 +191,12 @@ const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"
 function initSig(){
   const c=$("sigPad"),ctx=c.getContext("2d");
   const fit=()=>{const r=c.getBoundingClientRect();c.width=Math.round(r.width*2);c.height=Math.round(r.height*2);redraw()};
-  const pos=e=>{const r=c.getBoundingClientRect();return [(e.clientX-r.left)/r.width*c.width,(e.clientY-r.top)/r.height*c.height]};
-  function redraw(){ctx.clearRect(0,0,c.width,c.height);ctx.lineWidth=4;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#1a1a4a";strokes.forEach(s=>{ctx.beginPath();s.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke()})}
-  c.onpointerdown=e=>{drawing=true;c.setPointerCapture(e.pointerId);strokes.push([pos(e)]);$("sigPh").hidden=true;redraw()};
-  c.onpointermove=e=>{if(!drawing)return;strokes[strokes.length-1].push(pos(e));redraw()};
-  c.onpointerup=c.onpointercancel=()=>{drawing=false};
+  const pos=e=>{const r=c.getBoundingClientRect();return [Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))]};
+  function redraw(){ctx.clearRect(0,0,c.width,c.height);ctx.lineWidth=4;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#1a1a4a";strokes.forEach(s=>{ctx.beginPath();s.forEach((p,i)=>i?ctx.lineTo(p[0]*c.width,p[1]*c.height):ctx.moveTo(p[0]*c.width,p[1]*c.height));ctx.stroke()})}
+  let pid=null;
+  c.onpointerdown=e=>{if(!e.isPrimary||drawing)return;drawing=true;pid=e.pointerId;c.setPointerCapture(e.pointerId);strokes.push([pos(e)]);$("sigPh").hidden=true;redraw()};
+  c.onpointermove=e=>{if(!drawing||e.pointerId!==pid)return;strokes[strokes.length-1].push(pos(e));redraw()};
+  c.onpointerup=c.onpointercancel=e=>{if(e.pointerId===pid){drawing=false;pid=null}};
   $("sigClr").onclick=()=>{strokes=[];$("sigPh").hidden=false;redraw()};
   window.addEventListener("resize",fit);fit();
 }
@@ -204,7 +205,7 @@ function sign(){
   if(!pn)return err("pErr","חסר שם ההורה.");if(!$("pOk").checked)return err("pErr","יש לסמן את האישור.");if(!strokes.length||strokes.every(s=>s.length<3))return err("pErr","חסרה חתימה.");
   err("pErr","");
   const permit={...req,pn,pr:$("pRel").value,at:Date.now()};
-  drawPermit(permit);
+  drawPermit(permit);permitReady=null;permitBlob();
   $("stParent").hidden=true;$("stDone").hidden=false;window.scrollTo(0,0);
   $("btnToTeacher").onclick=()=>sharePermit(permit);$("btnSave").onclick=()=>savePermit(permit);
 }
@@ -238,12 +239,13 @@ function drawPermit(p){
   y+=14;
   // חתימה
   const sw=360,sh=150;ctx.fillStyle="#f7f7fb";ctx.fillRect(W-M-sw,y,sw,sh);ctx.strokeStyle="#e3e2f2";ctx.strokeRect(W-M-sw,y,sw,sh);
-  const sp=$("sigPad");ctx.save();ctx.translate(W-M-sw,y);ctx.scale(sw/sp.width,sh/sp.height);ctx.lineWidth=4*(sp.width/sw);ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#1a1a4a";strokes.forEach(s=>{ctx.beginPath();s.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.stroke()});ctx.restore();
+  ctx.save();ctx.translate(W-M-sw,y);ctx.scale(sw,sh);ctx.lineWidth=4/sw;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#1a1a4a";strokes.forEach(s=>{ctx.beginPath();s.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.stroke()});ctx.restore();
   ctx.fillStyle="#6c7093";ctx.font="500 22px Rubik, Arial";ctx.fillText("חתימת ההורה",W-M,y+sh+32);
   const at=new Date(p.at);ctx.textAlign="left";ctx.fillText(`אושר ב-${pad(at.getDate())}.${pad(at.getMonth()+1)}.${at.getFullYear()} בשעה ${pad(at.getHours())}:${pad(at.getMinutes())}`,M,y+sh+32);
   ctx.textAlign="right";ctx.font="400 20px Rubik, Arial";ctx.fillStyle="#9aa0c7";ctx.fillText("נוצר באפליקציית המערכת · נשלח מהטלפון של ההורה",W-M,H-28);
 }
-function permitBlob(){return new Promise(res=>$("permit").toBlob(res,"image/png"))}
+let permitReady=null; // נבנה מיד אחרי החתימה
+function permitBlob(){return permitReady||(permitReady=new Promise(res=>$("permit").toBlob(res,"image/png")))}
 async function sharePermit(p){
   const blob=await permitBlob();const file=new File([blob],`shichrur-${p.n}-${p.d}.png`,{type:"image/png"});
   const text=`שחרורון: ${p.n} (${p.c}) יוצא/ת היום בשעה ${p.t}. מאושר על ידי ${p.pn}.`;
@@ -256,6 +258,8 @@ async function savePermit(p){
 
 // ---- כניסה ----
 document.fonts.ready.then(()=>{
+  // קישור הורה שנפתח באותה לשונית: טוענים מחדש כדי להציג את מסך ההורה
+  addEventListener("hashchange",()=>{if(/^#p=/.test(location.hash))location.reload()});
   const m=location.hash.match(/^#p=(.+)$/);const q=m&&dec(m[1]);
   if(q&&q.v===1&&q.n&&q.d&&q.t)initParent(q);else initStudent();
 });

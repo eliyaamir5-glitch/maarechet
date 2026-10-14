@@ -141,7 +141,7 @@ const LABEL={green:"תקין",orange:"לשים לב",red:"מסוכן",lost:"עב
 const load=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}};
 let profile=load("profile",null);
 if(profile&&!profile.major&&profile.phys==="yes")profile.major="phys";
-let countJustified=localStorage.getItem("absCountJustified")!=="0";
+let countJustified=true;try{countJustified=localStorage.getItem("absCountJustified")!=="0"}catch(e){}
 let demo=location.hash==="#demo";
 
 // נתוני דוגמה: כדי לראות את המסך לפני שמחברים משוב
@@ -185,7 +185,7 @@ function render(){
   let until,untilMin;
   if(demo){until="2026-10-15";untilMin=24*60}else{const at=new Date(md?.at||Date.now());until=`${at.getFullYear()}-${String(at.getMonth()+1).padStart(2,"0")}-${String(at.getDate()).padStart(2,"0")}`;untilMin=at.getHours()*60+at.getMinutes()}
   const days=profile.cls==="y1"?DAYS_Y1:DAYS_Y2, D={ENG,MATH,MAJORS};
-  const r=Absences.analyze({days,profile,data:D,year:SCHOOL_YEAR,behave,today:demo?"2026-10-15":undefined,countJustified,nonBagrut:NON_BAGRUT});
+  const r=Absences.analyze({days,profile,data:D,year:SCHOOL_YEAR,behave,today:demo?"2026-10-15":until,countJustified,nonBagrut:NON_BAGRUT});
   const tl=Absences.timeline({days,profile,data:D,year:SCHOOL_YEAR,behave,until,untilMin});
   const SS=Absences.subjectStreaks(tl.blocks), B=tl.blocks;
   const bag=r.subjects.filter(s=>!s.nonBagrut), extra=r.subjects.filter(s=>s.nonBagrut);
@@ -272,7 +272,8 @@ function drawer(html){
     const sh=el.querySelector(".sh");let y0=null;
     sh.addEventListener("touchstart",e=>{y0=sh.scrollTop<=0?e.touches[0].clientY:null},{passive:true});
     sh.addEventListener("touchmove",e=>{if(y0!=null&&e.touches[0].clientY-y0>0)sh.style.transform=`translateY(${e.touches[0].clientY-y0}px)`},{passive:true});
-    sh.addEventListener("touchend",e=>{const dy=y0==null?0:(e.changedTouches[0].clientY-y0);sh.style.transform="";y0=null;if(dy>90)setDrawer(false)});
+    sh.addEventListener("touchend",e=>{const dy=y0==null?0:(e.changedTouches[0].clientY-y0);sh.style.transform="";y0=null;if(dy>90&&sh.scrollTop<=0)setDrawer(false)});
+    sh.addEventListener("touchcancel",()=>{sh.style.transform="";y0=null});
   }
   $("drwBody").innerHTML=html;
   if($("drwOpen"))$("drwOpen").onclick=()=>setDrawer(true);

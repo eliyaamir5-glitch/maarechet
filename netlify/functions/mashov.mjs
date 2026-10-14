@@ -130,6 +130,8 @@ export default async (req) => {
   const t3 = withTimeout(4000);
   try { await fetch(`${BASE}/logout`, { headers: auth, signal: t3.signal }); } catch {} finally { t3.done(); }
 
+  // בלי נתוני נוכחות אין טעם להחזיר הצלחה: זה היה מוחק את הנתונים הקודמים בטלפון ומראה "אפס חיסורים"
+  if (behave === null) return reply(200, { ok: false, error: "mashov_down" }, headers);
   return reply(200, {
     ok: true, fetchedAt: new Date().toISOString(),
     student: { name: findStudentName(loginData) },

@@ -51,7 +51,7 @@ ok("excluding justified lowers the count", noJ.counted < withJ.counted && noJ.pc
 
 // 5. אבוד: יותר מ-30% מכל השנה
 const evLost = [];
-for (let i = 0; i < Math.floor(0.3 * gm0.yearTotal) + 3; i++) evLost.push({ date: "2026-10-1" + (i % 5), lesson: 2, subject: "גמרא", type: "חיסור" });
+for (let i = 0; i < Math.floor(0.3 * gm0.yearTotal) + 3; i++) evLost.push({ date: "2026-10-1" + (1 + i % 5), lesson: 2, subject: "גמרא", type: "חיסור" });
 const lost = A.analyze({ ...base, behave: evLost, today }).subjects.find(s => s.name === "גמרא");
 ok("more than 30% of the whole year → lost", lost.status === "lost" && lost.allowedLeft < 0);
 

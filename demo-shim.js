@@ -39,6 +39,7 @@
     await new Promise(r => setTimeout(r, 250)); // כמו רשת אמיתית, כדי שהטעינה תיראה טבעית
     if (/\/api\/mashov/.test(url)) { const r = host.mashov(body); return reply(r.status, r.body); }
     if (/\/api\/updates/.test(url)) { const r = host.updates(init.method || "GET", body); return reply(r.status, r.body); }
+    if (/\/api\/feedback/.test(url)) { const r = host.feedback(body); return reply(r.status, r.body); }
     if (/\/api\/staff/.test(url)) { const r = host.staff(init.method || "GET", body, String(auth).replace(/^Bearer\s+/i, "")); return reply(r.status, r.body); }
     if (/web3forms\.com/.test(url)) return reply(200, { success: true });
     return realFetch(input, init);

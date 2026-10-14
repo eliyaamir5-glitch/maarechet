@@ -1,8 +1,8 @@
 // Service Worker: מאפשר לאפליקציה להיפתח גם בלי אינטרנט.
 // אסטרטגיה: קודם רשת ואם אין – מהמטמון (כך עדכונים מגיעים מיד כשיש קליטה).
 // לפונטים של גוגל: קודם מטמון, כי הם לא משתנים.
-const CACHE = "maarechet-v14";
-const PRECACHE = ["./", "./index.html", "./data.js", "./shichrur.html", "./cards.html", "./sets.js", "./board.js", "./mashov.js", "./absences.js", "./absences.html", "./timetable-image.js", "./about.html", "./updates.js", "./demo-shim.js", "./staff.html"];
+const CACHE = "maarechet-v15";
+const PRECACHE = ["./", "./index.html", "./data.js", "./shichrur.html", "./cards.html", "./sets.js", "./board.js", "./mashov.js", "./absences.js", "./absences.html", "./timetable-image.js", "./about.html", "./updates.js", "./demo-shim.js", "./staff.html", "./mashov-schools.json"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
@@ -29,7 +29,7 @@ self.addEventListener("fetch", e => {
   if (url.hostname.endsWith("gstatic.com") || url.hostname.endsWith("googleapis.com") || url.hostname === "cdn.jsdelivr.net") {
     e.respondWith(
       caches.match(req).then(hit => hit || fetch(req).then(res => {
-        const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return res;
+        if (res.ok || res.type === "opaque") { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); } return res;
       }))
     );
     return;
@@ -38,7 +38,7 @@ self.addEventListener("fetch", e => {
   // שאר הקבצים שלנו: רשת קודם, מטמון כגיבוי
   if (url.origin === location.origin) {
     e.respondWith(
-      fetch(req).then(res => {
+      (req.mode === "navigate" ? fetch(req) : fetch(req, { cache: "no-cache" })).then(res => { // קבצים: תמיד הגרסה הכי חדשה מהשרת (ניווט נשאר רגיל, בגלל הפניות)
         if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
         return res;
       }).catch(() => caches.match(req).then(hit => hit || (req.mode === "navigate" ? caches.match("./index.html") : undefined)))

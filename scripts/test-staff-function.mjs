@@ -80,9 +80,9 @@ ok("teacher's list shows only their own (incl. ended)", r.json.updates.length ==
 // טוקנים והגבלת ניסיונות
 r = await call("/api/staff", { body: { action: "me" }, token: adminToken.slice(0, -2) + "xx" });
 ok("tampered token is refused", r.status === 401);
-for (let i = 0; i < 8; i++) await call("/api/staff", { body: { action: "login", code: "WRONG" + i }, ip: "9.9.9.9" });
+for (let i = 0; i < 20; i++) await call("/api/staff", { body: { action: "login", code: "WRONG" + i }, ip: "9.9.9.9" });
 r = await call("/api/staff", { body: { action: "login", code: teacherCode }, ip: "9.9.9.9" });
-ok("8 wrong codes lock that address", r.status === 429);
+ok("20 wrong codes lock that address", r.status === 429);
 r = await call("/api/staff", { body: { action: "login", code: teacherCode }, ip: "2.2.2.2" });
 ok("other addresses are not locked", r.status === 200);
 
@@ -142,12 +142,15 @@ ok("teachers and other admins are kept", r.json.users.some(u => u.id === uri.id)
 const INVITE3 = "QRST-UVWX-YZ23";
 mod.__setInviteHash(crypto.createHash("sha256").update("QRSTUVWXYZ23").digest("hex"));
 r = await call("/api/staff", { body: { action: "login", code: "qrst uvwx yz23" }, ip: "7.7.7.7" });
-const t3 = r.json.token;
+let t3 = r.json.token;
 ok("typing the principal code (any case/spaces) signs him in as the main principal", r.status === 200 && r.json.first === true && r.json.user.id === ownerId && r.json.user.owner);
 r = await call("/api/staff", { body: { action: "login", code: INVITE3 }, ip: "7.7.7.7" });
 ok("the same code keeps working afterwards", r.status === 200 && !r.json.first && r.json.user.id === ownerId);
 r = await call("/api/staff", { body: { action: "updateMe", name: "הרב יוסף", code: "my-own-code" }, token: t3 });
-ok("he changes his name and code", r.status === 200 && r.json.user.name === "הרב יוסף");
+ok("he changes his name and code, and gets a fresh sign-in", r.status === 200 && r.json.user.name === "הרב יוסף" && !!r.json.token);
+const t3old = t3; t3 = r.json.token;
+r = await call("/api/staff", { body: { action: "me" }, token: t3old });
+ok("after changing the code, older sign-ins stop working", r.status === 401);
 r = await call("/api/staff", { body: { action: "login", code: INVITE3 }, ip: "7.7.7.7" });
 ok("after changing, the original code stops working", r.status === 401);
 r = await call("/api/staff", { body: { action: "login", code: "my-own-code" }, ip: "8.8.8.8" });
@@ -162,3 +165,36 @@ fresh.__setInviteHash(crypto.createHash("sha256").update("ABCDEFGHJKLM").digest(
 const res = await fresh.default(new Request("http://localhost/api/staff", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "login", code: "ABCD-EFGH-JKLM" }) }), { ip: "9.1.1.1" });
 const j = await res.json();
 ok("on a fresh install the principal code creates the account", res.status === 200 && j.user.role === "admin" && j.user.name === "המנהל");
+
+// רעיונות ותקלות מתלמידים
+r = await call("/api/feedback", { body: { kind: "idea", text: "להוסיף מצב לילה <b>", name: "יוסי", cls: "י'2", page: "index", device: "iPhone" }, ip: "10.0.0.1" });
+ok("a student sends an idea", r.status === 200 && r.json.ok);
+r = await call("/api/feedback", { body: { kind: "bug", text: "" }, ip: "10.0.0.1" });
+ok("empty feedback is refused", r.status === 400);
+for (let i = 0; i < 29; i++) await call("/api/feedback", { body: { kind: "bug", text: "תקלה " + i }, ip: "10.0.0.2" });
+r = await call("/api/feedback", { body: { kind: "bug", text: "האחרונה" }, ip: "10.0.0.2" });
+ok("30 per hour per address are accepted", r.status === 200);
+r = await call("/api/feedback", { body: { kind: "bug", text: "אחת יותר מדי" }, ip: "10.0.0.2" });
+ok("the 31st within an hour is refused", r.status === 429);
+r = await call("/api/staff", { body: { action: "feedback" }, token: uriToken });
+ok("teachers cannot read feedback", r.status === 403 || r.status === 401);
+r = await call("/api/staff", { body: { action: "feedback" }, token: t3 });
+const fb = r.json.feedback;
+ok("the principal sees feedback, newest first", r.status === 200 && fb.length === 31 && fb[fb.length - 1].kind === "idea" && fb[fb.length - 1].text.includes("<b>"));
+await call("/api/staff", { body: { action: "feedbackDone", id: fb[0].id }, token: t3 });
+await call("/api/staff", { body: { action: "feedbackDelete", id: fb[1].id }, token: t3 });
+r = await call("/api/staff", { body: { action: "feedback" }, token: t3 });
+ok("mark handled and delete work", r.json.feedback.length === 30 && r.json.feedback[0].done === true);
+
+// אותו קוד לשני אנשים = אסור; איפוס מבטל כניסות קודמות
+r = await call("/api/staff", { body: { action: "addUser", name: "מורה חדש" }, token: t3 });
+const nCode = r.json.code, nUser = r.json.user;
+r = await call("/api/staff", { body: { action: "login", code: nCode }, ip: "11.0.0.1" });
+const nTok = r.json.token;
+r = await call("/api/staff", { body: { action: "updateMe", code: "my-own-code" }, token: nTok });
+ok("a teacher cannot pick a code someone else already uses", r.status === 409 && r.json.error === "code_taken");
+r = await call("/api/staff", { body: { action: "login", code: "my-own-code" }, ip: "11.0.0.2" });
+ok("…so that code still signs in only the principal", r.status === 200 && r.json.user.owner === true);
+await call("/api/staff", { body: { action: "resetUser", id: nUser.id }, token: t3 });
+r = await call("/api/staff", { body: { action: "me" }, token: nTok });
+ok("after a reset, the teacher's old sign-in stops working", r.status === 401);
