@@ -98,7 +98,7 @@
       const ov = el("div", "upd-pop"), bk = el("div", "upd-bk"), stage = el("div", "upd-stage");
       ov.append(bk, stage); document.body.append(ov);
       document.documentElement.classList.add("upd-lock");
-      try { navigator.vibrate && navigator.vibrate(queue.some(u => u.urgent) ? [60, 40, 60] : 40); } catch (e) {}
+      try { const ua = navigator.userActivation; if (navigator.vibrate && (!ua || ua.hasBeenActive)) navigator.vibrate(queue.some(u => u.urgent) ? [60, 40, 60] : 40); } catch (e) {}
       for (let i = 0; i < queue.length; i++) {
         const u = queue[i];
         stage.textContent = "";
@@ -179,9 +179,9 @@
   .upd-meta{font-size:12px;color:var(--muted);margin-top:6px}
   .upd-more{display:block;width:100%;border:1.5px dashed var(--line);background:none;color:var(--accent);border-radius:12px;padding:8px;font:inherit;font-weight:700;cursor:pointer;margin-bottom:8px}
   html.upd-lock,html.upd-lock body{overflow:hidden}
-  .upd-pop{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+  .upd-pop{position:fixed;inset:0;z-index:9999;display:flex;padding:20px;overflow-y:auto;overscroll-behavior:contain}
   .upd-bk{position:absolute;inset:0;background:rgba(8,10,30,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);animation:updfade .3s both}
-  .upd-stage{position:relative;width:100%;max-width:420px;display:flex;flex-direction:column;align-items:stretch;gap:14px}
+  .upd-stage{position:relative;width:100%;max-width:420px;margin:auto;display:flex;flex-direction:column;align-items:stretch;gap:14px}
   .upd-pop-title{color:#fff;text-align:center;font-size:22px;font-weight:900;text-shadow:0 2px 12px rgba(0,0,0,.4);animation:updpop .5s cubic-bezier(.2,1.4,.4,1) both}
   .upd.big{margin:0;padding:18px;border-radius:22px;box-shadow:0 24px 60px rgba(0,0,0,.45);animation:updpop .55s cubic-bezier(.2,1.3,.4,1) .05s both;transform-origin:center}
   .upd.big .upd-text{font-size:19px;font-weight:500}

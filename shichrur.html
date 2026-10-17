@@ -248,7 +248,9 @@ let permitReady=null; // נבנה מיד אחרי החתימה
 function permitBlob(){return permitReady||(permitReady=new Promise(res=>$("permit").toBlob(res,"image/png")))}
 async function sharePermit(p){
   const blob=await permitBlob();const file=new File([blob],`shichrur-${p.n}-${p.d}.png`,{type:"image/png"});
-  const text=`שחרורון: ${p.n} (${p.c}) יוצא/ת היום בשעה ${p.t}. מאושר על ידי ${p.pn}.`;
+  const today=(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`})();
+  const when=p.d===today?"היום":(()=>{const [y,mo,da]=String(p.d||"").split("-");return y?`ב-${+da}.${+mo}`:""})();
+  const text=`שחרורון: ${p.n} (${p.c}) יוצא/ת ${when} בשעה ${p.t}. מאושר על ידי ${p.pn}.`;
   if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:"שחרורון",text});return}catch(e){if(e&&e.name==="AbortError")return}}
   savePermit(p);window.open("https://wa.me/?text="+encodeURIComponent(text+"\n(התמונה נשמרה בטלפון, צרפו אותה להודעה)"),"_blank");
 }

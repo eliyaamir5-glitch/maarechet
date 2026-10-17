@@ -5,7 +5,7 @@
 //   node gen-cal.js --check    – רק בדיקה שהקבצים בתיקייה מעודכנים (יוצא עם שגיאה אם לא)
 const fs = require("fs");
 const path = require("path");
-const { ENG, MATH, DAYS_Y1, DAYS_Y2, CLASSES_META, DEFAULT_GEAR, MAJORS } = require("./data.js");
+const { ENG, MATH, DAYS_Y1, DAYS_Y2, CLASSES_META, DEFAULT_GEAR, MAJORS, SCHOOL_YEAR } = require("./data.js");
 const { BOARD } = require("./board.js");
 
 const OUT_DIR = path.join(__dirname, "cal");
@@ -17,6 +17,21 @@ const STAMP = process.env.ICS_STAMP || new Date().toISOString().replace(/[-:]/g,
 
 const pad = n => String(n).padStart(2, "0");
 const esc = s => String(s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+// ימי חופשה (SCHOOL_YEAR.off) לפי יום בשבוע, כדי שהיומן לא יזכיר שיעורים בחגים
+const OFF_BY_WEEKDAY = (() => {
+  const m = [[], [], [], [], [], [], []];
+  for (const o of (SCHOOL_YEAR && SCHOOL_YEAR.off) || []) {
+    for (let d = new Date(o.from + "T12:00:00"); d <= new Date(o.to + "T12:00:00"); d.setDate(d.getDate() + 1)) {
+      if (d < WEEK_START) continue;
+      m[d.getDay()].push(`${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`);
+    }
+  }
+  return m;
+})();
+// שורות EXDATE: שורה לכל תאריך (קצר ונתמך בכל היומנים)
+const exdates = (weekday, hhmm, shiftDays = 0) => OFF_BY_WEEKDAY[weekday]
+  .map(ymd => { if (!shiftDays) return ymd; const d = new Date(+ymd.slice(0, 4), +ymd.slice(4, 6) - 1, +ymd.slice(6, 8)); d.setDate(d.getDate() - shiftDays); return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`; })
+  .map(ymd => `EXDATE;TZID=Asia/Jerusalem:${ymd}T${hhmm}00`);
 const gearOf = n => (DEFAULT_GEAR[n] || "").split(/[,\n]/).map(x => x.trim()).filter(Boolean);
 
 function resolve(l, p) {
@@ -50,6 +65,7 @@ function buildICS(p) {
         `DTSTART;TZID=Asia/Jerusalem:${ymd}T${l.s.replace(":", "")}00`,
         `DTEND;TZID=Asia/Jerusalem:${ymd}T${l.e.replace(":", "")}00`,
         `RRULE:FREQ=WEEKLY;BYDAY=${BYDAY[di]};UNTIL=${UNTIL}`,
+        ...exdates(di, l.s.replace(":", "")),
         `SUMMARY:${esc(l.n)}`,
         desc ? `DESCRIPTION:${esc(desc)}` : "",
         "BEGIN:VALARM", "TRIGGER:-PT10M", "ACTION:DISPLAY", `DESCRIPTION:${esc(l.n)} מתחיל בעוד 10 דקות`, "END:VALARM",
@@ -68,6 +84,7 @@ function buildICS(p) {
     out.push("BEGIN:VEVENT", `UID:${combo}-gear-${di}@maarechet`, `DTSTAMP:${STAMP}`,
       `DTSTART;TZID=Asia/Jerusalem:${ymd}T204500`, `DTEND;TZID=Asia/Jerusalem:${ymd}T205000`,
       `RRULE:FREQ=WEEKLY;BYDAY=${BYDAY[eve]};UNTIL=${UNTIL}`,
+      ...exdates(di, "2045", 1), // בערב שלפני יום חופשה – אין "מחר להביא"
       `SUMMARY:🎒 מחר להביא (${d.name})`, `DESCRIPTION:${esc(gear.join(", "))}`,
       "BEGIN:VALARM", "TRIGGER:PT0M", "ACTION:DISPLAY", `DESCRIPTION:מחר להביא: ${esc(gear.join(", "))}`, "END:VALARM", "END:VEVENT");
   });

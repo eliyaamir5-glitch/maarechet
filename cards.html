@@ -53,7 +53,7 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
 .flip{perspective:1200px;height:260px;cursor:pointer;margin:6px 0 12px}
 .flip .in{position:relative;width:100%;height:100%;transition:transform .45s;transform-style:preserve-3d}
 .flip.on .in{transform:rotateY(180deg)}
-.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--card);border:2px solid var(--line);border-radius:22px;display:flex;align-items:center;justify-content:center;text-align:center;padding:22px;font-size:26px;font-weight:700;line-height:1.35;overflow:auto}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--card);border:2px solid var(--line);border-radius:22px;display:flex;align-items:center;align-items:safe center;justify-content:center;text-align:center;padding:22px;font-size:26px;font-weight:700;line-height:1.35;overflow:auto}
 .face.back{transform:rotateY(180deg);background:var(--next)}
 .face small{position:absolute;top:10px;right:14px;font-size:12px;color:var(--muted);font-weight:400}
 .prog{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:10px}
@@ -65,8 +65,8 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
 .opt.ok{border-color:var(--free);background:rgba(61,220,151,.18)}
 .opt.no{border-color:var(--bad);background:rgba(255,107,107,.18)}
 /* match */
-.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.tile{min-height:78px;border:2px solid var(--line);background:var(--card);border-radius:14px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;line-height:1.3}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{min-height:78px;border:2px solid var(--line);background:var(--card);border-radius:14px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;font-size:15px;overflow-wrap:anywhere;font-weight:700;cursor:pointer;transition:all .2s;line-height:1.3}
 .tile.sel{border-color:var(--accent);background:var(--next)}
 .tile.gone{opacity:0;pointer-events:none;transform:scale(.6)}
 .tile.no{border-color:var(--bad)}

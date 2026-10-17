@@ -24,5 +24,7 @@ for (const f of FILES) {
   fs.copyFileSync(src, path.join(OUT, f)); n++;
 }
 for (const f of OPTIONAL) if (fs.existsSync(path.join(ROOT, f))) { fs.copyFileSync(path.join(ROOT, f), path.join(OUT, f)); n++; }
+// סרטוני הדרכה ותמונות שלהם
+if (fs.existsSync(path.join(ROOT, "media"))) { fs.mkdirSync(path.join(OUT, "media"), { recursive: true }); for (const f of fs.readdirSync(path.join(ROOT, "media"))) { fs.copyFileSync(path.join(ROOT, "media", f), path.join(OUT, "media", f)); n++; } }
 for (const f of fs.readdirSync(path.join(ROOT, "cal"))) { fs.copyFileSync(path.join(ROOT, "cal", f), path.join(OUT, "cal", f)); n++; }
 console.log(`copied ${n} files to _site/`);

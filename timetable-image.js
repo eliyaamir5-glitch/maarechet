@@ -91,8 +91,10 @@
     const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = u; a.download = name;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 5000);
   }
+  // מכינים מראש (מיד אחרי הציור): באייפון השיתוף חייב לקרות מיד אחרי הלחיצה, בלי המתנה ארוכה
+  function prepare(canvas) { canvas.__png = blobOf(canvas); loadJsPDF().catch(() => {}); }
   async function share(canvas, name, text) {
-    const file = new File([await blobOf(canvas)], name, { type: "image/png" });
+    const file = new File([await (canvas.__png || blobOf(canvas))], name, { type: "image/png" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], text }); return "shared"; } catch (e) { if (e && e.name === "AbortError") return "cancel"; } }
     download(file, name); return "downloaded";
   }
@@ -118,5 +120,5 @@
     download(file, name); return "downloaded";
   }
 
-  window.TimetableImage = { draw, share, pdf, download, blobOf };
+  window.TimetableImage = { draw, share, pdf, download, blobOf, prepare };
 })();
