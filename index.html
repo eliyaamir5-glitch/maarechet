@@ -643,8 +643,18 @@ async function sendFeedback(){
   btn.disabled=true;msg.textContent="שולח…";msg.style.color="var(--muted)";
   let ok=false;
   try{const r=await fetch(((typeof SERVER_BASE!=="undefined"&&SERVER_BASE)||"")+"/api/feedback",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const j=await r.json().catch(()=>null);ok=!!(j&&j.ok);if(j&&j.error==="too_many"){msg.style.color="#ff5d6c";msg.textContent="נשלחו הרבה הודעות בשעה האחרונה. נסה שוב מאוחר יותר.";btn.disabled=false;return}}catch(e){}
-  // גם במייל (בלי לחכות לתשובה)
-  try{if(NOTIFY_KEY){const fd=new FormData();fd.append("access_key",NOTIFY_KEY);fd.append("subject",`${fbKind==="bug"?"🐞 תקלה":fbKind==="idea"?"💡 רעיון":"💬 הודעה"} מהאפליקציה${payload.name?" – "+payload.name:""}`);fd.append("from_name","המערכת");fd.append("הודעה",text);if(payload.name)fd.append("מאת",payload.name+(payload.cls?" ("+payload.cls+")":""));if(payload.device)fd.append("מכשיר",payload.device);fetch("https://api.web3forms.com/submit",{method:"POST",body:fd,mode:"no-cors",keepalive:true}).then(()=>{},()=>{});ok=true}}catch(e){}
+  // גם במייל, עם תשובה אמיתית (וניסיון חוזר אחד). כותרת ייחודית, כדי שג'ימייל לא יאחד הודעות לשיחה אחת
+  if(typeof NOTIFY_KEY!=="undefined"&&NOTIFY_KEY){
+    const kindTxt=fbKind==="bug"?"🐞 תקלה":fbKind==="idea"?"💡 רעיון":"💬 הודעה";
+    const now=new Date(),hm=`${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+    const mail={access_key:NOTIFY_KEY,subject:`${kindTxt} מהאפליקציה${payload.name?" – "+payload.name:""} · ${now.getDate()}.${now.getMonth()+1} ${hm} · ${text.slice(0,30)}${text.length>30?"…":""}`,
+      from_name:"המערכת","סוג":kindTxt,"הודעה":text,"מאת":payload.name?payload.name+(payload.cls?" ("+payload.cls+")":""):"לא צירף שם","נשלח ב":now.toLocaleString("he-IL",{timeZone:"Asia/Jerusalem"})};
+    if(payload.device)mail["מכשיר"]=payload.device;
+    const sendMail=async()=>{const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),9000);
+      try{const r=await fetch("https://api.web3forms.com/submit",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(mail),signal:ctl.signal});const j=await r.json().catch(()=>null);return !!(j&&j.success)}catch(e){return false}finally{clearTimeout(tm)}};
+    const mailed=(await sendMail())||(await new Promise(r=>setTimeout(r,1500)),await sendMail());
+    ok=ok||mailed;
+  }
   btn.disabled=false;
   if(!ok){msg.style.color="#ff5d6c";msg.textContent="לא הצלחנו לשלוח. נסה שוב בעוד רגע.";return}
   fbLast=Date.now();
