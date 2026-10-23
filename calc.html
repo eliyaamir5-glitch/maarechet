@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5b6cff">
+<title>מחשבון חכם</title>
+<script src="demo-shim.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+html{overscroll-behavior:none;-webkit-text-size-adjust:100%}
+body{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior-y:none}
+input,textarea,.res{-webkit-user-select:text;user-select:text}
+:root{
+  --bg:#0f1226; --card:#1d2247; --ink:#f4f5ff; --muted:#9aa0c7; --line:#2b3162;
+  --next:#243a8a; --break:#2a2f5c; --accent:#7c8cff; --accent-ink:#0b0e24; --free:#3ddc97; --warn:#ffd23f; --bad:#ff6b6b;
+  --key:#262c5c; --key2:#323a78; --plot:#7c8cff; --plot2:#ff6bd6;
+  --grad:linear-gradient(135deg,#5b6cff 0%,#a259ff 60%,#ff6bd6 100%);
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#f3f2fb; --card:#ffffff; --ink:#191b33; --muted:#6c7093; --line:#e3e2f2; --next:#e5e9ff; --break:#eceaf7; --accent:#5b6cff; --accent-ink:#fff; --free:#1fb57a; --key:#eef0fb; --key2:#dfe3fa; --plot:#4a5cf0; --plot2:#d63fa8; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Rubik,"Segoe UI",Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+.top{background:var(--grad);color:#fff;padding:calc(16px + env(safe-area-inset-top)) 18px 20px;border-radius:0 0 28px 28px}
+.top a{display:inline-flex;align-items:center;gap:6px;color:#fff;text-decoration:none;font-size:16px;font-weight:700;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);border-radius:999px;padding:10px 18px;margin-bottom:6px;cursor:pointer}
+.top h1{margin:6px 0 0;font-size:26px;font-weight:900}
+.top p{margin:4px 0 0;font-size:14px;opacity:.85}
+main{padding:16px 14px 40px;max-width:560px;margin:0 auto}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:22px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 4px;font-size:19px;font-weight:900}
+.hint{margin:0 0 10px;color:var(--muted);font-size:14px;line-height:1.5}
+.btn{border:none;border-radius:14px;padding:13px 16px;font:inherit;font-size:17px;font-weight:900;cursor:pointer;margin-top:10px;width:100%}
+.primary{background:var(--accent);color:var(--accent-ink)}
+.ghost{background:var(--break);color:var(--ink)}
+[hidden]{display:none!important}
+/* בית: נושאים */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:14px;cursor:pointer;text-align:start;font:inherit;color:var(--ink)}
+.tile.big{grid-column:1/-1;background:var(--grad);color:#fff;border:none}
+.tile .i{font-size:26px}
+.tile b{display:block;font-size:16px;margin-top:4px}
+.tile small{display:block;font-size:13px;opacity:.8;margin-top:2px;line-height:1.35}
+/* שדה תרגיל */
+.disp{position:relative}
+.mi{width:100%;border:2px solid var(--line);border-radius:14px;padding:13px 46px 13px 14px;font:inherit;font-size:22px;background:var(--bg);color:var(--ink);direction:ltr;text-align:left;caret-color:var(--accent)}
+.mi:focus{outline:none;border-color:var(--accent)}
+.mi.sm{font-size:18px;padding:10px 12px;text-align:center}
+.clr{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:18px;padding:8px;cursor:pointer}
+.pv{min-height:44px;margin:8px 2px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.pv .k{background:var(--next);color:var(--ink);border-radius:999px;padding:3px 10px;font-weight:700;font-size:12px;white-space:nowrap}
+.pv .m{font-size:19px;color:var(--ink)}
+.pv.err{color:var(--bad)}
+/* מקלדת */
+.keys{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px;direction:ltr}
+.keys button{border:none;background:var(--key);color:var(--ink);border-radius:11px;padding:0;height:46px;font:inherit;font-size:19px;font-weight:500;cursor:pointer;touch-action:manipulation}
+.keys button.op{background:var(--key2);font-weight:700}
+.keys button.v{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:21px;color:var(--accent);font-weight:700}
+.keys button:active{transform:scale(.94);filter:brightness(1.15)}
+.kbt{background:none;border:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;padding:6px 2px;text-decoration:underline}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chip{border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 11px;font:inherit;font-size:14px;cursor:pointer;direction:ltr}
+.lbl{font-size:13px;font-weight:700;color:var(--muted);margin:12px 2px 0}
+/* מתמטיקה */
+.m{direction:ltr;unicode-bidi:isolate;display:inline-block;line-height:1.9}
+var{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:1.08em}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.82em;margin:0 2px;line-height:1.2}
+.fr>i{font-style:normal;padding:0 3px}
+.fr>i:first-child{border-bottom:1.5px solid currentColor}
+.sq{border-top:1.5px solid currentColor;padding:0 2px 0 1px;margin-inline-start:1px}
+sup{font-size:.68em}
+.ap{color:var(--muted);font-size:.85em;white-space:nowrap}
+/* תוצאה */
+.res .kind{display:inline-block;background:var(--next);border-radius:999px;padding:3px 11px;font-size:12px;font-weight:700}
+.ans{background:linear-gradient(135deg,rgba(91,108,255,.18),rgba(255,107,214,.14));border:2px solid var(--accent);border-radius:16px;padding:12px 14px;margin-top:10px;font-size:22px;font-weight:700;text-align:center}
+.ans small{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-bottom:2px}
+.steps{margin:14px 0 0;padding:0;list-style:none;counter-reset:s}
+.steps li{counter-increment:s;position:relative;padding:8px 36px 10px 4px;border-bottom:1px dashed var(--line)}
+.steps li:last-child{border-bottom:none}
+.steps li::before{content:counter(s);position:absolute;right:0;top:9px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.steps .h{font-size:14px;color:var(--muted);line-height:1.45}
+.steps .m{font-size:19px;display:block;text-align:left;overflow-x:auto;max-width:100%}
+.chk{margin-top:10px;font-size:14px;background:rgba(61,220,151,.12);border:1.5px solid var(--free);border-radius:12px;padding:8px 12px;line-height:1.7}
+.note{margin-top:10px;font-size:14px;color:var(--muted);line-height:1.5}
+.err{color:var(--bad);font-size:15px;line-height:1.5;margin-top:8px}
+.ttl{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ttl .kbt{font-size:14px}
+svg.plot,svg.nl{display:block;width:100%;height:auto;margin-top:12px;direction:ltr;background:var(--bg);border-radius:14px}
+svg text{font-family:Rubik,Arial,sans-serif}
+/* נקודות / משולש */
+.pt{display:flex;align-items:center;gap:6px;margin-top:10px;direction:ltr;justify-content:center;font-size:22px;font-weight:700}
+.pt .mi{width:86px}
+.pt b{font-size:22px;min-width:24px;text-align:center}
+.tri{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-top:6px}
+.tri label{display:block;font-size:13px;font-weight:700;margin-bottom:4px}
+.tri label i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:5px}
+.vals{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px;text-align:center}
+.vals div{background:var(--bg);border-radius:12px;padding:8px 2px;font-size:12px;color:var(--muted)}
+.vals b{display:block;font-size:17px;color:var(--ink);direction:ltr}
+/* אחוזים */
+.pq{background:var(--bg);border:1.5px solid var(--line);border-radius:16px;padding:12px;margin-top:10px;font-size:16px;line-height:2.2}
+.pq input{width:78px;border:1.5px solid var(--line);border-radius:10px;padding:5px 6px;font:inherit;font-size:17px;background:var(--card);color:var(--ink);text-align:center;direction:ltr}
+.pq select{border:1.5px solid var(--line);border-radius:10px;padding:5px;font:inherit;font-size:16px;background:var(--card);color:var(--ink)}
+.pq .r{display:block;font-weight:900;font-size:20px;color:var(--accent);white-space:nowrap;line-height:1.6}
+.pq .w{font-size:13px;color:var(--muted);line-height:1.5;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="top">
+  <a id="back">🏠 חזרה למערכת</a>
+  <h1 id="hT">🧮 מחשבון חכם</h1>
+  <p id="hS">פותר תרגילים של כיתה י' – ומראה איך</p>
+</div>
+<main>
+
+<!-- בית -->
+<section id="vHome">
+  <div class="tiles">
+    <button class="tile big" data-go="solve"><div class="i">🟰</div><b>פתרון תרגיל</b><small>משוואה, אי-שוויון, פתיחת סוגריים, שברים ושורשים – עם כל השלבים</small></button>
+    <button class="tile" data-go="sys"><div class="i">✖️</div><b>מערכת משוואות</b><small>שתי משוואות עם x ו-y</small></button>
+    <button class="tile" data-go="func"><div class="i">📈</div><b>גרף של פונקציה</b><small>ישר או פרבולה: קודקוד, חיתוכים</small></button>
+    <button class="tile" data-go="line"><div class="i">📍</div><b>ישר דרך 2 נקודות</b><small>שיפוע, משוואה, מרחק, אמצע</small></button>
+    <button class="tile" data-go="tri"><div class="i">📐</div><b>משולש ישר-זווית</b><small>פיתגורס, sin, cos, tan</small></button>
+    <button class="tile" data-go="pct"><div class="i">💯</div><b>אחוזים</b><small>אחוז מתוך, הנחה, שינוי</small></button>
+  </div>
+  <p class="hint" style="margin-top:14px;text-align:center">💡 המחשבון עוזר להבין. במבחן צריך לדעת לעשות את השלבים לבד.</p>
+</section>
+
+<!-- פתרון תרגיל -->
+<section id="vSolve" hidden>
+  <div class="card">
+    <div class="disp"><input class="mi" id="sIn" inputmode="none" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="2x+3=11"><button class="clr" data-clr="sIn" aria-label="נקה">✕</button></div>
+    <div class="pv" id="sPv"><span>כותבים תרגיל במקלדת שלמטה. אפשר עם = או בלי.</span></div>
+    <div class="kslot"></div>
+    <button class="btn primary" id="sGo">פתור ✨</button>
+    <div class="lbl">דוגמאות – לחיצה מעתיקה</div>
+    <div class="chips" id="sEx"></div>
+    <div id="sHistWrap" hidden><div class="lbl">אחרונים</div><div class="chips" id="sHist"></div></div>
+  </div>
+  <div id="sOut"></div>
+</section>
+
+<!-- מערכת משוואות -->
+<section id="vSys" hidden>
+  <div class="card">
+    <h2>✖️ מערכת משוואות</h2><p class="hint">שתי משוואות עם x ו-y. מוצאים את הנקודה שמתאימה לשתיהן.</p>
+    <div class="lbl">משוואה 1</div><div class="disp"><input class="mi" id="q1" inputmode="none" autocomplete="off" spellcheck="false" placeholder="x+y=5"><button class="clr" data-clr="q1" aria-label="נקה">✕</button></div>
+    <div class="lbl">משוואה 2</div><div class="disp"><input class="mi" id="q2" inputmode="none" autocomplete="off" spellcheck="false" placeholder="x-y=1"><button class="clr" data-clr="q2" aria-label="נקה">✕</button></div>
+    <div class="kslot"></div>
+    <button class="btn primary" id="qGo">פתור ✨</button>
+    <div class="chips"><button class="chip" data-sys="x+y=5|x-y=1">x+y=5 , x−y=1</button><button class="chip" data-sys="2x+3y=12|3x+2y=13">2x+3y=12 , 3x+2y=13</button><button class="chip" data-sys="y=2x+1|y=-x+7">y=2x+1 , y=−x+7</button></div>
+  </div>
+  <div id="qOut"></div>
+</section>
+
+<!-- פונקציה -->
+<section id="vFunc" hidden>
+  <div class="card">
+    <h2>📈 גרף של פונקציה</h2><p class="hint">כותבים מה שאחרי <b dir="ltr">y =</b></p>
+    <div class="disp" style="display:flex;align-items:center;gap:8px;direction:ltr"><b style="font-size:22px;font-family:Georgia,serif;font-style:italic">y =</b><div style="position:relative;flex:1"><input class="mi" id="fIn" inputmode="none" autocomplete="off" spellcheck="false" placeholder="x²-4x+3"><button class="clr" data-clr="fIn" aria-label="נקה">✕</button></div></div>
+    <div class="kslot"></div>
+    <button class="btn primary" id="fGo">צייר ונתח ✨</button>
+    <div class="chips"><button class="chip" data-f="2x-4">2x−4</button><button class="chip" data-f="-x/2+3">−x/2+3</button><button class="chip" data-f="x²-4x+3">x²−4x+3</button><button class="chip" data-f="-x²+2x+3">−x²+2x+3</button><button class="chip" data-f="(x-1)²-4">(x−1)²−4</button></div>
+  </div>
+  <div id="fOut"></div>
+</section>
+
+<!-- ישר דרך שתי נקודות -->
+<section id="vLine" hidden>
+  <div class="card">
+    <h2>📍 ישר דרך שתי נקודות</h2><p class="hint">ממלאים את שתי הנקודות. אפשר מספרים שליליים ושברים (למשל 1/2).</p>
+    <div class="pt"><b>A</b>(<input class="mi sm" id="lx1" inputmode="none" autocomplete="off" placeholder="x">,<input class="mi sm" id="ly1" inputmode="none" autocomplete="off" placeholder="y">)</div>
+    <div class="pt"><b>B</b>(<input class="mi sm" id="lx2" inputmode="none" autocomplete="off" placeholder="x">,<input class="mi sm" id="ly2" inputmode="none" autocomplete="off" placeholder="y">)</div>
+    <div class="kslot"></div>
+    <button class="btn primary" id="lGo">חשב ✨</button>
+  </div>
+  <div id="lOut"></div>
+</section>
+
+<!-- משולש -->
+<section id="vTri" hidden>
+  <div class="card">
+    <h2>📐 משולש ישר-זווית</h2><p class="hint">ממלאים <b>2 נתונים</b> (לפחות צלע אחת), ומקבלים את כל השאר.</p>
+    <svg class="plot" id="triPic" viewBox="0 0 320 170"></svg>
+    <div class="tri">
+      <div><label><i style="background:#ff6bd6"></i>a – ניצב מול α</label><input class="mi sm" id="ta" inputmode="none" autocomplete="off"></div>
+      <div><label><i style="background:#3ddc97"></i>b – ניצב ליד α</label><input class="mi sm" id="tb" inputmode="none" autocomplete="off"></div>
+      <div><label><i style="background:#ffd23f"></i>c – יתר (מול 90°)</label><input class="mi sm" id="tc" inputmode="none" autocomplete="off"></div>
+      <div><label><i style="background:#7c8cff"></i>α – זווית (מעלות)</label><input class="mi sm" id="tal" inputmode="none" autocomplete="off"></div>
+      <div><label><i style="background:#a259ff"></i>β – זווית (מעלות)</label><input class="mi sm" id="tbe" inputmode="none" autocomplete="off"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn ghost" id="tClr" style="margin:0;padding:10px">נקה הכל</button></div>
+    </div>
+    <div class="kslot"></div>
+    <button class="btn primary" id="tGo">חשב ✨</button>
+  </div>
+  <div id="tOut"></div>
+</section>
+
+<!-- אחוזים -->
+<section id="vPct" hidden>
+  <div class="card">
+    <h2>💯 אחוזים</h2><p class="hint">משנים מספר – והתשובה מתעדכנת.</p>
+    <div class="pq">כמה זה <input id="p1a" inputmode="decimal" value="20">% מתוך <input id="p1b" inputmode="decimal" value="150">? &nbsp;<span class="r" id="p1r"></span><div class="w" id="p1w"></div></div>
+    <div class="pq"><input id="p2a" inputmode="decimal" value="30"> מתוך <input id="p2b" inputmode="decimal" value="120"> זה כמה אחוז? &nbsp;<span class="r" id="p2r"></span><div class="w" id="p2w"></div></div>
+    <div class="pq">מחיר <input id="p3a" inputmode="decimal" value="200"> אחרי <select id="p3s"><option value="-1">הנחה</option><option value="1">תוספת</option></select> של <input id="p3b" inputmode="decimal" value="15">% &nbsp;<span class="r" id="p3r"></span><div class="w" id="p3w"></div></div>
+    <div class="pq">שינוי מ-<input id="p4a" inputmode="decimal" value="80"> ל-<input id="p4b" inputmode="decimal" value="100"> &nbsp;<span class="r" id="p4r"></span><div class="w" id="p4w"></div></div>
+  </div>
+</section>
+
+<!-- המקלדת: אחת לכל המסכים, עוברת לשדה שבו עומדים -->
+<div id="kp">
+  <div class="keys" id="keys"></div>
+  <div style="display:flex;justify-content:space-between"><button class="kbt" id="kbToggle">⌨️ מקלדת רגילה</button><span class="kbt" style="text-decoration:none;cursor:default" id="kbHint">◀ ▶ מזיזים את הסמן</span></div>
+</div>
+
+</main>
+
+<script src="calc-engine.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+// מתמטיקה משמאל לימין. אם השורה מתחילה במילה בעברית ("כל x מתאים") – מימין לשמאל
+const M=h=>{const f=String(h).replace(/<[^>]+>|&[a-z]+;/g,"").match(/[A-Za-zא-ת]/);return `<span class="m" dir="${f&&/[א-ת]/.test(f[0])?"rtl":"ltr"}">${h}</span>`};
+const D=x=>Calc.dec(x);
+
+// ---- ניווט (עם כפתור "אחורה" של הטלפון) ----
+const VIEWS={home:"vHome",solve:"vSolve",sys:"vSys",func:"vFunc",line:"vLine",tri:"vTri",pct:"vPct"};
+const TITLES={home:["🧮 מחשבון חכם","פותר תרגילים של כיתה י' – ומראה איך"],solve:["🟰 פתרון תרגיל","משוואות, אי-שוויונים, סוגריים ושברים"],sys:["✖️ מערכת משוואות","שתי משוואות, שני נעלמים"],func:["📈 גרף של פונקציה","ישר או פרבולה"],line:["📍 ישר דרך 2 נקודות","שיפוע, משוואה, מרחק, אמצע"],tri:["📐 משולש ישר-זווית","פיתגורס וטריגונומטריה"],pct:["💯 אחוזים","אחוז מתוך, הנחה, שינוי"]};
+const FIRST={solve:"sIn",sys:"q1",func:"fIn",line:"lx1",tri:"ta"};
+let cur="home",target=null;
+function route(){
+  cur=(location.hash.slice(1)||"home");if(!VIEWS[cur])cur="home";
+  for(const [k,id] of Object.entries(VIEWS))$(id).hidden=k!==cur;
+  $("hT").textContent=TITLES[cur][0];$("hS").textContent=TITLES[cur][1];
+  $("back").textContent=cur==="home"?"🏠 חזרה למערכת":"→ כל הנושאים";
+  const slot=document.querySelector(`#${VIEWS[cur]} .kslot`);
+  $("kp").hidden=!slot;if(slot)slot.appendChild($("kp"));
+  if(FIRST[cur])setTarget($(FIRST[cur]));
+  if(cur==="pct")pct();
+  window.scrollTo(0,0);
+  save("calcView",cur);
+}
+$("back").onclick=()=>{if(cur==="home")location.href="./";else location.hash=""};
+document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>location.hash=b.dataset.go);
+window.addEventListener("hashchange",route);
+
+// ---- מקלדת מתמטית ----
+// [תווית, מה נכנס, סוג]
+const KEYS=[["7"],["8"],["9"],["÷","/","op"],["(","(","op"],[")",")","op"],
+  ["4"],["5"],["6"],["×","×","op"],["x","x","v"],["y","y","v"],
+  ["1"],["2"],["3"],["−","-","op"],["x²","²","op"],["^","^","op"],
+  ["0"],["."],["=","=","op"],["+","+","op"],["√","√","op"],["⌫","BS","op"],
+  ["<","<","op"],[">",">","op"],["≤","≤","op"],["≥","≥","op"],["◀","L","op"],["▶","R","op"]];
+$("keys").innerHTML=KEYS.map(([l,v,c])=>`<button type="button" class="${c||""}" data-k="${esc(v||l)}" aria-label="${esc(l)}">${l}</button>`).join("");
+let nativeKb=false;
+function setTarget(el){
+  if(!el)return;target=el;
+  document.querySelectorAll(".mi").forEach(i=>i.setAttribute("inputmode",nativeKb?"text":"none"));
+}
+document.querySelectorAll(".mi").forEach(el=>{el.addEventListener("focus",()=>setTarget(el));el.addEventListener("input",()=>onInput(el))});
+// לחיצה על מקש לא גונבת את הפוקוס מהשדה
+$("keys").addEventListener("pointerdown",e=>{if(e.target.closest("button"))e.preventDefault()});
+$("keys").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b||!target)return;
+  const k=b.dataset.k,el=target;
+  let s=el.selectionStart??el.value.length,t=el.selectionEnd??s;
+  if(document.activeElement!==el){s=t=el.value.length}
+  if(k==="BS"){if(s===t&&s>0)s--;el.value=el.value.slice(0,s)+el.value.slice(t);t=s}
+  else if(k==="L"){s=t=Math.max(0,s-1)}
+  else if(k==="R"){s=t=Math.min(el.value.length,t+1)}
+  else{el.value=el.value.slice(0,s)+k+el.value.slice(t);s=t=s+k.length}
+  el.setSelectionRange(s,t);onInput(el);
+  el.focus();
+  if(navigator.vibrate)try{navigator.vibrate(8)}catch(x){}
+});
+$("kbToggle").onclick=()=>{nativeKb=!nativeKb;$("kbToggle").textContent=nativeKb?"🧮 המקלדת של המחשבון":"⌨️ מקלדת רגילה";setTarget(target);if(target){target.blur();setTimeout(()=>target.focus(),50)}};
+document.querySelectorAll("[data-clr]").forEach(b=>b.onclick=()=>{const el=$(b.dataset.clr);el.value="";setTarget(el);onInput(el)});
+// Enter = פתור
+document.querySelectorAll(".mi").forEach(el=>el.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();({solve:solveIt,sys:sysIt,func:funcIt,line:lineIt,tri:triIt})[cur]?.()}}));
+
+// ---- תצוגה חיה: "כך הבנתי" ----
+let pvT=null;
+function onInput(el){
+  if(el.id!=="sIn")return;
+  clearTimeout(pvT);pvT=setTimeout(()=>{
+    const v=el.value,box=$("sPv");
+    if(!v.trim()){box.className="pv";box.innerHTML="<span>כותבים תרגיל במקלדת שלמטה. אפשר עם = או בלי.</span>";return}
+    try{const p=Calc.preview(v);box.className="pv";box.innerHTML=`<span class="k">${p.kind}</span>${M(p.html)}`}
+    catch(e){box.className="pv err";box.textContent=e.user?e.message:"לא הבנתי עדיין…"}
+  },120);
+}
+
+// ---- פתרון תרגיל ----
+const EX=["2x+3=11","3(x-2)=2x+5","x/2+x/3=5","x²-5x+6=0","2x²=8","x²+3x-10=0","2x-7<3","x²-4>0","(x+3)²","1/3+1/6","√50"];
+$("sEx").innerHTML=EX.map(x=>`<button class="chip" data-x="${esc(x)}">${esc(x.replace(/-/g,"−"))}</button>`).join("");
+function drawHist(){const h=load("calcHist",[]);$("sHistWrap").hidden=!h.length;$("sHist").innerHTML=h.map(x=>`<button class="chip" data-x="${esc(x)}">${esc(x)}</button>`).join("")}
+document.addEventListener("click",e=>{const c=e.target.closest("[data-x]");if(!c)return;$("sIn").value=c.dataset.x;setTarget($("sIn"));onInput($("sIn"));solveIt()});
+const errCard=msg=>`<div class="card"><div class="err">⚠️ ${esc(msg)}</div></div>`;
+const stepsHTML=st=>st.length?`<ol class="steps">${st.map(s=>`<li><div class="h">${s.h}</div>${s.m?M(s.m):""}</li>`).join("")}</ol>`:"";
+function resultCard(r,extra=""){
+  return `<div class="card res"><div class="ttl"><span class="kind">${esc(r.kind)}</span></div>
+    <div class="ans"><small>התשובה</small>${M(r.answer)}</div>${extra}
+    ${r.steps&&r.steps.length?`<div class="lbl" style="margin-top:14px">איך מגיעים לזה – שלב אחרי שלב</div>${stepsHTML(r.steps)}`:""}
+    ${r.check?`<div class="chk">✔️ <b>בדיקה:</b> ${M(r.check)}</div>`:""}${r.note?`<div class="note">💡 ${r.note}</div>`:""}</div>`;
+}
+function solveIt(){
+  const v=$("sIn").value.trim(),out=$("sOut");
+  try{
+    const r=Calc.solve(v);
+    out.innerHTML=resultCard(r,r.line?numberLine(r.line):"");
+    const h=load("calcHist",[]).filter(x=>x!==v);h.unshift(v);save("calcHist",h.slice(0,8));drawHist();
+  }catch(e){out.innerHTML=errCard(e.user?e.message:"משהו השתבש בחישוב. בדקו את התרגיל ונסו שוב.");if(!e.user)console.error(e)}
+  out.firstElementChild&&out.firstElementChild.scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("sGo").onclick=solveIt;
+
+// ---- ציר מספרים לאי-שוויון ----
+function numberLine({segs,pts}){
+  const xs=pts.map(p=>p.x);let lo=xs.length?Math.min(...xs):0,hi=xs.length?Math.max(...xs):0;
+  const span=Math.max(hi-lo,2),pad=span*.6+1;lo-=pad;hi+=pad;
+  const W=320,H=70,X=x=>20+(x-lo)/(hi-lo)*(W-40),Y=34,col="var(--free)";
+  let s=`<svg class="nl" viewBox="0 0 ${W} ${H}"><line x1="8" y1="${Y}" x2="${W-8}" y2="${Y}" stroke="var(--muted)" stroke-width="1.5"/>`;
+  s+=`<path d="M${W-8} ${Y} l-7 -4 v8z M8 ${Y} l7 -4 v8z" fill="var(--muted)"/>`;
+  for(const g of segs){const a=g.a===-Infinity?8:X(g.a),b=g.b===Infinity?W-8:X(g.b);s+=`<line x1="${a}" y1="${Y}" x2="${b}" y2="${Y}" stroke="${col}" stroke-width="6" stroke-linecap="round" opacity=".9"/>`;if(g.b===Infinity)s+=`<path d="M${W-6} ${Y} l-10 -7 v14z" fill="${col}"/>`;if(g.a===-Infinity)s+=`<path d="M6 ${Y} l10 -7 v14z" fill="${col}"/>`}
+  for(const p of pts){s+=`<circle cx="${X(p.x)}" cy="${Y}" r="6.5" fill="${p.fill?col:"var(--bg)"}" stroke="${col}" stroke-width="2.5"/><text x="${X(p.x)}" y="${Y+26}" text-anchor="middle" font-size="13" fill="var(--ink)">${D(p.x)}</text>`}
+  if(!segs.length&&!pts.length)s+=`<text x="${W/2}" y="${Y-10}" text-anchor="middle" font-size="13" fill="var(--muted)">אין אף מספר שמתאים</text>`;
+  return s+`</svg><div class="note" style="margin-top:4px">● עיגול מלא = המספר כלול, ○ ריק = לא כלול</div>`;
+}
+
+// ---- גרף ----
+function niceStep(r){const p=Math.pow(10,Math.floor(Math.log10(r/6)));for(const m of [1,2,5,10])if(r/(m*p)<=8)return m*p;return 10*p}
+function plot({fns=[],pts=[],vlines=[]}){
+  const xs=[0,...pts.map(p=>p.x),...vlines];let x0=Math.min(...xs)-2,x1=Math.max(...xs)+2;
+  if(x1-x0<10){const c=(x0+x1)/2;x0=c-5;x1=c+5}
+  const ys=[0,...pts.map(p=>p.y)];let y0=Math.min(...ys)-2,y1=Math.max(...ys)+2;
+  // הגרף מתרחב לפי הפונקציה, אבל לא יותר מדי – כדי שהנקודות החשובות לא יתכווצו
+  const base=Math.max(y1-y0,6),lo=y0-base*.5,hi=y1+base*.5;
+  for(const f of fns)for(let i=0;i<=60;i++){const y=f.f(x0+(x1-x0)*i/60);if(isFinite(y)){y0=Math.min(y0,Math.max(y,lo));y1=Math.max(y1,Math.min(y,hi))}}
+  if(y1-y0<10){const c=(y0+y1)/2;y0=c-5;y1=c+5}
+  const W=340,H=300,L=8,R=8,T=8,B=8,X=x=>L+(x-x0)/(x1-x0)*(W-L-R),Y=y=>T+(y1-y)/(y1-y0)*(H-T-B);
+  let s=`<svg class="plot" viewBox="0 0 ${W} ${H}">`;
+  const sx=niceStep(x1-x0),sy=niceStep(y1-y0);
+  for(let x=Math.ceil(x0/sx)*sx;x<=x1;x+=sx){s+=`<line x1="${X(x)}" y1="${T}" x2="${X(x)}" y2="${H-B}" stroke="var(--line)" stroke-width="1"/>`;if(Math.abs(x)>1e-9)s+=`<text x="${X(x)}" y="${Math.min(H-B-3,Math.max(T+12,Y(0)+14))}" text-anchor="middle" font-size="10" fill="var(--muted)">${D(x)}</text>`}
+  for(let y=Math.ceil(y0/sy)*sy;y<=y1;y+=sy){s+=`<line x1="${L}" y1="${Y(y)}" x2="${W-R}" y2="${Y(y)}" stroke="var(--line)" stroke-width="1"/>`;if(Math.abs(y)>1e-9)s+=`<text x="${Math.min(W-R-4,Math.max(L+14,X(0)-4))}" y="${Y(y)+3}" text-anchor="end" font-size="10" fill="var(--muted)">${D(y)}</text>`}
+  if(x0<0&&x1>0)s+=`<line x1="${X(0)}" y1="${T}" x2="${X(0)}" y2="${H-B}" stroke="var(--muted)" stroke-width="1.6"/>`;
+  if(y0<0&&y1>0)s+=`<line x1="${L}" y1="${Y(0)}" x2="${W-R}" y2="${Y(0)}" stroke="var(--muted)" stroke-width="1.6"/>`;
+  for(const v of vlines)s+=`<line x1="${X(v)}" y1="${T}" x2="${X(v)}" y2="${H-B}" stroke="var(--plot)" stroke-width="3"/>`;
+  for(const f of fns){
+    let d="",pen=false;const n=400;
+    for(let i=0;i<=n;i++){const x=x0+(x1-x0)*i/n,y=f.f(x);if(!isFinite(y)||y<y0-(y1-y0)||y>y1+(y1-y0)){pen=false;continue}d+=(pen?"L":"M")+X(x).toFixed(1)+" "+Y(y).toFixed(1);pen=true}
+    s+=`<path d="${d}" fill="none" stroke="${f.color||"var(--plot)"}" stroke-width="3" stroke-linejoin="round"/>`;
+  }
+  // תוויות: מנסים כמה מקומות סביב הנקודה ובוחרים אחד שלא עולה על תווית אחרת
+  const boxes=[];
+  for(const p of pts){
+    const px=X(p.x),py=Y(p.y),t=p.t||`(${D(p.x)}, ${D(p.y)})`,w=t.length*6.6+4,h=14;
+    s+=`<circle cx="${px}" cy="${py}" r="${p.v?7:5}" fill="${p.v?"var(--plot2)":"var(--warn)"}" stroke="var(--bg)" stroke-width="2"/>`;
+    const cand=[[8,-8,"start"],[-8,-8,"end"],[8,18,"start"],[-8,18,"end"],[0,-14,"middle"],[0,24,"middle"]];
+    let best=null;
+    for(const [dx,dy,an] of cand){const bx=an==="start"?px+dx:an==="end"?px+dx-w:px-w/2,by=py+dy-h+3,box={x:bx,y:by,w,h};
+      const out=bx<2||bx+w>W-2||by<2||by+h>H-2,hit=boxes.some(o=>bx<o.x+o.w&&bx+w>o.x&&by<o.y+o.h&&by+h>o.y);
+      if(!out&&!hit){best={dx,dy,an,box};break}if(!best&&!out)best={dx,dy,an,box,weak:true}}
+    if(!best)continue;boxes.push(best.box);
+    s+=`<text x="${px+best.dx}" y="${py+best.dy}" text-anchor="${best.an}" font-size="12" font-weight="700" fill="${p.v?"var(--plot2)":"var(--ink)"}" paint-order="stroke" stroke="var(--bg)" stroke-width="3">${esc(t)}</text>`;
+  }
+  return s+"</svg>";
+}
+
+// ---- מערכת ----
+function sysIt(){
+  const out=$("qOut");
+  try{
+    const r=Calc.system($("q1").value,$("q2").value);
+    const line=t=>t.b.zero?null:(x=>(t.c.num()-t.a.num()*x)/t.b.num());
+    const fns=r.lines.map((t,i)=>({f:line(t),color:i?"var(--plot2)":"var(--plot)"})).filter(f=>f.f);
+    const vl=r.lines.filter(t=>t.b.zero).map(t=>t.c.num()/t.a.num());
+    out.innerHTML=resultCard(r,plot({fns,pts:r.point?[{x:r.point.x,y:r.point.y,t:`נקודת המפגש (${D(r.point.x)}, ${D(r.point.y)})`}]:[],vlines:vl})+`<div class="note" style="margin-top:4px">כל משוואה היא ישר. הפתרון = הנקודה שבה הם נפגשים.</div>`);
+  }catch(e){out.innerHTML=errCard(e.user?e.message:"משהו השתבש. בדקו את המשוואות.");if(!e.user)console.error(e)}
+  out.firstElementChild.scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("qGo").onclick=sysIt;
+document.querySelectorAll("[data-sys]").forEach(b=>b.onclick=()=>{const [a,c]=b.dataset.sys.split("|");$("q1").value=a;$("q2").value=c;sysIt()});
+
+// ---- פונקציה ----
+function funcIt(){
+  const out=$("fOut");
+  try{
+    const r=Calc.func($("fIn").value);
+    const pts=r.pts.map(p=>({x:p.x,y:p.y,v:!!p.vertex}));
+    out.innerHTML=`<div class="card res"><div class="ttl"><span class="kind">${esc(r.kind)}</span></div><div class="ans">${M(r.html)}</div>${plot({fns:[{f:r.f}],pts})}${pts.some(p=>p.v)?`<div class="note" style="margin-top:4px"><span style="color:var(--plot2)">●</span> קודקוד &nbsp; <span style="color:var(--warn)">●</span> חיתוך עם הצירים</div>`:""}
+      ${r.steps.length?`<div class="lbl" style="margin-top:14px">מה רואים בגרף – ואיך מחשבים</div>${stepsHTML(r.steps)}`:""}${r.note?`<div class="note">💡 ${r.note}</div>`:""}</div>`;
+  }catch(e){out.innerHTML=errCard(e.user?e.message:"משהו השתבש. בדקו את הפונקציה.");if(!e.user)console.error(e)}
+  out.firstElementChild.scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("fGo").onclick=funcIt;
+document.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{$("fIn").value=b.dataset.f;funcIt()});
+
+// ---- ישר דרך 2 נקודות ----
+function lineIt(){
+  const out=$("lOut");
+  try{
+    const r=Calc.line2($("lx1").value,$("ly1").value,$("lx2").value,$("ly2").value);
+    const pts=[{...r.A,t:`A(${D(r.A.x)}, ${D(r.A.y)})`},{...r.B,t:`B(${D(r.B.x)}, ${D(r.B.y)})`},{...r.M,t:"M"}];
+    out.innerHTML=resultCard({...r,answer:r.answer},`<div class="note" style="text-align:center">${r.extra.map(M).join(" &nbsp;·&nbsp; ")}</div>`+plot({fns:r.vertical==null?[{f:x=>r.m*x+r.n}]:[],pts,vlines:r.vertical==null?[]:[r.vertical]}));
+  }catch(e){out.innerHTML=errCard(e.user?e.message:"משהו השתבש. בדקו את הנקודות.");if(!e.user)console.error(e)}
+  out.firstElementChild.scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("lGo").onclick=lineIt;
+
+// ---- משולש ----
+function triSVG(v){
+  // C = הזווית הישרה. a אנכי (מול α), b אופקי (ליד α)
+  const a=v?v.a:3,b=v?v.b:4,k=Math.min(240/b,112/a),W=320,bx=40,by=150,ax=bx+b*k,ay=by-a*k;
+  const lab=(x,y,t,c,anchor="middle")=>`<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="14" font-weight="700" fill="${c}">${t}</text>`;
+  return `<polygon points="${bx},${by} ${ax},${by} ${ax},${ay}" fill="rgba(124,140,255,.12)" stroke="var(--ink)" stroke-width="2"/>
+    <path d="M${ax-14} ${by} v-14 h14" fill="none" stroke="var(--ink)" stroke-width="1.5"/>
+    <line x1="${ax}" y1="${by}" x2="${ax}" y2="${ay}" stroke="#ff6bd6" stroke-width="4"/>
+    <line x1="${bx}" y1="${by}" x2="${ax}" y2="${by}" stroke="#3ddc97" stroke-width="4"/>
+    <line x1="${bx}" y1="${by}" x2="${ax}" y2="${ay}" stroke="#ffd23f" stroke-width="4"/>
+    ${lab(ax+10,(by+ay)/2+5,v?`a = ${D(v.a)}`:"a","#ff6bd6","start")}${lab((bx+ax)/2,by+18,v?`b = ${D(v.b)}`:"b","#3ddc97")}${lab((bx+ax)/2-14,(by+ay)/2-6,v?`c = ${D(v.c)}`:"c","#ffd23f","end")}
+    ${lab(bx+30,by-6,v?`α = ${D(v.alpha)}°`:"α","#7c8cff","start")}${lab(ax-10,ay-4,v?`β = ${D(v.beta)}°`:"β","#a259ff","end")}
+    ${lab(bx-4,by+16,"A","var(--muted)","end")}${lab(ax+6,by+16,"C","var(--muted)","start")}${lab(ax+6,ay-4,"B","var(--muted)","start")}`;
+}
+$("triPic").innerHTML=triSVG(null);
+function triIt(){
+  const out=$("tOut");
+  try{
+    const r=Calc.triangle({a:$("ta").value,b:$("tb").value,c:$("tc").value,alpha:$("tal").value,beta:$("tbe").value});
+    $("triPic").innerHTML=triSVG(r.vals);
+    const v=r.vals;
+    out.innerHTML=`<div class="card res"><div class="ttl"><span class="kind">${r.kind}</span></div>
+      <div class="vals"><div>a<b>${D(v.a)}</b></div><div>b<b>${D(v.b)}</b></div><div>c<b>${D(v.c)}</b></div><div>α<b>${D(v.alpha)}°</b></div><div>β<b>${D(v.beta)}°</b></div></div>
+      <div class="note" style="text-align:center">שטח = ${M(`<span class="fr"><i>a·b</i><i>2</i></span> = ${D(r.area)}`)} &nbsp;·&nbsp; היקף = ${D(r.perim)}</div>
+      <div class="lbl" style="margin-top:14px">איך מחשבים – שלב אחרי שלב</div>${stepsHTML(r.steps)}
+      <div class="note">💡 מול = הצלע שמול הזווית, ליד = הצלע שנוגעת בה (לא היתר). <b>SOH-CAH-TOA</b>: sin = מול/יתר, cos = ליד/יתר, tan = מול/ליד.</div></div>`;
+  }catch(e){out.innerHTML=errCard(e.user?e.message:"משהו השתבש. בדקו את הנתונים.");if(!e.user)console.error(e)}
+  out.firstElementChild.scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("tGo").onclick=triIt;
+$("tClr").onclick=()=>{["ta","tb","tc","tal","tbe"].forEach(id=>$(id).value="");$("triPic").innerHTML=triSVG(null);$("tOut").innerHTML="";setTarget($("ta"))};
+
+// ---- אחוזים ----
+const n=id=>parseFloat(String($(id).value).replace(",","."));
+function pct(){
+  // מספרים ונוסחאות משמאל לימין, גם בתוך משפט בעברית
+  const L=t=>`<bdi dir="ltr">${esc(t)}</bdi>`;
+  const set=(i,r,w)=>{$(`p${i}r`).innerHTML=r;$(`p${i}w`).innerHTML=w};
+  const ok=(...v)=>v.every(x=>isFinite(x));
+  {const a=n("p1a"),b=n("p1b");ok(a,b)?set(1,L(`= ${D(a*b/100)}`),`${L(`${D(b)} × ${D(a)} ÷ 100`)} (מחלקים ל-100 חלקים ולוקחים ${D(a)} מהם)`):set(1,"","")}
+  {const a=n("p2a"),b=n("p2b");ok(a,b)&&b?set(2,L(`= ${D(a/b*100)}%`),L(`${D(a)} ÷ ${D(b)} × 100`)):set(2,"","")}
+  {const a=n("p3a"),b=n("p3b"),s=+$("p3s").value;ok(a,b)?set(3,L(`= ${D(a*(1+s*b/100))}`),`${L(`${D(a)} × ${D(1+s*b/100)}`)} &nbsp;·&nbsp; ${L(`${s<0?`100% − ${D(b)}%`:`100% + ${D(b)}%`} = ${D(100+s*b)}%`)}`):set(3,"","")}
+  {const a=n("p4a"),b=n("p4b");if(ok(a,b)&&a){const c=(b-a)/a*100;set(4,c>0?`עלייה של ${L(D(c)+"%")}`:c<0?`ירידה של ${L(D(-c)+"%")}`:"אין שינוי",`${L(`(${D(b)} − ${D(a)}) ÷ ${D(a)} × 100`)} – תמיד מחלקים בערך ההתחלתי`)}else set(4,"","")}
+}
+document.querySelectorAll(".pq input,.pq select").forEach(el=>el.addEventListener("input",pct));
+
+drawHist();route();
+</script>
+<script>
+document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
+document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
+let __lastTap=0;document.addEventListener("touchend",e=>{const t=Date.now();if(t-__lastTap<300&&!e.target.closest("input,select,button,a"))e.preventDefault();__lastTap=t},{passive:false});
+</script>
+</body>
+</html>

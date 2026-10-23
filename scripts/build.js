@@ -7,8 +7,8 @@ const ROOT = path.join(__dirname, "..");
 const OUT = path.join(ROOT, "_site");
 
 const FILES = [
-  "index.html", "about.html", "absences.html", "cards.html", "shichrur.html", "staff.html", "demo.html",
-  "data.js", "board.js", "sets.js", "card-editor.js", "mashov.js", "absences.js", "timetable-image.js", "updates.js", "demo-shim.js", "sw.js",
+  "index.html", "about.html", "absences.html", "cards.html", "calc.html", "shichrur.html", "staff.html", "demo.html",
+  "data.js", "board.js", "sets.js", "card-editor.js", "calc-engine.js", "mashov.js", "absences.js", "timetable-image.js", "updates.js", "demo-shim.js", "sw.js",
   "mashov-schools.json",
 ];
 const OPTIONAL = ["logo.png"]; // אם קיים, מועתק. אם לא, האתר פשוט בלי לוגו
