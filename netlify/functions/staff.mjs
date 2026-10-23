@@ -4,9 +4,11 @@
 // GET  /api/updates                 → { ok, updates:[פעילים בלבד] }            (ציבורי, לאפליקציה)
 // POST /api/updates {seen:[ids]}    → ספירת צפיות אנונימית (כמה תלמידים ראו)
 // POST /api/feedback {kind,text,..} → רעיון / תקלה מתלמיד (ציבורי, עם הגבלת כמות). מנהלים רואים ב"פניות"
+// GET  /api/sets                    → { ok, sets:[סטי כרטיסיות שהצוות פרסם] }    (ציבורי, לכרטיסיות)
 // GET  /api/staff                   → { ok, needsSetup }                      (האם כבר הוגדר מנהל)
 // POST /api/staff {action, ...}     → check_invite | setup | login | me | updateMe | post | end | extend | delete | list
 //                                     | users | addUser | resetUser | removeUser | feedback | feedbackDone | feedbackDelete
+//                                     | setsList | setSave | setDelete  (סטי כרטיסיות לכיתה: מורה מנהל את שלו, מנהל את כולם)
 //
 // כניסת המנהל: קוד ההזמנה האישי (נוצר ע"י scripts/make-invite.mjs ונשלח למנהל, גם כקישור staff.html#invite=...).
 // בכניסה הראשונה עם הקוד נוצר חשבון המנהל הראשי, והקוד הזה הוא הקוד שלו (אפשר לשנות ב"החשבון שלי").
@@ -18,13 +20,14 @@
 // תוכן העדכונים הוא טקסט בלבד, והאפליקציה מציגה אותו כטקסט (לא HTML).
 import crypto from "node:crypto";
 
-export const config = { path: ["/api/updates", "/api/staff", "/api/feedback"] };
+export const config = { path: ["/api/updates", "/api/staff", "/api/feedback", "/api/sets"] };
 
 const ALLOWED = [/^https:\/\/eliyaamir5-glitch\.github\.io$/, /^https:\/\/[a-z0-9-]+\.netlify\.app$/, /^http:\/\/localhost(:\d+)?$/];
 const MAX_FEEDBACK = 1000, FEEDBACK_KINDS = ["idea", "bug", "other"], FEEDBACK_PER_HOUR = 30;
 const MAX_TEXT = 600, MAX_NAME = 40, TOKEN_DAYS = 7, MAX_DURATION_MIN = 60 * 24 * 30;
 const LOCK_FAILS = 20, LOCK_MIN = 15; // 20 קודים שגויים ב-15 דקות מאותה כתובת → נעילה ל-15 דקות
 const AUDIENCES = ["all", "y1", "y2"];
+const MAX_SETS = 200, MAX_CARDS = 300, MAX_SIDE = 300, MAX_SETS_BYTES = 3e6; // סטי כרטיסיות של הצוות
 // sha256 של מפתח ההזמנה למנהל. נוצר ע"י: node scripts/make-invite.mjs
 let INVITE_HASH = "3cfc136db2d1d5b4403c8de0b99eaa57623b01b6eaa1b1110e191d4f63f9d20d";
 export function __setInviteHash(h) { INVITE_HASH = h; }
@@ -103,6 +106,17 @@ function verify(token, secret) {
 // בטוקן נשמרת "גרסה" של המשתמש (tv): החלפת קוד/איפוס מעלה אותה, וכל טוקן ישן נפסל
 const tokenFor = (u, secret) => sign({ uid: u.id, tv: u.tv || 0, exp: Date.now() + TOKEN_DAYS * 864e5 }, secret);
 const publicUser = u => ({ id: u.id, name: u.name, role: u.role, owner: !!u.owner });
+// סט כרטיסיות כפי שהתלמידים מקבלים אותו
+const publicSet = x => ({ id: x.id, title: x.title, subject: x.subject, audience: x.audience, cards: x.cards, author: x.authorName, updatedAt: x.updatedAt });
+// בדיקת סט שהגיע מהצוות: טקסט נקי, אורכים סבירים, לפחות 2 כרטיסים מלאים
+function cleanSet(b) {
+  const title = clean(b?.title, 80), subject = clean(b?.subject, 40);
+  const audience = AUDIENCES.includes(b?.audience) ? b.audience : "all";
+  const cards = (Array.isArray(b?.cards) ? b.cards : []).slice(0, MAX_CARDS)
+    .map(c => ({ t: clean(c?.t, MAX_SIDE), d: clean(c?.d, MAX_SIDE) })).filter(c => c.t && c.d);
+  if (!title || cards.length < 2) throw new Fail(400, "bad_request");
+  return { title, subject, audience, cards };
+}
 const activeUpdates = (list, now = Date.now()) => (list || []).filter(u => u.expiresAt > now).sort((a, b) => (b.urgent - a.urgent) || (b.createdAt - a.createdAt));
 
 // יצירת המנהל הראשי (או איפוס שלו, אם כבר קיים) עם קוד ההזמנה הנוכחי
@@ -175,6 +189,13 @@ async function handle(req, context, headers) {
     const list = await S.get("updates") || [];
     const updates = activeUpdates(list).map(u => ({ id: u.id, text: u.text, author: u.authorName, role: u.role, audience: u.audience, urgent: !!u.urgent, createdAt: u.createdAt, expiresAt: u.expiresAt }));
     return reply(200, { ok: true, now: Date.now(), updates }, { ...headers, "Cache-Control": "public, max-age=20" });
+  }
+
+  // ---- ציבורי: סטי הכרטיסיות של הכיתה ----
+  if (url.pathname.endsWith("/sets")) {
+    if (req.method !== "GET") return reply(405, { ok: false, error: "method" }, headers);
+    const sets = (await S.get("sets") || []).slice().sort((a, b) => b.updatedAt - a.updatedAt).map(publicSet);
+    return reply(200, { ok: true, sets }, { ...headers, "Cache-Control": "public, max-age=60" });
   }
 
   // ---- ציבורי: רעיון או תקלה מתלמיד ----
@@ -317,6 +338,44 @@ async function handle(req, context, headers) {
     const list = (await S.get("updates") || []).filter(u => (isAdmin || u.authorId === me.id) && u.expiresAt > now - 3 * 864e5)
       .sort((a, b) => b.createdAt - a.createdAt).map(u => ({ ...u, active: u.expiresAt > now, views: views[u.id] || 0 }));
     return reply(200, { ok: true, now, updates: list }, headers);
+  }
+
+  // ---- סטי כרטיסיות לכיתה ----
+  if (action === "setsList") {
+    // כולם רואים את כל הסטים (כדי לא להכין פעמיים), ועורכים רק את מה שמותר
+    const sets = (await S.get("sets") || []).slice().sort((a, b) => b.updatedAt - a.updatedAt)
+      .map(x => ({ ...publicSet(x), mine: x.authorId === me.id, canEdit: isAdmin || x.authorId === me.id }));
+    return reply(200, { ok: true, sets }, headers);
+  }
+  if (action === "setSave") {
+    const data = cleanSet(body), id = body.id ? String(body.id) : null, now = Date.now();
+    let out = null;
+    await S.update("sets", cur => {
+      const list = cur || [];
+      if (id) {
+        const x = list.find(y => y.id === id);
+        if (!x) throw new Fail(404, "not_found");
+        if (!isAdmin && x.authorId !== me.id) throw new Fail(403, "forbidden");
+        out = { ...x, ...data, updatedAt: now, editedBy: me.name };
+      } else {
+        if (list.length >= MAX_SETS) throw new Fail(413, "too_many_sets");
+        out = { id: newId(), ...data, authorId: me.id, authorName: me.name, createdAt: now, updatedAt: now };
+      }
+      const next = id ? list.map(y => y.id === id ? out : y) : [...list, out];
+      if (JSON.stringify(next).length > MAX_SETS_BYTES) throw new Fail(413, "too_big");
+      return next;
+    });
+    return reply(200, { ok: true, set: publicSet(out) }, headers);
+  }
+  if (action === "setDelete") {
+    const id = String(body.id || "");
+    await S.update("sets", cur => {
+      const list = cur || [], x = list.find(y => y.id === id);
+      if (!x) throw new Fail(404, "not_found");
+      if (!isAdmin && x.authorId !== me.id) throw new Fail(403, "forbidden");
+      return list.filter(y => y.id !== id);
+    });
+    return reply(200, { ok: true }, headers);
   }
 
   // ---- ניהול: מנהל בלבד ----

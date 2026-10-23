@@ -73,15 +73,6 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
 .big{font-size:44px;font-weight:900;text-align:center;margin:6px 0}
 .center{text-align:center}
 [hidden]{display:none!important}
-/* עורך כרטיסים: כרטיס = שני שדות */
-.ec{background:var(--bg);border:1.5px solid var(--line);border-radius:16px;padding:8px 12px 12px;margin-bottom:10px;transition:border-color .2s}
-.ec.bad{border-color:var(--bad)}
-.ec-h{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);font-weight:700}
-.ec-x{background:none;border:none;color:var(--muted);font-size:17px;padding:6px 8px;margin:-4px 0 -4px -8px;cursor:pointer;font-family:inherit}
-.ec .inp{background:var(--card);margin-top:6px;padding:11px 12px}
-.ec .ec-t{font-weight:700}
-.ec .inp:placeholder-shown{direction:rtl}
-.ec .inp.miss{border-color:var(--bad)}
 .paste{margin-top:14px;border:1.5px dashed var(--line);border-radius:14px;padding:10px 12px}
 .paste summary{cursor:pointer;font-weight:700;font-size:15px;list-style:none}
 .paste summary::-webkit-details-marker{display:none}
@@ -90,6 +81,31 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
 .stick .btn{margin-top:0;pointer-events:auto}
 .draft{background:var(--next);border-radius:12px;padding:8px 12px;font-size:14px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .draft button{background:none;border:none;color:var(--accent);font:inherit;font-weight:700;cursor:pointer;padding:4px}
+/* רשימת סטים */
+.set .side{margin-inline-start:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.set .side .pr{margin:0}
+.dueb{font-size:12px;font-weight:700;background:var(--next);border-radius:999px;padding:3px 9px;white-space:nowrap}
+.new{background:var(--warn);color:#1a1300;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:900;margin-inline-start:6px;vertical-align:2px}
+/* תפריט סט */
+.btn.smart{background:var(--grad);color:#fff}
+.btn.smart small{font-weight:500;opacity:.9}
+.tog{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0 0;font-weight:700;font-size:15px;cursor:pointer}
+.tog input{width:22px;height:22px;accent-color:var(--accent)}
+.li{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:15px}
+.li b{flex:1;min-width:0;overflow-wrap:anywhere}
+.li span{flex:1;min-width:0;color:var(--muted);overflow-wrap:anywhere}
+.li i{font-style:normal;color:var(--free)}
+.st{background:none;border:none;font-size:20px;padding:4px;cursor:pointer;line-height:1;color:var(--muted)}
+/* כרטיס: כוכב בפינה, לא מתהפך עם הכרטיס */
+.flip{position:relative}
+.flip .st{position:absolute;top:8px;left:10px;z-index:2;font-size:24px;padding:6px}
+/* כתיבת תשובה */
+#wIn{margin-top:4px;text-align:center;font-size:19px}
+#wIn:placeholder-shown{direction:rtl}
+.fb{border-radius:12px;padding:10px 14px;margin-top:10px;font-size:16px;line-height:1.5;text-align:center}
+.fb.ok{background:rgba(61,220,151,.18);border:1.5px solid var(--free)}
+.fb.almost{background:rgba(255,210,63,.16);border:1.5px solid var(--warn)}
+.fb.no{background:rgba(255,107,107,.15);border:1.5px solid var(--bad)}
 </style>
 </head>
 <body>
@@ -104,7 +120,7 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
 <section id="vHome">
   <button class="btn primary" id="btnNew">＋ סט חדש</button>
   <div class="sec">הסטים שלי</div><div id="mySets"></div>
-  <div class="sec">סטים של הכיתה</div><div id="classSets"></div>
+  <div class="sec">סטים של הכיתה <small style="font-weight:400">· מהמורים</small></div><div id="classSets"></div>
 </section>
 
 <!-- עריכת סט -->
@@ -131,22 +147,39 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
 <section id="vSet" hidden>
   <div class="card">
     <h2 id="sName"></h2><p class="hint" id="sInfo"></p>
+    <button class="btn smart" id="mSmart">🧠 חזרה חכמה <small id="mDue"></small></button>
     <button class="btn primary" id="mFlash">🃏 כרטיסיות</button>
+    <button class="btn primary" id="mWrite">✍️ כתיבת תשובה</button>
     <button class="btn primary" id="mQuiz">✅ מבחן אמריקאי</button>
     <button class="btn primary" id="mMatch">⚡ התאמה על זמן</button>
+    <label class="tog" id="starTog" hidden><span>⭐ רק הכרטיסים המסומנים <small id="starN" style="font-weight:400"></small></span><input type="checkbox" id="starOnly"></label>
     <div class="row"><button class="btn ghost" id="mShare">🔗 שתף</button><button class="btn ghost" id="mEdit">✏️ ערוך</button><button class="btn ghost" id="mReset">↺ אפס התקדמות</button></div>
   </div>
-  <div class="card" id="sList"></div>
+  <div class="card"><p class="hint" style="margin:0 0 4px">לחיצה על ☆ מסמנת כרטיס קשה, ואז אפשר ללמוד רק אותם.</p><div id="sList"></div></div>
 </section>
 
-<!-- כרטיסיות -->
+<!-- כרטיסיות (גם לחזרה חכמה) -->
 <section id="vFlash" hidden>
   <div class="cnt"><span id="fPos"></span><span id="fKnown"></span></div>
   <div class="prog"><i id="fBar"></i></div>
-  <div class="flip" id="flip"><div class="in"><div class="face front" id="fFront"></div><div class="face back" id="fBack"></div></div></div>
+  <div class="flip" id="flip"><button class="st" id="fStar" aria-label="סמן ככרטיס קשה">☆</button><div class="in"><div class="face front" id="fFront"></div><div class="face back" id="fBack"></div></div></div>
   <p class="hint center">לחיצה על הכרטיס הופכת אותו</p>
   <div class="row"><button class="btn badb" id="fNo">✗ לא ידעתי</button><button class="btn good" id="fYes">✓ ידעתי</button></div>
   <button class="btn ghost" id="fQuit">סיום</button>
+</section>
+
+<!-- כתיבת תשובה -->
+<section id="vWrite" hidden>
+  <div class="cnt"><span id="wPos"></span><span id="wScore"></span></div>
+  <div class="prog"><i id="wBar"></i></div>
+  <div class="card">
+    <div class="q" id="wQ"></div>
+    <input class="inp" id="wIn" dir="auto" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="מה התשובה?">
+    <div class="fb" id="wFb" hidden></div>
+    <div class="row"><button class="btn ghost" id="wSkip">לא יודע</button><button class="btn primary" id="wGo">בדוק</button></div>
+    <button class="btn ghost" id="wOver" hidden>בעצם צדקתי ✓</button>
+  </div>
+  <button class="btn ghost" id="wQuit">סיום</button>
 </section>
 
 <!-- מבחן -->
@@ -175,10 +208,12 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
 <div class="hint center" style="margin-top:18px;font-size:12px">הסטים וההתקדמות נשמרים בטלפון שלך. "שתף" שולח עותק לחבר.</div>
 </main>
 
+<script src="data.js"></script>
 <script src="sets.js"></script>
+<script src="card-editor.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const VIEWS=["vHome","vEdit","vSet","vFlash","vQuiz","vMatch","vDone"];
+const VIEWS=["vHome","vEdit","vSet","vFlash","vWrite","vQuiz","vMatch","vDone"];
 let qTimer=null;
 function show(v){clearTimeout(qTimer);if(v!=="vMatch")clearInterval(mTimer);VIEWS.forEach(x=>$(x).hidden=x!==v);window.scrollTo(0,0);$("back").textContent=v==="vHome"?"🏠 חזרה למערכת":"→ חזרה"}
 $("back").onclick=()=>{const v=VIEWS.find(x=>!$(x).hidden);if(v==="vHome")location.href="./";else if(v==="vSet"||v==="vEdit")home();else openSet(cur.id)};
@@ -187,9 +222,62 @@ const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(M
 const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
 const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let mySets=load("sets",[]),prog=load("cardsProg",{}),cur=null,editing=null;
-const allSets=()=>[...mySets,...CLASS_SETS.map(s=>({...s,builtin:true}))];
-const known=id=>new Set((prog[id]&&prog[id].known)||[]);
-const setKnown=(id,k)=>{prog[id]={known:[...k]};save("cardsProg",prog)};
+
+// ---- סטים של הכיתה: מה שהמורים פרסמו (נשמר בטלפון גם בלי אינטרנט) + סטים קבועים ----
+const MY_CLS=(load("profile",{})||{}).cls;
+let teacherSets=load("classSetsCache",[]);
+const forMe=s=>!s.audience||s.audience==="all"||!MY_CLS||s.audience===MY_CLS;
+const classSets=()=>[...teacherSets.filter(forMe).map(s=>({...s,id:"t:"+s.id,builtin:true,teacher:true})),...CLASS_SETS.map(s=>({...s,builtin:true}))];
+const allSets=()=>[...mySets,...classSets()];
+async function loadTeacherSets(){
+  try{
+    const ctl=new AbortController();setTimeout(()=>ctl.abort(),8000);
+    const r=await fetch(((typeof SERVER_BASE!=="undefined"&&SERVER_BASE)||"")+"/api/sets",{signal:ctl.signal,cache:"no-store"});
+    const j=await r.json();if(!j.ok||!Array.isArray(j.sets))return;
+    teacherSets=j.sets;save("classSetsCache",teacherSets);
+    if(!$("vHome").hidden)home();
+  }catch(e){}
+}
+
+// ---- התקדמות ----
+// נשמרת לכל כרטיס לפי התוכן שלו (לא לפי המיקום), כך שעריכה של הסט לא מבלבלת.
+// b = "קופסה": 0 = לא ידעתי, 1–5 = כמה פעמים ברצף ידעתי. due = מתי לחזור עליו. s = מסומן בכוכב.
+// חזרה חכמה (שיטת לייטנר): כל פעם שיודעים, הכרטיס חוזר אחרי יותר ימים. טעות = חוזר מיד.
+const DAY=864e5,GAP=[0,1,2,4,8,16];
+const today0=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()};
+const ck=c=>c.t+"␟"+c.d;
+function PG(set){
+  let p=prog[set.id];
+  if(!p||!p.c){const old=(p&&p.known)||[];p={c:{}};old.forEach(i=>{const c=set.cards[i];if(c)p.c[ck(c)]={b:1,due:0}});prog[set.id]=p}
+  return p;
+}
+const REC=(set,c)=>PG(set).c[ck(c)]||{};
+const saveProg=()=>save("cardsProg",prog);
+function mark(set,c,ok){
+  const p=PG(set),r=p.c[ck(c)]||{},b=ok?Math.min(5,(r.b||0)+1):0;
+  p.c[ck(c)]={...r,b,due:b?today0()+GAP[b]*DAY:0,seen:Date.now()};saveProg();
+}
+const isKnown=(set,c)=>(REC(set,c).b||0)>=1;
+const knownN=set=>set.cards.filter(c=>isKnown(set,c)).length;
+const starred=(set,c)=>!!REC(set,c).s;
+const starN=set=>set.cards.filter(c=>starred(set,c)).length;
+function toggleStar(set,c){const p=PG(set),k=ck(c),r={...(p.c[k]||{})};if(r.s)delete r.s;else r.s=1;p.c[k]=r;saveProg()}
+const started=set=>!!prog[set.id]&&Object.values(PG(set).c).some(r=>r.seen);
+// הכרטיסים שעובדים עליהם: כולם, או רק המסומנים בכוכב
+function poolOf(set){const all=set.cards.map((_,i)=>i);if(!PG(set).star)return all;const st=all.filter(i=>starred(set,set.cards[i]));return st.length?st:all}
+const pool=()=>poolOf(cur);
+const dueOf=set=>{const now=Date.now();return poolOf(set).filter(i=>(REC(set,set.cards[i]).due||0)<=now)};
+// קודם מה שטעית בו, אחר כך מה שהגיע זמנו, ובסוף כרטיסים חדשים. עד 20 בסיבוב
+function smartQueue(){
+  const rank=i=>{const r=REC(cur,cur.cards[i]);return r.seen==null?2:(r.b||0)===0?0:1};
+  return shuffle(dueOf(cur)).sort((a,b)=>rank(a)-rank(b)).slice(0,20);
+}
+function nextDueText(){
+  const now=Date.now(),later=pool().map(i=>REC(cur,cur.cards[i]).due||0).filter(d=>d>now);
+  if(!later.length)return "";
+  const m=Math.min(...later),n=later.filter(d=>d<=m).length,days=Math.round((m-today0())/DAY);
+  return `הסיבוב הבא: ${days<=1?"מחר":days===2?"מחרתיים":`בעוד ${days} ימים`} (${n} כרטיסים).`;
+}
 
 // ---- קידוד לשיתוף ----
 const b64=u8=>btoa(String.fromCharCode(...u8)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
@@ -209,114 +297,79 @@ async function decSet(str){
 // ---- בית ----
 function home(){
   show("vHome");
-  const item=s=>{const k=known(s.id).size,n=s.cards.length;return `<div class="set" data-id="${s.id}"><div class="ic">${s.builtin?"🏫":"🃏"}</div><div><div class="n">${esc(s.title)}</div><div class="s">${esc(s.subject||"")} · ${n} כרטיסים</div></div>${k?`<div class="pr">${Math.round(100*k/n)}% ✓</div>`:""}</div>`};
+  const item=s=>{
+    const n=s.cards.length,k=knownN(s),st=started(s),d=st?dueOf(s).length:0,fresh=s.teacher&&!st&&Date.now()-(s.updatedAt||0)<4*DAY;
+    return `<div class="set" data-id="${esc(s.id)}"><div class="ic">${s.teacher?"👨‍🏫":s.builtin?"🏫":"🃏"}</div><div style="min-width:0"><div class="n">${esc(s.title)}${fresh?'<span class="new">חדש</span>':""}</div><div class="s">${esc(s.subject||"")}${s.subject?" · ":""}${n} כרטיסים${s.author?" · "+esc(s.author):""}</div></div><div class="side">${k?`<div class="pr">${Math.round(100*k/n)}% ✓</div>`:""}${d?`<div class="dueb">🧠 ${d} לחזרה</div>`:""}</div></div>`;
+  };
   $("mySets").innerHTML=mySets.length?mySets.map(item).join(""):'<p class="hint">עוד אין לך סטים. צור אחד או פתח קישור שחבר שלח.</p>';
-  $("classSets").innerHTML=CLASS_SETS.length?CLASS_SETS.map(s=>item({...s,builtin:true})).join(""):'<p class="hint">עדיין אין סטים של הכיתה.</p>';
+  const cs=classSets();
+  $("classSets").innerHTML=cs.length?cs.map(item).join(""):'<p class="hint">עדיין אין סטים של הכיתה.</p>';
   document.querySelectorAll(".set").forEach(el=>el.onclick=()=>openSet(el.dataset.id));
   $("subjs").innerHTML=[...new Set(allSets().map(s=>s.subject).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join("");
 }
 $("btnNew").onclick=()=>openEdit(null);
 
 // ---- עריכה ----
-function parseCards(text){
-  return text.split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{
-    const m=l.match(/^(.+?)(?:\t| [-–—] |\s*[=:]\s+|\s*[-–—]\s*)(.+)$/);
-    return m?{t:m[1].trim(),d:m[2].trim()}:null;
-  }).filter(Boolean);
-}
-// כל כרטיס = שני שדות. תמיד יש כרטיס ריק בסוף, כך שפשוט ממשיכים להקליד
-const rows=()=>[...$("eList").querySelectorAll(".ec")];
-const rowVal=r=>({t:r.querySelector(".ec-t").value.trim(),d:r.querySelector(".ec-d").value.trim()});
-const filled=r=>{const c=rowVal(r);return !!(c.t||c.d)};
-function addRow(c,before){
-  const r=document.createElement("div");r.className="ec";
-  r.innerHTML=`<div class="ec-h"><span class="ec-n"></span><button type="button" class="ec-x" aria-label="מחק כרטיס">✕</button></div>
-    <input class="inp ec-t" placeholder="מונח / שאלה" enterkeyhint="next" dir="auto" autocomplete="off">
-    <input class="inp ec-d" placeholder="הגדרה / תשובה" enterkeyhint="next" dir="auto" autocomplete="off">`;
-  if(c){r.querySelector(".ec-t").value=c.t;r.querySelector(".ec-d").value=c.d}
-  $("eList").insertBefore(r,before||null);return r;
-}
-function syncRows(){
-  let rs=rows();
-  // בסוף נשאר בדיוק כרטיס ריק אחד (חוץ מזה שהמשתמש עומד בו)
-  while(rs.length>2&&!filled(rs.at(-1))&&!filled(rs.at(-2))&&!rs.at(-2).contains(document.activeElement)){rs.at(-1).remove();rs=rows()}
-  if(!rs.length||filled(rs.at(-1)))addRow();
-  while(rows().length<2)addRow();
-  rs=rows();rs.forEach((r,i)=>r.querySelector(".ec-n").textContent=`כרטיס ${i+1}`);
-  const n=rs.map(rowVal).filter(c=>c.t&&c.d).length;$("eCount").textContent=n?`· ${n} מוכנים`:"";
-}
-const goTo=el=>{el.focus();el.closest(".ec").scrollIntoView({block:"center",behavior:"smooth"})};
-function fillRows(cards){$("eList").innerHTML="";cards.forEach(c=>addRow(c));syncRows()}
-// רשימה (מהדבקה) נכנסת לכרטיסים: ממלאת את הכרטיס הנוכחי אם הוא ריק, ואחריו מוסיפה כרטיסים
-function insertParsed(list,at){
-  let ref=at&&!filled(at)?at:null,after=at&&filled(at)?at.nextElementSibling:null;
-  if(!at){const last=rows().filter(filled).at(-1);after=last?last.nextElementSibling:rows()[0]}
-  for(const c of list){const r=ref||addRow(null,after);ref=null;
-    r.querySelector(".ec-t").value=c.t;r.querySelector(".ec-d").value=c.d;r.classList.remove("bad");after=r.nextElementSibling}
-  syncRows();saveDraft();
-}
-$("eList").addEventListener("input",e=>{e.target.closest(".ec").classList.remove("bad");e.target.classList.remove("miss");syncRows();saveDraft()});
-$("eList").addEventListener("focusout",()=>setTimeout(syncRows,0));
-$("eList").addEventListener("click",e=>{const x=e.target.closest(".ec-x");if(!x)return;x.closest(".ec").remove();syncRows();saveDraft()});
-$("eList").addEventListener("keydown",e=>{
-  if(e.key!=="Enter"||e.isComposing)return;e.preventDefault();
-  const r=e.target.closest(".ec");
-  if(e.target.classList.contains("ec-t"))return goTo(r.querySelector(".ec-d"));
-  goTo((r.nextElementSibling||addRow()).querySelector(".ec-t"));
-});
-$("eList").addEventListener("paste",e=>{
-  const txt=(e.clipboardData||window.clipboardData).getData("text");if(!/\n/.test(txt.trim()))return;
-  const list=parseCards(txt);if(!list.length)return;e.preventDefault();insertParsed(list,e.target.closest(".ec"));
-});
-$("btnAddCard").onclick=()=>{const r=rows().at(-1);goTo((r&&!filled(r)?r:addRow()).querySelector(".ec-t"));syncRows()};
-$("btnPaste").onclick=()=>{const list=parseCards($("eCards").value);
-  if(!list.length)return $("eErr").textContent="לא מצאנו כרטיסים ברשימה. כל שורה צריכה להיות: מונח - הגדרה.";
-  insertParsed(list);$("eCards").value="";$("ePaste").open=false;$("eErr").textContent="";
-};
+const ED=CardEditor($("eList"),()=>{const n=ED.ready();$("eCount").textContent=n?`· ${n} מוכנים`:"";saveDraft()});
 // טיוטה של סט חדש נשמרת, כדי שלא יאבד כלום אם יוצאים באמצע
-function saveDraft(){if(editing)return;const d={title:$("eName").value,subject:$("eSubj").value,cards:rows().map(rowVal).filter(c=>c.t||c.d)};
+function saveDraft(){if(editing)return;const d={title:$("eName").value,subject:$("eSubj").value,cards:ED.draft()};
   try{if(d.title.trim()||d.cards.length)save("cardDraft",d);else localStorage.removeItem("cardDraft")}catch(e){}}
 const dropDraft=()=>{try{localStorage.removeItem("cardDraft")}catch(e){}};
 ["eName","eSubj"].forEach(id=>$(id).addEventListener("input",saveDraft));
-$("btnDraftClear").onclick=()=>{dropDraft();$("eName").value="";$("eSubj").value="";fillRows([]);$("eDraft").hidden=true};
+$("btnDraftClear").onclick=()=>{dropDraft();$("eName").value="";$("eSubj").value="";ED.set([]);$("eDraft").hidden=true};
+$("btnAddCard").onclick=()=>ED.addEmpty();
+$("btnPaste").onclick=()=>{const list=parseCards($("eCards").value);
+  if(!list.length)return $("eErr").textContent="לא מצאנו כרטיסים ברשימה. כל שורה צריכה להיות: מונח - הגדרה.";
+  ED.insert(list);$("eCards").value="";$("ePaste").open=false;$("eErr").textContent="";
+};
 function openEdit(s){
   editing=s;show("vEdit");
   $("edTitle").textContent=s?"עריכת סט":"סט חדש";
   const dr=!s&&load("cardDraft",null);
   $("eName").value=s?s.title:dr?dr.title||"":"";$("eSubj").value=s?s.subject||"":dr?dr.subject||"":"";
   $("eDraft").hidden=!dr;
-  fillRows(s?s.cards:dr&&dr.cards||[]);$("eCards").value="";$("ePaste").open=false;
+  ED.set(s?s.cards:dr&&dr.cards||[]);$("eCards").value="";$("ePaste").open=false;
   $("btnDel").hidden=!s||s.builtin;$("eErr").textContent="";
 }
 $("btnSave").onclick=()=>{
   const title=$("eName").value.trim(),subject=$("eSubj").value.trim();
   // רשימה שהודבקה ולא נלחץ "הוסף" – נכנסת בכל זאת
-  if($("eCards").value.trim()){const l=parseCards($("eCards").value);if(l.length){insertParsed(l);$("eCards").value=""}}
-  let half=null;rows().forEach(r=>{const c=rowVal(r);r.classList.remove("bad");
-    if(!!c.t!==!!c.d){r.classList.add("bad");r.querySelector(c.t?".ec-d":".ec-t").classList.add("miss");half=half||r}});
-  const cards=rows().map(rowVal).filter(c=>c.t&&c.d);
+  if($("eCards").value.trim()){const l=parseCards($("eCards").value);if(l.length){ED.insert(l);$("eCards").value=""}}
+  const half=ED.check(),cards=ED.cards();
   if(!title){$("eName").focus();return $("eErr").textContent="חסר שם לסט."}
-  if(half){half.scrollIntoView({block:"center",behavior:"smooth"});return $("eErr").textContent=`ב${half.querySelector(".ec-n").textContent} חסר${rowVal(half).t?"ה התשובה":" המונח"}.`}
+  if(half)return $("eErr").textContent=half;
   if(cards.length<2)return $("eErr").textContent="צריך לפחות 2 כרטיסים מלאים.";
-  if(editing&&!editing.builtin){if(JSON.stringify(editing.cards)!==JSON.stringify(cards)){delete prog[editing.id];save("cardsProg",prog)}Object.assign(editing,{title,subject,cards})}
+  if(editing&&!editing.builtin)Object.assign(editing,{title,subject,cards});
   else{const s={id:"s"+Date.now().toString(36),title,subject,cards,created:Date.now()};mySets.push(s);editing=s}
   save("sets",mySets);dropDraft();openSet(editing.id);
 };
 $("btnCancel").onclick=()=>editing?openSet(editing.id):home();
-$("btnDel").onclick=()=>{if(!confirm("למחוק את הסט?"))return;mySets=mySets.filter(s=>s.id!==editing.id);save("sets",mySets);delete prog[editing.id];save("cardsProg",prog);home()};
+$("btnDel").onclick=()=>{if(!confirm("למחוק את הסט?"))return;mySets=mySets.filter(s=>s.id!==editing.id);save("sets",mySets);delete prog[editing.id];saveProg();home()};
 
 // ---- תפריט סט ----
 function openSet(id){
   cur=allSets().find(s=>s.id===id);if(!cur)return home();
-  show("vSet");const k=known(id).size;
+  show("vSet");const n=cur.cards.length;
   $("sName").textContent=cur.title;
-  $("sInfo").textContent=`${cur.subject||""} · ${cur.cards.length} כרטיסים · ידעת ${k} מתוך ${cur.cards.length}`;
-  $("sList").innerHTML=cur.cards.map((c,i)=>`<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px"><span style="color:var(--muted);min-width:22px">${i+1}.</span><b style="flex:1">${esc(c.t)}</b><span style="flex:1;color:var(--muted)">${esc(c.d)}</span>${known(id).has(i)?"<span>✓</span>":""}</div>`).join("");
+  $("sInfo").textContent=[cur.subject,`${n} כרטיסים`,`ידעת ${knownN(cur)} מתוך ${n}`,cur.author&&`מאת ${cur.author}`].filter(Boolean).join(" · ");
   $("mEdit").textContent=cur.builtin?"📋 העתק לעריכה":"✏️ ערוך";
+  drawSetMeta();drawList();
 }
-$("mFlash").onclick=()=>startFlash(false);$("mQuiz").onclick=startQuiz;$("mMatch").onclick=startMatch;
+function drawSetMeta(){
+  const sn=starN(cur),p=PG(cur);
+  $("starTog").hidden=!sn;$("starOnly").checked=!!p.star&&sn>0;$("starN").textContent=`(${sn})`;
+  const d=smartQueue().length,all=dueOf(cur).length;
+  $("mDue").textContent=d?`· ${all>d?`${d} מתוך ${all}`:d} לתרגול היום`:"· הכל חזור להיום ✓";
+}
+function drawList(){
+  $("sList").innerHTML=cur.cards.map((c,i)=>`<div class="li"><button class="st" data-i="${i}" aria-label="סמן ככרטיס קשה">${starred(cur,c)?"⭐":"☆"}</button><b>${esc(c.t)}</b><span>${esc(c.d)}</span>${isKnown(cur,c)?"<i>✓</i>":""}</div>`).join("");
+  $("sList").querySelectorAll(".st").forEach(b=>b.onclick=()=>{toggleStar(cur,cur.cards[+b.dataset.i]);b.textContent=starred(cur,cur.cards[+b.dataset.i])?"⭐":"☆";drawSetMeta()});
+}
+$("starOnly").onchange=e=>{PG(cur).star=e.target.checked;saveProg();drawSetMeta()};
+$("mSmart").onclick=startSmart;$("mFlash").onclick=()=>startFlash(false);$("mWrite").onclick=startWrite;$("mQuiz").onclick=startQuiz;$("mMatch").onclick=startMatch;
 $("mEdit").onclick=()=>openEdit(cur.builtin?{...cur,builtin:true,id:null}:cur);
-$("mReset").onclick=()=>{delete prog[cur.id];save("cardsProg",prog);openSet(cur.id)};
+// איפוס: ההתקדמות נמחקת, הכוכבים נשארים
+$("mReset").onclick=()=>{if(!confirm("לאפס את ההתקדמות בסט הזה? (הכוכבים נשארים)"))return;const p=PG(cur);for(const k of Object.keys(p.c)){if(p.c[k].s)p.c[k]={s:1};else delete p.c[k]}saveProg();openSet(cur.id)};
 $("mShare").onclick=async()=>{
   const url=location.href.split("#")[0]+"#s="+await encSet(cur);
   const text=`סט כרטיסיות "${cur.title}" (${cur.cards.length} כרטיסים) ללמידה במערכת:\n${url}`;
@@ -324,27 +377,79 @@ $("mShare").onclick=async()=>{
   try{await navigator.clipboard.writeText(url);alert("הקישור הועתק. אפשר להדביק בוואטסאפ.")}catch(e){prompt("העתק את הקישור:",url)}
 };
 
-// ---- כרטיסיות ----
-let fq=[],fi=0,fk=null,fMissed=[];
+// ---- כרטיסיות וחזרה חכמה ----
+let fq=[],fi=0,fMode="flash",fMissed=[],fTries={};
 function startFlash(onlyMissed){
-  const k=known(cur.id);const idx=cur.cards.map((_,i)=>i).filter(i=>onlyMissed?fMissed.includes(i):!k.has(i));
-  fq=shuffle(idx.length?idx:cur.cards.map((_,i)=>i));fi=0;fk=k;fMissed=[];show("vFlash");drawFlash();
+  const ids=pool().filter(i=>onlyMissed?fMissed.includes(i):!isKnown(cur,cur.cards[i]));
+  fMode="flash";fq=shuffle(ids.length?ids:pool());fi=0;fMissed=[];show("vFlash");drawFlash();
+}
+function startSmart(){
+  const q=smartQueue();if(!q.length)return finish("smartEmpty");
+  fMode="smart";fq=q;fi=0;fMissed=[];fTries={};show("vFlash");drawFlash();
 }
 function drawFlash(){
-  if(fi>=fq.length)return finish("flash");
+  if(fi>=fq.length)return finish(fMode);
   const c=cur.cards[fq[fi]];$("flip").classList.remove("on");
   $("fFront").innerHTML=`<small>מונח</small>${esc(c.t)}`;$("fBack").innerHTML=`<small>הגדרה</small>${esc(c.d)}`;
-  $("fPos").textContent=`${fi+1} / ${fq.length}`;$("fKnown").textContent=`ידעת ${fk.size} מתוך ${cur.cards.length}`;
+  $("fStar").textContent=starred(cur,c)?"⭐":"☆";
+  if(fMode==="smart"){$("fPos").textContent="🧠 חזרה חכמה";$("fKnown").textContent=`נשארו ${fq.length-fi}`}
+  else{$("fPos").textContent=`${fi+1} / ${fq.length}`;$("fKnown").textContent=`ידעת ${knownN(cur)} מתוך ${cur.cards.length}`}
   $("fBar").style.width=Math.round(100*fi/fq.length)+"%";
 }
-$("flip").onclick=()=>$("flip").classList.toggle("on");
-$("fYes").onclick=()=>{fk.add(fq[fi]);setKnown(cur.id,fk);fi++;drawFlash()};
-$("fNo").onclick=()=>{fk.delete(fq[fi]);fMissed.push(fq[fi]);setKnown(cur.id,fk);fi++;drawFlash()};
+$("flip").onclick=e=>{if(!e.target.closest(".st"))$("flip").classList.toggle("on")};
+$("fStar").onclick=()=>{const c=cur.cards[fq[fi]];toggleStar(cur,c);$("fStar").textContent=starred(cur,c)?"⭐":"☆"};
+$("fYes").onclick=()=>{mark(cur,cur.cards[fq[fi]],true);fi++;drawFlash()};
+$("fNo").onclick=()=>{
+  const i=fq[fi];mark(cur,cur.cards[i],false);if(!fMissed.includes(i))fMissed.push(i);
+  // בחזרה חכמה כרטיס שלא ידעת חוזר עוד כמה כרטיסים (עד פעמיים בסיבוב)
+  if(fMode==="smart"&&(fTries[i]=(fTries[i]||0)+1)<=2)fq.splice(Math.min(fq.length,fi+4),0,i);
+  fi++;drawFlash();
+};
 $("fQuit").onclick=()=>openSet(cur.id);
+
+// ---- כתיבת תשובה ----
+let wq=[],wi=0,ws=0,wState=null;
+function startWrite(){wq=shuffle(pool());wi=0;ws=0;show("vWrite");drawWrite()}
+function drawWrite(){
+  if(wi>=wq.length)return finish("write");
+  const c=cur.cards[wq[wi]];wState=null;
+  $("wQ").textContent=c.t;$("wIn").value="";$("wIn").readOnly=false;$("wFb").hidden=true;$("wOver").hidden=true;$("wSkip").hidden=false;$("wGo").textContent="בדוק";
+  $("wPos").textContent=`${wi+1} / ${wq.length}`;$("wScore").textContent=`נכון: ${ws}`;$("wBar").style.width=Math.round(100*wi/wq.length)+"%";
+  setTimeout(()=>$("wIn").focus(),60);
+}
+// השוואה סלחנית: בלי ניקוד, סימני פיסוק, אותיות סופיות ורישיות. טעות הקלדה קטנה = "כמעט" (נחשב נכון)
+const FINAL={"ך":"כ","ם":"מ","ן":"נ","ף":"פ","ץ":"צ"};
+const normA=s=>String(s).toLowerCase().replace(/[֑-ׇ]/g,"").replace(/\([^)]*\)/g," ").replace(/[ךםןףץ]/g,ch=>FINAL[ch]).replace(/[^\p{L}\p{N}]+/gu," ").trim();
+function lev(a,b){let p=Array.from({length:b.length+1},(_,j)=>j);for(let i=1;i<=a.length;i++){const q=[i];for(let j=1;j<=b.length;j++)q[j]=Math.min(p[j]+1,q[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=q}return p[b.length]}
+function judge(ans,correct){
+  const a=normA(ans);if(!a)return "no";
+  // תשובה עם כמה אפשרויות ("לרדת, להפחית") או עם תוספת בסוגריים ("פריז (Paris)") – כל אחת מתקבלת
+  const opts=[correct,...correct.split(/[,;/]|\s+או\s+/),...[...correct.matchAll(/\(([^)]*)\)/g)].map(m=>m[1])].map(normA).filter(Boolean);
+  if(opts.includes(a))return "ok";
+  for(const o of opts){const tol=o.length>=8?2:o.length>=4?1:0;if(tol&&lev(a,o)<=tol)return "almost"}
+  return "no";
+}
+function checkWrite(skip){
+  const c=cur.cards[wq[wi]],typed=$("wIn").value.trim();
+  if(!skip&&!typed)return $("wIn").focus();
+  const v=skip?"no":judge(typed,c.d),ok=v!=="no";wState=v;if(ok)ws++;mark(cur,c,ok);
+  $("wIn").readOnly=true;
+  $("wFb").className="fb "+v;$("wFb").hidden=false;
+  $("wFb").innerHTML=v==="ok"?"✓ נכון!":v==="almost"?`כמעט! ✓ שים לב לכתיב: <b>${esc(c.d)}</b>`:`${skip?"":"✗ "}התשובה: <b>${esc(c.d)}</b>`;
+  $("wOver").hidden=v!=="no"||skip;$("wSkip").hidden=true;$("wGo").textContent="הבא ←";
+  $("wScore").textContent=`נכון: ${ws}`;
+  if(v==="ok"){clearTimeout(qTimer);qTimer=setTimeout(()=>{if(!$("vWrite").hidden&&wState==="ok")nextWrite()},900)}
+}
+function nextWrite(){clearTimeout(qTimer);wi++;drawWrite()}
+$("wGo").onclick=()=>wState?nextWrite():checkWrite(false);
+$("wIn").onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();$("wGo").click()}};
+$("wSkip").onclick=()=>checkWrite(true);
+$("wOver").onclick=()=>{mark(cur,cur.cards[wq[wi]],true);ws++;nextWrite()};
+$("wQuit").onclick=()=>openSet(cur.id);
 
 // ---- מבחן אמריקאי ----
 let qq=[],qi=0,qs=0,qLock=false;
-function startQuiz(){qq=shuffle(cur.cards.map((_,i)=>i));qi=0;qs=0;show("vQuiz");drawQuiz()}
+function startQuiz(){qq=shuffle(pool());qi=0;qs=0;show("vQuiz");drawQuiz()}
 function drawQuiz(){
   if(qi>=qq.length)return finish("quiz");
   const i=qq[qi],c=cur.cards[i];qLock=false;
@@ -355,7 +460,7 @@ function drawQuiz(){
   $("qOpts").querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
     if(qLock)return;qLock=true;const ok=+b.dataset.j===i;if(ok)qs++;
     b.classList.add(ok?"ok":"no");if(!ok)$("qOpts").querySelector(`[data-j="${i}"]`).classList.add("ok");
-    const k=known(cur.id);ok?k.add(i):k.delete(i);setKnown(cur.id,k);
+    mark(cur,c,ok);
     clearTimeout(qTimer);qTimer=setTimeout(()=>{if($("vQuiz").hidden)return;qi++;drawQuiz()},ok?600:1400);
   });
 }
@@ -364,9 +469,9 @@ $("qQuit").onclick=()=>openSet(cur.id);
 // ---- התאמה ----
 let mSel=null,mLeftN=0,mT0=0,mTimer=null;
 function startMatch(){
-  const pick=shuffle(cur.cards.map((_,i)=>i)).slice(0,6);mLeftN=pick.length;mSel=null;
+  const pick=shuffle(pool()).slice(0,6);mLeftN=pick.length;mSel=null;
   const tiles=shuffle([...pick.map(i=>({i,side:"t",txt:cur.cards[i].t})),...pick.map(i=>({i,side:"d",txt:cur.cards[i].d}))]);
-  $("mGrid").innerHTML=tiles.map((t,n)=>`<div class="tile" data-i="${t.i}" data-side="${t.side}">${esc(t.txt)}</div>`).join("");
+  $("mGrid").innerHTML=tiles.map(t=>`<div class="tile" data-i="${t.i}" data-side="${t.side}">${esc(t.txt)}</div>`).join("");
   $("mLeft").textContent=`נשארו ${mLeftN} זוגות`;show("vMatch");
   mT0=Date.now();clearInterval(mTimer);mTimer=setInterval(()=>$("mTime").textContent=((Date.now()-mT0)/1000).toFixed(1),100);
   $("mGrid").querySelectorAll(".tile").forEach(el=>el.onclick=()=>{
@@ -385,13 +490,19 @@ $("mQuit").onclick=()=>{clearInterval(mTimer);openSet(cur.id)};
 // ---- סיכום ----
 function finish(mode){
   show("vDone");const n=cur.cards.length;
-  if(mode==="flash"){const k=known(cur.id).size;$("dBig").textContent=fMissed.length?"💪":"🏆";$("dTitle").textContent=`ידעת ${k} מתוך ${n}`;
-    $("dMsg").textContent=fMissed.length?`${fMissed.length} כרטיסים עוד לא יושבים. נחזור רק עליהם?`:"כל הכרטיסים יושבים. סיימת!";
-    $("dAgain").textContent=fMissed.length?`חזור על ${fMissed.length} שלא ידעתי`:"עוד סיבוב על הכל";$("dAgain").onclick=()=>startFlash(fMissed.length>0)}
-  if(mode==="quiz"){const pct=Math.round(100*qs/n);$("dBig").textContent=pct===100?"🏆":pct>=70?"👏":"📚";$("dTitle").textContent=`${qs} מתוך ${n} נכונות (${pct}%)`;
-    $("dMsg").textContent=pct===100?"מושלם!":pct>=70?"יפה מאוד. עוד סיבוב וזה יושב.":"כדאי לעבור על הכרטיסיות ואז לנסות שוב.";$("dAgain").textContent="מבחן נוסף";$("dAgain").onclick=startQuiz}
+  const set=(big,title,msg,again,fn)=>{$("dBig").textContent=big;$("dTitle").textContent=title;$("dMsg").textContent=msg;$("dAgain").textContent=again;$("dAgain").onclick=fn};
+  if(mode==="flash"){const k=knownN(cur);
+    set(fMissed.length?"💪":"🏆",`ידעת ${k} מתוך ${n}`,fMissed.length?`${fMissed.length} כרטיסים עוד לא יושבים. נחזור רק עליהם?`:"כל הכרטיסים יושבים. סיימת!",
+      fMissed.length?`חזור על ${fMissed.length} שלא ידעתי`:"עוד סיבוב על הכל",()=>startFlash(fMissed.length>0))}
+  if(mode==="smart"||mode==="smartEmpty"){const left=smartQueue().length,nx=nextDueText();
+    if(mode==="smart")set("🧠","סיימת את החזרה להיום!",left?`${left} כרטיסים עוד לא ישבו. אפשר עוד סיבוב עכשיו, או לחזור אליהם מחר.`:`${nx||"כל הכרטיסים יושבים."} ככה זה נכנס לזיכרון לטווח ארוך.`,
+      left?"עוד סיבוב על מה שלא ישב":"לתרגל בכל זאת",left?startSmart:()=>startFlash(false));
+    else set("🎉","אין מה לחזור היום",`${nx} חזרה מרווחת עובדת הכי טוב כשלא דוחסים הכל ביום אחד.`,"לתרגל בכל זאת",()=>startFlash(false))}
+  if(mode==="quiz"||mode==="write"){const tot=mode==="quiz"?qq.length:wq.length,sc=mode==="quiz"?qs:ws,pct=tot?Math.round(100*sc/tot):0;
+    set(pct===100?"🏆":pct>=70?"👏":"📚",`${sc} מתוך ${tot} נכונות (${pct}%)`,pct===100?"מושלם!":pct>=70?"יפה מאוד. עוד סיבוב וזה יושב.":"כדאי לעבור על הכרטיסיות ואז לנסות שוב.",
+      mode==="quiz"?"מבחן נוסף":"עוד סיבוב כתיבה",mode==="quiz"?startQuiz:startWrite)}
   if(mode==="match"){const t=((Date.now()-mT0)/1000).toFixed(1);const best=load("matchBest",{});const prev=best[cur.id];const rec=!prev||+t<prev;if(rec){best[cur.id]=+t;save("matchBest",best)}
-    $("dBig").textContent=rec?"⚡":"⏱️";$("dTitle").textContent=`${t} שניות`;$("dMsg").textContent=rec?"שיא חדש!":`השיא שלך: ${prev} שניות`;$("dAgain").textContent="עוד פעם";$("dAgain").onclick=startMatch}
+    set(rec?"⚡":"⏱️",`${t} שניות`,rec?"שיא חדש!":`השיא שלך: ${prev} שניות`,"עוד פעם",startMatch)}
 }
 $("dBack").onclick=()=>openSet(cur.id);
 
@@ -400,11 +511,11 @@ $("dBack").onclick=()=>openSet(cur.id);
   const m=location.hash.match(/^#s=(.+)$/);
   if(m){const s=await decSet(m[1]);history.replaceState(null,"",location.pathname);
     if(s&&s.cards&&s.cards.length){const dup=mySets.find(x=>x.title===s.title&&x.cards.length===s.cards.length);
-      if(dup&&!confirm(`כבר יש לך סט בשם "${s.title}". להוסיף עותק נוסף?`))return openSet(dup.id);
-      const ns={id:"s"+Date.now().toString(36),title:s.title,subject:s.subject||"",cards:s.cards,created:Date.now()};mySets.push(ns);save("sets",mySets);return openSet(ns.id)}
+      if(dup&&!confirm(`כבר יש לך סט בשם "${s.title}". להוסיף עותק נוסף?`)){openSet(dup.id);return loadTeacherSets()}
+      const ns={id:"s"+Date.now().toString(36),title:s.title,subject:s.subject||"",cards:s.cards,created:Date.now()};mySets.push(ns);save("sets",mySets);openSet(ns.id);return loadTeacherSets()}
     setTimeout(()=>alert("לא הצלחנו לפתוח את הסט מהקישור. אולי הקישור נחתך בהעתקה, או שהדפדפן ישן מדי. בקשו מהחבר לשלוח שוב, או לעדכן את הדפדפן."),300);
   }
-  home();
+  home();loadTeacherSets();
 })();
 </script>
 <script>

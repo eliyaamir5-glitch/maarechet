@@ -199,6 +199,11 @@ host.updates=(method,b)=>{const t=now();
   if(method==="POST"){for(const id of (b&&b.seen)||[])host.views[id]=(host.views[id]||0)+1;return{status:200,body:{ok:true}}}
   return{status:200,body:{ok:true,now:t,updates:allUpdates().filter(u=>u.expiresAt>t).sort((a,b)=>(b.urgent-a.urgent)||(b.createdAt-a.createdAt)).map(u=>({id:u.id,text:u.text,author:u.authorName,role:u.role,audience:u.audience,urgent:!!u.urgent,createdAt:u.createdAt,expiresAt:u.expiresAt}))}}};
 host.staffUsers=[{id:"admin",name:"המנהל",role:"admin",owner:true},{id:"t1",name:"המורה לאנגלית",role:"teacher"}];
+// סט כרטיסיות לדוגמה שמורה פרסם לכיתה
+const pubSet=x=>({id:x.id,title:x.title,subject:x.subject,audience:x.audience,cards:x.cards,author:x.authorName,updatedAt:x.updatedAt});
+host.staffSets=[{id:"ds1",title:"אנגלית – מילים ליחידה 4",subject:"אנגלית",audience:"all",authorId:"t1",authorName:"המורה לאנגלית",updatedAt:Date.now()-3*60*60e3,
+  cards:[{t:"environment",d:"סביבה"},{t:"pollution",d:"זיהום"},{t:"protect",d:"להגן"},{t:"increase",d:"להגדיל, לעלות"},{t:"reduce",d:"להקטין, לצמצם"},{t:"solution",d:"פתרון"},{t:"waste",d:"פסולת, בזבוז"},{t:"energy",d:"אנרגיה"}]}];
+host.sets=()=>({status:200,body:{ok:true,sets:host.staffSets.slice().sort((a,b)=>b.updatedAt-a.updatedAt).map(pubSet)}});
 const newCode=()=>Array.from({length:8},()=>"ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random()*32)]).join("");
 host.staff=(method,b,token)=>{
   const ok=x=>({status:200,body:{ok:true,...x}}),err=(s,e)=>({status:s,body:{ok:false,error:e}});
@@ -219,6 +224,13 @@ host.staff=(method,b,token)=>{
       if(b.action==="delete")host.staffUpdates=host.staffUpdates.filter(x=>x.id!==b.id);else u.expiresAt=Math.min(u.expiresAt,t-1);return ok({})}
     case"list":return ok({now:t,updates:host.staffUpdates.filter(u=>admin||u.authorId===me.id).slice().sort((a,b)=>b.createdAt-a.createdAt).map(u=>({...u,active:u.expiresAt>t,views:host.views[u.id]||0}))});
     case"extend":{const u=host.staffUpdates.find(x=>x.id===b.id);if(!u)return err(404,"not_found");if(!admin&&u.authorId!==me.id)return err(403,"forbidden");u.expiresAt=Math.max(t,u.expiresAt)+Math.round(Number(b.minutes)||60)*60e3;return ok({update:u})}
+    // סטי כרטיסיות לכיתה
+    case"setsList":return ok({sets:host.staffSets.slice().sort((a,b)=>b.updatedAt-a.updatedAt).map(x=>({...pubSet(x),mine:x.authorId===me.id,canEdit:admin||x.authorId===me.id}))});
+    case"setSave":{const cards=(b.cards||[]).map(c=>({t:String(c.t||"").trim().slice(0,300),d:String(c.d||"").trim().slice(0,300)})).filter(c=>c.t&&c.d),title=String(b.title||"").trim().slice(0,80);
+      if(!title||cards.length<2)return err(400,"bad_request");const data={title,subject:String(b.subject||"").trim().slice(0,40),audience:["all","y1","y2"].includes(b.audience)?b.audience:"all",cards};
+      if(b.id){const x=host.staffSets.find(y=>y.id===b.id);if(!x)return err(404,"not_found");if(!admin&&x.authorId!==me.id)return err(403,"forbidden");Object.assign(x,data,{updatedAt:t});return ok({set:pubSet(x)})}
+      const x={id:"ds"+Math.random().toString(36).slice(2,8),...data,authorId:me.id,authorName:me.name,updatedAt:t};host.staffSets.push(x);return ok({set:pubSet(x)})}
+    case"setDelete":{const x=host.staffSets.find(y=>y.id===b.id);if(!x)return err(404,"not_found");if(!admin&&x.authorId!==me.id)return err(403,"forbidden");host.staffSets=host.staffSets.filter(y=>y!==x);return ok({})}
   }
   if(!admin)return err(403,"forbidden");
   switch(b.action){

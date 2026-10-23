@@ -198,3 +198,33 @@ ok("…so that code still signs in only the principal", r.status === 200 && r.js
 await call("/api/staff", { body: { action: "resetUser", id: nUser.id }, token: t3 });
 r = await call("/api/staff", { body: { action: "me" }, token: nTok });
 ok("after a reset, the teacher's old sign-in stops working", r.status === 401);
+
+// סטי כרטיסיות לכיתה: מורה מפרסם, תלמידים מקבלים, רק הבעלים או מנהל עורכים
+r = await call("/api/staff", { body: { action: "addUser", name: "מורה לאנגלית" }, token: t3 });
+r = await call("/api/staff", { body: { action: "login", code: r.json.code }, ip: "12.0.0.1" });
+const eTok = r.json.token;
+r = await call("/api/staff", { body: { action: "addUser", name: "מורה אחר" }, token: t3 });
+r = await call("/api/staff", { body: { action: "login", code: r.json.code }, ip: "12.0.0.2" });
+const oTok = r.json.token;
+r = await call("/api/staff", { body: { action: "setSave", title: "יחידה 3", subject: "אנגלית", audience: "y1", cards: [{ t: "apple", d: "תפוח" }] }, token: eTok });
+ok("a set needs at least 2 full cards", r.status === 400);
+r = await call("/api/staff", { body: { action: "setSave", title: "יחידה 3", subject: "אנגלית", audience: "y1", cards: [{ t: "apple", d: "תפוח" }, { t: "dog", d: "כלב" }, { t: "", d: "ריק" }, { t: "<b>cat</b>", d: "חתול" }] }, token: eTok });
+const setId = r.json.set && r.json.set.id;
+ok("teacher publishes a set (empty cards dropped)", r.status === 200 && r.json.set.cards.length === 3 && r.json.set.author === "מורה לאנגלית");
+r = await call("/api/sets", { method: "GET" });
+ok("students get the set from the public list", r.status === 200 && r.json.sets.length === 1 && r.json.sets[0].audience === "y1" && r.json.sets[0].cards[2].t === "<b>cat</b>" && !("authorId" in r.json.sets[0]));
+r = await call("/api/staff", { body: { action: "setSave", id: setId, title: "גנבתי", cards: [{ t: "a", d: "b" }, { t: "c", d: "d" }] }, token: oTok });
+ok("another teacher cannot edit it", r.status === 403);
+r = await call("/api/staff", { body: { action: "setDelete", id: setId }, token: oTok });
+ok("…or delete it", r.status === 403);
+r = await call("/api/staff", { body: { action: "setsList" }, token: oTok });
+ok("other teachers still see it (read-only)", r.json.sets.length === 1 && r.json.sets[0].canEdit === false && r.json.sets[0].mine === false);
+r = await call("/api/staff", { body: { action: "setSave", id: setId, title: "יחידה 3 – מעודכן", audience: "all", cards: [{ t: "apple", d: "תפוח" }, { t: "dog", d: "כלב" }] }, token: eTok });
+ok("the author edits it", r.status === 200 && r.json.set.title === "יחידה 3 – מעודכן" && r.json.set.audience === "all");
+r = await call("/api/staff", { body: { action: "setSave", id: setId, title: "יחידה 3 – מנהל", cards: [{ t: "apple", d: "תפוח" }, { t: "dog", d: "כלב" }] }, token: t3 });
+ok("the principal can edit any set", r.status === 200 && r.json.set.title === "יחידה 3 – מנהל");
+r = await call("/api/staff", { body: { action: "setSave", title: "x", cards: [{ t: "a", d: "b" }, { t: "c", d: "d" }] } });
+ok("publishing needs a sign-in", r.status === 401);
+r = await call("/api/staff", { body: { action: "setDelete", id: setId }, token: t3 });
+r = await call("/api/sets", { method: "GET" });
+ok("a deleted set disappears for students", r.json.sets.length === 0);

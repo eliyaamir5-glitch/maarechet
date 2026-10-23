@@ -80,13 +80,14 @@ textarea{min-height:110px;resize:vertical;line-height:1.5}
 
 <script src="data.js"></script>
 <script src="updates.js"></script>
+<script src="card-editor.js"></script>
 <script>
 const API=((typeof SERVER_BASE!=="undefined"&&SERVER_BASE)||"")+"/api/staff";
 const SITE=location.href.split("#")[0].split("?")[0];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const T={get:()=>{try{return localStorage.getItem("staffToken")}catch(e){return null}},set:v=>{try{v?localStorage.setItem("staffToken",v):localStorage.removeItem("staffToken")}catch(e){}}};
-const ERR={code_taken:"הקוד הזה כבר בשימוש. בחר קוד אחר.",busy:"השרת עמוס לרגע. נסה שוב.",server:"תקלה בשרת. נסה שוב בעוד רגע.",bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",bad_invite:"הקישור לא תקין.",invite_used:"הקישור הזה כבר שומש.",not_found:"לא נמצא.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
+const ERR={too_many_sets:"הגעתם למספר הסטים המקסימלי. מחקו סטים ישנים.",too_big:"הסטים תופסים יותר מדי מקום. מחקו סטים ישנים או קצרו.",code_taken:"הקוד הזה כבר בשימוש. בחר קוד אחר.",busy:"השרת עמוס לרגע. נסה שוב.",server:"תקלה בשרת. נסה שוב בעוד רגע.",bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",bad_invite:"הקישור לא תקין.",invite_used:"הקישור הזה כבר שומש.",not_found:"לא נמצא.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
 const ROLE={admin:"מנהל",teacher:"מורה",staff:"צוות"};
 let me=null,tab="write",welcome=false;
 
@@ -144,11 +145,11 @@ function wireLogin(){
 // ---- המסך הראשי לצוות: לשוניות ----
 function showHome(){
   $("logout").hidden=false;$("who").textContent=`${me.name} · ${ROLE[me.role]||"מורה"}`;
-  const TABS=[["write","✍️ עדכון חדש"],["list","📋 עדכונים"],["tt","🗓️ מערכת"],...(me.role==="admin"?[["team","👥 צוות"],["fb","📬 פניות"]]:[]),["me","⚙️ החשבון שלי"]];
+  const TABS=[["write","✍️ עדכון חדש"],["list","📋 עדכונים"],["sets","🃏 כרטיסיות"],["tt","🗓️ מערכת"],...(me.role==="admin"?[["team","👥 צוות"],["fb","📬 פניות"]]:[]),["me","⚙️ החשבון שלי"]];
   if(!TABS.some(t=>t[0]===tab))tab="write";
   $("tabs").hidden=false;$("tabs").innerHTML=TABS.map(([k,l])=>`<button data-t="${k}" class="${k===tab?"on":""}">${l}</button>`).join("");
   $("tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;showHome()});
-  ({write:showWrite,list:showList,tt:showTT,team:showTeam,me:showMe,fb:showFeedback})[tab]();
+  ({write:showWrite,list:showList,tt:showTT,team:showTeam,me:showMe,fb:showFeedback,sets:showSets})[tab]();
   if(welcome&&tab==="write"){
     const w=document.createElement("div");w.className="card";w.style.borderColor="var(--green)";
     w.innerHTML=`<h2>👋 ברוך הבא, נכנסת כמנהל ראשי</h2><p class="hint" style="margin:0">מכאן כותבים עדכונים לתלמידים, רואים את המערכת של כל כיתה ומורה, ומוסיפים מורים (לשונית 👥 צוות). רוצה קוד כניסה משלך? לשונית <b>⚙️ החשבון שלי</b>.</p><div class="row" style="margin-top:12px"><button class="btn" id="wMe">לבחור קוד משלי</button><button class="btn ghost" id="wX">אחר כך</button></div>`;
@@ -223,6 +224,69 @@ async function showList(){
   box.querySelectorAll("[data-end]").forEach(b=>b.onclick=async()=>{b.disabled=true;await api({action:"end",id:b.dataset.end});showList()});
   box.querySelectorAll("[data-ext]").forEach(b=>b.onclick=async()=>{b.disabled=true;await api({action:"extend",id:b.dataset.ext,minutes:Number(b.dataset.m)});showList()});
   box.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את העדכון? הוא ייעלם מיד אצל כל התלמידים."))return;await api({action:"delete",id:b.dataset.del});showList()});
+}
+
+// ---- כרטיסיות לכיתה: סטים שמופיעים אצל כל התלמידים ----
+const AUDN={all:"כל התלמידים",y1:"י'1",y2:"י'2"};
+const loadL=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
+async function showSets(){
+  $("main").innerHTML=`<div class="card"><h2>🃏 כרטיסיות לכיתה</h2><p class="hint">סט שתפרסמו מופיע אצל התלמידים במסך הכרטיסיות, תחת "סטים של הכיתה". הם לומדים ממנו בכרטיסיות, בכתיבת תשובה, במבחן אמריקאי ובחזרה חכמה.</p>
+    <div class="row"><button class="btn" id="sNew" style="flex:1">＋ סט חדש</button></div></div>
+    <div class="card"><h2>הסטים שפורסמו</h2><div id="setList"><p class="hint">טוען…</p></div></div>`;
+  $("sNew").onclick=()=>editSet(null);
+  const r=await api({action:"setsList"});const box=$("setList");if(!box)return;
+  if(!r.ok){if(r.error==="auth")return showLogin();box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
+  if(!r.sets.length){box.innerHTML=`<p class="hint">עוד לא פורסמו סטים. סט ראשון לוקח כמה דקות, ואפשר להדביק רשימה מוכנה מוורד או מאקסל.</p>`;return}
+  box.innerHTML=r.sets.map((x,i)=>`<div class="item"><div class="m"><span class="pill on">${esc(AUDN[x.audience]||"כולם")}</span><b>${esc(x.author||"")}</b> · ${x.cards.length} כרטיסים · עודכן ${fmtT(x.updatedAt)}</div><div class="t"><b>${esc(x.title)}</b>${x.subject?` · ${esc(x.subject)}`:""}</div>
+    <details style="margin-top:6px"><summary class="hint" style="margin:0;cursor:pointer">הצג את הכרטיסים</summary><div class="hint" style="margin:6px 0 0">${x.cards.map(c=>`<div>• <b>${esc(c.t)}</b> – ${esc(c.d)}</div>`).join("")}</div></details>
+    ${x.canEdit?`<div class="row" style="margin-top:8px"><button class="btn sm ghost" data-ed="${i}">✏️ ערוך</button><button class="btn sm danger" data-sdel="${esc(x.id)}">מחק</button></div>`:""}</div>`).join("");
+  box.querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editSet(r.sets[+b.dataset.ed]));
+  box.querySelectorAll("[data-sdel]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את הסט? הוא ייעלם אצל כל התלמידים."))return;b.disabled=true;const x=await api({action:"setDelete",id:b.dataset.sdel});if(!x.ok)alert(ERR[x.error]||"שגיאה.");showSets()});
+}
+function editSet(set){
+  // טיוטה של סט חדש נשמרת במחשב/בטלפון, כדי שלא יאבד כלום אם יוצאים באמצע
+  const dr=!set&&loadL("staffSetDraft",null);
+  const subjects=[...new Set([...DAYS_Y1,...DAYS_Y2].flatMap(d=>(d.lessons||[]).map(l=>l.key==="eng"?"אנגלית":l.key==="math"?"מתמטיקה":l.key==="major"?"":l.n)).filter(n=>n&&!PRAY.test(n)))];
+  let aud=set?set.audience:dr&&dr.audience||"all";
+  $("main").innerHTML=`<div class="card"><h2>${set?"✏️ עריכת סט":"＋ סט חדש לכיתה"}</h2>
+    ${dr?`<div class="msg ok" style="margin:0 0 6px">📝 המשכנו מהטיוטה. <a href="#" id="drX" style="color:inherit;font-weight:700">להתחיל מחדש</a></div>`:""}
+    <label>שם הסט</label><input id="sTitle" maxlength="80" placeholder="למשל: אנגלית – מילים ליחידה 4" value="${esc(set?set.title:dr&&dr.title||"")}">
+    <label>מקצוע</label><input id="sSubj" maxlength="40" list="sSubjs" placeholder="למשל: אנגלית" value="${esc(set?set.subject||"":dr&&dr.subject||"")}"><datalist id="sSubjs">${subjects.map(n=>`<option value="${esc(n)}">`).join("")}</datalist>
+    <label>למי</label><div class="seg" id="sAud">${Object.entries(AUDN).map(([v,l])=>`<button data-v="${v}" class="${v===aud?"on":""}">${l}</button>`).join("")}</div>
+    <label>הכרטיסים <small id="sCount" style="font-weight:400;color:var(--muted)"></small></label>
+    <p class="hint" style="margin:0 0 8px">למעלה מה שהתלמיד רואה (מילה, מושג, שאלה), למטה התשובה. Enter עובר לשדה הבא.</p>
+    <div id="sCards"></div>
+    <div class="row"><button class="btn ghost" id="sAdd" style="flex:1">＋ עוד כרטיס</button></div>
+    <details style="margin-top:14px;border:1.5px dashed var(--line);border-radius:14px;padding:10px 12px"><summary style="cursor:pointer;font-weight:700">📋 יש רשימה מוכנה? הדבקה מוורד, מאקסל או מוואטסאפ</summary>
+      <p class="hint" style="margin-top:8px">כל שורה כרטיס: <b>מונח - הגדרה</b>. מטבלה (שתי עמודות בוורד או באקסל) מעתיקים ומדביקים כמו שהיא.</p>
+      <textarea id="sPaste" placeholder="environment - סביבה&#10;pollution - זיהום"></textarea>
+      <div class="row" style="margin-top:8px"><button class="btn ghost" id="sPasteGo" style="flex:1">הוסף לכרטיסים</button></div></details>
+    <div id="sMsg" hidden></div>
+    <div class="row" style="margin-top:14px"><button class="btn" id="sSave" style="flex:1">${set?"שמור שינויים":"פרסם לתלמידים"}</button><button class="btn ghost" id="sBack">ביטול</button></div></div>`;
+  const draft=()=>{if(set)return;const d={title:$("sTitle").value,subject:$("sSubj").value,audience:aud,cards:ED.draft()};try{d.title.trim()||d.cards.length?localStorage.setItem("staffSetDraft",JSON.stringify(d)):localStorage.removeItem("staffSetDraft")}catch(e){}};
+  const ED=CardEditor($("sCards"),()=>{const n=ED.ready();$("sCount").textContent=n?`· ${n} מוכנים`:"";draft()});
+  ED.set(set?set.cards:dr&&dr.cards||[]);
+  $("sAud").querySelectorAll("button").forEach(b=>b.onclick=()=>{$("sAud").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));aud=b.dataset.v;draft()});
+  $("sTitle").oninput=$("sSubj").oninput=draft;
+  if($("drX"))$("drX").onclick=e=>{e.preventDefault();try{localStorage.removeItem("staffSetDraft")}catch(x){}editSet(null)};
+  $("sAdd").onclick=()=>ED.addEmpty();
+  $("sPasteGo").onclick=()=>{const l=parseCards($("sPaste").value);if(!l.length)return msg("sMsg","לא מצאנו כרטיסים ברשימה. כל שורה: מונח - הגדרה.");ED.insert(l);$("sPaste").value="";$("sPaste").closest("details").open=false;$("sMsg").hidden=true};
+  $("sBack").onclick=showSets;
+  $("sSave").onclick=async()=>{
+    if($("sPaste").value.trim()){const l=parseCards($("sPaste").value);if(l.length){ED.insert(l);$("sPaste").value=""}}
+    const title=$("sTitle").value.trim(),half=ED.check(),cards=ED.cards();
+    if(!title){$("sTitle").focus();return msg("sMsg","חסר שם לסט.")}
+    if(half)return msg("sMsg",half);
+    if(cards.length<2)return msg("sMsg","צריך לפחות 2 כרטיסים מלאים.");
+    $("sSave").disabled=true;
+    const r=await api({action:"setSave",...(set?{id:set.id}:{}),title,subject:$("sSubj").value.trim(),audience:aud,cards});
+    $("sSave").disabled=false;
+    if(!r.ok){if(r.error==="auth")return showLogin();return msg("sMsg",ERR[r.error]||"שגיאה.")}
+    if(!set)try{localStorage.removeItem("staffSetDraft")}catch(e){}
+    await showSets();
+    const ok=document.createElement("div");ok.className="msg ok";ok.textContent=`✅ ${set?"נשמר":"פורסם"}! "${r.set.title}" (${r.set.cards.length} כרטיסים) מופיע אצל ${AUDN[r.set.audience]==="כל התלמידים"?"כל התלמידים":"תלמידי "+AUDN[r.set.audience]} בכרטיסיות.`;
+    $("main").firstElementChild.appendChild(ok);
+  };
 }
 
 // ---- מערכת: לפי כיתה או לפי מורה ----
