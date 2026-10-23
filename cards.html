@@ -73,6 +73,23 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
 .big{font-size:44px;font-weight:900;text-align:center;margin:6px 0}
 .center{text-align:center}
 [hidden]{display:none!important}
+/* עורך כרטיסים: כרטיס = שני שדות */
+.ec{background:var(--bg);border:1.5px solid var(--line);border-radius:16px;padding:8px 12px 12px;margin-bottom:10px;transition:border-color .2s}
+.ec.bad{border-color:var(--bad)}
+.ec-h{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);font-weight:700}
+.ec-x{background:none;border:none;color:var(--muted);font-size:17px;padding:6px 8px;margin:-4px 0 -4px -8px;cursor:pointer;font-family:inherit}
+.ec .inp{background:var(--card);margin-top:6px;padding:11px 12px}
+.ec .ec-t{font-weight:700}
+.ec .inp:placeholder-shown{direction:rtl}
+.ec .inp.miss{border-color:var(--bad)}
+.paste{margin-top:14px;border:1.5px dashed var(--line);border-radius:14px;padding:10px 12px}
+.paste summary{cursor:pointer;font-weight:700;font-size:15px;list-style:none}
+.paste summary::-webkit-details-marker{display:none}
+.paste[open] summary{margin-bottom:8px}
+.stick{position:sticky;bottom:0;padding:8px 0 calc(8px + env(safe-area-inset-bottom));background:linear-gradient(to top,var(--card) 70%,transparent);pointer-events:none}
+.stick .btn{margin-top:0;pointer-events:auto}
+.draft{background:var(--next);border-radius:12px;padding:8px 12px;font-size:14px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.draft button{background:none;border:none;color:var(--accent);font:inherit;font-weight:700;cursor:pointer;padding:4px}
 </style>
 </head>
 <body>
@@ -95,11 +112,18 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
   <h2 id="edTitle">סט חדש</h2>
   <label>שם הסט</label><input class="inp" id="eName" placeholder="למשל: היסטוריה – מלחמת העולם הראשונה">
   <label>מקצוע</label><input class="inp" id="eSubj" placeholder="למשל: היסטוריה" list="subjs"><datalist id="subjs"></datalist>
-  <label>הכרטיסים <small>שורה לכל כרטיס, בצורה: מונח - הגדרה</small></label>
-  <textarea id="eCards" placeholder="הצהרת בלפור - 1917&#10;קונגרס בזל - 1897&#10;photosynthesis - פוטוסינתזה"></textarea>
-  <p class="hint">אפשר להפריד גם עם טאב, נקודתיים או סימן =. הדבקה של רשימה שלמה מוואטסאפ או מ-Quizlet עובדת.</p>
+  <div class="draft" id="eDraft" hidden><span>📝 המשכנו מאיפה שהפסקת</span><button id="btnDraftClear">להתחיל מחדש</button></div>
+  <label>הכרטיסים <small id="eCount"></small></label>
+  <p class="hint" style="margin:0 0 8px">למעלה מה שרואים בצד הקדמי, למטה התשובה. "הבא" במקלדת עובר לשדה הבא.</p>
+  <div id="eList"></div>
+  <button class="btn ghost" id="btnAddCard">＋ עוד כרטיס</button>
+  <details class="paste" id="ePaste"><summary>📋 יש לך רשימה מוכנה? הדבקה מהירה</summary>
+    <p class="hint">כל שורה כרטיס אחד: <b>מונח - הגדרה</b>. עובד גם עם רשימה מוואטסאפ, מ-Quizlet או מהמחשב.</p>
+    <textarea id="eCards" placeholder="הצהרת בלפור - 1917&#10;קונגרס בזל - 1897&#10;photosynthesis - פוטוסינתזה"></textarea>
+    <button class="btn ghost" id="btnPaste">הוסף את הרשימה לכרטיסים</button>
+  </details>
   <div class="err" id="eErr"></div>
-  <button class="btn primary" id="btnSave">שמור</button>
+  <div class="stick"><button class="btn primary" id="btnSave">שמור</button></div>
   <div class="row"><button class="btn ghost" id="btnCancel">ביטול</button><button class="btn badb" id="btnDel" hidden>מחק סט</button></div>
 </section>
 
@@ -200,20 +224,83 @@ function parseCards(text){
     return m?{t:m[1].trim(),d:m[2].trim()}:null;
   }).filter(Boolean);
 }
+// כל כרטיס = שני שדות. תמיד יש כרטיס ריק בסוף, כך שפשוט ממשיכים להקליד
+const rows=()=>[...$("eList").querySelectorAll(".ec")];
+const rowVal=r=>({t:r.querySelector(".ec-t").value.trim(),d:r.querySelector(".ec-d").value.trim()});
+const filled=r=>{const c=rowVal(r);return !!(c.t||c.d)};
+function addRow(c,before){
+  const r=document.createElement("div");r.className="ec";
+  r.innerHTML=`<div class="ec-h"><span class="ec-n"></span><button type="button" class="ec-x" aria-label="מחק כרטיס">✕</button></div>
+    <input class="inp ec-t" placeholder="מונח / שאלה" enterkeyhint="next" dir="auto" autocomplete="off">
+    <input class="inp ec-d" placeholder="הגדרה / תשובה" enterkeyhint="next" dir="auto" autocomplete="off">`;
+  if(c){r.querySelector(".ec-t").value=c.t;r.querySelector(".ec-d").value=c.d}
+  $("eList").insertBefore(r,before||null);return r;
+}
+function syncRows(){
+  let rs=rows();
+  // בסוף נשאר בדיוק כרטיס ריק אחד (חוץ מזה שהמשתמש עומד בו)
+  while(rs.length>2&&!filled(rs.at(-1))&&!filled(rs.at(-2))&&!rs.at(-2).contains(document.activeElement)){rs.at(-1).remove();rs=rows()}
+  if(!rs.length||filled(rs.at(-1)))addRow();
+  while(rows().length<2)addRow();
+  rs=rows();rs.forEach((r,i)=>r.querySelector(".ec-n").textContent=`כרטיס ${i+1}`);
+  const n=rs.map(rowVal).filter(c=>c.t&&c.d).length;$("eCount").textContent=n?`· ${n} מוכנים`:"";
+}
+const goTo=el=>{el.focus();el.closest(".ec").scrollIntoView({block:"center",behavior:"smooth"})};
+function fillRows(cards){$("eList").innerHTML="";cards.forEach(c=>addRow(c));syncRows()}
+// רשימה (מהדבקה) נכנסת לכרטיסים: ממלאת את הכרטיס הנוכחי אם הוא ריק, ואחריו מוסיפה כרטיסים
+function insertParsed(list,at){
+  let ref=at&&!filled(at)?at:null,after=at&&filled(at)?at.nextElementSibling:null;
+  if(!at){const last=rows().filter(filled).at(-1);after=last?last.nextElementSibling:rows()[0]}
+  for(const c of list){const r=ref||addRow(null,after);ref=null;
+    r.querySelector(".ec-t").value=c.t;r.querySelector(".ec-d").value=c.d;r.classList.remove("bad");after=r.nextElementSibling}
+  syncRows();saveDraft();
+}
+$("eList").addEventListener("input",e=>{e.target.closest(".ec").classList.remove("bad");e.target.classList.remove("miss");syncRows();saveDraft()});
+$("eList").addEventListener("focusout",()=>setTimeout(syncRows,0));
+$("eList").addEventListener("click",e=>{const x=e.target.closest(".ec-x");if(!x)return;x.closest(".ec").remove();syncRows();saveDraft()});
+$("eList").addEventListener("keydown",e=>{
+  if(e.key!=="Enter"||e.isComposing)return;e.preventDefault();
+  const r=e.target.closest(".ec");
+  if(e.target.classList.contains("ec-t"))return goTo(r.querySelector(".ec-d"));
+  goTo((r.nextElementSibling||addRow()).querySelector(".ec-t"));
+});
+$("eList").addEventListener("paste",e=>{
+  const txt=(e.clipboardData||window.clipboardData).getData("text");if(!/\n/.test(txt.trim()))return;
+  const list=parseCards(txt);if(!list.length)return;e.preventDefault();insertParsed(list,e.target.closest(".ec"));
+});
+$("btnAddCard").onclick=()=>{const r=rows().at(-1);goTo((r&&!filled(r)?r:addRow()).querySelector(".ec-t"));syncRows()};
+$("btnPaste").onclick=()=>{const list=parseCards($("eCards").value);
+  if(!list.length)return $("eErr").textContent="לא מצאנו כרטיסים ברשימה. כל שורה צריכה להיות: מונח - הגדרה.";
+  insertParsed(list);$("eCards").value="";$("ePaste").open=false;$("eErr").textContent="";
+};
+// טיוטה של סט חדש נשמרת, כדי שלא יאבד כלום אם יוצאים באמצע
+function saveDraft(){if(editing)return;const d={title:$("eName").value,subject:$("eSubj").value,cards:rows().map(rowVal).filter(c=>c.t||c.d)};
+  try{if(d.title.trim()||d.cards.length)save("cardDraft",d);else localStorage.removeItem("cardDraft")}catch(e){}}
+const dropDraft=()=>{try{localStorage.removeItem("cardDraft")}catch(e){}};
+["eName","eSubj"].forEach(id=>$(id).addEventListener("input",saveDraft));
+$("btnDraftClear").onclick=()=>{dropDraft();$("eName").value="";$("eSubj").value="";fillRows([]);$("eDraft").hidden=true};
 function openEdit(s){
   editing=s;show("vEdit");
   $("edTitle").textContent=s?"עריכת סט":"סט חדש";
-  $("eName").value=s?s.title:"";$("eSubj").value=s?s.subject||"":"";
-  $("eCards").value=s?s.cards.map(c=>`${c.t} - ${c.d}`).join("\n"):"";
+  const dr=!s&&load("cardDraft",null);
+  $("eName").value=s?s.title:dr?dr.title||"":"";$("eSubj").value=s?s.subject||"":dr?dr.subject||"":"";
+  $("eDraft").hidden=!dr;
+  fillRows(s?s.cards:dr&&dr.cards||[]);$("eCards").value="";$("ePaste").open=false;
   $("btnDel").hidden=!s||s.builtin;$("eErr").textContent="";
 }
 $("btnSave").onclick=()=>{
-  const title=$("eName").value.trim(),subject=$("eSubj").value.trim(),cards=parseCards($("eCards").value);
-  if(!title)return $("eErr").textContent="חסר שם לסט.";
-  if(cards.length<2)return $("eErr").textContent="צריך לפחות 2 כרטיסים בצורה: מונח - הגדרה.";
+  const title=$("eName").value.trim(),subject=$("eSubj").value.trim();
+  // רשימה שהודבקה ולא נלחץ "הוסף" – נכנסת בכל זאת
+  if($("eCards").value.trim()){const l=parseCards($("eCards").value);if(l.length){insertParsed(l);$("eCards").value=""}}
+  let half=null;rows().forEach(r=>{const c=rowVal(r);r.classList.remove("bad");
+    if(!!c.t!==!!c.d){r.classList.add("bad");r.querySelector(c.t?".ec-d":".ec-t").classList.add("miss");half=half||r}});
+  const cards=rows().map(rowVal).filter(c=>c.t&&c.d);
+  if(!title){$("eName").focus();return $("eErr").textContent="חסר שם לסט."}
+  if(half){half.scrollIntoView({block:"center",behavior:"smooth"});return $("eErr").textContent=`ב${half.querySelector(".ec-n").textContent} חסר${rowVal(half).t?"ה התשובה":" המונח"}.`}
+  if(cards.length<2)return $("eErr").textContent="צריך לפחות 2 כרטיסים מלאים.";
   if(editing&&!editing.builtin){if(JSON.stringify(editing.cards)!==JSON.stringify(cards)){delete prog[editing.id];save("cardsProg",prog)}Object.assign(editing,{title,subject,cards})}
   else{const s={id:"s"+Date.now().toString(36),title,subject,cards,created:Date.now()};mySets.push(s);editing=s}
-  save("sets",mySets);openSet(editing.id);
+  save("sets",mySets);dropDraft();openSet(editing.id);
 };
 $("btnCancel").onclick=()=>editing?openSet(editing.id):home();
 $("btnDel").onclick=()=>{if(!confirm("למחוק את הסט?"))return;mySets=mySets.filter(s=>s.id!==editing.id);save("sets",mySets);delete prog[editing.id];save("cardsProg",prog);home()};
