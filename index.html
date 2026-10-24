@@ -59,6 +59,7 @@ header .clock{font-size:34px;font-weight:900;font-variant-numeric:tabular-nums;l
 .tab.on{background:#fff;color:#3b3f7a;border-color:#fff}
 .tab.today::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--now);margin-inline-start:6px;vertical-align:middle}
 main{padding:16px 14px 40px;max-width:560px;margin:0 auto;display:flex;flex-direction:column}
+#hero.noanim *{animation:none!important;transition:none!important}
 /* בטלפון: עמודה אחת, באותו סדר כמו תמיד */
 .col-main,.col-side{display:contents}
 #updates{order:1}#extras{order:2}#streakPill{order:3}#absAlert{order:4}#board{order:5}#hero{order:6}#content{order:7}#zmanim{order:8}#imgBtn{order:9}main>.foot{order:10}
@@ -307,7 +308,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 <div class="top">
 <div class="brand" id="brand" hidden></div>
 <header>
-  <div class="who-h"><button type="button" class="avatar" id="hAvatar" aria-label="הפרופיל שלי"></button><div><h1 id="hTitle">המערכת שלי</h1><div id="hSub"></div></div></div>
+  <div class="who-h"><button type="button" class="avatar" id="hAvatar" aria-label="הפרופיל שלי"></button><div><h1 id="hTitle">המערכת שלי</h1><div id="hSub" role="button" tabindex="0"></div></div></div>
   <div><div class="clock" id="clock">--:--</div><div class="hdate" id="hDate"></div></div>
 </header>
 <div class="actions">
@@ -343,15 +344,15 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 </dialog>
 <main>
   <div class="col-main">
-  <div id="streakPill" hidden></div>
-  <div id="absAlert" hidden></div>
+  <div id="streakPill" hidden role="button" tabindex="0"></div>
+  <div id="absAlert" hidden role="button" tabindex="0"></div>
   <div id="hero"></div>
   <div id="content"></div>
   </div>
   <div class="col-side">
   <div id="updates" hidden></div>
   <div id="extras" hidden></div>
-  <div id="board" hidden></div>
+  <div id="board" hidden role="button" tabindex="0"></div>
   <div id="zmanim" hidden></div>
   </div>
   <button type="button" class="img-btn" id="imgBtn">🖼️ המערכת שלי כתמונה <small>לשיתוף בוואטסאפ ולהדפסה</small></button>
@@ -446,7 +447,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
     <h3>❓ שאלה לצוות</h3>
     <p>השאלה נשלחת <b>בלי שם</b>. כשמורה עונה, השאלה והתשובה מופיעות לכל הכיתה.</p>
     <label style="font-weight:700;font-size:14px">על מה?</label>
-    <select class="inp" id="askTo" style="margin:6px 0 10px"></select>
+    <select class="inp" id="askTo" aria-label="על מה השאלה" style="margin:6px 0 10px"></select>
     <textarea id="askText" maxlength="500" placeholder="למשל: מה בדיוק החומר למבחן ביום חמישי?"></textarea>
     <p class="fb-note" id="askMsg" style="color:#ff5d6c"></p>
     <div class="btns"><button type="button" class="primary" id="askSend">שליחה</button><button class="ghost" value="cancel">ביטול</button></div>
@@ -485,7 +486,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
   <form method="dialog">
     <h3 id="dlgTitle"></h3>
     <p>מה צריך להביא לשיעור הזה? כל פריט בשורה נפרדת או עם פסיק.</p>
-    <textarea id="dlgText"></textarea>
+    <textarea id="dlgText" aria-label="רשימת הציוד"></textarea>
     <div class="btns">
       <button class="primary" value="save">שמור</button>
       <button class="ghost" value="cancel">ביטול</button>
@@ -506,7 +507,7 @@ let profile=null;
 try{profile=JSON.parse(localStorage.getItem("profile")||"null")}catch(e){profile=null}
 // מעבר מהשאלה הישנה (פיזיקה כן/לא) לבחירת מגמה
 if(profile&&!profile.major&&profile.phys==="yes"){profile.major="phys";try{localStorage.setItem("profile",JSON.stringify(profile))}catch(e){}}
-let DAYS=CLASSES[(profile&&profile.cls)||"y2"].days;
+let DAYS=CLASSES[(profile&&CLASSES[profile.cls]&&profile.cls)||"y2"].days;
 let gear={};
 try{gear=Object.assign({},DEFAULT_GEAR,JSON.parse(localStorage.getItem("gear")||"{}"))}catch(e){gear=Object.assign({},DEFAULT_GEAR)}
 function saveGear(){const diff={};for(const k of Object.keys(gear))if(gear[k]!==DEFAULT_GEAR[k])diff[k]=gear[k];try{localStorage.setItem("gear",JSON.stringify(diff))}catch(e){}}
@@ -574,6 +575,7 @@ function render(animate){
   tabs.innerHTML=DAYS.map((d,i)=>`<button class="tab ${i===sel?"on":""} ${i===today?"today":""}" data-i="${i}">${d.name}</button>`).join("");
   tabs.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{sel=+b.dataset.i;render()});
   const d=DAYS[sel]; const hero=document.getElementById("hero"); const c=document.getElementById("content");
+  hero.classList.toggle("noanim",animate!==true&&!!hero.innerHTML);
   const vac=sel===today&&!d.shabbat&&!d.free?vacationOf(now):null;
   if(vac){
     hero.innerHTML="";
@@ -582,7 +584,7 @@ function render(animate){
   }
   if(d.shabbat){
     hero.innerHTML="";
-    c.innerHTML=`<div class="free"><div class="emoji">🕯️</div><h2>שבת שלום</h2><p>הטלפון סגור, גם המערכת. נתראה במוצ"ש.</p></div>`;
+    c.innerHTML=`<div class="free"><div class="emoji">🕯️</div><h2>שבת שלום</h2><p>הטלפון סגור, גם המערכת. נתראה במוצ"ש.</p>${tomorrowGear(6).replace('class="gear-tmrw"','class="gear-tmrw" style="text-align:start"')}</div>`;
     return;
   }
   if(d.free){
@@ -607,7 +609,7 @@ function render(animate){
     }else if(nl){
       hero.innerHTML=`<div class="hero idle"><div class="lbl">${nxt===0?"עוד לא התחלנו":"☕ הפסקה"}</div><div class="big">${nxt===0?"היום מתחילים ב-"+nl.s:"עד "+nl.s}</div><div class="left">עוד ${dur(nl.sm-nowMin)}</div>${nextBlock(nl)}</div>`;
     }else{
-      hero.innerHTML=`<div class="hero idle"><div class="lbl">היום</div><div class="big">סיימנו להיום 🎉</div><div class="sub">מחר: ${DAYS[(today+1)%7].name}</div>${tomorrowGear(today)}</div>`;
+      hero.innerHTML=`<div class="hero idle"><div class="lbl">היום</div><div class="big">סיימנו להיום 🎉</div>${(()=>{const n=nextSchoolDay(today);return n?`<div class="sub">הלימודים הבאים: ${n.label}</div>`:""})()}${tomorrowGear(today)}</div>`;
     }
   }else{
     const first=L[0],last=L[L.length-1];
@@ -655,17 +657,25 @@ function renderBoard(){
   const live=items.filter(b=>b.type==="notice"&&b.date<=isoToday());
   const top=live[0]||items[0];const n=daysUntil(top.date);
   el.className="board "+top.type;el.hidden=false;
-  el.innerHTML=`<span class="bi">${top.type==="test"?"📝":"📌"}</span><span class="bt"><b>${top.title}</b></span><span class="bc">${top.type==="test"?whenTxt(n)+" · "+fmtD(top.date):(items.length>1?"ועוד "+(items.length-1):"")}</span>`;
+  el.innerHTML=`<span class="bi">${top.type==="test"?"📝":"📌"}</span><span class="bt"><b>${escH(top.title)}</b></span><span class="bc">${top.type==="test"?whenTxt(n)+" · "+fmtD(top.date):(items.length>1?"ועוד "+(items.length-1):"")}</span>`;
   el.onclick=()=>{
-    document.getElementById("boardList").innerHTML=items.map(b=>`<div class="bl"><div class="bd">${b.type==="test"?whenTxt(daysUntil(b.date))+"<br>"+fmtD(b.date):(b.date<=isoToday()?"עכשיו":whenTxt(daysUntil(b.date))+"<br>"+fmtD(b.date))}</div><div><div>${b.type==="test"?"📝 ":"📌 "}<b>${b.title}</b></div>${b.detail?`<div class="bx">${b.detail}</div>`:""}</div></div>`).join("");
+    document.getElementById("boardList").innerHTML=items.map(b=>`<div class="bl"><div class="bd">${b.type==="test"?whenTxt(daysUntil(b.date))+"<br>"+fmtD(b.date):(b.date<=isoToday()?"עכשיו":whenTxt(daysUntil(b.date))+"<br>"+fmtD(b.date))}</div><div><div>${b.type==="test"?"📝 ":"📌 "}<b>${escH(b.title)}</b></div>${b.detail?`<div class="bx">${escH(b.detail)}</div>`:""}</div></div>`).join("");
     document.getElementById("boardDlg").showModal();
   };
 }
+// היום הבא שיש בו לימודים, אחרי fromDay (מדלג על שבת, חג וחופשה)
+function nextSchoolDay(fromDay){
+  const now=new Date(),base=new Date(now);base.setDate(now.getDate()+((fromDay-now.getDay()+7)%7));
+  for(let k=1;k<=21;k++){const dt=new Date(base);dt.setDate(base.getDate()+k);const d=DAYS[dt.getDay()];
+    if(!d||!d.lessons||d.shabbat||d.free||vacationOf(dt))continue;
+    const ahead=Math.round((new Date(dt.toDateString())-new Date(now.toDateString()))/864e5);
+    return {d,dt,label:ahead===1?"מחר":`ביום ${d.name}${ahead>6?" "+dt.getDate()+"."+(dt.getMonth()+1):""}`};}
+  return null;
+}
 function tomorrowGear(fromDay){
-  for(let k=1;k<=7;k++){const i=(fromDay+k)%7;const d=DAYS[i];if(!d.lessons)continue;
-    const all=[...new Set(lessonsOf(d).filter(l=>!l.joke).flatMap(l=>gearList(l.n)))];
-    return `<div class="gear-tmrw">🎒 <b>ל${d.name} להביא:</b> ${all.length?all.map(escH).join(" · "):"לא הוגדר ציוד"}</div>`}
-  return "";
+  const n=nextSchoolDay(fromDay);if(!n)return "";
+  const all=[...new Set(lessonsOf(n.d).filter(l=>!l.joke).flatMap(l=>gearList(l.n)))];
+  return `<div class="gear-tmrw">🎒 <b>${n.label} (${n.d.name}) להביא:</b> ${all.length?all.map(escH).join(" · "):"לא הוגדר ציוד"}</div>`;
 }
 let hebParts={date:"",parsha:""};
 function renderHebDate(){
@@ -729,7 +739,7 @@ document.getElementById("instShare").onclick=async()=>{
   }catch(e){}
 };
 // ---- כתבו לנו: רעיון או תקלה. נשמר בשרת (לשונית "פניות" אצל המנהלים) ונשלח גם במייל ----
-const APP_VER="2026.10.15";
+const APP_VER=typeof APP_VERSION!=="undefined"?APP_VERSION:"2026.10.15";
 const FB_PH={idea:"מה היית רוצה שיהיה באפליקציה? למשל: תזכורת לפני מבחן",bug:"מה לא עבד? מה עשית לפני שזה קרה? (למשל: לחצתי על נוכחות והמסך נשאר ריק)",other:"מה תרצה להגיד לנו?"};
 let fbKind="idea",fbLast=0;
 // פנייה ישירה למי שבנה את האפליקציה (מופיע רק בחלון "כתבו לנו"): וואטסאפ, SMS ומייל
@@ -860,7 +870,7 @@ function drawStep(){
     }
   }else{
     body.innerHTML=`<div class="wz-opts">${st.opts.map(o=>`<button type="button" class="wz-opt ${wzData[st.k]===o[0]?"sel":""}" data-v="${o[0]}"><span class="ic">${o[3]}</span><span>${o[1]}${o[2]?`<small>${o[2]}</small>`:""}</span></button>`).join("")}</div>`;
-    body.querySelectorAll(".wz-opt").forEach(b=>b.onclick=()=>{wzData[st.k]=b.dataset.v;body.querySelectorAll(".wz-opt").forEach(x=>x.classList.toggle("sel",x===b));setTimeout(next,180)});
+    body.querySelectorAll(".wz-opt").forEach(b=>b.onclick=()=>{wzData[st.k]=b.dataset.v;body.querySelectorAll(".wz-opt").forEach(x=>x.classList.toggle("sel",x===b));const s0=wzStep;clearTimeout(window.__wzT);window.__wzT=setTimeout(()=>{if(wzStep===s0)next()},180)});
   }
   document.getElementById("wzBack").style.visibility=(wzStep===0&&!wzEditing)?"hidden":"visible";
   document.getElementById("wzBack").textContent=wzStep===0?"ביטול":"חזרה";
@@ -938,13 +948,13 @@ function runBuild(){
 }
 document.getElementById("wzNext").onclick=next;
 document.getElementById("wzBack").onclick=()=>{if(wzStep===0){if(wzEditing)document.getElementById("wiz").hidden=true;return}wzStep--;drawStep()};
-document.getElementById("wiz").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();next()}});
+document.getElementById("wiz").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.target.closest("button")){e.preventDefault();next()}});
 document.getElementById("hSub").onclick=()=>openProfile();
 
 // ---- פרופיל: עריכת פרטים, אימייל ומשוב (חיבור וניתוק בכל רגע) ----
 function escH(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 function saveProfile(){try{localStorage.setItem("profile",JSON.stringify(profile))}catch(e){}}
-function openProfile(){if(!profile||!profile.major)return openOnb(!!profile);renderProfile();document.getElementById("profDlg").showModal()}
+function openProfile(){if(!profile||!profile.major||!CLASSES[profile.cls])return openOnb(!!profile);renderProfile();document.getElementById("profDlg").showModal()}
 function renderProfile(){
   const b=document.getElementById("profBody"),c=CLASSES[profile.cls],mj=MAJORS[profile.major],mc=Mashov.conn();
   b.innerHTML=`
@@ -983,7 +993,7 @@ function renderProfile(){
   $("pfEdit").onclick=()=>{$("profDlg").close();openOnb(true)};
   renderAvatar($("pfAv"));$("pfAv").onclick=()=>$("pfPh").click();
   $("pfPh").onchange=async e=>{if(await pickAvatar(e.target.files[0])){renderAvatar(document.getElementById("hAvatar"));renderProfile()}};
-  if($("pfPhDel"))$("pfPhDel").onclick=()=>{try{localStorage.removeItem("avatar")}catch(_){}renderAvatar(document.getElementById("hAvatar"));renderProfile()};
+  if($("pfPhDel"))$("pfPhDel").onclick=()=>{if(!confirm("להסיר את תמונת הפרופיל?"))return;try{localStorage.removeItem("avatar")}catch(_){}renderAvatar(document.getElementById("hAvatar"));renderProfile()};
   if($("pfFb"))$("pfFb").onclick=()=>{document.getElementById("profDlg").close();openFeedback()};
   $("pfNew").onclick=()=>{document.getElementById("profDlg").close();openWhatsNew(true)};
   b.querySelectorAll("[data-th]").forEach(x=>x.onclick=()=>{Theme.setTheme(x.dataset.th);b.querySelectorAll("[data-th]").forEach(y=>y.classList.toggle("on",y===x))});
@@ -1060,7 +1070,8 @@ async function loadZmanim(){
     const DAYN=["א'","ב'","ג'","ד'","ה'","ו'","שבת"],dayOf=d=>d.toDateString()===now.toDateString()?"היום":"יום "+DAYN[d.getDay()];
     const soon=light&&light.eventTime-now<3*864e5;
     const next=rows.find(r=>r[1]>now);
-    box.innerHTML=`<details class="zm"${soon?" open":""}><summary><span>🕰️ זמני היום · ${ZM_LOC.name}</span><small>${next?`${next[0]} ${hm(next[1])}`:""}</small></summary>
+    const prev=box.querySelector("details.zm"),open=prev?prev.open:soon;
+    box.innerHTML=`<details class="zm"${open?" open":""}><summary><span>🕰️ זמני היום · ${ZM_LOC.name}</span><small>${next?`${next[0]} ${hm(next[1])}`:""}</small></summary>
       ${soon?`<div class="zm-shabbat">🕯️ הדלקת נרות: <b>${dayOf(light.eventTime)} ${hm(light.eventTime)}</b>${havd?` · ✨ יציאה: <b>${dayOf(havd.eventTime)} ${hm(havd.eventTime)}</b>`:""}</div>`:""}
       <div class="zm-grid">${rows.map(([n,d])=>`<div class="${next&&next[0]===n?"nx":""}${d<now?" past":""}"><span>${n}</span><b>${hm(d)}</b></div>`).join("")}</div>
       <div class="zm-note">לפי מיקום ${ZM_LOC.name}. הדלקת נרות 20 דק' לפני השקיעה.</div></details>`;
@@ -1070,15 +1081,17 @@ async function loadZmanim(){
 loadZmanim();setInterval(loadZmanim,10*60e3);
 
 applyProfile();
-const incomplete=!profile||!profile.eng||!profile.math||!profile.major;
+const incomplete=!profile||!CLASSES[profile.cls]||!profile.eng||!profile.math||!profile.major;
 if(incomplete)setTimeout(()=>openOnb(!!profile),150);
 else{let seen=null;try{seen=localStorage.getItem("introSeen")}catch(e){}if(!seen)setTimeout(()=>openIntro(),500);else setTimeout(maybeWhatsNew,2500)}
-function toast(t,m){const el=document.createElement("div");el.className="toast";el.innerHTML=`<b>${t}</b>${m}`;document.body.appendChild(el);el.onclick=()=>el.remove();setTimeout(()=>el.remove(),9000)}
+// Enter/רווח על אזור עם role=button = לחיצה
+document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches&&e.target.matches('[role="button"]:not(button)')){e.preventDefault();e.target.click()}});
+function toast(t,m){const el=document.createElement("div");el.className="toast";el.innerHTML=`<b>${t}</b>${m}`;(document.querySelector("dialog[open]")||document.body).appendChild(el);el.onclick=()=>el.remove();setTimeout(()=>el.remove(),9000)}
 
 render();renderBoard();
 let __lastDay=new Date().toDateString();
-function tick(){const t=new Date().toDateString();if(t!==__lastDay){__lastDay=t;sel=new Date().getDay();if(typeof renderAbsAlert==="function")renderAbsAlert()}render();renderBoard()}
-setInterval(tick,30000);
+function tick(){const t=new Date().toDateString();if(t!==__lastDay){__lastDay=t;sel=new Date().getDay();if(typeof renderAbsAlert==="function")renderAbsAlert();renderHebDate();loadParsha();if(typeof loadZmanim==="function")loadZmanim()}render();renderBoard()}
+setTimeout(()=>{tick();setInterval(tick,30000)},60000-Date.now()%60000+300); // מיושר לתחילת דקה
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)tick()});
 Mashov.autoRefresh().catch(()=>{});
 document.addEventListener("mashov-updated",()=>{render();renderAbsAlert()});

@@ -76,6 +76,7 @@ sup{font-size:.68em}
 .res .kind{display:inline-block;background:var(--next);border-radius:999px;padding:3px 11px;font-size:12px;font-weight:700}
 .ans{background:linear-gradient(135deg,rgba(91,108,255,.18),rgba(255,107,214,.14));border:2px solid var(--accent);border-radius:16px;padding:12px 14px;margin-top:10px;font-size:22px;font-weight:700;text-align:center}
 .ans small{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-bottom:2px}
+.ans .m{max-width:100%;overflow-x:auto;vertical-align:middle}
 .steps{margin:14px 0 0;padding:0;list-style:none;counter-reset:s}
 .steps li{counter-increment:s;position:relative;padding:8px 36px 10px 4px;border-bottom:1px dashed var(--line)}
 .steps li:last-child{border-bottom:none}
@@ -96,9 +97,10 @@ svg text{font-family:Rubik,Arial,sans-serif}
 .tri{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-top:6px}
 .tri label{display:block;font-size:13px;font-weight:700;margin-bottom:4px}
 .tri label i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:5px}
-.vals{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px;text-align:center}
-.vals div{background:var(--bg);border-radius:12px;padding:8px 2px;font-size:12px;color:var(--muted)}
-.vals b{display:block;font-size:17px;color:var(--ink);direction:ltr}
+.vals{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:10px;text-align:center}
+.vals div{background:var(--bg);border-radius:12px;padding:8px 2px;font-size:12px;color:var(--muted);min-width:0}
+.vals b{display:block;font-size:17px;color:var(--ink);direction:ltr;overflow-wrap:anywhere;line-height:1.25}
+@media (max-width:420px){.vals b{font-size:14px}}
 /* אחוזים */
 .pq{background:var(--bg);border:1.5px solid var(--line);border-radius:16px;padding:12px;margin-top:10px;font-size:16px;line-height:2.2}
 .pq input{width:78px;border:1.5px solid var(--line);border-radius:10px;padding:5px 6px;font:inherit;font-size:17px;background:var(--card);color:var(--ink);text-align:center;direction:ltr}
@@ -465,8 +467,9 @@ function pct(){
   const ok=(...v)=>v.every(x=>isFinite(x));
   {const a=n("p1a"),b=n("p1b");ok(a,b)?set(1,L(`= ${D(a*b/100)}`),`${L(`${D(b)} × ${D(a)} ÷ 100`)} (מחלקים ל-100 חלקים ולוקחים ${D(a)} מהם)`):set(1,"","")}
   {const a=n("p2a"),b=n("p2b");ok(a,b)&&b?set(2,L(`= ${D(a/b*100)}%`),L(`${D(a)} ÷ ${D(b)} × 100`)):set(2,"","")}
-  {const a=n("p3a"),b=n("p3b"),s=+$("p3s").value;ok(a,b)?set(3,L(`= ${D(a*(1+s*b/100))}`),`${L(`${D(a)} × ${D(1+s*b/100)}`)} &nbsp;·&nbsp; ${L(`${s<0?`100% − ${D(b)}%`:`100% + ${D(b)}%`} = ${D(100+s*b)}%`)}`):set(3,"","")}
-  {const a=n("p4a"),b=n("p4b");if(ok(a,b)&&a){const c=(b-a)/a*100;set(4,c>0?`עלייה של ${L(D(c)+"%")}`:c<0?`ירידה של ${L(D(-c)+"%")}`:"אין שינוי",`${L(`(${D(b)} − ${D(a)}) ÷ ${D(a)} × 100`)} – תמיד מחלקים בערך ההתחלתי`)}else set(4,"","")}
+  {const a=n("p3a"),b=n("p3b"),s=+$("p3s").value;ok(a,b)?set(3,L(`= ${D(a*(1+s*b/100))}`),`${L(`${D(a)} × ${D(1+s*b/100)}`)} &nbsp;·&nbsp; ${L(`${s<0?`100% − ${D(b)}%`:`100% + ${D(b)}%`} = ${D(100+s*b)}%`)}${s<0&&b>100?`<br>⚠️ הנחה של יותר מ-100% נותנת מחיר שלילי – בדקו את המספר.`:""}`):set(3,"","")}
+  // שינוי באחוזים: מחלקים בערך המוחלט של ההתחלה, כדי שגם מ-−10 ל-−5 ייצא "עלייה"
+  {const a=n("p4a"),b=n("p4b");if(ok(a,b)&&a){const c=(b-a)/Math.abs(a)*100,P=x=>x<0?`(${D(x)})`:D(x);set(4,c>0?`עלייה של ${L(D(c)+"%")}`:c<0?`ירידה של ${L(D(-c)+"%")}`:"אין שינוי",`${L(`(${D(b)} − ${P(a)}) ÷ ${a<0?`|${D(a)}|`:D(a)} × 100`)} – תמיד מחלקים בערך ההתחלתי${a<0?" (בערך המוחלט שלו, כי הוא שלילי)":""}`)}else set(4,"","")}
 }
 document.querySelectorAll(".pq input,.pq select").forEach(el=>el.addEventListener("input",pct));
 

@@ -22,6 +22,7 @@ main{padding:14px 14px 40px;max-width:560px;margin:0 auto}
 .tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 12px}
 .tabs button{flex:0 0 auto;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
 .tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+@media (prefers-color-scheme: dark){.tabs button.on{color:#0b0e24}} /* טקסט כהה על הסגול הבהיר: ניגודיות מספיקה */
 .card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:14px;margin-bottom:10px}
 .card h2{margin:0 0 6px;font-size:16px;font-weight:900}
 .bring{display:flex;flex-wrap:wrap;gap:6px}
@@ -72,26 +73,29 @@ function lessonsOf(d){
 }
 const gearOf=n=>String(DEFAULT_GEAR[n]||"").split(",").map(x=>x.trim()).filter(Boolean);
 const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-let day=Math.min(new Date().getDay(),5);
+// השבוע המוצג: יום ראשון של השבוע הזה, ובשישי ובשבת – של השבוע הבא (התאריכים תמיד קדימה)
+const weekSun=()=>{const d=new Date();d.setHours(12,0,0,0);const w=d.getDay();d.setDate(d.getDate()-w+(w>=5?7:0));return d};
+const dateOfTab=i=>{const d=weekSun();d.setDate(d.getDate()+i);return d};
+let day=new Date().getDay();if(day>=5)day=0;
 function draw(){
   if(!p||!CLASSES_META[p.c]){$("title").textContent="הקישור לא תקין";$("body").innerHTML=`<div class="empty">בקשו מהבן לשלוח שוב את הקישור מהאפליקציה (פרופיל ← "שליחת קישור להורים").</div>`;return}
   const meta=CLASSES_META[p.c],days=p.c==="y1"?DAYS_Y1:DAYS_Y2;
   $("school").textContent=SCHOOL_NAME||"";
   $("title").textContent=`המערכת של ${p.f||""} ${p.l||""}`.trim();
   $("sub").textContent=`כיתה ${meta.label} · מחנך: ${meta.rav}`;
-  const today=new Date().getDay();
-  $("tabs").innerHTML=DAYN.slice(0,days.length).map((n,i)=>(days[i]&&(days[i].lessons||[]).length)?`<button data-d="${i}" class="${i===day?"on":""}">${n}${i===today?" · היום":""}</button>`:"").join("");
+  const now=new Date(),todayIso=iso(now);
+  $("tabs").innerHTML=DAYN.slice(0,days.length).map((n,i)=>(days[i]&&(days[i].lessons||[]).length)?`<button data-d="${i}" class="${i===day?"on":""}">${n}${iso(dateOfTab(i))===todayIso?" · היום":""}</button>`:"").join("");
   $("tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{day=+b.dataset.d;draw()});
-  // חופשה?
-  const d0=new Date();d0.setDate(d0.getDate()+(day-today));
+  // חופשה? (לפי התאריך האמיתי של הלשונית)
+  const d0=dateOfTab(day),isToday=iso(d0)===todayIso,dd=`${d0.getDate()}.${d0.getMonth()+1}`;
   const off=(SCHOOL_YEAR.off||[]).find(o=>iso(d0)>=o.from&&iso(d0)<=o.to);
-  if(off){$("body").innerHTML=`<div class="card empty">🎉 ${esc(off.label)} – אין לימודים</div>`;return}
-  const L=lessonsOf(days[day]||{}),nowM=d0.getHours?new Date().getHours()*60+new Date().getMinutes():0;
+  if(off){$("body").innerHTML=`<div class="card empty">🎉 ${esc(off.label)} – אין לימודים ביום ${DAYN[day]} ${dd}</div>`;return}
+  const L=lessonsOf(days[day]||{}),nowM=now.getHours()*60+now.getMinutes();
   if(!L.length){$("body").innerHTML=`<div class="card empty">אין לימודים ביום הזה.</div>`;return}
   const bring=[...new Set(L.flatMap(l=>gearOf(l.n)))];
-  let h=bring.length?`<div class="card"><h2>🎒 מה להביא ${day===today?"היום":"ביום "+DAYN[day]}</h2><div class="bring">${bring.map(x=>`<span>${esc(x)}</span>`).join("")}</div></div>`:"";
-  h+=`<div class="card"><h2>🗓️ יום ${DAYN[day]}</h2>${L.map(l=>{
-    const s=toMin(l.s),e=toMin(l.e),cls=day===today?(nowM>=s&&nowM<e?"now":nowM>=e?"done":""):"";
+  let h=bring.length?`<div class="card"><h2>🎒 מה להביא ${isToday?"היום":"ביום "+DAYN[day]}</h2><div class="bring">${bring.map(x=>`<span>${esc(x)}</span>`).join("")}</div></div>`:"";
+  h+=`<div class="card"><h2>🗓️ יום ${DAYN[day]} · ${dd}</h2>${L.map(l=>{
+    const s=toMin(l.s),e=toMin(l.e),cls=isToday?(nowM>=s&&nowM<e?"now":nowM>=e?"done":""):"";
     return `<div class="ls ${cls} ${/תפילת|ערבית/.test(l.n)?"pray":""}"><div class="t"><b>${l.s}</b>${l.e}</div><div><div class="n">${esc(l.n)}</div>${l.w?`<div class="w">${esc(l.w)}</div>`:""}</div></div>`}).join("")}</div>`;
   $("body").innerHTML=h;
 }

@@ -87,6 +87,28 @@ mark{background:none;color:var(--accent);font-weight:900}
   #editBar{max-width:640px;margin-inline:auto}
 }
 @media (min-width:1350px){#list{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* 🚧 בבנייה: מוצג כל עוד אין אף מספר טלפון. נעלם לבד כשנכנס המספר הראשון */
+.wip{position:relative;overflow:hidden;border-radius:22px;margin:4px 0 14px;padding:22px 18px 18px;text-align:center;background:linear-gradient(160deg,#2a2210,#1d2247 70%);border:2px solid #ffd23f;color:#fff}
+@media (prefers-color-scheme: light){.wip{background:linear-gradient(160deg,#fff6d6,#fff 70%);color:#191b33}}
+.wip .tape{position:absolute;left:-10%;right:-10%;height:22px;background:repeating-linear-gradient(-45deg,#ffd23f 0 18px,#1b1b1b 18px 36px);background-size:51px 51px;animation:tape 1.6s linear infinite;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.wip .tape.t1{top:10px;transform:rotate(-3deg)}
+.wip .tape.t2{bottom:10px;transform:rotate(2.5deg);animation-direction:reverse}
+@keyframes tape{to{background-position:51px 0}}
+.wip .crane{font-size:56px;line-height:1;margin:22px 0 4px;display:inline-block;animation:bob 2.2s ease-in-out infinite;transform-origin:50% 100%}
+.wip .crane span{display:inline-block;animation:swing 1.8s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-6px)}}
+@keyframes swing{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+.wip h2{margin:6px 0 4px;font-size:22px;font-weight:900}
+.wip p{margin:0 auto;max-width:420px;font-size:14px;line-height:1.6;opacity:.9}
+.wip .bar{height:10px;border-radius:99px;background:rgba(255,255,255,.15);margin:14px auto 30px;max-width:320px;overflow:hidden;position:relative}
+@media (prefers-color-scheme: light){.wip .bar{background:rgba(0,0,0,.08)}}
+.wip .bar i{position:absolute;top:0;bottom:0;width:40%;border-radius:99px;background:linear-gradient(90deg,#ffd23f,#ff8a3d);animation:load 1.5s ease-in-out infinite}
+@keyframes load{0%{right:-40%}100%{right:100%}}
+.wip .sparks{position:absolute;inset:0;pointer-events:none}
+.wip .sparks b{position:absolute;width:5px;height:5px;border-radius:50%;background:#ffd23f;opacity:0;animation:spark 2.4s ease-out infinite}
+@keyframes spark{0%{opacity:0;transform:translate(0,0) scale(.6)}15%{opacity:1}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.2)}}
+body.wip-on #list{opacity:.55;filter:saturate(.6)}
+@media (prefers-reduced-motion: reduce){.wip *{animation:none!important}}
 </style>
 </head>
 <body>
@@ -96,6 +118,14 @@ mark{background:none;color:var(--accent);font-weight:900}
   <p id="sub">כל המורים בישיבה – לחיצה ומתקשרים</p>
 </div>
 <main>
+  <div class="wip" id="wip" hidden>
+    <div class="tape t1"></div><div class="tape t2"></div>
+    <div class="sparks"><b style="top:42%;right:30%;--dx:-40px;--dy:-30px"></b><b style="top:40%;right:34%;--dx:30px;--dy:-36px;animation-delay:.6s"></b><b style="top:44%;right:28%;--dx:-20px;--dy:24px;animation-delay:1.2s"></b><b style="top:42%;left:30%;--dx:36px;--dy:-26px;animation-delay:.3s"></b><b style="top:46%;left:32%;--dx:-28px;--dy:20px;animation-delay:1.6s"></b></div>
+    <div class="crane"><span>🏗️</span>👷</div>
+    <h2>ספר הטלפונים בבנייה</h2>
+    <p>כבר אפשר לראות את כל המורים ולחפש אותם.<br>המספרים שלהם מתווספים ממש בקרוב 📞</p>
+    <div class="bar"><i></i></div>
+  </div>
   <div id="editBar" hidden></div>
   <div class="search">
     <div class="sbox">
@@ -168,13 +198,21 @@ let filter="all",picked=null,sugIdx=-1;
 const initials=n=>{const w=n.replace(/^הרב\s+/,"").split(/\s+/).filter(Boolean);return w.length>1?w[0][0]+w[1][0]:(w[0]||"?").slice(0,2)};
 const intl=p=>p.replace(/\D/g,"").replace(/^0/,"972");
 
+// מספרים שהוקלדו במצב עריכה ועוד לא נשמרו (לפי שם) – נשמרים גם כשהרשימה מצוירת מחדש
+const typed=new Map();
 function draw(){
+  // לפני הציור: אוספים מה שהוקלד ואיפה הסמן, כדי להחזיר אחרי הציור
+  const ae=document.activeElement,focusName=ae&&ae.dataset&&ae.dataset.ph!=null?ae.dataset.ph:null,sel=focusName!=null?[ae.selectionStart,ae.selectionEnd]:null;
+  document.querySelectorAll("[data-ph]").forEach(i=>{if(i.value!==i.defaultValue)typed.set(i.dataset.ph,i.value);else typed.delete(i.dataset.ph)});
+  if(!editing)typed.clear();
   const q=norm($("q").value),all=people();
   let list=all.map(p=>({p,s:score(p,q)})).filter(x=>x.s>=0);
   if(filter==="mine")list=list.filter(x=>x.p.mine);
   if(filter==="phone")list=list.filter(x=>x.p.phone);
   if(q)list.sort((a,b)=>b.s-a.s||sortKey(a.p.name).localeCompare(sortKey(b.p.name),"he"));
   const withPhone=all.filter(p=>p.phone).length;
+  // 🚧 כל עוד אין אף מספר – מסך "בבנייה" (לא במצב עריכה)
+  const wip=!withPhone&&!editing;$("wip").hidden=!wip;document.body.classList.toggle("wip-on",wip);
   $("count").textContent=q||filter!=="all"?`נמצאו ${list.length}`:`${all.length} אנשי קשר · ${withPhone} עם מספר`;
   if(!list.length){$("list").innerHTML=`<div class="empty">${filter==="mine"&&!profile?"כדי לראות את המורים שלך – צריך קודם להירשם במערכת.":"לא נמצא אף מורה כזה.<br>אולי בשם אחר? נסו רק את שם המשפחה."}</div>`;return}
   let h="",letter="";
@@ -187,7 +225,12 @@ function draw(){
       ${p.phone&&!editing?`<div class="acts"><a class="call" href="tel:${esc(p.phone.replace(/-/g,""))}" aria-label="התקשרות ל${esc(p.name)}">📞</a><a class="wa" href="https://wa.me/${intl(p.phone)}?text=${hi}" target="_blank" rel="noopener" aria-label="וואטסאפ ל${esc(p.name)}">💬</a><a class="sms" href="sms:${esc(p.phone.replace(/-/g,""))}" aria-label="SMS ל${esc(p.name)}">📱</a></div>`:""}</div>`;
   }
   $("list").innerHTML=h;
-  if(editing)wireEdit();
+  if(editing){
+    wireEdit();
+    // מחזירים את המספרים שהוקלדו (value בלבד, כך ש-defaultValue נשאר המספר השמור) ואת הסמן
+    document.querySelectorAll("[data-ph]").forEach(i=>{if(typed.has(i.dataset.ph))i.value=typed.get(i.dataset.ph)});
+    if(focusName!=null){const i=document.querySelector(`[data-ph="${CSS.escape(focusName)}"]`);if(i){i.focus({preventScroll:true});try{i.setSelectionRange(sel[0],sel[1])}catch(e){}}}
+  }
 }
 
 // ---- השלמה אוטומטית ----
@@ -243,13 +286,17 @@ function editBar(){
 }
 function wireEdit(){
   document.querySelectorAll("[data-save]").forEach(b=>b.onclick=async()=>{
-    const name=b.dataset.save,inp=document.querySelector(`[data-ph="${CSS.escape(name)}"]`),m=document.querySelector(`[data-m="${CSS.escape(name)}"]`);
+    const name=b.dataset.save,Q=a=>document.querySelector(`[${a}="${CSS.escape(name)}"]`); // אחרי ההמתנה הרשימה אולי צוירה מחדש: מחפשים שוב לפי שם
+    const sent=Q("data-ph").value.trim();
     b.disabled=true;const old=contacts.find(c=>c.name===name);
-    const r=await call({action:"set",name,phone:inp.value.trim(),note:old?old.note:"",extra:!!(old&&old.extra)});b.disabled=false;
-    if(!r.ok){m.className="msg err";m.textContent=ERR[r.error]||"שגיאה.";return}
+    const r=await call({action:"set",name,phone:sent,note:old?old.note:"",extra:!!(old&&old.extra)});b.disabled=false;
+    const inp=Q("data-ph"),m=Q("data-m");
+    if(!r.ok){if(m){m.className="msg err";m.textContent=ERR[r.error]||"שגיאה."}return}
     const i=contacts.findIndex(c=>c.name===name);if(i>=0)contacts[i]=r.contact;else contacts.push(r.contact);save("contactsCache",contacts);
-    m.className="msg ok";m.textContent=r.contact.phone?`✓ נשמר: ${r.contact.phone}`:"✓ המספר נמחק";setTimeout(()=>{if(m.isConnected)m.textContent=""},2500);
-    const ph=b.closest(".info").querySelector(".ph,.none");if(ph){ph.className=r.contact.phone?"ph":"none";ph.textContent=r.contact.phone||"אין מספר עדיין"}
+    // נשמר: זה כבר לא "הוקלד ולא נשמר" (אלא אם הקלידו עוד משהו בזמן השמירה)
+    typed.delete(name);if(inp){if(inp.value.trim()===sent)inp.value=r.contact.phone||"";inp.defaultValue=r.contact.phone||""}
+    if(m){m.className="msg ok";m.textContent=r.contact.phone?`✓ נשמר: ${r.contact.phone}`:"✓ המספר נמחק";setTimeout(()=>{if(m.isConnected)m.textContent=""},2500)}
+    const ph=inp&&inp.closest(".info").querySelector(".ph,.none");if(ph){ph.className=r.contact.phone?"ph":"none";ph.textContent=r.contact.phone||"אין מספר עדיין"}
   });
   document.querySelectorAll("[data-ph]").forEach(i=>i.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();document.querySelector(`[data-save="${CSS.escape(i.dataset.ph)}"]`).click()}}));
   document.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!confirm(`למחוק את "${b.dataset.del}" מספר הטלפונים?`))return;const r=await call({action:"remove",name:b.dataset.del});if(r.ok)await refresh();else alert(ERR[r.error]||"שגיאה.")});

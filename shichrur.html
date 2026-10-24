@@ -52,6 +52,9 @@ textarea{min-height:80px;resize:vertical}
 .sig .clr{position:absolute;top:8px;left:8px;background:var(--break);color:var(--ink);border:none;border-radius:8px;padding:4px 10px;font:inherit;font-size:13px;cursor:pointer}
 .sig .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:15px;pointer-events:none}
 .err{color:#ff6b6b;font-size:14px;margin-top:8px;min-height:18px}
+@media (prefers-color-scheme: light){.err{color:#c62828}}
+.info .warn{display:block;color:#ffd23f;font-weight:700;margin-bottom:4px}
+@media (prefers-color-scheme: light){.info .warn{color:#8a5a00}}
 .permit{width:100%;border-radius:14px;border:1.5px solid var(--line);display:block;background:#fff}
 .ok{background:rgba(61,220,151,.15);border:1.5px solid var(--free);border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.5;margin-bottom:12px}
 .foot{margin-top:18px;color:var(--muted);font-size:12px;text-align:center;line-height:1.6}
@@ -93,7 +96,7 @@ textarea{min-height:80px;resize:vertical}
 <!-- שלב 2: ההורה -->
 <section class="card" id="stParent" hidden>
   <h2>2. אישור ההורה</h2>
-  <p class="hint">בקשת יציאה שנשלחה אליך. בדקו את הפרטים, מלאו את שמכם וחתמו באצבע.</p>
+  <p class="hint">בקשת יציאה שנשלחה אליך. בדקו את הפרטים, מלאו את שמכם וחתמו באצבע. אחרי החתימה פרטי האישור יוצגו גם לצוות הישיבה למשך שבוע.</p>
   <div class="kv" id="reqView"></div>
   <div class="row2">
     <div><label>שם ההורה</label><input class="inp" id="pName" placeholder="שם מלא"></div>
@@ -114,7 +117,7 @@ textarea{min-height:80px;resize:vertical}
   <button class="btn ghost" id="btnSave">💾 שמור תמונה</button>
 </section>
 
-<div class="foot">השחרורון נוצר בטלפון בלבד ולא נשמר בשום שרת. האמינות שלו היא בכך שההורה שולח אותו מהטלפון שלו.</div>
+<div class="foot">השחרורון נוצר בטלפון. אחרי שההורה חותם, פרטי האישור (שם, כיתה, סיבה, שעה ושם ההורה, בלי החתימה) מוצגים לצוות הישיבה למשך שבוע, ושום דבר נוסף לא נשמר. האמינות שלו היא בכך שההורה שולח אותו מהטלפון שלו.</div>
 </main>
 
 <script src="data.js"></script>
@@ -130,8 +133,23 @@ const DAYNAMES=["ראשון","שני","שלישי","רביעי","חמישי","ש
 let profile=null;try{profile=JSON.parse(localStorage.getItem("profile")||"null")}catch(e){}
 const PHYS_TEACHER="יבגני קלנר";
 
+const isoNow=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+// הערות על התאריך: עבר, חופשה/חג, שישי/שבת, מחוץ לשנת הלימודים
+function dayNotes(dateIso){
+  const out=[],wd=new Date(dateIso+"T12:00:00").getDay(),Y=typeof SCHOOL_YEAR!=="undefined"?SCHOOL_YEAR:null;
+  if(dateIso<isoNow())out.push("התאריך שבחרת כבר עבר. בדקו שזה התאריך הנכון.");
+  const off=Y&&(Y.off||[]).find(o=>dateIso>=o.from&&dateIso<=o.to);
+  if(off)out.push(`${off.label} – אין לימודים בתאריך הזה.`);
+  else if(wd===6)out.push("שבת – אין לימודים.");
+  else if(wd===5)out.push("יום שישי – אין לימודים.");
+  else if(Y&&(dateIso<Y.start||dateIso>Y.end))out.push("התאריך מחוץ לשנת הלימודים.");
+  return out;
+}
+const noSchool=dateIso=>{const wd=new Date(dateIso+"T12:00:00").getDay(),Y=typeof SCHOOL_YEAR!=="undefined"?SCHOOL_YEAR:null;return wd>4||!!(Y&&(Y.off||[]).some(o=>dateIso>=o.from&&dateIso<=o.to))};
+
 // מי מלמד את הכיתה בשעה נתונה
 function lessonAt(cls,dateIso,time){
+  if(noSchool(dateIso))return null; // חופשה/חג/שישי/שבת: אין שיעור
   const days=cls==="y1"?DAYS_Y1:DAYS_Y2;
   const d=days[new Date(dateIso+"T12:00:00").getDay()];
   if(!d||!d.lessons)return null;
@@ -160,9 +178,9 @@ function initStudent(){
 function showLesson(){
   const cls=$("fCls").value,dt=$("fDate").value,t=$("fTime").value;const box=$("lessonInfo");
   if(!dt||!t){box.textContent="בחר שעה כדי לראות מאיזה שיעור יוצאים ולמי נשלח האישור.";return}
-  const L=lessonAt(cls,dt,t);
-  if(!L){box.innerHTML=`ביום ${DAYNAMES[new Date(dt+"T12:00:00").getDay()]} בשעה ${t} אין שיעור. האישור ייכתב למחנך הכיתה, <b>${CLASSES_META[cls].rav}</b>.`;return}
-  box.innerHTML=(L.kind==="during"?`יוצאים באמצע <b>${L.n}</b> (${L.s}–${L.e})`:`יוצאים לפני <b>${L.n}</b> (${L.s}–${L.e})`)+`<br>האישור נכתב למורה: <b>${L.w}</b>`;
+  const L=lessonAt(cls,dt,t),notes=dayNotes(dt).map(n=>`<span class="warn">⚠️ ${n}</span>`).join("");
+  if(!L){box.innerHTML=notes+`ביום ${DAYNAMES[new Date(dt+"T12:00:00").getDay()]} בשעה ${t} אין שיעור. האישור ייכתב למחנך הכיתה, <b>${CLASSES_META[cls].rav}</b>.`;return}
+  box.innerHTML=notes+(L.kind==="during"?`יוצאים באמצע <b>${L.n}</b> (${L.s}–${L.e})`:`יוצאים לפני <b>${L.n}</b> (${L.s}–${L.e})`)+`<br>האישור נכתב למורה: <b>${L.w}</b>`;
 }
 function buildRequest(){
   const n=$("fName").value.trim(),cls=$("fCls").value,dt=$("fDate").value,t=$("fTime").value,r=$("fReason").value.trim(),x=$("fDetails").value.trim();
@@ -182,7 +200,7 @@ async function sendToParent(viaShare){
 }
 
 // ---- שלב 2: ההורה ----
-let req=null,strokes=[],drawing=false;
+let req=null,strokes=[],drawing=false,sigAR=2; // sigAR: רוחב/גובה של משטח החתימה בזמן החתימה
 function initParent(q){
   req=q;$("stParent").hidden=false;$("topSub").textContent=`בקשה של ${q.n}, כיתה ${q.c}`;
   const day=DAYNAMES[new Date(q.d+"T12:00:00").getDay()];
@@ -207,6 +225,7 @@ function sign(){
   const pn=$("pName").value.trim();
   if(!pn)return err("pErr","חסר שם ההורה.");if(!$("pOk").checked)return err("pErr","יש לסמן את האישור.");if(!strokes.length||strokes.every(s=>s.length<3))return err("pErr","חסרה חתימה.");
   err("pErr","");
+  {const r=$("sigPad").getBoundingClientRect();if(r.width&&r.height)sigAR=r.width/r.height}
   const permit={...req,pn,pr:$("pRel").value,at:Date.now()};
   drawPermit(permit);permitReady=null;permitBlob();
   $("stParent").hidden=true;$("stDone").hidden=false;window.scrollTo(0,0);
@@ -252,9 +271,10 @@ function drawPermit(p){
   ctx.font="500 27px Rubik, Arial";ctx.fillStyle="#191b33";
   parentLines.forEach(ln=>{ctx.fillText(ln,W-M,y);y+=38});
   y+=14;
-  // חתימה
-  const sw=360,sh=150;ctx.fillStyle="#f7f7fb";ctx.fillRect(W-M-sw,y,sw,sh);ctx.strokeStyle="#e3e2f2";ctx.strokeRect(W-M-sw,y,sw,sh);
-  ctx.save();ctx.translate(W-M-sw,y);ctx.scale(sw,sh);ctx.lineWidth=4/sw;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#1a1a4a";strokes.forEach(s=>{ctx.beginPath();s.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.stroke()});ctx.restore();
+  // חתימה: שומרים על היחס של משטח החתימה (טלפון צר, מחשב רחב), ממורכזת בתוך המסגרת
+  const sh=150,sw=Math.round(Math.min(W-2*M,Math.max(300,sh*sigAR)));ctx.fillStyle="#f7f7fb";ctx.fillRect(W-M-sw,y,sw,sh);ctx.strokeStyle="#e3e2f2";ctx.strokeRect(W-M-sw,y,sw,sh);
+  const dw=Math.min(sw,sh*sigAR),dh=dw/sigAR,ox=W-M-sw+(sw-dw)/2,oy=y+(sh-dh)/2;
+  ctx.save();ctx.lineWidth=4;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#1a1a4a";strokes.forEach(s=>{ctx.beginPath();s.forEach((q,i)=>i?ctx.lineTo(ox+q[0]*dw,oy+q[1]*dh):ctx.moveTo(ox+q[0]*dw,oy+q[1]*dh));ctx.stroke()});ctx.restore();
   ctx.fillStyle="#6c7093";ctx.font="500 22px Rubik, Arial";ctx.fillText("חתימת ההורה",W-M,y+sh+32);
   const at=new Date(p.at);ctx.textAlign="left";ctx.fillText(`אושר ב-${pad(at.getDate())}.${pad(at.getMonth()+1)}.${at.getFullYear()} בשעה ${pad(at.getHours())}:${pad(at.getMinutes())}`,M,y+sh+32);
   ctx.textAlign="right";ctx.font="400 20px Rubik, Arial";ctx.fillStyle="#9aa0c7";ctx.fillText("נוצר באפליקציית המערכת · נשלח מהטלפון של ההורה",W-M,H-28);

@@ -29,16 +29,24 @@ class Q {
   get sign() { return this.n > 0n ? 1 : this.n < 0n ? -1 : 0; }
   get isInt() { return this.d === 1n; }
   eq(o) { return this.n === o.n && this.d === o.d; }
-  num() { return Number(this.n) / Number(this.d); }
+  num() {
+    const n = Number(this.n), d = Number(this.d); if (isFinite(n) && isFinite(d)) return n / d;
+    // מספרים ענקיים: מקטינים את שניהם באותה חזקה של 10 לפני החילוק
+    const t = 10n ** BigInt(Math.max(babs(this.n).toString().length, this.d.toString().length) - 300);
+    return Number(this.n / t) / Number(this.d / t);
+  }
 }
 const ZERO = Q.int(0), ONE = Q.int(1);
 
 // שורש שלם: n = k²·m (למשל 50 = 5²·2 → 5√2)
-function isqrt(n) { if (n < 2n) return n; let x = BigInt(Math.floor(Math.sqrt(Number(n)))); while (x * x > n) x--; while ((x + 1n) * (x + 1n) <= n) x++; return x; }
+// שיטת ניוטון ב-BigInt: מהיר ומדויק גם למספרים של מאות ספרות
+function isqrt(n) { if (n < 2n) return n; let x = 1n << BigInt((n.toString(2).length >> 1) + 1), y; while ((y = (x + n / x) >> 1n) < x) x = y; return x; }
 function sqParts(n) {
   const r = isqrt(n); if (r * r === n) return { k: r, m: 1n };
   let k = 1n, m = n;
-  for (let p = 2n; p * p <= m && p < 200000n; p++) while (m % (p * p) === 0n) { m /= p * p; k *= p; }
+  // מספר ענק – בודקים רק ראשוניים קטנים, כדי לא להיתקע (התוצאה עדיין נכונה, רק אולי לא מפושטת עד הסוף)
+  const lim = n.toString().length > 40 ? 3000n : 200000n;
+  for (let p = 2n; p * p <= m && p < lim; p += p === 2n ? 1n : 2n) while (m % (p * p) === 0n) { m /= p * p; k *= p; }
   return { k, m };
 }
 // √q = c·√m (c שבר, m שלם בלי ריבועים)
@@ -61,6 +69,7 @@ function tokenize(src) {
     const ch = s[i];
     if (/\s/.test(ch)) { i++; continue; }
     const num = s.slice(i).match(/^(\d+\.?\d*|\.\d+)/);
+    if (num && s[i + num[1].length] === ".") throw new MathErr(`במספר "${s.slice(i).match(/^[\d.]+/)[0]}" יש יותר מנקודה עשרונית אחת. במספר יש רק נקודה אחת, למשל 2.5`);
     if (num) { let raw = num[1]; if (raw.endsWith(".")) raw = raw.slice(0, -1); out.push({ t: "n", raw, q: Q.dec(raw) }); i += num[1].length; continue; }
     const fn = s.slice(i).match(/^(sin|cos|tan|abs)/);
     if (fn) { out.push({ t: "f", f: fn[1] }); i += fn[1].length; continue; }
@@ -115,7 +124,11 @@ function parseTokens(toks) {
       take(); return { t: "()", a: e };
     }
     if (t.t === "f") {
-      if (t.f === "√") return { t: "f", f: "√", a: peek() && peek().t === "(" ? atom() : power() };
+      if (t.f === "√") {
+        // √-4 נקרא כ-√(−4), כדי שתצא הודעה ברורה על שורש של מספר שלילי
+        if (peek() && peek().t === "-") { take(); return { t: "f", f: "√", a: { t: "neg", a: power() } }; }
+        return { t: "f", f: "√", a: peek() && peek().t === "(" ? atom() : power() };
+      }
       if (!peek() || peek().t !== "(") throw new MathErr(`אחרי ${t.f} צריך סוגריים, למשל ${t.f}(30).`);
       return { t: "f", f: t.f, a: atom() };
     }
@@ -186,8 +199,18 @@ function toPoly(n) {
       if (!P.isConst(e)) throw new NotPoly("varexp");
       const k = P.val(e);
       if (!k.isInt) throw new NotPoly("fracexp");
+      if (P.isConst(b)) {
+        // בסיס מספרי: 2^10, 10^9, 2^-3 – מחשבים ישר ב-BigInt (מגבלת המעלה היא רק לביטויים עם x)
+        const q = P.val(b), neg = k.sign < 0, e2 = babs(k.n);
+        if (q.zero) { if (neg) throw new MathErr("אי אפשר לחלק באפס"); return P.c(e2 === 0n ? ONE : ZERO); }
+        if (babs(q.n) === 1n && q.d === 1n) return P.c(q.sign < 0 && e2 % 2n ? ONE.neg() : ONE); // 1 או −1 בכל חזקה
+        const lg = x => { const s = babs(x).toString(); return s.length + Math.log10(Number("0." + s.slice(0, 15))); };
+        if (Number(e2) * Math.max(lg(q.n), lg(q.d)) > 2000) throw new MathErr("התוצאה ענקית מדי (יותר מ-2000 ספרות). נסו חזקה קטנה יותר.");
+        const r = new Q(q.n ** e2, q.d ** e2);
+        return P.c(neg ? ONE.div(r) : r);
+      }
       const kk = Number(k.n);
-      if (kk < 0) { if (!P.isConst(b)) throw new NotPoly("negexp"); let r = ONE; for (let i = 0; i < -kk; i++) r = r.div(P.val(b)); return P.c(r); }
+      if (kk < 0) throw new NotPoly("negexp");
       if (kk > MAXDEG) throw new MathErr("החזקה גבוהה מדי.");
       let r = P.c(ONE); for (let i = 0; i < kk; i++) r = P.mul(r, b);
       if (P.deg(r) > MAXDEG) throw new MathErr("החזקה גבוהה מדי.");
@@ -217,7 +240,11 @@ function evalF(n, env) {
     case "*": return evalF(n.a, env) * evalF(n.b, env);
     case "/": return evalF(n.a, env) / evalF(n.b, env);
     case "^": return Math.pow(evalF(n.a, env), evalF(n.b, env));
-    case "f": { const a = evalF(n.a, env); return n.f === "√" ? Math.sqrt(a) : n.f === "abs" ? Math.abs(a) : n.f === "sin" ? Math.sin(a * RAD) : n.f === "cos" ? Math.cos(a * RAD) : Math.tan(a * RAD); }
+    case "f": {
+      const a = evalF(n.a, env);
+      if (n.f === "tan" && Math.abs(Math.cos(a * RAD)) < 1e-12) return NaN; // tan(90°) לא מוגדר (ולא 1.6·10¹⁶)
+      return n.f === "√" ? Math.sqrt(a) : n.f === "abs" ? Math.abs(a) : n.f === "sin" ? Math.sin(a * RAD) : n.f === "cos" ? Math.cos(a * RAD) : Math.tan(a * RAD);
+    }
   }
   return NaN;
 }
@@ -235,7 +262,7 @@ function dec(x) {
   let r = Math.round(x * 1e4) / 1e4; if (Object.is(r, -0)) r = 0;
   return String(r).replace("-", MINUS);
 }
-const approx = q => q.isInt ? "" : ` <span class="ap">(≈ ${dec(q.num())})</span>`;
+const approx = q => q.isInt || !isFinite(q.num()) ? "" : ` <span class="ap">(≈ ${dec(q.num())})</span>`;
 function mono(ex, ey) { const f = (v, e) => e === 0 ? "" : e === 1 ? V(v) : V(v) + `<sup>${e}</sup>`; return f("x", ex) + f("y", ey); }
 function polyHTML(p) {
   const terms = [...p].map(([k, q]) => { const [ex, ey] = k.split(",").map(Number); return { ex, ey, q }; })
@@ -323,10 +350,10 @@ function calc(L) {
     if (!(err instanceof NotPoly)) throw err;
     // שורש שלא יוצא שלם: מראים גם בצורה מפושטת (√50 = 5√2)
     if (L.t === "f" && L.f === "√") {
-      try { const q = P.val(toPoly(L.a)), s = sqrtQ(q); return { kind: KIND.calc, steps, answer: `${radHTML(s.c, s.m)} <span class="ap">(≈ ${dec(Math.sqrt(q.num()))})</span>`, note: s.c.eq(ONE) ? "" : "הוצאנו מהשורש את הריבוע השלם." }; } catch (e2) { if (!(e2 instanceof NotPoly)) throw e2; }
+      try { const q = P.val(toPoly(L.a)), s = sqrtQ(q), ap = Math.sqrt(q.num()); return { kind: KIND.calc, steps, answer: `${radHTML(s.c, s.m)}${isFinite(ap) ? ` <span class="ap">(≈ ${dec(ap)})</span>` : ""}`, note: s.c.eq(ONE) ? "" : "הוצאנו מהשורש את הריבוע השלם." }; } catch (e2) { if (!(e2 instanceof NotPoly)) throw e2; }
     }
     const x = evalF(L, {});
-    if (!isFinite(x)) throw new MathErr("התוצאה לא מוגדרת (אולי שורש של מספר שלילי או חילוק באפס).");
+    if (!isFinite(x)) throw new MathErr("התוצאה לא מוגדרת (אולי שורש של מספר שלילי, חילוק באפס או tan של 90°).");
     return { kind: KIND.calc, steps, answer: `≈ ${dec(x)}`, note: hasFunc(L) ? "sin, cos ו-tan מחושבים במעלות." : "" };
   }
 }
@@ -338,9 +365,19 @@ function simplify(L) {
   return { kind: KIND.simplify, steps, answer: polyHTML(p), note: "רוצים לפתור? מוסיפים = ומה שבצד השני, למשל: = 0" };
 }
 function checkClaim(e) {
-  const a = toPoly(e.L), b = toPoly(e.R), x = P.val(a), y = P.val(b), c = x.sub(y).sign;
+  let c, shown;
+  try { const x = P.val(toPoly(e.L)), y = P.val(toPoly(e.R)); c = x.sub(y).sign; shown = rel(qHTML(x), e.rel, qHTML(y)); }
+  catch (err) {
+    if (!(err instanceof NotPoly)) throw err;
+    // שורש לא שלם או sin/cos/tan: משווים בעשרוני, עם סובלנות קטנה לשגיאות עיגול (sin 30° = 0.49999…)
+    const x = evalF(e.L, {}), y = evalF(e.R, {});
+    if (!isFinite(x) || !isFinite(y)) throw new MathErr("אחד הצדדים לא מוגדר (אולי שורש של מספר שלילי, חילוק באפס או tan של 90°).");
+    const dd = x - y; c = Math.abs(dd) <= 1e-9 * Math.max(1, Math.abs(x), Math.abs(y)) ? 0 : Math.sign(dd);
+    const sh = (n, v) => { try { return qHTML(P.val(toPoly(n))); } catch (e2) { if (!(e2 instanceof NotPoly)) throw e2; return `≈ ${dec(v)}`; } };
+    shown = rel(sh(e.L, x), e.rel, sh(e.R, y));
+  }
   const ok = { "=": c === 0, "<": c < 0, ">": c > 0, "≤": c <= 0, "≥": c >= 0 }[e.rel];
-  return { kind: "בדיקה", steps: [step("מחשבים כל צד", rel(qHTML(x), e.rel, qHTML(y)))], answer: ok ? "✓ נכון" : "✗ לא נכון" };
+  return { kind: "בדיקה", steps: [step("מחשבים כל צד", shown)], answer: ok ? "✓ נכון" : "✗ לא נכון" };
 }
 // מקדמים לפי חזקה: [c0, c1, c2]
 const coefs = (p, v) => { const r = []; for (let i = 0; i <= P.degIn(p, v); i++) r.push(v === "x" ? P.co(p, i, 0) : P.co(p, 0, i)); return r; };
@@ -424,7 +461,11 @@ function quadratic(steps, Lp, Rp, v) {
   const { a, b, c } = normalizeQuad(steps, p, v);
   const X = V(v), X2 = X + "<sup>2</sup>";
   let roots;
-  if (c.zero) {
+  if (c.zero && b.zero) {
+    // x² = 0 → פתרון אחד בלבד
+    steps.push(step(`ריבוע שווה 0 רק כשהמספר עצמו 0`, `${X2} = 0 → ${X} = 0`));
+    roots = [{ html: "0", val: 0, q: ZERO }];
+  } else if (c.zero) {
     // x(ax + b) = 0
     const r = b.neg().div(a);
     steps.push(step(`אין מספר חופשי, אז מוציאים ${X} כגורם משותף`, `${X}(${polyOf([b, a], v).size ? polyHTML(polyOf([b, a], v)) : ""}) = 0`));
@@ -595,7 +636,10 @@ function func(src) {
     const xv = b.neg().div(Q.int(2).mul(a)), yv = evalQ(p, "x", xv);
     steps.push(step("הקודקוד: x של הקודקוד הוא −b חלקי 2a, ואז מציבים בפונקציה", `${V("x")} = ${frac(`${MINUS}b`, "2a")} = ${frac(qHTML(b.neg()), qHTML(Q.int(2).mul(a)))} = ${qHTML(xv)}, &nbsp; ${V("y")} = ${qHTML(yv)} → (${qHTML(xv)}, ${qHTML(yv)})`));
     steps.push(step("חיתוך עם ציר y: מציבים x = 0", `(0, ${qHTML(c)})`));
-    const R = quadRoots(a, b, c);
+    // לפני נוסחת השורשים: מקדמים שלמים ו-a חיובי (כמו בפתרון משוואה). השורשים לא משתנים, והקודקוד חושב למעלה מהמקדמים המקוריים
+    const lcm = [a, b, c].reduce((m, q) => m * q.d / bgcd(m, q.d), 1n), Lq = new Q(a.sign < 0 ? -lcm : lcm);
+    const [an, bn, cn] = [a, b, c].map(q => q.mul(Lq)), g = new Q([an, bn, cn].reduce((m, q) => bgcd(m, q.n), 0n));
+    const R = quadRoots(an.div(g), bn.div(g), cn.div(g));
     steps.push(step(R.roots.length ? "חיתוך עם ציר x: פותרים y = 0" : "חיתוך עם ציר x: אין – הפרבולה לא חותכת את ציר x", R.roots.length ? R.roots.map(r => `(${r.html}, 0)`).join(" &nbsp; ") + (R.roots.some(r => !r.q || !r.q.isInt) ? ` <span class="ap">(≈ ${R.roots.map(r => dec(r.val)).join(", ")})</span>` : "") : `Δ = ${qHTML(R.D)} &lt; 0`));
     steps.push(step(a.sign > 0 ? "תחומי עלייה וירידה: לפני הקודקוד יורדת ↘, אחריו עולה ↗" : "תחומי עלייה וירידה: לפני הקודקוד עולה ↗, אחריו יורדת ↘", a.sign > 0 ? `↘ ${V("x")} &lt; ${qHTML(xv)} &nbsp;&nbsp; ↗ ${V("x")} &gt; ${qHTML(xv)}` : `↗ ${V("x")} &lt; ${qHTML(xv)} &nbsp;&nbsp; ↘ ${V("x")} &gt; ${qHTML(xv)}`));
     pts.push({ x: xv.num(), y: yv.num(), label: `קודקוד (${qHTML(xv)}, ${qHTML(yv)})`, vertex: true }, { x: 0, y: c.num(), label: `(0, ${qHTML(c)})` });
@@ -658,7 +702,14 @@ function triangle(inp) {
     else if (a == null) { a = Math.sqrt(c * c - b * b); steps.push(step("פיתגורס: a² = c² − b²", `a = ${sq(`${D(c)}<sup>2</sup> ${MINUS} ${D(b)}<sup>2</sup>`)} = ${D(a)}`)); }
     else if (b == null) { b = Math.sqrt(c * c - a * a); steps.push(step("פיתגורס: b² = c² − a²", `b = ${sq(`${D(c)}<sup>2</sup> ${MINUS} ${D(a)}<sup>2</sup>`)} = ${D(b)}`)); }
     else if (Math.abs(a * a + b * b - c * c) > 0.01 * c * c) throw new MathErr(`שלוש הצלעות לא מתאימות למשולש ישר-זווית: ${D(a)}² + ${D(b)}² ≠ ${D(c)}²`);
-    if (al == null) { al = deg(Math.atan(a / b)); steps.push(step("tan α = מול חלקי ליד, ומחשבים את הזווית (tan⁻¹ במחשבון)", `tan α = ${frac(D(a), D(b))} → α = ${D(al)}°`)); }
+    // עם שתי צלעות הזווית נקבעת מהן. אם הוקלדה גם זווית – בודקים שהיא מתאימה
+    const alc = deg(Math.atan(a / b));
+    if (al != null && Math.abs(al - alc) > 0.5) {
+      const nm = inp.alpha != null && String(inp.alpha).trim() ? "α" : "β", typed = nm === "α" ? al : 90 - al, real = nm === "α" ? alc : 90 - alc;
+      throw new MathErr(`הזווית ${nm} = ${D(typed)}° לא מתאימה לצלעות: לפי הצלעות ${nm} = ${D(real)}°. עם שתי צלעות לא צריך זווית – מחקו אותה או תקנו.`);
+    }
+    if (al == null) steps.push(step("tan α = מול חלקי ליד, ומחשבים את הזווית (tan⁻¹ במחשבון)", `tan α = ${frac(D(a), D(b))} → α = ${D(alc)}°`));
+    al = alc;
   }
   be = 90 - al;
   steps.push(step("והזווית השנייה", `β = 90° ${MINUS} α = ${D(be)}°`));

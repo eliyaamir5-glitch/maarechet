@@ -80,7 +80,8 @@
     return pct > RED ? "red" : pct >= ORANGE ? "orange" : "green";
   }
 
-  function analyze({ days, profile, data: D, year: Y, behave, today, countJustified = true, nonBagrut = [] }) {
+  // weekFrom: מאיזה תאריך מחשבים את "לא מפספסים השבוע" (ברירת מחדל: today). כך גם כשהנתונים ממשוב ישנים, השבוע הוא השבוע האמיתי
+  function analyze({ days, profile, data: D, year: Y, behave, today, weekFrom, countJustified = true, nonBagrut = [] }) {
     today = today || isoOf(new Date());
     const asOf = today > Y.end ? Y.end : today;
     const yearTotals = periodsBetween(days, profile, D, Y, Y.start, Y.end);
@@ -125,7 +126,7 @@
 
     return {
       asOf, subjects, unmatched: Object.entries(unmatched).map(([subject, absences]) => ({ subject, absences })),
-      patterns: patterns(absEvents), thisWeek: thisWeek(subjects, days, profile, D, Y, asOf),
+      patterns: patterns(absEvents), thisWeek: thisWeek(subjects, days, profile, D, Y, weekFrom || asOf),
       tips: tips(subjects, absEvents, Y),
     };
   }
@@ -184,8 +185,9 @@
       run = next === dates[i] ? run + 1 : 1; maxRun = Math.max(maxRun, run);
     }
     if (maxRun >= 3) out.push({ icon: "🩺", title: "חיסור של כמה ימים ברצף", text: "אם היית חולה, תביא אישור רפואי כדי שהחיסורים יירשמו כמוצדקים. זה יכול לשנות את התמונה." });
-    const unknown = ev.filter(e => e.justified !== true).length;
-    if (unknown >= 3 && ev.some(e => e.justified === true)) out.push({ icon: "📝", title: "יש חיסורים שאפשר אולי להצדיק", text: `${unknown} חיסורים לא מוצדקים. אם חלק מהם היו בגלל תור, מחלה או אירוע משפחתי, בקש מההורים לשלוח אישור.` });
+    // כולל גם חיסורים שמשוב לא מציין אם הם מוצדקים, לכן "לא מסומנים כמוצדקים" ולא "לא מוצדקים"
+    const notJ = ev.filter(e => e.justified !== true).length;
+    if (notJ >= 3 && ev.some(e => e.justified === true)) out.push({ icon: "📝", title: "יש חיסורים שאפשר אולי להצדיק", text: `${notJ} חיסורים לא מסומנים כמוצדקים. אם חלק מהם היו בגלל תור, מחלה או אירוע משפחתי, בקש מההורים לשלוח אישור.` });
     const bad = subjects.filter(s => !s.nonBagrut && (s.status === "red" || s.status === "lost"));
     if (bad.length) out.push({ icon: "🗣️", title: "שיחה עם המורה", text: `ב${bad.map(s => s.name).join(", ")} כדאי לדבר עם המורה עכשיו, לפני שזה נהיה סופי. מורים מעריכים תלמיד שבא לבד עם תוכנית.` });
     return out;

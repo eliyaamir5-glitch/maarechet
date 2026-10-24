@@ -25,7 +25,7 @@ import crypto from "node:crypto";
 
 export const config = { path: ["/api/updates", "/api/staff", "/api/feedback", "/api/sets", "/api/contacts", "/api/feed"] };
 
-const ALLOWED = [/^https:\/\/eliyaamir5-glitch\.github\.io$/, /^https:\/\/[a-z0-9-]+\.netlify\.app$/, /^http:\/\/localhost(:\d+)?$/];
+const ALLOWED = [/^https:\/\/eliyaamir5-glitch\.github\.io$/, /^https:\/\/([a-z0-9-]+--)?lucent-crepe-6db22c\.netlify\.app$/, /^http:\/\/localhost(:\d+)?$/];
 const MAX_FEEDBACK = 1000, FEEDBACK_KINDS = ["idea", "bug", "other"], FEEDBACK_PER_HOUR = 30;
 const MAX_TEXT = 600, MAX_NAME = 40, TOKEN_DAYS = 7, MAX_DURATION_MIN = 60 * 24 * 30;
 const LOCK_FAILS = 20, LOCK_MIN = 15; // 20 קודים שגויים ב-15 דקות מאותה כתובת → נעילה ל-15 דקות
@@ -38,6 +38,7 @@ export function __setInviteHash(h) { INVITE_HASH = h; }
 let PHONE_HASH = "f2ab971e878bd1ab9072853dc15a6ad4e8e533c824eae1e2b341fff1b7c5be37";
 export function __setPhoneHash(h) { PHONE_HASH = h; }
 const MAX_CONTACTS = 300;
+const CAPS = { feed: true, schedule: true };
 const sha = s => crypto.createHash("sha256").update(String(s)).digest("hex");
 const norm = c => String(c || "").replace(/[\s-]/g, "").toUpperCase(); // "abcd-efgh" = "ABCDEFGH"
 const isInvite = c => !!INVITE_HASH && !!norm(c) && safeEq(sha(norm(c)), INVITE_HASH);
@@ -55,7 +56,9 @@ export function __useMemoryStore() {
   const m = new Map();
   const get = async k => m.has(k) ? JSON.parse(m.get(k)) : null;
   const set = async (k, v) => { m.set(k, JSON.stringify(v)); };
-  memStore = { get, set, update: async (k, fn) => { const next = fn(await get(k)); if (next !== undefined) await set(k, next); } };
+  // עדכונים לאותו מפתח רצים בתור (כמו הכתיבה המותנית בשרת האמיתי)
+  let chain = Promise.resolve();
+  memStore = { get, set, update: (k, fn) => { const run = chain.then(async () => { const next = fn(await get(k)); if (next !== undefined) await set(k, next); }); chain = run.catch(() => {}); return run; } };
   return m;
 }
 async function store() {
@@ -100,6 +103,11 @@ const clean = (s, max) => String(s ?? "").replace(/[\u0000-\u0008\u000B\u000C\u0
 // הקוד כפי שהוקלד, באותיות גדולות, ובלי רווחים/מקפים: כולם מתקבלים
 const variants = code => [...new Set([code, code.toUpperCase(), norm(code)])].filter(Boolean);
 const codeMatches = (u, code) => variants(code).some(c => safeEq(hashCode(c, u.salt), u.hash));
+const hashCodeAsync = (code, salt) => new Promise((res, rej) => crypto.scrypt(String(code), salt, 32, (e, k) => e ? rej(e) : res(k.toString("hex"))));
+async function findByCode(users, code) {
+  for (const u of users) for (const c of variants(code)) if (safeEq(await hashCodeAsync(c, u.salt), u.hash)) return u;
+  return null;
+}
 
 function sign(payload, secret) {
   const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
@@ -147,6 +155,22 @@ async function claim(S, name, code) {
 }
 
 // הגבלת ניסיונות כניסה
+// attempt: סופר ניסיון וזורק 429 אם עברו את המכסה – באותה כתיבה, כך שבקשות מקבילות לא עוקפות
+async function attempt(S, ip) {
+  const now = Date.now(), win = LOCK_MIN * 60e3;
+  await S.update("fails", cur => {
+    const r = cur || {};
+    const recent = (r[ip] || []).filter(t => now - t < win);
+    if (recent.length >= LOCK_FAILS) throw new Fail(429, "locked");
+    r[ip] = [...recent, now];
+    for (const k of Object.keys(r)) if (!r[k].some(t => now - t < win)) delete r[k];
+    return r;
+  });
+}
+// ניסיון שהצליח – לא נחשב לכישלון
+async function forgive(S, ip) {
+  await S.update("fails", cur => { const r = cur || {}; if (!r[ip] || !r[ip].length) return undefined; r[ip] = r[ip].slice(0, -1); if (!r[ip].length) delete r[ip]; return r; });
+}
 async function tooManyFailures(S, ip) {
   const r = await S.get("fails") || {};
   const now = Date.now();
@@ -184,6 +208,7 @@ async function handle(req, context, headers) {
       // צפיות: מספר משוער (בלי זיהוי תלמיד). שמור בנפרד מהעדכונים, כדי שלא יתנגש עם כתיבת עדכון
       let b; try { b = await req.json(); } catch { b = null; }
       const ids = Array.isArray(b?.seen) ? b.seen.map(String).filter(x => /^[\w-]{4,20}$/.test(x)).slice(0, 10) : [];
+      if (ids.length) await rateLimit(S, "viewRate", ip, 2000);
       if (ids.length) {
         const known = new Set((await S.get("updates") || []).map(u => u.id));
         await S.update("views", cur => {
@@ -252,8 +277,9 @@ async function handle(req, context, headers) {
     return reply(200, { ok: true, valid, used: valid && !!cfg && cfg.inviteUsed === INVITE_HASH, hasAdmin: !!cfg }, headers);
   }
   if (action === "setup") {
-    if (await tooManyFailures(S, ip)) return reply(429, { ok: false, error: "locked" }, headers);
-    if (!isInvite(body.invite)) { await recordFailure(S, ip); return reply(403, { ok: false, error: "bad_invite" }, headers); }
+    await attempt(S, ip);
+    if (!isInvite(body.invite)) return reply(403, { ok: false, error: "bad_invite" }, headers);
+    await forgive(S, ip);
     if (cfg && cfg.inviteUsed === INVITE_HASH) return reply(409, { ok: false, error: "invite_used" }, headers);
     const name = clean(body.name, MAX_NAME), code = String(body.code || "");
     if (!name || code.length < 6 || code.length > 64) return reply(400, { ok: false, error: "bad_request" }, headers);
@@ -270,12 +296,14 @@ async function handle(req, context, headers) {
 
   // ---- כניסה בקוד אישי ----
   if (action === "login") {
-    if (await tooManyFailures(S, ip)) return reply(429, { ok: false, error: "locked" }, headers);
+    await attempt(S, ip);
     const code = String(body.code || "").trim();
+    if (!code || code.length > 64) return reply(401, { ok: false, error: "bad_code" }, headers);
     const users = await S.get("users") || [];
-    const u = code && users.find(x => codeMatches(x, code));
-    if (!u) { await recordFailure(S, ip); return reply(401, { ok: false, error: "bad_code" }, headers); }
-    return reply(200, { ok: true, token: tokenFor(u, cfg.secret), user: publicUser(u) }, headers);
+    const u = await findByCode(users, code);
+    if (!u) return reply(401, { ok: false, error: "bad_code" }, headers);
+    await forgive(S, ip);
+    return reply(200, { ok: true, token: tokenFor(u, cfg.secret), user: publicUser(u), caps: CAPS }, headers);
   }
 
   // ---- מכאן: רק עם טוקן תקף ----
@@ -285,10 +313,16 @@ async function handle(req, context, headers) {
   if (!me) return reply(401, { ok: false, error: "auth" }, headers);
   const isAdmin = me.role === "admin";
 
-  if (action === "me") return reply(200, { ok: true, user: publicUser(me) }, headers);
+  if (action === "me") return reply(200, { ok: true, user: publicUser(me), caps: CAPS }, headers);
 
   // "החשבון שלי": שינוי שם ו/או קוד כניסה (לכל אחד, על עצמו)
   if (action === "updateMe") {
+    if (body.code != null) {
+      await attempt(S, ip);
+      const want = String(body.code).trim();
+      // כל החלפת קוד נספרת (לא "נסלחת"), כדי שאי אפשר יהיה לבדוק קודים של אחרים שוב ושוב
+      if (want.length >= 6 && want.length <= 64 && await findByCode(users.filter(x => x.id !== me.id), want)) return reply(409, { ok: false, error: "code_taken" }, headers);
+    }
     const name = body.name != null ? clean(body.name, MAX_NAME) : null;
     const code = body.code != null ? String(body.code).trim() : null;
     if ((name != null && !name) || (code != null && (code.length < 6 || code.length > 64))) return reply(400, { ok: false, error: "bad_request" }, headers);
@@ -299,7 +333,6 @@ async function handle(req, context, headers) {
       next = { ...cur, ...(name != null ? { name } : {}) };
       if (code != null) {
         // שני אנשים עם אותו קוד = אחד נכנס לחשבון של השני. לא מאפשרים
-        if (all.some(x => x.id !== me.id && codeMatches(x, code))) throw new Fail(409, "code_taken");
         const salt = newSalt();
         next = { ...next, salt, hash: hashCode(code, salt), tv: (cur.tv || 0) + 1 };
       }
@@ -348,7 +381,7 @@ async function handle(req, context, headers) {
       if (action === "delete") return list.filter(x => x.id !== id);
       out = action === "end"
         ? { ...u, expiresAt: Math.min(u.expiresAt, now - 1) }
-        : { ...u, expiresAt: Math.min(Math.max(now, u.expiresAt) + add * 60e3, now + MAX_DURATION_MIN * 60e3) };
+        : { ...u, expiresAt: Math.min(Math.max(now, u.expiresAt) + add * 60e3, Math.max(now, u.startsAt || 0) + MAX_DURATION_MIN * 60e3) };
       return list.map(x => x.id === id ? out : x);
     });
     return reply(200, { ok: true, ...(out && action === "extend" ? { update: out } : {}) }, headers);
@@ -359,7 +392,7 @@ async function handle(req, context, headers) {
     const now = Date.now();
     const views = await S.get("views") || {};
     const list = (await S.get("updates") || []).filter(u => (isAdmin || u.authorId === me.id) && u.expiresAt > now - 3 * 864e5)
-      .sort((a, b) => b.createdAt - a.createdAt).map(u => ({ ...u, active: u.expiresAt > now && (u.startsAt || 0) <= now, scheduled: (u.startsAt || 0) > now, views: views[u.id] || 0 }));
+      .sort((a, b) => b.createdAt - a.createdAt).map(u => ({ ...u, active: u.expiresAt > now && (u.startsAt || 0) <= now, scheduled: (u.startsAt || 0) > now && u.expiresAt > now, views: views[u.id] || 0 }));
     return reply(200, { ok: true, now, updates: list }, headers);
   }
 
@@ -428,7 +461,7 @@ async function handle(req, context, headers) {
   if (action === "eventCreate") {
     const title = clean(body.title, 80), date = String(body.date || ""), time = String(body.time || "");
     const audience = AUDIENCES.includes(body.audience) ? body.audience : "all";
-    if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date) || (time && !/^\d{2}:\d{2}$/.test(time))) return reply(400, { ok: false, error: "bad_request" }, headers);
+    if (!title || !validDate(date) || (time && !validTime(time))) return reply(400, { ok: false, error: "bad_request" }, headers);
     const e = { id: newId(), title, date, time, place: clean(body.place, 60), desc: clean(body.desc, 300), audience, author: me.name, authorId: me.id, createdAt: Date.now() };
     const today = israelDay();
     await S.update("events", cur => [...(cur || []).filter(x => x.date >= israelDay(Date.now() - 30 * 864e5)), e].slice(-300));
@@ -452,14 +485,14 @@ async function handle(req, context, headers) {
     const qs = (await S.get("questions") || []).sort((a, b) => b.createdAt - a.createdAt);
     return reply(200, { ok: true, questions: qs }, headers);
   }
-  if (action === "qAnswer" || action === "qHide" || action === "qDelete") {
+  if (action === "qAnswer" || action === "qHide" || action === "qRestore" || action === "qDelete") {
     const answer = clean(body.answer, 800);
     if (action === "qAnswer" && !answer) return reply(400, { ok: false, error: "bad_request" }, headers);
     await S.update("questions", cur => {
       const list = cur || [], q = list.find(x => x.id === body.id);
       if (!q) throw new Fail(404, "not_found");
       if (action === "qDelete") return list.filter(x => x !== q);
-      return list.map(x => x !== q ? x : action === "qAnswer" ? { ...x, status: "answered", answer, answeredBy: me.name, answeredAt: Date.now() } : { ...x, status: "hidden" });
+      return list.map(x => x !== q ? x : action === "qAnswer" ? { ...x, status: "answered", answer, answeredBy: me.name, answeredAt: Date.now() } : action === "qRestore" ? { ...x, status: x.answer ? "answered" : "new" } : { ...x, status: "hidden" });
     });
     return reply(200, { ok: true }, headers);
   }
@@ -472,12 +505,20 @@ async function handle(req, context, headers) {
   // ---- ניהול: מנהל בלבד ----
   if (!isAdmin) return reply(403, { ok: false, error: "forbidden" }, headers);
   if (action === "users") return reply(200, { ok: true, users: users.map(publicUser) }, headers);
+  if (action === "bdList") {
+    const bd = await S.get("birthdays") || {};
+    return reply(200, { ok: true, birthdays: Object.entries(bd).map(([k, x]) => ({ key: k, name: x.name, cls: x.cls, md: x.md })).sort((a, b) => a.md.localeCompare(b.md)) }, headers);
+  }
+  if (action === "bdDelete") {
+    await S.update("birthdays", cur => { const m = cur || {}; if (!Object.hasOwn(m, String(body.key))) return undefined; delete m[String(body.key)]; return m; });
+    return reply(200, { ok: true }, headers);
+  }
   if (action === "stats") {
     // מי השתמש ב-7 הימים האחרונים, ובכמה תלמידים כל מקצוע בסיכון – רק מספרים, בלי שמות
     const st = await S.get("stats") || {}, since = israelDay(Date.now() - 7 * 864e5), out = {};
     for (const x of Object.values(st)) {
       if (x.day < since) continue;
-      const c = out[x.cls] = out[x.cls] || { active: 0, mashov: 0, risk: {}, warn: {} };
+      const c = out[x.cls] = out[x.cls] || { active: 0, mashov: 0, risk: Object.create(null), warn: Object.create(null) };
       c.active++; if (x.mashov) c.mashov++;
       for (const n of x.risk || []) c.risk[n] = (c.risk[n] || 0) + 1;
       for (const n of x.warn || []) c.warn[n] = (c.warn[n] || 0) + 1;
@@ -530,7 +571,11 @@ async function handle(req, context, headers) {
 const DEV_RE = /^[A-Za-z0-9-]{8,64}$/;
 const devKey = d => sha("dev:" + d).slice(0, 24); // לא שומרים את מזהה המכשיר עצמו
 const strList = (a, n = 30, len = 60) => (Array.isArray(a) ? a : []).slice(0, n).map(x => clean(x, len)).filter(Boolean);
-const israelDay = (t = Date.now()) => new Date(t + 3 * 3600e3).toISOString().slice(0, 10); // תאריך לפי שעון ישראל (בערך)
+const IL_DAY = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem", year: "numeric", month: "2-digit", day: "2-digit" });
+const israelDay = (t = Date.now()) => IL_DAY.format(new Date(t)); // YYYY-MM-DD לפי שעון ישראל (קיץ/חורף)
+const validDate = d => /^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(Date.parse(d + "T12:00:00Z")) && new Date(d + "T12:00:00Z").toISOString().slice(0, 10) === d;
+const validTime = t => /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
+const SAFE_KEY = k => !["__proto__", "constructor", "prototype", "toString", "valueOf", "hasOwnProperty"].includes(k);
 const publicUpdate = u => ({ id: u.id, text: u.text, ...(u.video ? { video: u.video } : {}), author: u.authorName, role: u.role, audience: u.audience, urgent: !!u.urgent, createdAt: u.startsAt || u.createdAt, expiresAt: u.expiresAt });
 const pollCounts = p => p.options.map((_, i) => (p.votes && p.votes[i]) || 0);
 const publicPoll = p => ({ id: p.id, q: p.q, options: p.options, audience: p.audience, endsAt: p.endsAt, author: p.authorName, counts: pollCounts(p), total: pollCounts(p).reduce((a, b) => a + b, 0) });
@@ -562,7 +607,8 @@ async function feed(req, S, ip, headers) {
       ok: true, now,
       updates: activeUpdates(ups, now).map(publicUpdate),
       polls: (polls || []).filter(p => p.endsAt > now).sort((a, b) => b.createdAt - a.createdAt).map(publicPoll),
-      events: (events || []).filter(e => e.date >= today).sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || ""))).slice(0, 30),
+      events: (events || []).filter(e => e.date >= today).sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || ""))).slice(0, 30)
+        .map(e => ({ id: e.id, title: e.title, date: e.date, time: e.time || "", place: e.place || "", desc: e.desc || "", audience: e.audience })),
       answers: (qs || []).filter(q => q.status === "answered" && q.answeredAt > now - 21 * 864e5).sort((a, b) => b.answeredAt - a.answeredAt).slice(0, 30)
         .map(q => ({ id: q.id, q: q.text, a: q.answer, to: q.to, cls: q.cls, by: q.answeredBy, at: q.answeredAt })),
       birthdays: upcomingBirthdays(bd, now),
@@ -574,6 +620,7 @@ async function feed(req, S, ip, headers) {
   const device = String(b?.device || ""), cls = AUDIENCES.includes(b?.cls) && b.cls !== "all" ? b.cls : "";
   if (action === "vote") {
     if (!DEV_RE.test(device)) return reply(400, { ok: false, error: "bad_request" }, headers);
+    await rateLimit(S, "voteRate", ip, 400);
     const k = devKey(device), opt = Math.round(Number(b.option));
     let out = null;
     await S.update("polls", cur => {
@@ -581,6 +628,7 @@ async function feed(req, S, ip, headers) {
       if (!p || p.endsAt <= now) throw new Fail(404, "not_found");
       if (!(opt >= 0 && opt < p.options.length)) throw new Fail(400, "bad_request");
       p.voters = p.voters || {};
+      if (Object.keys(p.voters).length >= 3000) throw new Fail(413, "too_many");
       if (p.voters[k] != null) { out = p; return undefined; } // כבר הצביע – לא סופרים פעמיים
       p.voters[k] = opt; p.votes = p.votes || {}; p.votes[opt] = (p.votes[opt] || 0) + 1; out = p;
       return list;
@@ -590,7 +638,7 @@ async function feed(req, S, ip, headers) {
   if (action === "ask") {
     const text = clean(b.text, 500), to = clean(b.to, 60);
     if (!text) return reply(400, { ok: false, error: "bad_request" }, headers);
-    await rateLimit(S, "askRate", ip, 10);
+    await rateLimit(S, "askRate", ip, 60);
     const q = { id: newId(), text, to, cls, status: "new", createdAt: now };
     await S.update("questions", cur => [q, ...(cur || []).filter(x => x.createdAt > now - 90 * 864e5)].slice(0, 500));
     return reply(200, { ok: true }, headers);
@@ -601,18 +649,20 @@ async function feed(req, S, ip, headers) {
     if (b.remove) { await S.update("birthdays", cur => { const m = cur || {}; delete m[k]; return m; }); return reply(200, { ok: true }, headers); }
     const name = clean(b.name, MAX_NAME), md = String(b.md || "");
     if (!name || !cls || !/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(md)) return reply(400, { ok: false, error: "bad_request" }, headers);
-    await rateLimit(S, "bdRate", ip, 30);
+    await rateLimit(S, "bdRate", ip, 100);
     await S.update("birthdays", cur => { const m = cur || {}; if (!m[k] && Object.keys(m).length >= 2000) throw new Fail(413, "too_many"); m[k] = { name, cls, md, at: now }; return m; });
     return reply(200, { ok: true }, headers);
   }
   if (action === "ping") {
     // סטטיסטיקה אנונימית למנהל: כיתה + אילו מקצועות בסיכון. בלי שם ובלי מזהה אמיתי
     if (!DEV_RE.test(device) || !cls) return reply(400, { ok: false, error: "bad_request" }, headers);
+    await rateLimit(S, "pingRate", ip, 600);
     const k = devKey(device), day = israelDay(now);
     await S.update("stats", cur => {
       const m = cur || {};
       if (m[k] && m[k].day === day && JSON.stringify(m[k].risk) === JSON.stringify(strList(b.risk))) return undefined; // כבר נספר היום
-      m[k] = { cls, day, risk: strList(b.risk), warn: strList(b.warn), mashov: !!b.mashov };
+      if (!m[k] && Object.keys(m).length >= 3000) throw new Fail(413, "too_many");
+      m[k] = { cls, day, risk: strList(b.risk, 15, 40).filter(SAFE_KEY), warn: strList(b.warn, 15, 40).filter(SAFE_KEY), mashov: !!b.mashov };
       for (const x of Object.keys(m)) if (m[x].day < israelDay(now - 60 * 864e5)) delete m[x];
       return m;
     });
@@ -622,8 +672,10 @@ async function feed(req, S, ip, headers) {
     // אישור יציאה שההורה חתם עליו – מופיע אצל הצוות ב"שחרורים"
     const name = clean(b.name, MAX_NAME), reason = clean(b.reason, 200);
     if (!name || !cls) return reply(400, { ok: false, error: "bad_request" }, headers);
-    await rateLimit(S, "relRate", ip, 20);
-    const r = { id: newId(), name, cls, reason, date: clean(b.date, 10) || israelDay(now), from: clean(b.from, 5), until: clean(b.until, 5), parent: clean(b.parent, MAX_NAME), lesson: clean(b.lesson, 60), teacher: clean(b.teacher, 60), at: now };
+    await rateLimit(S, "relRate", ip, 60);
+    const date = clean(b.date, 10), from = clean(b.from, 5), until = clean(b.until, 5);
+    if ((date && !validDate(date)) || (from && !validTime(from)) || (until && !validTime(until))) return reply(400, { ok: false, error: "bad_request" }, headers);
+    const r = { id: newId(), name, cls, reason, date: date || israelDay(now), from, until, parent: clean(b.parent, MAX_NAME), lesson: clean(b.lesson, 60), teacher: clean(b.teacher, 60), at: now };
     await S.update("releases", cur => [r, ...(cur || []).filter(x => x.at > now - 30 * 864e5)].slice(0, 1000));
     return reply(200, { ok: true }, headers);
   }
@@ -651,9 +703,9 @@ async function contacts(req, S, ip, headers) {
   let who = null;
   const code = norm(body.code);
   if (code) {
-    if (await tooManyFailures(S, ip)) return reply(429, { ok: false, error: "locked" }, headers);
-    if (PHONE_HASH && safeEq(sha(code), PHONE_HASH)) who = "editor";
-    else { await recordFailure(S, ip); return reply(403, { ok: false, error: "bad_code" }, headers); }
+    await attempt(S, ip);
+    if (PHONE_HASH && safeEq(sha(code), PHONE_HASH)) { who = "editor"; await forgive(S, ip); }
+    else return reply(403, { ok: false, error: "bad_code" }, headers);
   } else {
     const cfg = await S.get("config");
     const auth = cfg && verify((req.headers.get("authorization") || "").replace(/^Bearer\s+/i, ""), cfg.secret);
@@ -665,7 +717,7 @@ async function contacts(req, S, ip, headers) {
   const action = String(body.action || "");
   if (action === "check") return reply(200, { ok: true, who }, headers);
   const name = clean(body.name, MAX_NAME);
-  if (!name) return reply(400, { ok: false, error: "bad_request" }, headers);
+  if (!name || !SAFE_KEY(name)) return reply(400, { ok: false, error: "bad_request" }, headers);
   if (action === "set") {
     const raw = clean(body.phone, 30), phone = raw ? normPhone(raw) : "";
     if (raw && !phone) return reply(400, { ok: false, error: "bad_phone" }, headers);
@@ -673,7 +725,7 @@ async function contacts(req, S, ip, headers) {
     let out = null;
     await S.update("contacts", cur => {
       const c = cur || {};
-      if (!c[name] && Object.keys(c).length >= MAX_CONTACTS) throw new Fail(413, "too_many");
+      if (!Object.hasOwn(c, name) && Object.keys(c).length >= MAX_CONTACTS) throw new Fail(413, "too_many");
       c[name] = { ...(c[name] || {}), phone, note, extra: !!(body.extra ?? (c[name] && c[name].extra)), updatedAt: Date.now(), by: who };
       out = { name, phone, note: c[name].note, extra: c[name].extra };
       return c;

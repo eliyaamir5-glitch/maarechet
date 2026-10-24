@@ -119,15 +119,15 @@
     url() { return ((typeof SERVER_BASE !== "undefined" && SERVER_BASE) || "") + "/api/updates"; },
     feedUrl() { return ((typeof SERVER_BASE !== "undefined" && SERVER_BASE) || "") + "/api/feed"; },
     // סקרים, אירועים, תשובות לשאלות וימי הולדת – מגיעים יחד עם העדכונים
-    feed() { return load("feedCache", { polls: [], events: [], answers: [], birthdays: [] }); },
-    cached() { const c = load(KEY, null); return c ? (c.list || []).filter(u => u.expiresAt > Date.now()) : []; },
+    feed() { const f = load("feedCache", null) || {}, A = x => Array.isArray(x) ? x : []; return { polls: A(f.polls), events: A(f.events), answers: A(f.answers), birthdays: A(f.birthdays) }; },
+    cached() { const c = load(KEY, null); return c && Array.isArray(c.list) ? c.list.filter(u => u && typeof u === "object" && u.expiresAt > Date.now()) : []; },
     async refresh() {
       try {
         // קודם הפיד המשולב; אם השרת עוד לא מכיר אותו – הכתובת הישנה (רק עדכונים)
-        let j = null;
-        try { const r = await fetch(this.feedUrl(), { cache: "no-store" }); if (r.ok) j = await r.json(); } catch (e) {}
+        let j = null, answered = false;
+        try { const r = await fetch(this.feedUrl(), { cache: "no-store" }); answered = r.status === 404 || r.ok; if (r.ok) j = await r.json(); } catch (e) {}
         // האם השרת כבר מכיר את הפיד המשולב (סקרים, שאלות וכו') – אם לא, התכונות האלה מוסתרות
-        try { localStorage.setItem("feedOk", j && j.ok ? "1" : "0"); } catch (e) {}
+        if (answered) try { localStorage.setItem("feedOk", j && j.ok ? "1" : "0"); } catch (e) {}
         if (j && j.ok && Array.isArray(j.updates)) save("feedCache", { at: Date.now(), polls: j.polls || [], events: j.events || [], answers: j.answers || [], birthdays: j.birthdays || [] });
         else { const r = await fetch(this.url(), { cache: "no-store" }); j = await r.json(); }
         if (j && j.ok && Array.isArray(j.updates)) { save(KEY, { at: Date.now(), list: j.updates }); if (this.onFeed) try { this.onFeed(); } catch (e) {} return true; }
@@ -138,6 +138,9 @@
     // preview: רשימה לתצוגה מקדימה (במסך הצוות), בלי לגעת במטמון
     render(box, cls, preview) {
       const list = preview ? sorted(preview) : this.forClass(cls);
+      const sig = JSON.stringify([list.map(u => [u.id, u.text, u.video, u.urgent, u.expiresAt]), [...(this._flying || [])]]);
+      if (!preview && box.__sig === sig && box.childElementCount) return;
+      box.__sig = preview ? null : sig;
       const flying = new Set(this._flying || []);
       box.textContent = "";
       if (!list.length) { box.hidden = true; return; }
@@ -154,7 +157,8 @@
       if (list.length > SHOW) {
         const more = el("button", "upd-more", `הצג עוד ${list.length - SHOW}`);
         more.type = "button";
-        more.onclick = () => { box.querySelectorAll(".upd.more").forEach(c => c.hidden = false); more.remove(); };
+        more.onclick = () => { box.querySelectorAll(".upd.more").forEach(c => c.hidden = false); more.remove(); box.__open = true; };
+        if (box.__open) more.click();
         box.append(more);
       }
     },

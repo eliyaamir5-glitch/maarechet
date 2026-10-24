@@ -95,7 +95,7 @@ const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>
 const T={get:()=>{try{return localStorage.getItem("staffToken")}catch(e){return null}},set:v=>{try{v?localStorage.setItem("staffToken",v):localStorage.removeItem("staffToken")}catch(e){}}};
 const ERR={bad_action:"התכונה הזאת עוד לא פעילה בשרת. היא תעבוד לבד אחרי שהשרת (נטליפיי) יתעדכן.",bad_time:"הזמן לא תקין.",too_many:"יותר מדי.",bad_video:"הקישור לסרטון לא תקין.",bad_phone:"מספר הטלפון לא תקין.",too_many_sets:"הגעתם למספר הסטים המקסימלי. מחקו סטים ישנים.",too_big:"הסטים תופסים יותר מדי מקום. מחקו סטים ישנים או קצרו.",code_taken:"הקוד הזה כבר בשימוש. בחר קוד אחר.",busy:"השרת עמוס לרגע. נסה שוב.",server:"תקלה בשרת. נסה שוב בעוד רגע.",bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",bad_invite:"הקישור לא תקין.",invite_used:"הקישור הזה כבר שומש.",not_found:"לא נמצא.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
 const ROLE={admin:"מנהל",teacher:"מורה",staff:"צוות"};
-let me=null,tab="write",welcome=false;
+let me=null,tab="write",welcome=false,caps={};
 
 async function api(body){
   try{
@@ -104,6 +104,12 @@ async function api(body){
     if(j.error==="auth"&&me){T.set(null);me=null;setTimeout(()=>showLogin("פג תוקף הכניסה. צריך להיכנס שוב."),0)}
     return j;
   }catch(e){return {ok:false,error:"network"}}
+}
+async function act(b,body,after,ask){
+  if(ask&&!confirm(ask))return;
+  b.disabled=true;const r=await api(body);
+  if(!r.ok){b.disabled=false;if(r.error!=="auth")alert(ERR[r.error]||"שגיאה.");return}
+  after&&after();
 }
 const msg=(id,text,ok)=>{const el=$(id);if(!el)return;el.className="msg "+(ok?"ok":"err");el.textContent=text;el.hidden=!text};
 
@@ -119,13 +125,13 @@ async function start(){
   // קישור המנהל: הקוד שבקישור הוא קוד הכניסה שלו
   if(INVITE){
     const r=await api({action:"login",code:INVITE});
-    if(r.ok){T.set(r.token);me=r.user;welcome=!!r.first;return showHome()}
+    if(r.ok){T.set(r.token);me=r.user;caps=r.caps||{};welcome=!!r.first;return showHome()}
     if(r.error==="locked")return showLogin(ERR.locked);
     if(!T.get())return showLogin("הקוד שבקישור כבר לא בתוקף (אולי שינית אותו). נכנסים עם הקוד שלך.");
   }
   if(st.needsSetup)return showWaiting();
-  if(LINKCODE){const r=await api({action:"login",code:LINKCODE});if(r.ok){T.set(r.token);me=r.user;return showHome()}}
-  if(T.get()){const r=await api({action:"me"});if(r.ok){me=r.user;return showHome()}}
+  if(LINKCODE){const r=await api({action:"login",code:LINKCODE});if(r.ok){T.set(r.token);me=r.user;caps=r.caps||{};return showHome()}}
+  if(T.get()){const r=await api({action:"me"});if(r.ok){me=r.user;caps=r.caps||{};return showHome()}}
   showLogin();
 }
 function showWaiting(){
@@ -144,7 +150,7 @@ function showLogin(note){
 }
 function wireLogin(){
   const go=async()=>{const code=$("lCode").value.trim();if(!code)return;$("lGo").disabled=true;const r=await api({action:"login",code});$("lGo").disabled=false;
-    if(!r.ok)return msg("lMsg",ERR[r.error]||"שגיאה.");T.set(r.token);me=r.user;welcome=!!r.first;showHome()};
+    if(!r.ok)return msg("lMsg",ERR[r.error]||"שגיאה.");T.set(r.token);me=r.user;caps=r.caps||{};welcome=!!r.first;showHome()};
   $("lGo").onclick=go;$("lCode").onkeydown=e=>{if(e.key==="Enter")go()};
 }
 
@@ -167,7 +173,7 @@ function showHome(){
 const DUR=[["15 דק'",15],["שעה",60],["3 שעות",180],["עד סוף היום","eod"],["יום",1440],["3 ימים",4320],["שבוע",10080]];
 const TPL=[["🔄 שינוי במערכת","שינוי במערכת: "],["❌ שיעור מבוטל","השיעור ב… היום מבוטל. "],["📝 מבחן","תזכורת: מבחן ב… ביום … . החומר: "],["🎒 להביא מחר","מחר להביא: "],["⏰ שינוי בשעות","מחר הלימודים מתחילים ב-… "],["🎉 כל הכבוד","כל הכבוד ל"]];
 let dur=60,aud="all",urgent=false,users=null;
-function minutesFor(v){if(v!=="eod")return v;const n=new Date(),e=new Date(n);e.setHours(23,59,0,0);return Math.max(1,Math.round((e-n)/60000))}
+function minutesFor(v,from){if(v!=="eod")return v;const n=from?new Date(from):new Date(),e=new Date(n);e.setHours(23,59,0,0);return Math.max(1,Math.round((e-n)/60000))}
 async function showWrite(){
   const admin=me.role==="admin";
   $("main").innerHTML=`<div class="card"><h2>✍️ עדכון חדש לתלמידים</h2><p class="hint">קופץ על המסך אצל כל תלמיד שפותח את האפליקציה, ואז נשאר בראש המסך עד שהזמן נגמר.</p>
@@ -193,8 +199,7 @@ async function showWrite(){
   $("text").oninput=()=>{$("count").textContent=$("text").value.length+"/600";preview()};
   $("video").oninput=()=>{showVideoHint();preview()};
   $("urg").onchange=e=>{urgent=e.target.checked;preview()};
-  const wl=$("when").previousElementSibling;$("when").hidden=true;wl.hidden=true;
-  fetch(API.replace(/\/api\/staff$/,"/api/feed"),{cache:"no-store"}).then(r=>{if(r.ok&&$("when")){$("when").hidden=false;wl.hidden=false}}).catch(()=>{});
+  const wl=$("when").previousElementSibling,canSch=!!(caps&&caps.schedule);$("when").hidden=!canSch;wl.hidden=!canSch;
   seg("when",v=>{$("whenAt").hidden=v!=="later";if(v==="later"&&!$("whenAt").value){const t=new Date(Date.now()+864e5);t.setHours(7,0,0,0);$("whenAt").value=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}T07:00`}});
   $("cNum").oninput=$("cUnit").onchange=preview;
   $("post").onclick=post;
@@ -207,7 +212,7 @@ async function showWrite(){
   }
   preview();
 }
-function minutes(){return dur==="custom"?Math.round(Number($("cNum").value)*Number($("cUnit").value)):minutesFor(dur)}
+function minutes(){if(dur==="custom")return Math.round(Number($("cNum").value)*Number($("cUnit").value));const at=!$("whenAt").hidden&&new Date($("whenAt").value).getTime();return minutesFor(dur,at>Date.now()?at:0)}
 function author(){
   const sel=$("as");if(!sel||!sel.value)return{author:me.name,role:me.role,body:{}};
   if(sel.value==="__name"){const n=$("asName").value.trim();return n?{author:n,role:"staff",body:{asName:n}}:{author:me.name,role:me.role,body:{}}}
@@ -254,9 +259,9 @@ async function showList(){
   if(!r.updates.length){box.innerHTML=`<p class="hint">אין עדכונים בימים האחרונים.</p>`;return}
   box.innerHTML=r.updates.map(u=>`<div class="item"><div class="m"><span class="pill ${u.scheduled?"sch":u.active?"on":"off"}">${u.scheduled?"⏰ מתוזמן ל-"+fmtT(u.startsAt):u.active?"פעיל":"הסתיים"}</span>${u.urgent?`<span class="pill urg">דחוף</span>`:""}<b>${esc(u.authorName)}</b> · ${u.audience==="all"?"כולם":u.audience==="y1"?"י'1":"י'2"} · ${fmtT(u.createdAt)} עד ${fmtT(u.expiresAt)} · 👁 ${u.views||0}${u.postedByName&&u.postedByName!==u.authorName?`<br>נשלח ע"י ${esc(u.postedByName)}`:""}</div><div class="t">${esc(u.text)}</div>${u.video?`<div class="m" style="margin-top:4px">🎬 <a href="${esc(u.video)}" target="_blank" rel="noopener" style="color:var(--accent)">סרטון מצורף</a></div>`:""}
     <div class="row" style="margin-top:8px">${u.active?`<button class="btn sm ghost" data-end="${esc(u.id)}">סיים עכשיו</button>`:""}<button class="btn sm ghost" data-ext="${esc(u.id)}" data-m="60">+ שעה</button><button class="btn sm ghost" data-ext="${esc(u.id)}" data-m="1440">+ יום</button><button class="btn sm danger" data-del="${esc(u.id)}">מחק</button></div></div>`).join("");
-  box.querySelectorAll("[data-end]").forEach(b=>b.onclick=async()=>{b.disabled=true;await api({action:"end",id:b.dataset.end});showList()});
-  box.querySelectorAll("[data-ext]").forEach(b=>b.onclick=async()=>{b.disabled=true;await api({action:"extend",id:b.dataset.ext,minutes:Number(b.dataset.m)});showList()});
-  box.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את העדכון? הוא ייעלם מיד אצל כל התלמידים."))return;await api({action:"delete",id:b.dataset.del});showList()});
+  box.querySelectorAll("[data-end]").forEach(b=>b.onclick=()=>act(b,{action:"end",id:b.dataset.end},showList,"לסיים את העדכון עכשיו? הוא ייעלם אצל התלמידים."));
+  box.querySelectorAll("[data-ext]").forEach(b=>b.onclick=()=>act(b,{action:"extend",id:b.dataset.ext,minutes:Number(b.dataset.m)},showList));
+  box.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>act(b,{action:"delete",id:b.dataset.del},showList,"למחוק את העדכון? הוא ייעלם מיד אצל כל התלמידים."));
 }
 
 // ---- כרטיסיות לכיתה: סטים שמופיעים אצל כל התלמידים ----
@@ -352,8 +357,8 @@ async function loadPolls(){
   box.innerHTML=r.polls.map(p=>`<div class="item"><div class="m"><span class="pill ${p.active?"on":"off"}">${p.active?"פתוח":"נסגר"}</span>${esc(p.author||"")} · ${AUDN2[p.audience]} · ${p.total} הצביעו</div><div class="t"><b>${esc(p.q)}</b></div>
     ${p.options.map((o,i)=>{const pc=p.total?Math.round(100*p.counts[i]/p.total):0;return `<div class="bar"><i style="width:${pc}%"></i><span>${esc(o)}</span><b>${p.counts[i]} · ${pc}%</b></div>`}).join("")}
     ${p.canEdit?`<div class="row" style="margin-top:8px">${p.active?`<button class="btn sm ghost" data-pend="${esc(p.id)}">סגור עכשיו</button>`:""}<button class="btn sm danger" data-pdel="${esc(p.id)}">מחק</button></div>`:""}</div>`).join("");
-  box.querySelectorAll("[data-pend]").forEach(b=>b.onclick=async()=>{await api({action:"pollEnd",id:b.dataset.pend});loadPolls()});
-  box.querySelectorAll("[data-pdel]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את הסקר?"))return;await api({action:"pollDelete",id:b.dataset.pdel});loadPolls()});
+  box.querySelectorAll("[data-pend]").forEach(b=>b.onclick=()=>act(b,{action:"pollEnd",id:b.dataset.pend},loadPolls,"לסגור את הסקר? אי אפשר לפתוח אותו שוב."));
+  box.querySelectorAll("[data-pdel]").forEach(b=>b.onclick=()=>act(b,{action:"pollDelete",id:b.dataset.pdel},loadPolls,"למחוק את הסקר?"));
 }
 
 // ---- 📅 אירועים ----
@@ -378,40 +383,49 @@ async function loadEvents(){
   const up=r.events.filter(e=>e.date>=r.today);
   if(!up.length){box.innerHTML=`<p class="hint">אין אירועים קרובים.</p>`;return}
   box.innerHTML=up.map(e=>`<div class="item"><div class="m"><b>${esc(e.date.split("-").reverse().join("."))}${e.time?" · "+esc(e.time):""}</b> · ${AUDN2[e.audience]} · ${esc(e.author||"")}</div><div class="t"><b>${esc(e.title)}</b>${e.place?` · 📍 ${esc(e.place)}`:""}${e.desc?`<br>${esc(e.desc)}`:""}</div>${e.canEdit?`<div class="row" style="margin-top:6px"><button class="btn sm danger" data-edel="${esc(e.id)}">מחק</button></div>`:""}</div>`).join("");
-  box.querySelectorAll("[data-edel]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את האירוע?"))return;await api({action:"eventDelete",id:b.dataset.edel});loadEvents()});
+  box.querySelectorAll("[data-edel]").forEach(b=>b.onclick=()=>act(b,{action:"eventDelete",id:b.dataset.edel},loadEvents,"למחוק את האירוע?"));
 }
 
 // ---- ❓ שאלות מתלמידים (אנונימיות) ----
 let qFilter="new";
 async function showQuestions(){
   $("main").innerHTML=`<div class="card"><h2>❓ שאלות מתלמידים</h2><p class="hint">התלמידים שואלים בלי שם. כשעונים, השאלה והתשובה מופיעות לכל הכיתה שממנה הגיעה השאלה. שאלה לא מתאימה – מסתירים.</p>
-    <div class="seg" id="qF"><button data-v="new" class="${qFilter==="new"?"on":""}">מחכות לתשובה</button><button data-v="answered" class="${qFilter==="answered"?"on":""}">נענו</button></div><div id="qList" style="margin-top:10px"><p class="hint">טוען…</p></div></div>`;
+    <div class="seg" id="qF"><button data-v="new" class="${qFilter==="new"?"on":""}">מחכות לתשובה</button><button data-v="answered" class="${qFilter==="answered"?"on":""}">נענו</button><button data-v="hidden" class="${qFilter==="hidden"?"on":""}">מוסתרות</button></div><div id="qList" style="margin-top:10px"><p class="hint">טוען…</p></div></div>`;
   $("qF").querySelectorAll("button").forEach(b=>b.onclick=()=>{qFilter=b.dataset.v;showQuestions()});
   const r=await api({action:"qList"}),box=$("qList");if(!box)return;
   if(!r.ok){box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
   const list=r.questions.filter(q=>q.status===qFilter);
-  if(!list.length){box.innerHTML=`<p class="hint">${qFilter==="new"?"אין שאלות שמחכות 🎉":"עוד לא נענו שאלות."}</p>`;return}
+  if(!list.length){box.innerHTML=`<p class="hint">${qFilter==="new"?"אין שאלות שמחכות 🎉":qFilter==="hidden"?"אין שאלות מוסתרות.":"עוד לא נענו שאלות."}</p>`;return}
   box.innerHTML=list.map(q=>`<div class="item"><div class="m">${q.cls?AUDN2[q.cls]:""}${q.to?" · "+esc(q.to):""} · ${fmtT(q.createdAt)}</div><div class="t"><b>${esc(q.text)}</b></div>
-    ${q.status==="answered"?`<div class="t" style="margin-top:4px">💬 ${esc(q.answer)} <span class="hint">– ${esc(q.answeredBy||"")}</span></div><div class="row" style="margin-top:6px"><button class="btn sm danger" data-qdel="${esc(q.id)}">מחק</button></div>`
+    ${q.status==="hidden"?`<div class="row" style="margin-top:6px"><button class="btn sm ghost" data-qrest="${esc(q.id)}">החזר לשאלות</button><button class="btn sm danger" data-qdel="${esc(q.id)}">מחק</button></div>`:q.status==="answered"?`<div class="t" style="margin-top:4px">💬 ${esc(q.answer)} <span class="hint">– ${esc(q.answeredBy||"")}</span></div><div class="row" style="margin-top:6px"><button class="btn sm danger" data-qdel="${esc(q.id)}">מחק</button></div>`
     :`<textarea data-qa="${esc(q.id)}" maxlength="800" style="min-height:60px;margin-top:6px" placeholder="התשובה שלך (תופיע לכל הכיתה)"></textarea><div class="row" style="margin-top:6px"><button class="btn sm" data-qans="${esc(q.id)}">פרסם תשובה</button><button class="btn sm ghost" data-qhide="${esc(q.id)}">הסתר</button></div>`}</div>`).join("");
   box.querySelectorAll("[data-qans]").forEach(b=>b.onclick=async()=>{const t=box.querySelector(`[data-qa="${CSS.escape(b.dataset.qans)}"]`).value.trim();if(!t)return;b.disabled=true;const x=await api({action:"qAnswer",id:b.dataset.qans,answer:t});if(!x.ok)alert(ERR[x.error]||"שגיאה.");showQuestions()});
-  box.querySelectorAll("[data-qhide]").forEach(b=>b.onclick=async()=>{await api({action:"qHide",id:b.dataset.qhide});showQuestions()});
-  box.querySelectorAll("[data-qdel]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק? היא תיעלם גם אצל התלמידים."))return;await api({action:"qDelete",id:b.dataset.qdel});showQuestions()});
+  box.querySelectorAll("[data-qhide]").forEach(b=>b.onclick=()=>act(b,{action:"qHide",id:b.dataset.qhide},showQuestions,"להסתיר את השאלה? אפשר להחזיר אותה מ\"מוסתרות\"."));
+  box.querySelectorAll("[data-qrest]").forEach(b=>b.onclick=()=>act(b,{action:"qRestore",id:b.dataset.qrest},showQuestions));
+  box.querySelectorAll("[data-qdel]").forEach(b=>b.onclick=()=>act(b,{action:"qDelete",id:b.dataset.qdel},showQuestions,"למחוק? היא תיעלם גם אצל התלמידים."));
 }
 
 // ---- 🏃 שחרורים שההורים חתמו עליהם ----
 async function showReleases(){
-  $("main").innerHTML=`<div class="card"><h2>🏃 שחרורים</h2><p class="hint">אישורי יציאה שההורים חתמו עליהם בשחרורון, מהשבוע האחרון.</p><div id="rList"><p class="hint">טוען…</p></div></div>`;
+  $("main").innerHTML=`<div class="card"><h2>🏃 שחרורים</h2><p class="hint">אישורי יציאה שההורים חתמו עליהם בשחרורון, מהשבוע האחרון. ⚠️ זו חתימה דיגיטלית מהקישור שנשלח להורה – במקרה של ספק, כדאי לוודא מול ההורה.</p><div id="rList"><p class="hint">טוען…</p></div></div>`;
   const r=await api({action:"releasesList"}),box=$("rList");if(!box)return;
   if(!r.ok){box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
   if(!r.releases.length){box.innerHTML=`<p class="hint">אין שחרורים בשבוע האחרון.</p>`;return}
-  const byDay={};r.releases.sort((a,b)=>(b.date+b.from).localeCompare(a.date+a.from)).forEach(x=>(byDay[x.date]=byDay[x.date]||[]).push(x));
+  const byDay=Object.create(null);r.releases.sort((a,b)=>(b.date+b.from).localeCompare(a.date+a.from)).forEach(x=>(byDay[x.date]=byDay[x.date]||[]).push(x));
   box.innerHTML=Object.entries(byDay).map(([d,l])=>`<div class="day"><h3>${d===r.today?"היום":esc(d.split("-").reverse().join("."))} <small>${l.length} שחרורים</small></h3>${l.map(x=>`<div class="item"><div class="m"><b>${esc(x.from||"")}</b> · ${AUDN2[x.cls]||""}${x.lesson?" · "+esc(x.lesson):""}${x.teacher?" · למורה: "+esc(x.teacher):""}</div><div class="t"><b>${esc(x.name)}</b> – ${esc(x.reason||"")}</div><div class="m">✍️ חתום: ${esc(x.parent||"")}</div></div>`).join("")}</div>`).join("");
 }
 
 // ---- 📈 נתונים למנהל (אנונימי) ----
+async function loadBirthdays(){
+  const box=$("bdBox");if(!box)return;const r=await api({action:"bdList"});
+  if(!r.ok){box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
+  box.innerHTML=r.birthdays.length?r.birthdays.map(x=>`<div class="item row" style="justify-content:space-between"><span><b>${esc(x.name)}</b> · ${esc((CLASSES_META[x.cls]||{}).label||"")} · ${esc(x.md.split("-").reverse().join("."))}</span><button class="btn sm danger" data-bdel="${esc(x.key)}">הסר</button></div>`).join(""):`<p class="hint">אף תלמיד עוד לא בחר להציג יום הולדת.</p>`;
+  box.querySelectorAll("[data-bdel]").forEach(b=>b.onclick=()=>act(b,{action:"bdDelete",key:b.dataset.bdel},loadBirthdays,"להסיר את יום ההולדת הזה מהתצוגה לתלמידים?"));
+}
 async function showStats(){
-  $("main").innerHTML=`<div class="card"><h2>📈 נתונים</h2><p class="hint">7 הימים האחרונים. רק מספרים – בלי שמות. "בסיכון" = מעל 25% חיסורים במקצוע (אצל מי שחיבר משוב).</p><div id="stBody"><p class="hint">טוען…</p></div></div>`;
+  $("main").innerHTML=`<div class="card"><h2>📈 נתונים</h2><p class="hint">7 הימים האחרונים. רק מספרים – בלי שמות. "בסיכון" = מעל 25% חיסורים במקצוע (אצל מי שחיבר משוב).</p><div id="stBody"><p class="hint">טוען…</p></div></div>
+    <div class="card"><h2>🎂 ימי הולדת שמוצגים</h2><p class="hint">התלמידים מכניסים את השם בעצמם. אם משהו לא מתאים – אפשר להסיר.</p><div id="bdBox"><p class="hint">טוען…</p></div></div>`;
+  loadBirthdays();
   const r=await api({action:"stats"}),box=$("stBody");if(!box)return;
   if(!r.ok){box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
   const cls=Object.keys(CLASSES_META);
@@ -529,8 +543,8 @@ async function showFeedback(){
   if(!list.length){box.innerHTML=`<p class="hint">${fbFilter==="open"?"אין פניות פתוחות 🎉":"עוד לא התקבלו פניות."}</p>`;return}
   box.innerHTML=list.map(f=>{const [ic,lb]=FBK[f.kind]||FBK.other;return `<div class="item" style="${f.done?"opacity:.55":""}"><div class="m"><span class="pill ${f.kind==="bug"?"urg":"on"}">${ic} ${lb}</span>${f.done?'<span class="pill off">טופל</span>':""}${f.name?esc(f.name):"ללא שם"}${f.cls?" · "+esc(f.cls):""} · ${fmtT(f.at)}${f.page?" · מסך: "+esc(f.page):""}</div><div class="t">${esc(f.text)}</div>${f.device?`<details style="margin-top:6px"><summary class="hint" style="margin:0;cursor:pointer">פרטים טכניים</summary><div class="hint" style="direction:ltr;text-align:left;font-size:12px;overflow-wrap:anywhere">${esc(f.device)} ${esc(f.ver||"")}</div></details>`:""}
     <div class="row" style="margin-top:8px"><button class="btn sm ghost" data-done="${esc(f.id)}">${f.done?"החזר לפתוחות":"✓ טופל"}</button><button class="btn sm danger" data-fdel="${esc(f.id)}">מחק</button></div></div>`}).join("");
-  box.querySelectorAll("[data-done]").forEach(b=>b.onclick=async()=>{b.disabled=true;await api({action:"feedbackDone",id:b.dataset.done});showFeedback()});
-  box.querySelectorAll("[data-fdel]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את הפנייה?"))return;await api({action:"feedbackDelete",id:b.dataset.fdel});showFeedback()});
+  box.querySelectorAll("[data-done]").forEach(b=>b.onclick=()=>act(b,{action:"feedbackDone",id:b.dataset.done},showFeedback));
+  box.querySelectorAll("[data-fdel]").forEach(b=>b.onclick=()=>act(b,{action:"feedbackDelete",id:b.dataset.fdel},showFeedback,"למחוק את הפנייה?"));
 }
 
 // ---- צוות (מנהל בלבד) ----

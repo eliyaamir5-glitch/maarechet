@@ -262,13 +262,37 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
 const $=id=>document.getElementById(id);
 const VIEWS=["vHome","vEdit","vSet","vFlash","vWrite","vQuiz","vMatch","vDone","vDict"];
 let qTimer=null;
-function show(v){clearTimeout(qTimer);if(v!=="vMatch")clearInterval(mTimer);VIEWS.forEach(x=>$(x).hidden=x!==v);window.scrollTo(0,0);$("back").textContent=v==="vHome"?"🏠 חזרה למערכת":"→ חזרה"}
-$("back").onclick=()=>{const v=VIEWS.find(x=>!$(x).hidden);if(v==="vHome")location.href="./";else if(v==="vSet"||v==="vEdit"||v==="vDict")home();else openSet(cur.id)};
+function show(v){clearTimeout(qTimer);if(v!=="vMatch")clearInterval(mTimer);VIEWS.forEach(x=>$(x).hidden=x!==v);window.scrollTo(0,0);$("back").textContent=v==="vHome"?"🏠 חזרה למערכת":"→ חזרה";
+  HS={lv:lvOf(v),v,id:cur&&cur.id||null};if(popping){try{history.replaceState(HS,"")}catch(e){}}else hist()}
+$("back").onclick=()=>{const v=VIEWS.find(x=>!$(x).hidden);if(v==="vHome")location.href="./";else if(v==="vEdit")leaveEdit();else if(v==="vSet"||v==="vDict")home();else openSet(cur.id)};
+
+// ---- היסטוריה: כפתור "חזרה" של הטלפון חוזר מסך אחד אחורה (תרגול ← סט ← בית), ולא יוצא מהדף ----
+// לכל מסך "רמה": 0 בית, 1 סט / מילון / סט חדש, 2 תרגול / סיכום / עריכת סט קיים. רשומה בהיסטוריה לכל רמה.
+let HS={lv:0,v:"vHome"},hPend=false,popping=false,hPendT=null;
+const lvOf=v=>v==="vHome"?0:v==="vSet"||v==="vDict"||(v==="vEdit"&&!editing)?1:2;
+function hist(){
+  if(hPend)return; // הדפדפן עוד חוזר אחורה – נעדכן כשיסיים
+  const c=(history.state&&+history.state.lv)||0,n=HS.lv;
+  try{
+    // חזרה בתוך הדף (למשל "סיום") – גם ההיסטוריה חוזרת, כדי שה"חזרה" של הטלפון לא תחזיר לתרגול שנגמר
+    if(n<c){hPend=true;clearTimeout(hPendT);hPendT=setTimeout(()=>{if(hPend){hPend=false;hist()}},1500);history.go(n-c);return}
+    for(let k=c+1;k<n;k++)history.pushState({lv:k,v:"vSet",id:HS.id},"");
+    if(n>c)history.pushState(HS,"");else history.replaceState(HS,"");
+  }catch(e){}
+}
+addEventListener("popstate",e=>{
+  if(/^#s=/.test(location.hash))return; // קישור משותף – מטופל ב-hashchange
+  if(hPend){hPend=false;clearTimeout(hPendT);hist();return}
+  if(!$("vEdit").hidden&&!leaveOk()){try{history.pushState(HS,"")}catch(x){}return}
+  const s=e.state||{lv:0,v:"vHome"};popping=true;
+  try{if(s.v==="vDict")openDict();else if(s.lv>0&&s.id&&allSets().some(x=>x.id===s.id))openSet(s.id);else home()}finally{popping=false}
+});
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
 const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let mySets=load("sets",[]),prog=load("cardsProg",{}),cur=null,editing=null;
+if(!prog||typeof prog!=="object"||Array.isArray(prog))prog={};
 
 // ---- סטים של הכיתה: מה שהמורים פרסמו (נשמר בטלפון גם בלי אינטרנט) + סטים קבועים ----
 const MY_CLS=(load("profile",{})||{}).cls;
@@ -281,7 +305,7 @@ async function loadTeacherSets(){
     const ctl=new AbortController();setTimeout(()=>ctl.abort(),8000);
     const r=await fetch(((typeof SERVER_BASE!=="undefined"&&SERVER_BASE)||"")+"/api/sets",{signal:ctl.signal,cache:"no-store"});
     const j=await r.json();if(!j.ok||!Array.isArray(j.sets))return;
-    teacherSets=j.sets;save("classSetsCache",teacherSets);
+    teacherSets=fixSets(j.sets);save("classSetsCache",teacherSets);
     if(!$("vHome").hidden)home();
   }catch(e){}
 }
@@ -298,6 +322,18 @@ function PG(set){
   if(!p||!p.c){const old=(p&&p.known)||[];p={c:{}};old.forEach(i=>{const c=set.cards[i];if(c)p.c[ck(c)]={b:1,due:0}});prog[set.id]=p}
   return p;
 }
+// ---- ניקוי נתונים: קישור משובש או סט פגום שנשמר בטלפון לא יפילו את הדף ----
+const str=(v,n)=>typeof v==="string"||typeof v==="number"?String(v).trim().slice(0,n):"";
+// רק כרטיסים עם מונח ותשובה (טקסט לא ריק). uniq: בלי כפילויות (אותו מונח ואותה תשובה)
+function cleanCards(a,n,uniq){
+  if(!Array.isArray(a))return [];const seen=new Set();
+  return a.map(c=>c&&typeof c==="object"?{t:str(c.t,n),d:str(c.d,n)}:{}).filter(c=>{if(!c.t||!c.d)return false;if(!uniq)return true;const k=ck(c);if(seen.has(k))return false;seen.add(k);return true});
+}
+const fixSets=a=>(Array.isArray(a)?a:[]).filter(s=>s&&typeof s==="object"&&s.id!=null).map(s=>({...s,id:String(s.id),title:str(s.title,200)||"סט ללא שם",cards:cleanCards(s.cards,1e4)}));
+// סטים שנשמרו פגומים (למשל מקישור משובש בגרסה קודמת) – מתוקנים בטעינה. סט שלא נשאר בו כרטיס נמחק (חוץ מ"המילים שלי")
+{const fixed=fixSets(mySets).filter(s=>s.cards.length||s.id==="mywords");
+  if(JSON.stringify(fixed)!==JSON.stringify(mySets)){mySets=fixed;save("sets",mySets)}
+  teacherSets=fixSets(teacherSets);}
 const REC=(set,c)=>PG(set).c[ck(c)]||{};
 const saveProg=()=>save("cardsProg",prog);
 function mark(set,c,ok){
@@ -363,34 +399,50 @@ function saveDraft(){if(editing)return;const d={title:$("eName").value,subject:$
   try{if(d.title.trim()||d.cards.length)save("cardDraft",d);else localStorage.removeItem("cardDraft")}catch(e){}}
 const dropDraft=()=>{try{localStorage.removeItem("cardDraft")}catch(e){}};
 ["eName","eSubj"].forEach(id=>$(id).addEventListener("input",saveDraft));
-$("btnDraftClear").onclick=()=>{dropDraft();$("eName").value="";$("eSubj").value="";ED.set([]);$("eDraft").hidden=true};
+$("btnDraftClear").onclick=()=>{if(!confirm("למחוק את הטיוטה ולהתחיל סט חדש מאפס?"))return;dropDraft();$("eName").value="";$("eSubj").value="";ED.set([]);$("eDraft").hidden=true};
 $("btnAddCard").onclick=()=>ED.addEmpty();
-$("btnPaste").onclick=()=>{const list=parseCards($("eCards").value);
-  if(!list.length)return $("eErr").textContent="לא מצאנו כרטיסים ברשימה. כל שורה צריכה להיות: מונח - הגדרה.";
-  ED.insert(list);$("eCards").value="";$("ePaste").open=false;$("eErr").textContent="";
-};
+// הדבקה מהירה: שורות בלי מפריד נשארות בתיבה (לתיקון), ואומרים כמה
+function pasteBox(){
+  const list=parseCards($("eCards").value),sk=list.skipped;
+  if(list.length)ED.insert(list);
+  $("eCards").value=sk.join("\n");$("ePaste").open=!!sk.length;
+  $("eErr").textContent=!sk.length?"":(list.length?`נוספו ${list.length} כרטיסים. `:"")+`${sk.length===1?"שורה אחת לא נוספה":`${sk.length} שורות לא נוספו`} – לא מצאנו בהן מפריד. כל שורה צריכה להיות: מונח - הגדרה. השורות נשארו בתיבה לתיקון.`;
+  return sk.length;
+}
+$("btnPaste").onclick=()=>{if(!$("eCards").value.trim())return $("eErr").textContent="התיבה ריקה. מדביקים בה רשימה, שורה לכל כרטיס: מונח - הגדרה.";pasteBox()};
+// יציאה מעריכה של סט קיים (או עותק) בלי לשמור – שואלים, אבל רק אם באמת שינו משהו. בסט חדש יש טיוטה, אז לא צריך
+let edSnap="";
+const edNow=()=>JSON.stringify([$("eName").value.trim(),$("eSubj").value.trim(),ED.draft(),$("eCards").value.trim()]);
+const leaveOk=()=>!editing||edNow()===edSnap||confirm("לצאת בלי לשמור?");
+function leaveEdit(){if(!leaveOk())return;editing?openSet(editing.id||cur.id):home()}
 function openEdit(s){
   editing=s;show("vEdit");
   $("edTitle").textContent=s?"עריכת סט":"סט חדש";
   const dr=!s&&load("cardDraft",null);
   $("eName").value=s?s.title:dr?dr.title||"":"";$("eSubj").value=s?s.subject||"":dr?dr.subject||"":"";
   $("eDraft").hidden=!dr;
-  ED.set(s?s.cards:dr&&dr.cards||[]);$("eCards").value="";$("ePaste").open=false;
+  ED.set(s?s.cards:dr&&Array.isArray(dr.cards)&&dr.cards||[]);$("eCards").value="";$("ePaste").open=false;
   $("btnDel").hidden=!s||s.builtin;$("eErr").textContent="";
+  edSnap=edNow();
 }
 $("btnSave").onclick=()=>{
   const title=$("eName").value.trim(),subject=$("eSubj").value.trim();
-  // רשימה שהודבקה ולא נלחץ "הוסף" – נכנסת בכל זאת
-  if($("eCards").value.trim()){const l=parseCards($("eCards").value);if(l.length){ED.insert(l);$("eCards").value=""}}
-  const half=ED.check(),cards=ED.cards();
+  // רשימה שהודבקה ולא נלחץ "הוסף" – נכנסת בכל זאת (ואם יש בה שורות בלי מפריד – עוצרים ומראים)
+  if($("eCards").value.trim()&&pasteBox())return;
+  const half=ED.check(),all=ED.cards();
   if(!title){$("eName").focus();return $("eErr").textContent="חסר שם לסט."}
   if(half)return $("eErr").textContent=half;
-  if(cards.length<2)return $("eErr").textContent="צריך לפחות 2 כרטיסים מלאים.";
+  // כרטיס כפול (אותו מונח ואותה תשובה) נשמר פעם אחת – אחרת שניהם חולקים את אותה התקדמות
+  const cards=cleanCards(all,1e4,true),dupN=all.length-cards.length;
+  if(cards.length<2)return $("eErr").textContent="צריך לפחות 2 כרטיסים מלאים"+(dupN?" ושונים.":".");
+  const isNew=!editing;
   if(editing&&!editing.builtin)Object.assign(editing,{title,subject,cards});
   else{const s={id:"s"+Date.now().toString(36),title,subject,cards,created:Date.now()};mySets.push(s);editing=s}
-  save("sets",mySets);dropDraft();openSet(editing.id);
+  // הטיוטה שייכת לסט חדש בלבד – שמירה של סט קיים לא מוחקת אותה
+  save("sets",mySets);if(isNew)dropDraft();openSet(editing.id);
+  if(dupN)alert(dupN===1?"כרטיס אחד הופיע פעמיים, ונשמר פעם אחת.":`${dupN} כרטיסים הופיעו פעמיים, ונשמרו פעם אחת.`);
 };
-$("btnCancel").onclick=()=>editing?openSet(editing.id):home();
+$("btnCancel").onclick=leaveEdit;
 $("btnDel").onclick=()=>{if(!confirm("למחוק את הסט?"))return;mySets=mySets.filter(s=>s.id!==editing.id);save("sets",mySets);delete prog[editing.id];saveProg();home()};
 
 // ---- תפריט סט ----
@@ -469,11 +521,14 @@ const FINAL={"ך":"כ","ם":"מ","ן":"נ","ף":"פ","ץ":"צ"};
 const normA=s=>String(s).toLowerCase().replace(/[֑-ׇ]/g,"").replace(/\([^)]*\)/g," ").replace(/[ךםןףץ]/g,ch=>FINAL[ch]).replace(/[^\p{L}\p{N}]+/gu," ").trim();
 function lev(a,b){let p=Array.from({length:b.length+1},(_,j)=>j);for(let i=1;i<=a.length;i++){const q=[i];for(let j=1;j<=b.length;j++)q[j]=Math.min(p[j]+1,q[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=q}return p[b.length]}
 function judge(ans,correct){
-  const a=normA(ans);if(!a)return "no";
+  const a=normA(ans);
+  // תשובה שכולה סימנים ("%", "+") – הניקוי מוחק אותה, אז משווים את הטקסט עצמו
+  if(!a){const raw=s=>String(s).trim().toLowerCase().replace(/\s+/g," ");return raw(ans)&&raw(ans)===raw(correct)?"ok":"no"}
   // תשובה עם כמה אפשרויות ("לרדת, להפחית") או עם תוספת בסוגריים ("פריז (Paris)") – כל אחת מתקבלת
   const opts=[correct,...correct.split(/[,;/]|\s+או\s+/),...[...correct.matchAll(/\(([^)]*)\)/g)].map(m=>m[1])].map(normA).filter(Boolean);
   if(opts.includes(a))return "ok";
-  for(const o of opts){const tol=o.length>=8?2:o.length>=4?1:0;if(tol&&lev(a,o)<=tol)return "almost"}
+  // טעות הקלדה: לא כשיש בתשובה מספר (1918 ≠ 1917), ורק במילים ארוכות – 5+ אותיות: טעות אחת, 8+: שתיים
+  for(const o of opts){if(/\p{N}/u.test(o))continue;const tol=o.length>=8?2:o.length>=5?1:0;if(tol&&lev(a,o)<=tol)return "almost"}
   return "no";
 }
 function checkWrite(skip){
@@ -500,7 +555,8 @@ function startQuiz(){qq=shuffle(pool());qi=0;qs=0;show("vQuiz");drawQuiz()}
 function drawQuiz(){
   if(qi>=qq.length)return finish("quiz");
   const i=qq[qi],c=cur.cards[i];qLock=false;
-  const others=shuffle(cur.cards.map((_,j)=>j).filter(j=>j!==i&&cur.cards[j].d!==c.d)).slice(0,3);
+  // מסיחים: בלי תשובה שמופיעה פעמיים (שתי אפשרויות זהות)
+  const seenD=new Set([c.d]),others=shuffle(cur.cards.map((_,j)=>j).filter(j=>j!==i)).filter(j=>{const d=cur.cards[j].d;if(seenD.has(d))return false;seenD.add(d);return true}).slice(0,3);
   const opts=shuffle([i,...others]);
   $("qQ").textContent=c.t;$("qPos").textContent=`${qi+1} / ${qq.length}`;$("qScore").textContent=`נכון: ${qs}`;$("qBar").style.width=Math.round(100*qi/qq.length)+"%";
   $("qOpts").innerHTML=opts.map(j=>`<button class="opt" data-j="${j}">${esc(cur.cards[j].d)}</button>`).join("");
@@ -514,7 +570,7 @@ function drawQuiz(){
 $("qQuit").onclick=()=>openSet(cur.id);
 
 // ---- התאמה ----
-let mSel=null,mLeftN=0,mT0=0,mTimer=null;
+let mSel=null,mLeftN=0,mT0=0,mT1=0,mTimer=null;
 function startMatch(){
   const pick=shuffle(pool()).slice(0,6);mLeftN=pick.length;mSel=null;
   const tiles=shuffle([...pick.map(i=>({i,side:"t",txt:cur.cards[i].t})),...pick.map(i=>({i,side:"d",txt:cur.cards[i].d}))]);
@@ -528,7 +584,8 @@ function startMatch(){
     const a=mSel;mSel=null;a.classList.remove("sel");
     if(a.dataset.i===el.dataset.i&&a.dataset.side!==el.dataset.side){
       a.classList.add("gone");el.classList.add("gone");mLeftN--;$("mLeft").textContent=`נשארו ${mLeftN} זוגות`;
-      if(!mLeftN){clearInterval(mTimer);setTimeout(()=>{if(!$("vMatch").hidden)finish("match")},350)}
+      // השעון עוצר בהתאמה האחרונה (לא כולל ההשהיה עד מסך הסיכום)
+      if(!mLeftN){mT1=Date.now();clearInterval(mTimer);$("mTime").textContent=((mT1-mT0)/1000).toFixed(1);setTimeout(()=>{if(!$("vMatch").hidden)finish("match")},350)}
     }else{a.classList.add("no");el.classList.add("no");setTimeout(()=>{a.classList.remove("no");el.classList.remove("no")},400)}
   });
 }
@@ -548,7 +605,7 @@ function finish(mode){
   if(mode==="quiz"||mode==="write"){const tot=mode==="quiz"?qq.length:wq.length,sc=mode==="quiz"?qs:ws,pct=tot?Math.round(100*sc/tot):0;
     set(pct===100?"🏆":pct>=70?"👏":"📚",`${sc} מתוך ${tot} נכונות (${pct}%)`,pct===100?"מושלם!":pct>=70?"יפה מאוד. עוד סיבוב וזה יושב.":"כדאי לעבור על הכרטיסיות ואז לנסות שוב.",
       mode==="quiz"?"מבחן נוסף":"עוד סיבוב כתיבה",mode==="quiz"?startQuiz:startWrite)}
-  if(mode==="match"){const t=((Date.now()-mT0)/1000).toFixed(1);const best=load("matchBest",{});const prev=best[cur.id];const rec=!prev||+t<prev;if(rec){best[cur.id]=+t;save("matchBest",best)}
+  if(mode==="match"){const t=((mT1-mT0)/1000).toFixed(1);const best=load("matchBest",{});const prev=best[cur.id];const rec=!prev||+t<prev;if(rec){best[cur.id]=+t;save("matchBest",best)}
     set(rec?"⚡":"⏱️",`${t} שניות`,rec?"שיא חדש!":`השיא שלך: ${prev} שניות`,"עוד פעם",startMatch)}
 }
 $("dBack").onclick=()=>openSet(cur.id);
@@ -582,15 +639,18 @@ function dictHist(){const h=load("dictHist",[]);$("dHist").innerHTML=h.map(w=>`<
 function openDict(){show("vDict");dictHist();setTimeout(()=>$("dIn").focus(),100)}
 $("btnDict").onclick=openDict;
 async function getJSON(url,ms=7000){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{const r=await fetch(url,{signal:c.signal});return r.ok?await r.json():null}catch(e){return null}finally{clearTimeout(t)}}
+// \u05DE\u05E1\u05E4\u05E8 \u05D7\u05D9\u05E4\u05D5\u05E9: \u05EA\u05E9\u05D5\u05D1\u05D4 \u05D0\u05D9\u05D8\u05D9\u05EA \u05E9\u05DC \u05D7\u05D9\u05E4\u05D5\u05E9 \u05E7\u05D5\u05D3\u05DD \u05DC\u05D0 \u05D3\u05D5\u05E8\u05E1\u05EA \u05D0\u05EA \u05D4\u05D7\u05D9\u05E4\u05D5\u05E9 \u05D4\u05D0\u05D7\u05E8\u05D5\u05DF
+let dSeq=0;
 async function lookup(){
   const w=$("dIn").value.trim();if(!w)return;
-  const he=/[\u0590-\u05FF]/.test(w);dWord=w;dPick=null;dAudio=null;
+  const my=++dSeq,he=/[\u0590-\u05FF]/.test(w);dWord=w;dPick=null;dAudio=null;
   $("dOut").innerHTML=`<div class="card center hint">מחפש…</div>`;
   const h=load("dictHist",[]).filter(x=>x.toLowerCase()!==w.toLowerCase());h.unshift(w);save("dictHist",h.slice(0,10));dictHist();
   const [tr,def]=await Promise.all([
     getJSON(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(w)}&langpair=${he?"he|en":"en|he"}`),
     he?null:getJSON(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(w.toLowerCase())}`),
   ]);
+  if(my!==dSeq)return;
   if(!tr&&!def){$("dOut").innerHTML=`<div class="card"><p class="err">אין חיבור לאינטרנט, או שהשירות לא זמין כרגע. אפשר לנסות שוב, או לחפש במורפיקס:</p><a class="btn ghost" style="display:block;text-align:center;text-decoration:none" href="https://www.morfix.co.il/${encodeURIComponent(w)}" target="_blank" rel="noopener">חיפוש במורפיקס ↗</a></div>`;return}
   // תרגומים: מנקים, מסירים כפילויות, ומשאירים רק בשפה הנכונה
   const want=he?/[a-z]/i:/[\u0590-\u05FF]/;
@@ -604,6 +664,7 @@ async function lookup(){
   let meanings=e?(e.meanings||[]).slice(0,2).map(m=>({pos:m.partOfSpeech,d:(m.definitions||[])[0]||{}})):[];
   // גיבוי: ויקימילון, אם המילון הראשון לא זמין
   if(!meanings.length&&!he){const wk=await getJSON(`https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(w.toLowerCase())}`);
+    if(my!==dSeq)return;
     if(wk&&Array.isArray(wk.en))meanings=wk.en.slice(0,2).map(x=>({pos:String(x.partOfSpeech||"").toLowerCase(),d:{definition:String(((x.definitions||[])[0]||{}).definition||"").replace(/<[^>]+>/g,"").trim()}})).filter(m=>m.d.definition)}
   const POS={noun:"שם עצם",verb:"פועל",adjective:"תואר",adverb:"תואר הפועל",preposition:"מילת יחס",conjunction:"מילת חיבור",pronoun:"כינוי"};
   $("dOut").innerHTML=`<div class="card">
@@ -628,15 +689,23 @@ $("dGo").onclick=lookup;
 $("dIn").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();lookup()}};
 
 // ---- כניסה: קישור משותף או בית ----
+// מה שמגיע בקישור נבדק: כרטיסים = רשימה של מונח+תשובה (טקסט, עד 300 תווים), לפחות 2. אחרת – הודעה, ושום דבר לא נשמר
+async function openShared(){
+  const m=location.hash.match(/^#s=(.+)$/);if(!m)return false;
+  const raw=await decSet(m[1]);try{history.replaceState({lv:0,v:"vHome"},"",location.pathname+location.search)}catch(e){}
+  const s=raw&&typeof raw==="object"?raw:{},cards=cleanCards(s.cards,300,true).slice(0,1000);
+  if(cards.length>=2){const title=str(s.title,120)||"סט משותף",subject=str(s.subject,60);
+    const dup=mySets.find(x=>x.title===title&&x.cards.length===cards.length);
+    if(dup&&!confirm(`כבר יש לך סט בשם "${title}". להוסיף עותק נוסף?`)){openSet(dup.id);return true}
+    const ns={id:"s"+Date.now().toString(36),title,subject,cards,created:Date.now()};mySets.push(ns);save("sets",mySets);openSet(ns.id);return true}
+  setTimeout(()=>alert("לא הצלחנו לפתוח את הסט מהקישור. אולי הקישור נחתך בהעתקה, או שהדפדפן ישן מדי. בקשו מהחבר לשלוח שוב, או לעדכן את הדפדפן."),300);
+  return false;
+}
+// קישור משותף שנפתח כשהדף כבר פתוח (משתנה רק ה-# בכתובת)
+addEventListener("hashchange",()=>{if(/^#s=/.test(location.hash))openShared().then(ok=>ok||home())});
 (async()=>{
-  const m=location.hash.match(/^#s=(.+)$/);
-  if(m){const s=await decSet(m[1]);history.replaceState(null,"",location.pathname);
-    if(s&&s.cards&&s.cards.length){const dup=mySets.find(x=>x.title===s.title&&x.cards.length===s.cards.length);
-      if(dup&&!confirm(`כבר יש לך סט בשם "${s.title}". להוסיף עותק נוסף?`)){openSet(dup.id);return loadTeacherSets()}
-      const ns={id:"s"+Date.now().toString(36),title:s.title,subject:s.subject||"",cards:s.cards,created:Date.now()};mySets.push(ns);save("sets",mySets);openSet(ns.id);return loadTeacherSets()}
-    setTimeout(()=>alert("לא הצלחנו לפתוח את הסט מהקישור. אולי הקישור נחתך בהעתקה, או שהדפדפן ישן מדי. בקשו מהחבר לשלוח שוב, או לעדכן את הדפדפן."),300);
-  }
-  home();loadTeacherSets();
+  if(!(await openShared()))home();
+  loadTeacherSets();
 })();
 </script>
 <script>

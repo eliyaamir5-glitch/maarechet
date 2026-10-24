@@ -48,6 +48,6 @@
     return realFetch(input, init);
   };
 
-  // מעדכנים את לוח הבקרה באיזה מסך אנחנו
-  window.addEventListener("load", () => { try { host.onFrameLoad && host.onFrameLoad(location.pathname.split("/").pop() || "index.html"); } catch (e) {} });
+  // מעדכנים את לוח הבקרה באיזה מסך אנחנו. אחרי הפניה הכתובת בלי ".html" (נטליפיי/שרת מקומי), אז מנרמלים ל-"x.html"
+  window.addEventListener("load", () => { try { const f = location.pathname.split("/").pop() || "index"; host.onFrameLoad && host.onFrameLoad(/\.html$/.test(f) ? f : f + ".html"); } catch (e) {} });
 })();

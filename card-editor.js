@@ -3,11 +3,24 @@
 // והדבקה של רשימה ("מונח - הגדרה" בכל שורה, או טבלה מאקסל/וורד) נפרסת לכרטיסים.
 
 // "מונח - הגדרה" / "מונח: הגדרה" / "מונח = הגדרה" / טאב (העתקה מטבלה)
-function parseCards(text){
-  return String(text||"").split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{
-    const m=l.match(/^(.+?)(?:\t+| [-–—] |\s*[=:]\s+|\s*[-–—]\s*)(.+)$/);
-    return m?{t:m[1].trim(),d:m[2].trim()}:null;
-  }).filter(Boolean);
+// סדר עדיפות: טאב, מקף עם רווחים (" - " / " – " / " — "), ": ", "=", ורק אם אין אף אחד – מקף צמוד.
+// כך "well-known - מוכר היטב" לא נחתך באמצע המילה.
+// מחזיר מערך כרטיסים; ‎.skipped = השורות שלא נמצא בהן מפריד. keep: שורות כאלה נכנסות ככרטיס עם מונח בלבד
+function parseCards(text,keep){
+  const out=[],skipped=[];
+  String(text||"").split("\n").map(l=>l.trim()).filter(Boolean).forEach(l=>{
+    const m=l.match(/^(.+?)\t+(.+)$/)||l.match(/^(.+?)\s+[-–—]\s+(.+)$/)||l.match(/^(.+?)\s*:\s+(.+)$/)||l.match(/^(.+?)\s*=\s*(.+)$/)||bareDash(l);
+    const c=m&&{t:m[1].trim(),d:m[2].trim()};
+    if(c&&c.t&&c.d)out.push(c);else{skipped.push(l);if(keep)out.push({t:l,d:""})}
+  });
+  out.skipped=skipped;return out;
+}
+// מקף צמוד ("dog-כלב"): עדיף המקף שבו מתחלפת השפה (אנגלית ↔ עברית), אחרת הראשון
+function bareDash(l){
+  const sc=s=>(/[a-z]/i.test(s)?1:0)|(/[֐-׿]/.test(s)?2:0);
+  const ix=[...l.matchAll(/[-–—]/g)].map(x=>x.index).filter(i=>i>0&&i<l.length-1);if(!ix.length)return null;
+  const i=ix.find(i=>{const a=sc(l.slice(0,i)),b=sc(l.slice(i+1));return a&&b&&!(a&b)})??ix[0];
+  return [l,l.slice(0,i),l.slice(i+1)];
 }
 
 (function(){
@@ -64,7 +77,8 @@ function CardEditor(list,onChange){
   });
   list.addEventListener("paste",e=>{
     const txt=(e.clipboardData||window.clipboardData).getData("text");if(!/\n/.test(txt.trim()))return;
-    const items=parseCards(txt);if(!items.length)return;e.preventDefault();insert(items,e.target.closest(".ec"));
+    // שורה בלי מפריד לא נעלמת: נכנסת ככרטיס עם מונח בלבד, ובשמירה מסומנת באדום
+    const items=parseCards(txt,true);if(items.length===items.skipped.length)return;e.preventDefault();insert(items,e.target.closest(".ec"));
   });
   return {
     set(cards){list.innerHTML="";(cards||[]).forEach(c=>add(c));sync()},

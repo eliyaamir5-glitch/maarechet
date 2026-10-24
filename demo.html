@@ -113,6 +113,9 @@ const DAYN=["ראשון","שני","שלישי","רביעי","חמישי","שיש
 const DEF={first:"יוסי",last:"כהן",cls:"y2",eng:Object.keys(ENG)[1]||Object.keys(ENG)[0],math:Object.keys(MATH)[0],major:"phys",scenario:"good",day:null,time:"10:40",real:false,samples:true,page:"index.html"};
 let cfg;try{cfg=Object.assign({},DEF,JSON.parse(localStorage.getItem("demoPanel")||"{}"))}catch(e){cfg=Object.assign({},DEF)}
 const saveCfg=()=>{try{localStorage.setItem("demoPanel",JSON.stringify(cfg))}catch(e){}};
+// שם מסך תמיד בצורה "x.html" (אחרי הפניה הכתובת מגיעה בלי ".html")
+const pageName=f=>{f=String(f||"").split(/[?#]/)[0]||"index.html";return /\.html$/.test(f)?f:f+".html"};
+cfg.page=pageName(cfg.page);
 if(cfg.day==null){const wd=new Date().getDay();cfg.day=wd<=4?wd:0}
 
 // ---- המארח: מה שהדפים בתוך הדמו "רואים" במקום הטלפון והשרת ----
@@ -216,6 +219,8 @@ host.polls=[{id:"dp1",q:"לאן הטיול השנתי?",options:["צפון – �
 host.events=[{id:"de1",title:"שבת אחים",date:new Date(Date.now()+4*864e5).toISOString().slice(0,10),time:"",place:"בית המדרש",desc:"מביאים שק שינה",audience:"all",author:"המנהל",authorId:"admin"},{id:"de2",title:"טיול שנתי",date:new Date(Date.now()+11*864e5).toISOString().slice(0,10),time:"07:00",place:"יציאה מהשער",desc:"",audience:"all",author:"המנהל",authorId:"admin"}];
 host.questions=[{id:"dq1",text:"מה בדיוק החומר למבחן באנגלית?",to:"אנגלית",cls:"y2",status:"answered",answer:"יחידות 3–4 ואוצר המילים מהדף. בהצלחה!",answeredBy:"המורה לאנגלית",createdAt:Date.now()-864e5,answeredAt:Date.now()-20*3600e3},{id:"dq2",text:"אפשר להגיש את העבודה בהיסטוריה ביום ראשון?",to:"היסטוריה",cls:"y1",status:"new",createdAt:Date.now()-3600e3}];
 host.releases=[{id:"dr1",name:"נועם לוי",cls:"y1",reason:"תור לרופא שיניים",date:new Date().toISOString().slice(0,10),from:"11:00",parent:"אמא של נועם (אמא)",lesson:"היסטוריה",teacher:"הרב הראל עובדיה",at:Date.now()-2*3600e3}];
+// עותק של נתוני הדוגמה ההתחלתיים, בשביל "איפוס הדמו"
+const INITIAL=JSON.stringify({fb:host.fb,staffSets:host.staffSets,contactList:host.contactList,polls:host.polls,events:host.events,questions:host.questions,releases:host.releases,staffUsers:host.staffUsers,views:{}});
 const pubPoll=p=>{const counts=p.options.map((_,i)=>p.votes[i]||0);return{id:p.id,q:p.q,options:p.options,audience:p.audience,endsAt:p.endsAt,author:p.author,counts,total:counts.reduce((a,b)=>a+b,0)}};
 host.feed=(method,b)=>{const t=now(),ok=x=>({status:200,body:{ok:true,...x}});
   if(method==="GET"){const up=host.updates("GET").body.updates,today=new Date(t).toISOString().slice(0,10);
@@ -329,13 +334,13 @@ function go(p){
   const [file,hash]=p.split("#");$("frame").src=`${file}?d=${Date.now()}${hash?"#"+hash:""}`;
 }
 function reloadFrame(){
-  try{const w=$("frame").contentWindow,file=(w.location.pathname.split("/").pop()||"index.html");$("frame").src=file+(w.location.hash||"")}catch(e){$("frame").src=cfg.page}
+  try{const w=$("frame").contentWindow,file=pageName(w.location.pathname.split("/").pop());$("frame").src=file+(w.location.hash||"")}catch(e){$("frame").src=cfg.page}
 }
 function changed(page){saveCfg();buildStore(true);if(page){cfg.page=page;saveCfg();markNav();$("frame").src=page}else reloadFrame()}
 function timeChanged(){saveCfg();applyTime();clockInfo();
   seg("day",[...DAYN.map((n,i)=>[i,n])],cfg.real?-1:cfg.day,v=>{cfg.day=v;cfg.real=false;timeChanged()});
   delete host.store.updatesCache;reloadFrame()}
-host.onFrameLoad=file=>{cfg.page=file;saveCfg();markNav()};
+host.onFrameLoad=file=>{cfg.page=pageName(file);saveCfg();markNav()};
 
 $("first").oninput=$("last").oninput=()=>{cfg.first=$("first").value.trim()||"יוסי";cfg.last=$("last").value.trim();clearTimeout(window.__nt);window.__nt=setTimeout(()=>changed(),600)};
 $("eng").onchange=e=>{cfg.eng=e.target.value;changed()};
@@ -347,7 +352,7 @@ $("samples").onchange=e=>{cfg.samples=e.target.checked;saveCfg();delete host.sto
 $("goStaff").onclick=()=>go("staff.html");
 $("rePop").onclick=()=>{delete host.store.updatesSeen;go("index.html")};
 $("newStudent").onclick=()=>{for(const k of Object.keys(host.store))delete host.store[k];cfg.page="index.html";saveCfg();markNav();$("frame").src="index.html"};
-$("reset").onclick=()=>{if(!confirm("לאפס את הדמו להגדרות ההתחלה?"))return;cfg=Object.assign({},DEF,{day:cfg.day});host.staffUpdates=[];host.codes={};host.staffUsers=host.staffUsers.slice(0,2);saveCfg();panel();applyTime();buildStore(false);$("frame").src="index.html"};
+$("reset").onclick=()=>{if(!confirm("לאפס את הדמו להגדרות ההתחלה?"))return;cfg=Object.assign({},DEF,{day:cfg.day});host.staffUpdates=[];host.codes={};Object.assign(host,JSON.parse(INITIAL));saveCfg();applyTime();panel();buildStore(false);$("frame").src="index.html"};
 $("tglPanel").onclick=()=>{const c=$("panel").classList.toggle("closed");$("tglPanel").textContent=c?"הצג":"הסתר"};
 $("selfUrl").textContent=location.href.split("#")[0];
 
@@ -355,7 +360,7 @@ $("selfUrl").textContent=location.href.split("#")[0];
 function fit(){const s=$("stage"),ph=$("phone");if(innerWidth<=820){ph.style.transform="";return}const k=Math.min(1,(s.clientHeight-30)/820,(s.clientWidth-30)/390);ph.style.transform=`scale(${k})`}
 addEventListener("resize",fit);
 
-panel();applyTime();buildStore(false);fit();
+applyTime();panel();buildStore(false);fit(); // קודם השעה של הדמו, ואז הלוח (כדי שהשעון יראה מיד את שעת הדמו)
 $("frame").src=cfg.page||"index.html";
 </script>
 </body>

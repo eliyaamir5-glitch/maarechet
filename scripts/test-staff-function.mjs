@@ -317,3 +317,58 @@ ok("teachers can't see stats", r.status === 403);
 r = await call("/api/feed", { body: { action: "release", name: "יוסי כהן", cls: "y2", reason: "רופא שיניים", from: "11:00", parent: "אבא" } });
 r = await call("/api/staff", { body: { action: "releasesList" }, token: eTok });
 ok("signed release shows for staff", r.json.releases.some(x => x.name === "יוסי כהן" && x.reason === "רופא שיניים"));
+
+// ---- אבטחה (מעבר יסודי 25.10) ----
+// אי אפשר לנחש קודים של אחרים דרך "קוד תפוס": כל בדיקה נספרת, ואחרי 20 – נעילה
+{
+  let locked = false;
+  let tok = eTok;
+  for (let i = 0; i < 25; i++) { const x = await call("/api/staff", { body: { action: "updateMe", code: "guess" + String(i).padStart(4, "0") }, token: tok, ip: "66.0.0.1" }); if (x.json.token) tok = x.json.token; if (x.status === 429) { locked = true; break; } }
+  ok("guessing codes via 'code taken' gets locked out", locked);
+}
+// 60 ניסיונות כניסה במקביל מאותה כתובת – הנעילה תופסת
+{
+  const rs = await Promise.all(Array.from({ length: 40 }, (_, i) => call("/api/staff", { body: { action: "login", code: "WRONG" + i }, ip: "77.0.0.1" })));
+  ok("parallel wrong logins are locked out too", rs.filter(x => x.status === 429).length >= 15, rs.map(x => x.status).join(","));
+}
+r = await call("/api/staff", { body: { action: "login", code: "x".repeat(500) }, ip: "78.0.0.1" });
+ok("absurdly long code rejected fast", r.status === 401);
+// שחרור עם תאריך לא תקין
+r = await call("/api/feed", { body: { action: "release", name: "x", cls: "y1", date: "__proto__" } });
+ok("release with a fake date is refused", r.status === 400);
+// אירוע: תאריך שלא קיים
+r = await call("/api/staff", { body: { action: "eventCreate", title: "x", date: "2099-99-99" }, token: t3 });
+ok("event with an impossible date is refused", r.status === 400);
+// בפיד אין מזהים פנימיים של אירועים
+await call("/api/staff", { body: { action: "eventCreate", title: "בדיקה", date: "2099-02-02" }, token: t3 });
+r = await call("/api/feed", { method: "GET" });
+ok("public events don't leak author ids", r.json.events.every(e => !("authorId" in e) && !("createdAt" in e)));
+// יום הולדת – המנהל יכול להסיר
+await call("/api/feed", { body: { action: "birthday", device: "device-cccc-3333", name: "שם לא מתאים", cls: "y1", md: "01-01" } });
+r = await call("/api/staff", { body: { action: "bdList" }, token: t3 });
+const bk = r.json.birthdays.find(x => x.name === "שם לא מתאים");
+await call("/api/staff", { body: { action: "bdDelete", key: bk.key }, token: t3 });
+r = await call("/api/staff", { body: { action: "bdList" }, token: t3 });
+ok("principal can remove a birthday entry", !r.json.birthdays.some(x => x.name === "שם לא מתאים"));
+r = await call("/api/staff", { body: { action: "addUser", name: "מורה לבדיקה" }, token: t3 });
+r = await call("/api/staff", { body: { action: "login", code: r.json.code }, ip: "79.0.0.1" });
+r = await call("/api/staff", { body: { action: "bdList" }, token: r.json.token });
+ok("teachers can't list birthdays", r.status === 403);
+// ספר טלפונים: שמות שמורים
+r = await call("/api/contacts", { body: { action: "set", name: "__proto__", phone: "0501234567" }, token: t3 });
+ok("reserved names refused in the phone book", r.status === 400);
+// סטטיסטיקה: מקצוע בשם "constructor" לא שובר את הספירה
+await call("/api/feed", { body: { action: "ping", device: "device-dddd-4444", cls: "y2", risk: ["constructor", "אנגלית"] } });
+r = await call("/api/staff", { body: { action: "stats" }, token: t3 });
+ok("stats ignore prototype-named subjects", r.json.classes.y2 && !Object.hasOwn(r.json.classes.y2.risk, "constructor") && r.json.classes.y2.risk["אנגלית"] >= 1);
+// login/me מחזירים את יכולות השרת
+r = await call("/api/staff", { body: { action: "me" }, token: t3 });
+ok("server tells the staff page what it supports", r.json.caps && r.json.caps.feed === true);
+// שאלה שהוסתרה בטעות – אפשר להחזיר
+r = await call("/api/feed", { body: { action: "ask", text: "שאלה שהוסתרה בטעות", to: "כללי", cls: "y1" } });
+r = await call("/api/staff", { body: { action: "qList" }, token: t3 });
+const hq = r.json.questions.find(q => q.text === "שאלה שהוסתרה בטעות");
+await call("/api/staff", { body: { action: "qHide", id: hq.id }, token: t3 });
+await call("/api/staff", { body: { action: "qRestore", id: hq.id }, token: t3 });
+r = await call("/api/staff", { body: { action: "qList" }, token: t3 });
+ok("hidden question can be restored", r.json.questions.find(q => q.id === hq.id).status === "new");
