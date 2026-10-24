@@ -162,6 +162,22 @@ const MASHOV_API="https://lucent-crepe-6db22c.netlify.app/api/mashov";
 const MASHOV_SCHOOL={semel:640151,name:"יב\"ע בית יהודה- כפר מימון"};
 // התראה במייל על הרשמה חדשה (שירות Web3Forms). מחרוזת ריקה = כבוי.
 const NOTIFY_KEY="a2ee4160-fcd1-4313-aa96-c06be6cd536f";
+// גרסת האפליקציה ו"מה חדש": כשהגרסה משתנה, תלמידים רואים פעם אחת את מה שנוסף מאז הפעם האחרונה
+const APP_VERSION="2026-10-25";
+const WHATS_NEW=[
+ {v:"2026-10-25",items:[
+  "🧮 מחשבון חכם: משוואות, גרפים, משולשים ואחוזים – עם כל השלבים בעברית",
+  "📞 ספר טלפונים של כל המורים, עם חיפוש שמשלים את השם",
+  "🃏 כרטיסיות חכמות: חזרה חכמה, כתיבת תשובה, כוכב לכרטיס קשה, וסטים מהמורים",
+  "🔊 הקראה בקול בכרטיסיות, ו📖 מילון אנגלית-עברית",
+  "🎬 הודעות מהצוות יכולות לכלול קישורים וסרטונים",
+  "🕰️ זמני היום והדלקת נרות לשבת",
+  "⏱️ זמנים במילים (״שעה וחצי״), ושיעור כפול בשתי שורות",
+  "👤 שם המורה ליד כל מקצוע בנוכחות",
+  "🎨 צבע לאפליקציה וטקסט גדול – בפרופיל",
+  "👨‍👩‍👦 שיתוף המערכת עם ההורים – בפרופיל"
+ ]}
+];
 // פרטי קשר של מי שבנה את האפליקציה – מופיעים בתחתית המסך הראשי ובחלון "כתבו לנו"
 const CONTACT={name:"אליה עמיר",phone:"0535742343",email:"eliya.amir5@gmail.com"};
 const DEFAULT_GEAR={
@@ -172,4 +188,4 @@ const DEFAULT_GEAR={
  "השכלה כללית – חברה":"","השכלה כללית – מורשת":"","חינוך תעבורתי (זהב)":"","לאורו נלך – התנדבות":""
 };
 
-if(typeof module!=="undefined"&&module.exports){module.exports={P,SHACHARIT,MINCHA,ARVIT,ENG,MATH,DAYS_Y1,DAYS_Y2,CLASSES_META,DEFAULT_GEAR,NOTIFY_KEY,MAJORS,MASHOV_API,MASHOV_SCHOOL,SCHOOL_YEAR,NON_BAGRUT,SERVER_BASE,SCHOOL_NAME,SCHOOL_LOGO,CONTACT};}
+if(typeof module!=="undefined"&&module.exports){module.exports={P,SHACHARIT,MINCHA,ARVIT,ENG,MATH,DAYS_Y1,DAYS_Y2,CLASSES_META,DEFAULT_GEAR,NOTIFY_KEY,MAJORS,MASHOV_API,MASHOV_SCHOOL,SCHOOL_YEAR,NON_BAGRUT,SERVER_BASE,SCHOOL_NAME,SCHOOL_LOGO,CONTACT,APP_VERSION,WHATS_NEW};}

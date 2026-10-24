@@ -152,6 +152,8 @@
     },
 
     // ---- חלון קופץ לעדכונים שעוד לא נראו ----
+    // מספר על אייקון האפליקציה (כמו בוואטסאפ) = כמה עדכונים חדשים. עובד בטלפונים ומחשבים שתומכים
+    badge(cls) { try { const n = this.unseen(cls).length; if (navigator.setAppBadge) n ? navigator.setAppBadge(n) : navigator.clearAppBadge(); } catch (e) {} },
     unseen(cls) { const seen = load(SEEN, []); return this.forClass(cls).filter(u => !seen.includes(u.id)); },
     markSeen(ids) {
       const seen = load(SEEN, []);
@@ -181,7 +183,7 @@
         btn.disabled = true;
         await this.fly(c, box, u.id, title, btn, i === queue.length - 1 ? bk : null);
         this._flying = this._flying.filter(x => x !== u.id);
-        this.markSeen([u.id]);
+        this.markSeen([u.id]); this.badge(cls);
       }
       ov.remove();
       document.documentElement.classList.remove("upd-lock");
@@ -220,7 +222,7 @@
       const draw = () => { if (!this._popping) this.render(box, getCls()); };
       const tryPop = () => { if (ok() && !document.hidden) this.popup(box, getCls()); };
       draw();
-      const tick = async () => { await this.refresh(); draw(); tryPop(); }; // מציירים גם אם הרענון נכשל, כדי להעלים עדכונים שפג תוקפם
+      const tick = async () => { await this.refresh(); draw(); tryPop(); this.badge(getCls()); }; // מציירים גם אם הרענון נכשל, כדי להעלים עדכונים שפג תוקפם
       setTimeout(tryPop, 700); // מהמטמון, מיד בפתיחה
       tick();
       setInterval(tick, 60e3);

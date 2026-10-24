@@ -1,0 +1,65 @@
+{
+ "name": "המערכת שלי",
+ "short_name": "המערכת",
+ "id": "./",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#0f1226",
+ "theme_color": "#5b6cff",
+ "dir": "rtl",
+ "lang": "he",
+ "icons": [
+  {
+   "src": "icon-180.png",
+   "sizes": "180x180",
+   "type": "image/png"
+  }
+ ],
+ "shortcuts": [
+  {
+   "name": "מחשבון חכם",
+   "short_name": "מחשבון",
+   "url": "./calc.html",
+   "icons": [
+    {
+     "src": "icon-180.png",
+     "sizes": "180x180"
+    }
+   ]
+  },
+  {
+   "name": "ספר טלפונים",
+   "short_name": "טלפונים",
+   "url": "./phones.html",
+   "icons": [
+    {
+     "src": "icon-180.png",
+     "sizes": "180x180"
+    }
+   ]
+  },
+  {
+   "name": "כרטיסיות",
+   "short_name": "כרטיסיות",
+   "url": "./cards.html",
+   "icons": [
+    {
+     "src": "icon-180.png",
+     "sizes": "180x180"
+    }
+   ]
+  },
+  {
+   "name": "נוכחות",
+   "short_name": "נוכחות",
+   "url": "./absences.html",
+   "icons": [
+    {
+     "src": "icon-180.png",
+     "sizes": "180x180"
+    }
+   ]
+  }
+ ]
+}

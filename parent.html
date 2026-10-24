@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#5b6cff">
+<meta name="robots" content="noindex">
+<title>המערכת – להורים</title>
+<script src="demo-shim.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f2fb;--card:#fff;--ink:#191b33;--muted:#6c7093;--line:#e3e2f2;--next:#e5e9ff;--break:#eceaf7;--accent:#5b6cff;--free:#1fb57a;--grad:linear-gradient(135deg,#5b6cff 0%,#a259ff 60%,#ff6bd6 100%)}
+@media (prefers-color-scheme: dark){:root{--bg:#0f1226;--card:#1d2247;--ink:#f4f5ff;--muted:#9aa0c7;--line:#2b3162;--next:#243a8a;--break:#2a2f5c;--accent:#7c8cff;--free:#3ddc97}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Rubik,"Segoe UI",Arial,sans-serif}
+.top{background:var(--grad);color:#fff;padding:calc(18px + env(safe-area-inset-top)) 18px 18px;border-radius:0 0 28px 28px}
+.top small{display:block;font-size:13px;opacity:.85}
+.top h1{margin:4px 0 2px;font-size:25px;font-weight:900}
+.top p{margin:0;font-size:14px;opacity:.9}
+main{padding:14px 14px 40px;max-width:560px;margin:0 auto}
+.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 12px}
+.tabs button{flex:0 0 auto;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:14px;margin-bottom:10px}
+.card h2{margin:0 0 6px;font-size:16px;font-weight:900}
+.bring{display:flex;flex-wrap:wrap;gap:6px}
+.bring span{background:var(--break);border-radius:999px;padding:5px 11px;font-size:14px}
+.ls{display:grid;grid-template-columns:56px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.ls:first-of-type{border-top:none}
+.ls .t{font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);line-height:1.4}
+.ls .t b{display:block;color:var(--ink);font-size:16px}
+.ls .n{font-weight:700;font-size:16px}
+.ls .w{font-size:13px;color:var(--muted);margin-top:2px}
+.ls.now{background:var(--next);border-radius:12px;padding:10px 8px;border-top-color:transparent}
+.ls.now .n::after{content:" · עכשיו";color:var(--free);font-size:13px}
+.ls.done{opacity:.5}
+.ls.pray .n{font-weight:500;color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:24px 8px;line-height:1.6}
+.foot{text-align:center;font-size:12px;color:var(--muted);line-height:1.7;margin-top:16px}
+.foot a{color:var(--accent);font-weight:700;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="top"><small id="school"></small><h1 id="title">המערכת</h1><p id="sub"></p></div>
+<main>
+  <div id="updates" hidden></div>
+  <div class="tabs" id="tabs"></div>
+  <div id="body"></div>
+  <div class="foot">👨‍👩‍👦 עמוד צפייה להורים · מתעדכן לבד<br>בלי ציונים, בלי חיסורים, ובלי שום מידע אישי מעבר לשם והכיתה.<br><a href="./">לאפליקציה המלאה ←</a></div>
+</main>
+<script src="data.js"></script>
+<script src="updates.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+// הפרטים מגיעים בקישור (#p=...): שם, כיתה, הקבצות ומגמה. שום דבר לא נשמר בשרת
+let p=null;
+try{const m=location.hash.match(/p=([\w-]+)/);if(m){const s=m[1].replace(/-/g,"+").replace(/_/g,"/");p=JSON.parse(decodeURIComponent(escape(atob(s+"===".slice((s.length+3)%4)))))}}catch(e){p=null}
+const DAYN=["ראשון","שני","שלישי","רביעי","חמישי","שישי"];
+const toMin=t=>{const[a,b]=t.split(":").map(Number);return a*60+b};
+const clean=t=>String(t||"").replace(/\s*\(.*\)\s*$/,"").trim();
+function lessonsOf(d){
+  return (d.lessons||[]).map(l=>{
+    if(l.key==="eng")return {...l,w:clean(ENG[p.e])};
+    if(l.key==="math")return {...l,w:clean(MATH[p.m])};
+    if(l.key==="major"){const m=MAJORS[p.j];return m?{...l,n:"מגמת "+m.n,w:m.w}:l}
+    return l;
+  });
+}
+const gearOf=n=>String(DEFAULT_GEAR[n]||"").split(",").map(x=>x.trim()).filter(Boolean);
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+let day=Math.min(new Date().getDay(),5);
+function draw(){
+  if(!p||!CLASSES_META[p.c]){$("title").textContent="הקישור לא תקין";$("body").innerHTML=`<div class="empty">בקשו מהבן לשלוח שוב את הקישור מהאפליקציה (פרופיל ← "שליחת קישור להורים").</div>`;return}
+  const meta=CLASSES_META[p.c],days=p.c==="y1"?DAYS_Y1:DAYS_Y2;
+  $("school").textContent=SCHOOL_NAME||"";
+  $("title").textContent=`המערכת של ${p.f||""} ${p.l||""}`.trim();
+  $("sub").textContent=`כיתה ${meta.label} · מחנך: ${meta.rav}`;
+  const today=new Date().getDay();
+  $("tabs").innerHTML=DAYN.slice(0,days.length).map((n,i)=>(days[i]&&(days[i].lessons||[]).length)?`<button data-d="${i}" class="${i===day?"on":""}">${n}${i===today?" · היום":""}</button>`:"").join("");
+  $("tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{day=+b.dataset.d;draw()});
+  // חופשה?
+  const d0=new Date();d0.setDate(d0.getDate()+(day-today));
+  const off=(SCHOOL_YEAR.off||[]).find(o=>iso(d0)>=o.from&&iso(d0)<=o.to);
+  if(off){$("body").innerHTML=`<div class="card empty">🎉 ${esc(off.label)} – אין לימודים</div>`;return}
+  const L=lessonsOf(days[day]||{}),nowM=d0.getHours?new Date().getHours()*60+new Date().getMinutes():0;
+  if(!L.length){$("body").innerHTML=`<div class="card empty">אין לימודים ביום הזה.</div>`;return}
+  const bring=[...new Set(L.flatMap(l=>gearOf(l.n)))];
+  let h=bring.length?`<div class="card"><h2>🎒 מה להביא ${day===today?"היום":"ביום "+DAYN[day]}</h2><div class="bring">${bring.map(x=>`<span>${esc(x)}</span>`).join("")}</div></div>`:"";
+  h+=`<div class="card"><h2>🗓️ יום ${DAYN[day]}</h2>${L.map(l=>{
+    const s=toMin(l.s),e=toMin(l.e),cls=day===today?(nowM>=s&&nowM<e?"now":nowM>=e?"done":""):"";
+    return `<div class="ls ${cls} ${/תפילת|ערבית/.test(l.n)?"pray":""}"><div class="t"><b>${l.s}</b>${l.e}</div><div><div class="n">${esc(l.n)}</div>${l.w?`<div class="w">${esc(l.w)}</div>`:""}</div></div>`}).join("")}</div>`;
+  $("body").innerHTML=h;
+}
+draw();setInterval(draw,60e3);
+// הודעות מהצוות לכיתה (לקריאה בלבד)
+if(p&&window.Updates){Updates.refresh().then(()=>Updates.render($("updates"),p.c))}
+</script>
+</body>
+</html>

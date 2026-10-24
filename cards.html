@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#5b6cff">
 <title>כרטיסיות</title>
 <script src="demo-shim.js"></script>
+<script src="theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
@@ -99,6 +100,25 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
 /* כרטיס: כוכב בפינה, לא מתהפך עם הכרטיס */
 .flip{position:relative}
 .flip .st{position:absolute;top:8px;left:10px;z-index:2;font-size:24px;padding:6px}
+/* הקראה בקול */
+.say{background:var(--break);border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;flex:0 0 auto}
+.flip .say{position:absolute;top:8px;right:10px;z-index:2}
+.qrow{display:flex;align-items:center;justify-content:center;gap:10px}
+.qrow .q{flex:1}
+/* מילון */
+.dword{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dword b{font-size:26px;font-weight:900}
+.dword span{color:var(--muted);font-size:15px}
+.dword .dsay{margin-inline-start:auto}
+.dtr,#dHist{display:flex;gap:6px;flex-wrap:wrap}
+#dHist{margin-top:8px}
+.dchip{border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:7px 13px;font:inherit;font-size:15px;cursor:pointer}
+.dchip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.dmean{font-size:14px;line-height:1.5;margin-top:6px;text-align:left}
+.dmean i{color:var(--accent);font-weight:700}
+.dex{color:var(--muted);font-style:italic;margin-top:2px}
+.msg{font-size:14px;margin-top:8px;min-height:18px;color:var(--free)}
+.msg a{color:var(--accent);font-weight:700}
 /* כתיבת תשובה */
 #wIn{margin-top:4px;text-align:center;font-size:19px}
 #wIn:placeholder-shown{direction:rtl}
@@ -119,6 +139,7 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
 <!-- רשימת סטים -->
 <section id="vHome">
   <button class="btn primary" id="btnNew">＋ סט חדש</button>
+  <button class="btn ghost" id="btnDict">📖 מילון אנגלית-עברית</button>
   <div class="sec">הסטים שלי</div><div id="mySets"></div>
   <div class="sec">סטים של הכיתה <small style="font-weight:400">· מהמורים</small></div><div id="classSets"></div>
 </section>
@@ -162,7 +183,7 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
 <section id="vFlash" hidden>
   <div class="cnt"><span id="fPos"></span><span id="fKnown"></span></div>
   <div class="prog"><i id="fBar"></i></div>
-  <div class="flip" id="flip"><button class="st" id="fStar" aria-label="סמן ככרטיס קשה">☆</button><div class="in"><div class="face front" id="fFront"></div><div class="face back" id="fBack"></div></div></div>
+  <div class="flip" id="flip"><button class="st" id="fStar" aria-label="סמן ככרטיס קשה">☆</button><button class="say" id="fSay" aria-label="הקראה בקול">🔊</button><div class="in"><div class="face front" id="fFront"></div><div class="face back" id="fBack"></div></div></div>
   <p class="hint center">לחיצה על הכרטיס הופכת אותו</p>
   <div class="row"><button class="btn badb" id="fNo">✗ לא ידעתי</button><button class="btn good" id="fYes">✓ ידעתי</button></div>
   <button class="btn ghost" id="fQuit">סיום</button>
@@ -173,7 +194,7 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
   <div class="cnt"><span id="wPos"></span><span id="wScore"></span></div>
   <div class="prog"><i id="wBar"></i></div>
   <div class="card">
-    <div class="q" id="wQ"></div>
+    <div class="qrow"><div class="q" id="wQ"></div><button class="say" id="wSay" aria-label="הקראה בקול">🔊</button></div>
     <input class="inp" id="wIn" dir="auto" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="מה התשובה?">
     <div class="fb" id="wFb" hidden></div>
     <div class="row"><button class="btn ghost" id="wSkip">לא יודע</button><button class="btn primary" id="wGo">בדוק</button></div>
@@ -186,7 +207,7 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
 <section id="vQuiz" hidden>
   <div class="cnt"><span id="qPos"></span><span id="qScore"></span></div>
   <div class="prog"><i id="qBar"></i></div>
-  <div class="card"><div class="q" id="qQ"></div><div id="qOpts"></div></div>
+  <div class="card"><div class="qrow"><div class="q" id="qQ"></div><button class="say" id="qSay" aria-label="הקראה בקול">🔊</button></div><div id="qOpts"></div></div>
   <button class="btn ghost" id="qQuit">סיום</button>
 </section>
 
@@ -195,6 +216,16 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
   <div class="cnt"><span id="mLeft"></span><span id="mTime">0.0</span></div>
   <div class="grid" id="mGrid"></div>
   <button class="btn ghost" id="mQuit">סיום</button>
+</section>
+
+<!-- מילון -->
+<section id="vDict" hidden>
+  <div class="card">
+    <h2>📖 מילון אנגלית-עברית</h2><p class="hint">מקלידים מילה באנגלית או בעברית. מילה שרוצים לזכור – מוסיפים לסט "המילים שלי" ומתרגלים בכרטיסיות.</p>
+    <div class="row" style="align-items:center"><input class="inp" id="dIn" dir="auto" placeholder="למשל: environment" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search"><button class="btn primary" id="dGo" style="width:auto;margin:0;flex:0 0 auto">חפש</button></div>
+    <div id="dHist"></div>
+  </div>
+  <div id="dOut"></div>
 </section>
 
 <!-- סיכום -->
@@ -213,10 +244,10 @@ textarea{min-height:120px;resize:vertical;direction:rtl}
 <script src="card-editor.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const VIEWS=["vHome","vEdit","vSet","vFlash","vWrite","vQuiz","vMatch","vDone"];
+const VIEWS=["vHome","vEdit","vSet","vFlash","vWrite","vQuiz","vMatch","vDone","vDict"];
 let qTimer=null;
 function show(v){clearTimeout(qTimer);if(v!=="vMatch")clearInterval(mTimer);VIEWS.forEach(x=>$(x).hidden=x!==v);window.scrollTo(0,0);$("back").textContent=v==="vHome"?"🏠 חזרה למערכת":"→ חזרה"}
-$("back").onclick=()=>{const v=VIEWS.find(x=>!$(x).hidden);if(v==="vHome")location.href="./";else if(v==="vSet"||v==="vEdit")home();else openSet(cur.id)};
+$("back").onclick=()=>{const v=VIEWS.find(x=>!$(x).hidden);if(v==="vHome")location.href="./";else if(v==="vSet"||v==="vEdit"||v==="vDict")home();else openSet(cur.id)};
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
@@ -396,7 +427,7 @@ function drawFlash(){
   else{$("fPos").textContent=`${fi+1} / ${fq.length}`;$("fKnown").textContent=`ידעת ${knownN(cur)} מתוך ${cur.cards.length}`}
   $("fBar").style.width=Math.round(100*fi/fq.length)+"%";
 }
-$("flip").onclick=e=>{if(!e.target.closest(".st"))$("flip").classList.toggle("on")};
+$("flip").onclick=e=>{if(!e.target.closest(".st,.say"))$("flip").classList.toggle("on")};
 $("fStar").onclick=()=>{const c=cur.cards[fq[fi]];toggleStar(cur,c);$("fStar").textContent=starred(cur,c)?"⭐":"☆"};
 $("fYes").onclick=()=>{mark(cur,cur.cards[fq[fi]],true);fi++;drawFlash()};
 $("fNo").onclick=()=>{
@@ -505,6 +536,80 @@ function finish(mode){
     set(rec?"⚡":"⏱️",`${t} שניות`,rec?"שיא חדש!":`השיא שלך: ${prev} שניות`,"עוד פעם",startMatch)}
 }
 $("dBack").onclick=()=>openSet(cur.id);
+
+
+// ---- 🔊 הקראה בקול (הקול של הטלפון עצמו) ----
+const canSay="speechSynthesis" in window;
+function say(text){
+  if(!canSay||!text)return;
+  try{
+    speechSynthesis.cancel();
+    const he=/[\u0590-\u05FF]/.test(text),u=new SpeechSynthesisUtterance(String(text).replace(/[()\/]/g," "));
+    u.lang=he?"he-IL":"en-US";u.rate=he?1:.9;
+    const v=speechSynthesis.getVoices().find(x=>x.lang&&x.lang.toLowerCase().startsWith(he?"he":"en-us"))||speechSynthesis.getVoices().find(x=>x.lang&&x.lang.toLowerCase().startsWith(he?"iw":"en"));
+    if(v)u.voice=v;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+if(canSay){try{speechSynthesis.getVoices()}catch(e){}}
+document.querySelectorAll(".say").forEach(b=>b.hidden=!canSay);
+$("fSay").onclick=e=>{e.stopPropagation();const c=cur.cards[fq[fi]];say($("flip").classList.contains("on")?c.d:c.t)};
+$("wSay").onclick=()=>say($("wQ").textContent);
+$("qSay").onclick=()=>say($("qQ").textContent);
+
+// ---- 📖 מילון אנגלית-עברית ----
+// תרגום: MyMemory (חינמי, בלי מפתח). הגייה והגדרה: dictionaryapi.dev (מילון אנגלי פתוח).
+const MYWORDS="mywords";
+function myWordsSet(){let s=mySets.find(x=>x.id===MYWORDS);if(!s){s={id:MYWORDS,title:"📖 המילים שלי",subject:"אנגלית",cards:[],created:Date.now()};mySets.unshift(s)}return s}
+let dPick=null,dWord="",dAudio=null;
+function dictHist(){const h=load("dictHist",[]);$("dHist").innerHTML=h.map(w=>`<button class="dchip" data-w="${esc(w)}">${esc(w)}</button>`).join("");$("dHist").querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{$("dIn").value=b.dataset.w;lookup()})}
+function openDict(){show("vDict");dictHist();setTimeout(()=>$("dIn").focus(),100)}
+$("btnDict").onclick=openDict;
+async function getJSON(url,ms=7000){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{const r=await fetch(url,{signal:c.signal});return r.ok?await r.json():null}catch(e){return null}finally{clearTimeout(t)}}
+async function lookup(){
+  const w=$("dIn").value.trim();if(!w)return;
+  const he=/[\u0590-\u05FF]/.test(w);dWord=w;dPick=null;dAudio=null;
+  $("dOut").innerHTML=`<div class="card center hint">מחפש…</div>`;
+  const h=load("dictHist",[]).filter(x=>x.toLowerCase()!==w.toLowerCase());h.unshift(w);save("dictHist",h.slice(0,10));dictHist();
+  const [tr,def]=await Promise.all([
+    getJSON(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(w)}&langpair=${he?"he|en":"en|he"}`),
+    he?null:getJSON(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(w.toLowerCase())}`),
+  ]);
+  if(!tr&&!def){$("dOut").innerHTML=`<div class="card"><p class="err">אין חיבור לאינטרנט, או שהשירות לא זמין כרגע. אפשר לנסות שוב, או לחפש במורפיקס:</p><a class="btn ghost" style="display:block;text-align:center;text-decoration:none" href="https://www.morfix.co.il/${encodeURIComponent(w)}" target="_blank" rel="noopener">חיפוש במורפיקס ↗</a></div>`;return}
+  // תרגומים: מנקים, מסירים כפילויות, ומשאירים רק בשפה הנכונה
+  const want=he?/[a-z]/i:/[\u0590-\u05FF]/;
+  const raw=tr?[tr.responseData&&tr.responseData.translatedText,...(tr.matches||[]).sort((a,b)=>(b.quality||0)-(a.quality||0)).map(m=>m.translation)]:[];
+  const seen=new Set(),trans=[];
+  for(let t of raw){if(!t)continue;t=String(t).replace(/<[^>]*>/g,"").replace(/[.!?;:"״]+$/,"").trim();const k=t.toLowerCase();if(t.length>40||!want.test(t)||seen.has(k)||k===w.toLowerCase())continue;seen.add(k);trans.push(t);if(trans.length>=4)break}
+  dPick=trans[0]||null;
+  const e=Array.isArray(def)?def[0]:null;
+  const phon=e&&(e.phonetic||(e.phonetics||[]).map(x=>x.text).find(Boolean));
+  dAudio=e&&(e.phonetics||[]).map(x=>x.audio).find(Boolean)||null;
+  let meanings=e?(e.meanings||[]).slice(0,2).map(m=>({pos:m.partOfSpeech,d:(m.definitions||[])[0]||{}})):[];
+  // גיבוי: ויקימילון, אם המילון הראשון לא זמין
+  if(!meanings.length&&!he){const wk=await getJSON(`https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(w.toLowerCase())}`);
+    if(wk&&Array.isArray(wk.en))meanings=wk.en.slice(0,2).map(x=>({pos:String(x.partOfSpeech||"").toLowerCase(),d:{definition:String(((x.definitions||[])[0]||{}).definition||"").replace(/<[^>]+>/g,"").trim()}})).filter(m=>m.d.definition)}
+  const POS={noun:"שם עצם",verb:"פועל",adjective:"תואר",adverb:"תואר הפועל",preposition:"מילת יחס",conjunction:"מילת חיבור",pronoun:"כינוי"};
+  $("dOut").innerHTML=`<div class="card">
+    <div class="dword"><b dir="auto">${esc(w)}</b>${phon?`<span dir="ltr">${esc(phon)}</span>`:""}<button class="say dsay" id="dSay" aria-label="השמעה">🔊</button></div>
+    ${trans.length?`<div class="sec" style="margin-top:10px">${he?"באנגלית":"בעברית"}</div><div class="dtr">${trans.map((t,i)=>`<button class="dchip ${i?"":"on"}" data-t="${esc(t)}" dir="auto">${esc(t)}</button>`).join("")}</div>`:`<p class="hint">לא נמצא תרגום. אפשר לחפש במורפיקס.</p>`}
+    ${meanings.length?`<div class="sec">הגדרה באנגלית</div>${meanings.map(m=>`<div class="dmean" dir="ltr"><i>${esc(m.pos||"")}</i>${POS[m.pos]?` <small>(${POS[m.pos]})</small>`:""} – ${esc(m.d.definition||"")}${m.d.example?`<div class="dex">"${esc(m.d.example)}"</div>`:""}</div>`).join("")}`:""}
+    ${trans.length?`<button class="btn good" id="dAdd">＋ הוספה ל"המילים שלי"</button>`:""}
+    <div class="row"><a class="btn ghost" style="text-align:center;text-decoration:none" href="https://www.morfix.co.il/${encodeURIComponent(w)}" target="_blank" rel="noopener">מורפיקס ↗</a><a class="btn ghost" style="text-align:center;text-decoration:none" href="https://translate.google.com/?sl=${he?"iw":"en"}&tl=${he?"en":"iw"}&text=${encodeURIComponent(w)}" target="_blank" rel="noopener">Google ↗</a></div>
+    <div class="msg" id="dMsg"></div></div>`;
+  $("dOut").querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{dPick=b.dataset.t;$("dOut").querySelectorAll("[data-t]").forEach(x=>x.classList.toggle("on",x===b))});
+  $("dSay").hidden=!canSay&&!dAudio;
+  $("dSay").onclick=()=>{if(dAudio){try{new Audio(dAudio).play().catch(()=>say(w));return}catch(e){}}say(w)};
+  if($("dAdd"))$("dAdd").onclick=()=>{
+    const s=myWordsSet(),en=he?dPick:w,hb=he?w:dPick;
+    if(s.cards.some(c=>c.t.toLowerCase()===en.toLowerCase())){$("dMsg").textContent="המילה כבר בסט ✓";return}
+    s.cards.push({t:en,d:hb});save("sets",mySets);
+    $("dMsg").innerHTML=`✓ נוספה. יש ${s.cards.length} מילים בסט. <a href="#" id="dOpen">לסט ←</a>`;
+    $("dOpen").onclick=ev=>{ev.preventDefault();openSet(MYWORDS)};
+  };
+}
+$("dGo").onclick=lookup;
+$("dIn").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();lookup()}};
 
 // ---- כניסה: קישור משותף או בית ----
 (async()=>{
