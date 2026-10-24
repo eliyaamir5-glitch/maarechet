@@ -211,6 +211,39 @@ host.contacts=(method,b)=>{if(method==="GET")return{status:200,body:{ok:true,con
   const c={name,phone:String(b.phone||"").trim(),note:String(b.note||""),extra:!!b.extra};host.contactList=[...host.contactList.filter(x=>x.name!==name),c];return{status:200,body:{ok:true,contact:c}}};
 host.sets=()=>({status:200,body:{ok:true,sets:host.staffSets.slice().sort((a,b)=>b.updatedAt-a.updatedAt).map(pubSet)}});
 const newCode=()=>Array.from({length:8},()=>"ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random()*32)]).join("");
+// פיד בדמו: סקר, אירוע, תשובה ויום הולדת לדוגמה (כל הנתונים מדומים)
+host.polls=[{id:"dp1",q:"לאן הטיול השנתי?",options:["צפון – רמת הגולן","דרום – מכתש רמון","ירושלים"],audience:"all",author:"המנהל",authorId:"admin",votes:{0:14,1:9,2:6},voters:{},createdAt:Date.now()-5*3600e3,endsAt:Date.now()+3*864e5}];
+host.events=[{id:"de1",title:"שבת אחים",date:new Date(Date.now()+4*864e5).toISOString().slice(0,10),time:"",place:"בית המדרש",desc:"מביאים שק שינה",audience:"all",author:"המנהל",authorId:"admin"},{id:"de2",title:"טיול שנתי",date:new Date(Date.now()+11*864e5).toISOString().slice(0,10),time:"07:00",place:"יציאה מהשער",desc:"",audience:"all",author:"המנהל",authorId:"admin"}];
+host.questions=[{id:"dq1",text:"מה בדיוק החומר למבחן באנגלית?",to:"אנגלית",cls:"y2",status:"answered",answer:"יחידות 3–4 ואוצר המילים מהדף. בהצלחה!",answeredBy:"המורה לאנגלית",createdAt:Date.now()-864e5,answeredAt:Date.now()-20*3600e3},{id:"dq2",text:"אפשר להגיש את העבודה בהיסטוריה ביום ראשון?",to:"היסטוריה",cls:"y1",status:"new",createdAt:Date.now()-3600e3}];
+host.releases=[{id:"dr1",name:"נועם לוי",cls:"y1",reason:"תור לרופא שיניים",date:new Date().toISOString().slice(0,10),from:"11:00",parent:"אמא של נועם (אמא)",lesson:"היסטוריה",teacher:"הרב הראל עובדיה",at:Date.now()-2*3600e3}];
+const pubPoll=p=>{const counts=p.options.map((_,i)=>p.votes[i]||0);return{id:p.id,q:p.q,options:p.options,audience:p.audience,endsAt:p.endsAt,author:p.author,counts,total:counts.reduce((a,b)=>a+b,0)}};
+host.feed=(method,b)=>{const t=now(),ok=x=>({status:200,body:{ok:true,...x}});
+  if(method==="GET"){const up=host.updates("GET").body.updates,today=new Date(t).toISOString().slice(0,10);
+    return ok({now:t,updates:up,polls:host.polls.filter(p=>p.endsAt>t).map(pubPoll),events:host.events.filter(e=>e.date>=today),
+      answers:host.questions.filter(q=>q.status==="answered").map(q=>({id:q.id,q:q.text,a:q.answer,to:q.to,cls:q.cls,by:q.answeredBy,at:q.answeredAt})),
+      birthdays:[{name:"דניאל אברהם",cls:"y2",md:"",inDays:0},{name:"איתי כהן",cls:"y1",md:"",inDays:2}]})}
+  b=b||{};
+  if(b.action==="vote"){const p=host.polls.find(x=>x.id===b.poll);if(!p)return{status:404,body:{ok:false,error:"not_found"}};if(p.voters[b.device]==null){p.voters[b.device]=b.option;p.votes[b.option]=(p.votes[b.option]||0)+1}return ok({poll:pubPoll(p),mine:p.voters[b.device]})}
+  if(b.action==="ask"){host.questions.unshift({id:"dq"+Math.random().toString(36).slice(2,7),text:String(b.text||""),to:String(b.to||""),cls:b.cls||"",status:"new",createdAt:t});return ok({})}
+  if(b.action==="release"){host.releases.unshift({id:"dr"+Math.random().toString(36).slice(2,7),...b,at:t});return ok({})}
+  return ok({});
+};
+// פעולות הצוות החדשות בדמו
+host.staffExtra=(b,me,admin)=>{const t=now(),ok=x=>({status:200,body:{ok:true,...x}}),err=(s,e)=>({status:s,body:{ok:false,error:e}});
+  switch(b.action){
+    case"pollCreate":{const opts=(b.options||[]).map(x=>String(x).trim()).filter(Boolean);if(!b.q||opts.length<2)return err(400,"bad_request");const p={id:"dp"+Math.random().toString(36).slice(2,7),q:String(b.q),options:opts,audience:b.audience||"all",author:me.name,authorId:me.id,votes:{},voters:{},createdAt:t,endsAt:t+(+b.hours||24)*3600e3};host.polls.unshift(p);return ok({poll:pubPoll(p)})}
+    case"pollList":return ok({polls:host.polls.map(p=>({...pubPoll(p),active:p.endsAt>t,canEdit:admin||p.authorId===me.id}))});
+    case"pollEnd":case"pollDelete":{const p=host.polls.find(x=>x.id===b.id);if(!p)return err(404,"not_found");if(b.action==="pollDelete")host.polls=host.polls.filter(x=>x!==p);else p.endsAt=t-1;return ok({})}
+    case"eventCreate":{if(!b.title||!b.date)return err(400,"bad_request");host.events.push({id:"de"+Math.random().toString(36).slice(2,7),title:b.title,date:b.date,time:b.time||"",place:b.place||"",desc:b.desc||"",audience:b.audience||"all",author:me.name,authorId:me.id});return ok({})}
+    case"eventList":return ok({events:host.events.slice().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).map(e=>({...e,canEdit:admin||e.authorId===me.id})),today:new Date(t).toISOString().slice(0,10)});
+    case"eventDelete":host.events=host.events.filter(e=>e.id!==b.id);return ok({});
+    case"qList":return ok({questions:host.questions});
+    case"qAnswer":case"qHide":case"qDelete":{const q=host.questions.find(x=>x.id===b.id);if(!q)return err(404,"not_found");if(b.action==="qDelete")host.questions=host.questions.filter(x=>x!==q);else if(b.action==="qHide")q.status="hidden";else Object.assign(q,{status:"answered",answer:b.answer,answeredBy:me.name,answeredAt:t});return ok({})}
+    case"releasesList":return ok({releases:host.releases,today:new Date(t).toISOString().slice(0,10)});
+    case"stats":return admin?ok({classes:{y1:{active:21,mashov:15,risk:{"אנגלית":2},warn:{"גמרא":3,"היסטוריה":1}},y2:{active:24,mashov:19,risk:{},warn:{"מתמטיקה":2}}}}):err(403,"forbidden");
+  }
+  return null;
+};
 host.staff=(method,b,token)=>{
   const ok=x=>({status:200,body:{ok:true,...x}}),err=(s,e)=>({status:s,body:{ok:false,error:e}});
   if(method==="GET")return ok({needsSetup:false});
@@ -218,6 +251,7 @@ host.staff=(method,b,token)=>{
   if(b.action==="login"){const id=host.codes[String(b.code||"").trim().toUpperCase()]||"admin";const u=host.staffUsers.find(x=>x.id===id)||host.staffUsers[0];return ok({token:"demo:"+u.id,user:u})}
   const me=host.staffUsers.find(x=>"demo:"+x.id===token);if(!me)return err(401,"auth");
   const admin=me.role==="admin",t=now();
+  {const x=host.staffExtra(b,me,admin);if(x)return x}
   switch(b.action){
     case"me":return ok({user:me});
     case"updateMe":{const n=b.name!=null?String(b.name).trim().slice(0,40):me.name;if(!n||(b.code!=null&&String(b.code).trim().length<6))return err(400,"bad_request");me.name=n;return ok({user:me})}

@@ -260,3 +260,60 @@ ok("students see all numbers", r.json.contacts.length === 3 && r.json.contacts.f
 r = await call("/api/contacts", { body: { action: "remove", code: "PHON-1234", name: "מזכירות" } });
 r = await call("/api/contacts", { method: "GET" });
 ok("remove works", r.json.contacts.length === 2 && !r.json.contacts.some(c => c.name === "מזכירות"));
+
+// ---- פיד: עדכון מתוזמן, סקרים, אירועים, שאלות, ימי הולדת, סטטיסטיקה, שחרורים ----
+const DEV1 = "device-aaaa-1111", DEV2 = "device-bbbb-2222";
+r = await call("/api/staff", { body: { action: "post", text: "מתוזמן למחר", minutes: 60, startsAt: Date.now() + 864e5 }, token: t3 });
+ok("scheduled update saved", r.status === 200 && r.json.update.startsAt > Date.now());
+r = await call("/api/feed", { method: "GET" });
+ok("scheduled update not visible yet", r.status === 200 && !r.json.updates.some(u => u.text === "מתוזמן למחר"));
+r = await call("/api/staff", { body: { action: "list" }, token: t3 });
+ok("staff sees it marked as scheduled", r.json.updates.some(u => u.text === "מתוזמן למחר" && u.scheduled && !u.active));
+r = await call("/api/staff", { body: { action: "post", text: "x", minutes: 60, startsAt: Date.now() + 90 * 864e5 }, token: t3 });
+ok("can't schedule more than 30 days ahead", r.status === 400);
+// סקר
+r = await call("/api/staff", { body: { action: "pollCreate", q: "לאן הטיול?", options: ["צפון", "דרום", ""], audience: "y1", hours: 24 }, token: t3 });
+const pid = r.json.poll && r.json.poll.id;
+ok("poll created (empty option dropped)", r.status === 200 && r.json.poll.options.length === 2);
+r = await call("/api/feed", { body: { action: "vote", poll: pid, option: 1, device: DEV1 } });
+ok("student votes", r.status === 200 && r.json.poll.counts[1] === 1 && r.json.mine === 1);
+r = await call("/api/feed", { body: { action: "vote", poll: pid, option: 0, device: DEV1 } });
+ok("same phone can't vote twice", r.json.poll.total === 1 && r.json.mine === 1);
+r = await call("/api/feed", { body: { action: "vote", poll: pid, option: 0, device: DEV2 } });
+r = await call("/api/feed", { method: "GET" });
+ok("feed shows the poll with counts", r.json.polls[0].counts.join() === "1,1" && !("voters" in r.json.polls[0]));
+// אירוע
+r = await call("/api/staff", { body: { action: "eventCreate", title: "שבת אחים", date: "2099-01-05", time: "18:00", place: "בית המדרש", audience: "all" }, token: t3 });
+ok("event created", r.status === 200);
+r = await call("/api/feed", { method: "GET" });
+ok("feed shows upcoming events", r.json.events.some(e => e.title === "שבת אחים" && e.place === "בית המדרש"));
+// שאלה אנונימית → תשובה
+r = await call("/api/feed", { body: { action: "ask", text: "מה בדיוק בחומר למבחן?", to: "אנגלית", cls: "y2" } });
+ok("student asks anonymously", r.status === 200);
+r = await call("/api/feed", { method: "GET" });
+ok("unanswered question is NOT public", !r.json.answers.length);
+r = await call("/api/staff", { body: { action: "qList" }, token: t3 });
+const qid = r.json.questions[0].id;
+ok("staff sees the question (no name)", r.json.questions[0].text === "מה בדיוק בחומר למבחן?" && !("name" in r.json.questions[0]));
+await call("/api/staff", { body: { action: "qAnswer", id: qid, answer: "יחידות 3–4." }, token: t3 });
+r = await call("/api/feed", { method: "GET" });
+ok("answer published to the class", r.json.answers[0].a === "יחידות 3–4." && r.json.answers[0].cls === "y2");
+// יום הולדת
+const md = new Date(Date.now() + 3 * 3600e3).toISOString().slice(5, 10);
+r = await call("/api/feed", { body: { action: "birthday", device: DEV1, name: "יוסי כהן", cls: "y2", md } });
+r = await call("/api/feed", { method: "GET" });
+ok("birthday today shows (opt-in)", r.json.birthdays.some(x => x.name === "יוסי כהן" && x.inDays === 0));
+await call("/api/feed", { body: { action: "birthday", device: DEV1, remove: true } });
+r = await call("/api/feed", { method: "GET" });
+ok("…and disappears when removed", !r.json.birthdays.length);
+// סטטיסטיקה
+await call("/api/feed", { body: { action: "ping", device: DEV1, cls: "y1", risk: ["אנגלית"], warn: ["גמרא"], mashov: true } });
+await call("/api/feed", { body: { action: "ping", device: DEV2, cls: "y1", risk: ["אנגלית"] } });
+r = await call("/api/staff", { body: { action: "stats" }, token: t3 });
+ok("principal stats: active + at-risk counts, no names", r.json.classes.y1.active === 2 && r.json.classes.y1.risk["אנגלית"] === 2 && r.json.classes.y1.mashov === 1);
+r = await call("/api/staff", { body: { action: "stats" }, token: eTok });
+ok("teachers can't see stats", r.status === 403);
+// שחרור
+r = await call("/api/feed", { body: { action: "release", name: "יוסי כהן", cls: "y2", reason: "רופא שיניים", from: "11:00", parent: "אבא" } });
+r = await call("/api/staff", { body: { action: "releasesList" }, token: eTok });
+ok("signed release shows for staff", r.json.releases.some(x => x.name === "יוסי כהן" && x.reason === "רופא שיניים"));

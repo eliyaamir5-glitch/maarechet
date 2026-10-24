@@ -209,6 +209,18 @@ function sign(){
   drawPermit(permit);permitReady=null;permitBlob();
   $("stParent").hidden=true;$("stDone").hidden=false;window.scrollTo(0,0);
   $("btnToTeacher").onclick=()=>sharePermit(permit);$("btnSave").onclick=()=>savePermit(permit);
+  reportRelease(permit);
+}
+// האישור החתום מופיע גם אצל הצוות (לשונית "שחרורים" בכניסת הצוות)
+async function reportRelease(p){
+  if(window.__DEMO)return;
+  const cls=Object.keys(CLASSES_META).find(k=>CLASSES_META[k].label===p.c);if(!cls)return;
+  try{
+    const r=await fetch(((typeof SERVER_BASE!=="undefined"&&SERVER_BASE)||"")+"/api/feed",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"release",name:p.n,cls,reason:p.r,date:p.d,from:p.t,parent:`${p.pn} (${p.pr})`,lesson:p.l,teacher:p.w})});
+    const j=await r.json().catch(()=>null);
+    if(j&&j.ok){const n=document.createElement("p");n.className="hint";n.style.textAlign="center";n.textContent="✓ האישור נרשם גם אצל צוות הישיבה.";$("stDone").appendChild(n)}
+  }catch(e){}
 }
 
 // ---- שלב 3: ציור השחרורון ----

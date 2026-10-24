@@ -23,7 +23,7 @@
 // תוכן העדכונים הוא טקסט בלבד, והאפליקציה מציגה אותו כטקסט (לא HTML).
 import crypto from "node:crypto";
 
-export const config = { path: ["/api/updates", "/api/staff", "/api/feedback", "/api/sets", "/api/contacts"] };
+export const config = { path: ["/api/updates", "/api/staff", "/api/feedback", "/api/sets", "/api/contacts", "/api/feed"] };
 
 const ALLOWED = [/^https:\/\/eliyaamir5-glitch\.github\.io$/, /^https:\/\/[a-z0-9-]+\.netlify\.app$/, /^http:\/\/localhost(:\d+)?$/];
 const MAX_FEEDBACK = 1000, FEEDBACK_KINDS = ["idea", "bug", "other"], FEEDBACK_PER_HOUR = 30;
@@ -127,7 +127,7 @@ function cleanSet(b) {
   if (!title || cards.length < 2) throw new Fail(400, "bad_request");
   return { title, subject, audience, cards };
 }
-const activeUpdates = (list, now = Date.now()) => (list || []).filter(u => u.expiresAt > now).sort((a, b) => (b.urgent - a.urgent) || (b.createdAt - a.createdAt));
+const activeUpdates = (list, now = Date.now()) => (list || []).filter(u => (u.startsAt || u.createdAt) <= now && u.expiresAt > now).sort((a, b) => (b.urgent - a.urgent) || (b.createdAt - a.createdAt));
 
 // יצירת המנהל הראשי (או איפוס שלו, אם כבר קיים) עם קוד ההזמנה הנוכחי
 async function claim(S, name, code) {
@@ -197,7 +197,7 @@ async function handle(req, context, headers) {
     }
     if (req.method !== "GET") return reply(405, { ok: false, error: "method" }, headers);
     const list = await S.get("updates") || [];
-    const updates = activeUpdates(list).map(u => ({ id: u.id, text: u.text, ...(u.video ? { video: u.video } : {}), author: u.authorName, role: u.role, audience: u.audience, urgent: !!u.urgent, createdAt: u.createdAt, expiresAt: u.expiresAt }));
+    const updates = activeUpdates(list).map(publicUpdate);
     return reply(200, { ok: true, now: Date.now(), updates }, { ...headers, "Cache-Control": "public, max-age=20" });
   }
 
@@ -207,6 +207,9 @@ async function handle(req, context, headers) {
     const sets = (await S.get("sets") || []).slice().sort((a, b) => b.updatedAt - a.updatedAt).map(publicSet);
     return reply(200, { ok: true, sets }, { ...headers, "Cache-Control": "public, max-age=60" });
   }
+
+  // ---- פיד לתלמידים ----
+  if (url.pathname.endsWith("/feed")) return feed(req, S, ip, headers);
 
   // ---- ספר הטלפונים של המורים ----
   if (url.pathname.endsWith("/contacts")) return contacts(req, S, ip, headers);
@@ -324,7 +327,11 @@ async function handle(req, context, headers) {
     // קישור לסרטון (יוטיוב, גוגל דרייב וכו'): התלמיד רואה כפתור ▶️ וצופה רק אם הוא רוצה
     const video = clean(body.video, 400);
     if (video && !/^https:\/\/[^\s<>"']+$/i.test(video)) return reply(400, { ok: false, error: "bad_video" }, headers);
-    const upd = { id: newId(), text, ...(video ? { video } : {}), ...author, postedBy: me.id, postedByName: me.name, audience, urgent: !!body.urgent, createdAt: now, expiresAt: now + minutes * 60e3 };
+    // שליחה מתוזמנת: startsAt בעתיד (עד 30 יום). עד אז התלמידים לא רואים
+    const startsAt = body.startsAt ? Math.round(Number(body.startsAt)) : 0;
+    if (startsAt && !(startsAt > now - 60e3 && startsAt < now + 30 * 864e5)) return reply(400, { ok: false, error: "bad_time" }, headers);
+    const from = startsAt > now ? startsAt : now;
+    const upd = { id: newId(), text, ...(video ? { video } : {}), ...author, postedBy: me.id, postedByName: me.name, audience, urgent: !!body.urgent, createdAt: now, ...(from > now ? { startsAt: from } : {}), expiresAt: from + minutes * 60e3 };
     await S.update("updates", cur => [...(cur || []).filter(u => u.expiresAt > now - 7 * 864e5), upd]); // + ניקוי ישנים
     return reply(200, { ok: true, update: upd }, headers);
   }
@@ -352,7 +359,7 @@ async function handle(req, context, headers) {
     const now = Date.now();
     const views = await S.get("views") || {};
     const list = (await S.get("updates") || []).filter(u => (isAdmin || u.authorId === me.id) && u.expiresAt > now - 3 * 864e5)
-      .sort((a, b) => b.createdAt - a.createdAt).map(u => ({ ...u, active: u.expiresAt > now, views: views[u.id] || 0 }));
+      .sort((a, b) => b.createdAt - a.createdAt).map(u => ({ ...u, active: u.expiresAt > now && (u.startsAt || 0) <= now, scheduled: (u.startsAt || 0) > now, views: views[u.id] || 0 }));
     return reply(200, { ok: true, now, updates: list }, headers);
   }
 
@@ -394,9 +401,89 @@ async function handle(req, context, headers) {
     return reply(200, { ok: true }, headers);
   }
 
+  // ---- סקרים ----
+  if (action === "pollCreate") {
+    const q = clean(body.q, 200), options = strList(body.options, 6, 80), hours = Math.round(Number(body.hours) || 24);
+    const audience = AUDIENCES.includes(body.audience) ? body.audience : "all";
+    if (!q || options.length < 2 || !(hours >= 1 && hours <= 24 * 30)) return reply(400, { ok: false, error: "bad_request" }, headers);
+    const now = Date.now(), p = { id: newId(), q, options, audience, votes: {}, voters: {}, authorId: me.id, authorName: me.name, createdAt: now, endsAt: now + hours * 3600e3 };
+    await S.update("polls", cur => [p, ...(cur || []).filter(x => x.endsAt > now - 30 * 864e5)].slice(0, 200));
+    return reply(200, { ok: true, poll: publicPoll(p) }, headers);
+  }
+  if (action === "pollList") {
+    const now = Date.now();
+    const polls = (await S.get("polls") || []).sort((a, b) => b.createdAt - a.createdAt).map(p => ({ ...publicPoll(p), active: p.endsAt > now, canEdit: isAdmin || p.authorId === me.id }));
+    return reply(200, { ok: true, polls }, headers);
+  }
+  if (action === "pollEnd" || action === "pollDelete") {
+    await S.update("polls", cur => {
+      const list = cur || [], p = list.find(x => x.id === body.id);
+      if (!p) throw new Fail(404, "not_found");
+      if (!isAdmin && p.authorId !== me.id) throw new Fail(403, "forbidden");
+      return action === "pollDelete" ? list.filter(x => x !== p) : list.map(x => x === p ? { ...x, endsAt: Date.now() - 1 } : x);
+    });
+    return reply(200, { ok: true }, headers);
+  }
+  // ---- אירועים (לוח הישיבה) ----
+  if (action === "eventCreate") {
+    const title = clean(body.title, 80), date = String(body.date || ""), time = String(body.time || "");
+    const audience = AUDIENCES.includes(body.audience) ? body.audience : "all";
+    if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date) || (time && !/^\d{2}:\d{2}$/.test(time))) return reply(400, { ok: false, error: "bad_request" }, headers);
+    const e = { id: newId(), title, date, time, place: clean(body.place, 60), desc: clean(body.desc, 300), audience, author: me.name, authorId: me.id, createdAt: Date.now() };
+    const today = israelDay();
+    await S.update("events", cur => [...(cur || []).filter(x => x.date >= israelDay(Date.now() - 30 * 864e5)), e].slice(-300));
+    return reply(200, { ok: true, event: e, past: date < today }, headers);
+  }
+  if (action === "eventList") {
+    const events = (await S.get("events") || []).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)).map(e => ({ ...e, canEdit: isAdmin || e.authorId === me.id }));
+    return reply(200, { ok: true, events, today: israelDay() }, headers);
+  }
+  if (action === "eventDelete") {
+    await S.update("events", cur => {
+      const list = cur || [], e = list.find(x => x.id === body.id);
+      if (!e) throw new Fail(404, "not_found");
+      if (!isAdmin && e.authorId !== me.id) throw new Fail(403, "forbidden");
+      return list.filter(x => x !== e);
+    });
+    return reply(200, { ok: true }, headers);
+  }
+  // ---- שאלות מתלמידים (אנונימיות) ----
+  if (action === "qList") {
+    const qs = (await S.get("questions") || []).sort((a, b) => b.createdAt - a.createdAt);
+    return reply(200, { ok: true, questions: qs }, headers);
+  }
+  if (action === "qAnswer" || action === "qHide" || action === "qDelete") {
+    const answer = clean(body.answer, 800);
+    if (action === "qAnswer" && !answer) return reply(400, { ok: false, error: "bad_request" }, headers);
+    await S.update("questions", cur => {
+      const list = cur || [], q = list.find(x => x.id === body.id);
+      if (!q) throw new Fail(404, "not_found");
+      if (action === "qDelete") return list.filter(x => x !== q);
+      return list.map(x => x !== q ? x : action === "qAnswer" ? { ...x, status: "answered", answer, answeredBy: me.name, answeredAt: Date.now() } : { ...x, status: "hidden" });
+    });
+    return reply(200, { ok: true }, headers);
+  }
+  // ---- שחרורים שההורים חתמו עליהם ----
+  if (action === "releasesList") {
+    const since = Date.now() - 7 * 864e5;
+    return reply(200, { ok: true, releases: (await S.get("releases") || []).filter(r => r.at > since), today: israelDay() }, headers);
+  }
+
   // ---- ניהול: מנהל בלבד ----
   if (!isAdmin) return reply(403, { ok: false, error: "forbidden" }, headers);
   if (action === "users") return reply(200, { ok: true, users: users.map(publicUser) }, headers);
+  if (action === "stats") {
+    // מי השתמש ב-7 הימים האחרונים, ובכמה תלמידים כל מקצוע בסיכון – רק מספרים, בלי שמות
+    const st = await S.get("stats") || {}, since = israelDay(Date.now() - 7 * 864e5), out = {};
+    for (const x of Object.values(st)) {
+      if (x.day < since) continue;
+      const c = out[x.cls] = out[x.cls] || { active: 0, mashov: 0, risk: {}, warn: {} };
+      c.active++; if (x.mashov) c.mashov++;
+      for (const n of x.risk || []) c.risk[n] = (c.risk[n] || 0) + 1;
+      for (const n of x.warn || []) c.warn[n] = (c.warn[n] || 0) + 1;
+    }
+    return reply(200, { ok: true, classes: out }, headers);
+  }
   if (action === "feedback") return reply(200, { ok: true, feedback: await S.get("feedback") || [] }, headers);
   if (action === "feedbackDone" || action === "feedbackDelete") {
     await S.update("feedback", cur => {
@@ -432,6 +519,112 @@ async function handle(req, context, headers) {
       if (list.find(x => x.id === body.id)?.owner) throw new Fail(403, "forbidden");
       return list.filter(x => x.id !== body.id);
     });
+    return reply(200, { ok: true }, headers);
+  }
+  return reply(400, { ok: false, error: "bad_action" }, headers);
+}
+
+// ---------- פיד לתלמידים: הכל בבקשה אחת (עדכונים, סקרים, אירועים, תשובות, ימי הולדת) ----------
+// GET  /api/feed               → { ok, now, updates, polls, events, answers, birthdays }
+// POST /api/feed {action, ...}  → vote | ask | birthday | ping | release   (ציבורי, עם הגבלות)
+const DEV_RE = /^[A-Za-z0-9-]{8,64}$/;
+const devKey = d => sha("dev:" + d).slice(0, 24); // לא שומרים את מזהה המכשיר עצמו
+const strList = (a, n = 30, len = 60) => (Array.isArray(a) ? a : []).slice(0, n).map(x => clean(x, len)).filter(Boolean);
+const israelDay = (t = Date.now()) => new Date(t + 3 * 3600e3).toISOString().slice(0, 10); // תאריך לפי שעון ישראל (בערך)
+const publicUpdate = u => ({ id: u.id, text: u.text, ...(u.video ? { video: u.video } : {}), author: u.authorName, role: u.role, audience: u.audience, urgent: !!u.urgent, createdAt: u.startsAt || u.createdAt, expiresAt: u.expiresAt });
+const pollCounts = p => p.options.map((_, i) => (p.votes && p.votes[i]) || 0);
+const publicPoll = p => ({ id: p.id, q: p.q, options: p.options, audience: p.audience, endsAt: p.endsAt, author: p.authorName, counts: pollCounts(p), total: pollCounts(p).reduce((a, b) => a + b, 0) });
+async function rateLimit(S, key, ip, perHour) {
+  const now = Date.now();
+  await S.update(key, cur => {
+    const rate = cur || {}, recent = (rate[ip] || []).filter(t => now - t < 3600e3);
+    if (recent.length >= perHour) throw new Fail(429, "too_many");
+    rate[ip] = [...recent, now];
+    for (const k of Object.keys(rate)) if (!rate[k].some(t => now - t < 3600e3)) delete rate[k];
+    return rate;
+  });
+}
+function upcomingBirthdays(bd, now = Date.now()) {
+  const out = [];
+  for (const x of Object.values(bd || {})) {
+    for (let d = 0; d < 7; d++) {
+      const day = israelDay(now + d * 864e5).slice(5); // MM-DD
+      if (x.md === day) { out.push({ name: x.name, cls: x.cls, md: x.md, inDays: d }); break; }
+    }
+  }
+  return out.sort((a, b) => a.inDays - b.inDays);
+}
+async function feed(req, S, ip, headers) {
+  if (req.method === "GET") {
+    const now = Date.now(), today = israelDay(now);
+    const [ups, polls, events, qs, bd] = await Promise.all(["updates", "polls", "events", "questions", "birthdays"].map(k => S.get(k)));
+    return reply(200, {
+      ok: true, now,
+      updates: activeUpdates(ups, now).map(publicUpdate),
+      polls: (polls || []).filter(p => p.endsAt > now).sort((a, b) => b.createdAt - a.createdAt).map(publicPoll),
+      events: (events || []).filter(e => e.date >= today).sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || ""))).slice(0, 30),
+      answers: (qs || []).filter(q => q.status === "answered" && q.answeredAt > now - 21 * 864e5).sort((a, b) => b.answeredAt - a.answeredAt).slice(0, 30)
+        .map(q => ({ id: q.id, q: q.text, a: q.answer, to: q.to, cls: q.cls, by: q.answeredBy, at: q.answeredAt })),
+      birthdays: upcomingBirthdays(bd, now),
+    }, { ...headers, "Cache-Control": "public, max-age=20" });
+  }
+  if (req.method !== "POST") return reply(405, { ok: false, error: "method" }, headers);
+  let b; try { b = await req.json(); } catch { return reply(400, { ok: false, error: "bad_request" }, headers); }
+  const action = String(b?.action || ""), now = Date.now();
+  const device = String(b?.device || ""), cls = AUDIENCES.includes(b?.cls) && b.cls !== "all" ? b.cls : "";
+  if (action === "vote") {
+    if (!DEV_RE.test(device)) return reply(400, { ok: false, error: "bad_request" }, headers);
+    const k = devKey(device), opt = Math.round(Number(b.option));
+    let out = null;
+    await S.update("polls", cur => {
+      const list = cur || [], p = list.find(x => x.id === b.poll);
+      if (!p || p.endsAt <= now) throw new Fail(404, "not_found");
+      if (!(opt >= 0 && opt < p.options.length)) throw new Fail(400, "bad_request");
+      p.voters = p.voters || {};
+      if (p.voters[k] != null) { out = p; return undefined; } // כבר הצביע – לא סופרים פעמיים
+      p.voters[k] = opt; p.votes = p.votes || {}; p.votes[opt] = (p.votes[opt] || 0) + 1; out = p;
+      return list;
+    });
+    return reply(200, { ok: true, poll: publicPoll(out), mine: out.voters[k] }, headers);
+  }
+  if (action === "ask") {
+    const text = clean(b.text, 500), to = clean(b.to, 60);
+    if (!text) return reply(400, { ok: false, error: "bad_request" }, headers);
+    await rateLimit(S, "askRate", ip, 10);
+    const q = { id: newId(), text, to, cls, status: "new", createdAt: now };
+    await S.update("questions", cur => [q, ...(cur || []).filter(x => x.createdAt > now - 90 * 864e5)].slice(0, 500));
+    return reply(200, { ok: true }, headers);
+  }
+  if (action === "birthday") {
+    if (!DEV_RE.test(device)) return reply(400, { ok: false, error: "bad_request" }, headers);
+    const k = devKey(device);
+    if (b.remove) { await S.update("birthdays", cur => { const m = cur || {}; delete m[k]; return m; }); return reply(200, { ok: true }, headers); }
+    const name = clean(b.name, MAX_NAME), md = String(b.md || "");
+    if (!name || !cls || !/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(md)) return reply(400, { ok: false, error: "bad_request" }, headers);
+    await rateLimit(S, "bdRate", ip, 30);
+    await S.update("birthdays", cur => { const m = cur || {}; if (!m[k] && Object.keys(m).length >= 2000) throw new Fail(413, "too_many"); m[k] = { name, cls, md, at: now }; return m; });
+    return reply(200, { ok: true }, headers);
+  }
+  if (action === "ping") {
+    // סטטיסטיקה אנונימית למנהל: כיתה + אילו מקצועות בסיכון. בלי שם ובלי מזהה אמיתי
+    if (!DEV_RE.test(device) || !cls) return reply(400, { ok: false, error: "bad_request" }, headers);
+    const k = devKey(device), day = israelDay(now);
+    await S.update("stats", cur => {
+      const m = cur || {};
+      if (m[k] && m[k].day === day && JSON.stringify(m[k].risk) === JSON.stringify(strList(b.risk))) return undefined; // כבר נספר היום
+      m[k] = { cls, day, risk: strList(b.risk), warn: strList(b.warn), mashov: !!b.mashov };
+      for (const x of Object.keys(m)) if (m[x].day < israelDay(now - 60 * 864e5)) delete m[x];
+      return m;
+    });
+    return reply(200, { ok: true }, headers);
+  }
+  if (action === "release") {
+    // אישור יציאה שההורה חתם עליו – מופיע אצל הצוות ב"שחרורים"
+    const name = clean(b.name, MAX_NAME), reason = clean(b.reason, 200);
+    if (!name || !cls) return reply(400, { ok: false, error: "bad_request" }, headers);
+    await rateLimit(S, "relRate", ip, 20);
+    const r = { id: newId(), name, cls, reason, date: clean(b.date, 10) || israelDay(now), from: clean(b.from, 5), until: clean(b.until, 5), parent: clean(b.parent, MAX_NAME), lesson: clean(b.lesson, 60), teacher: clean(b.teacher, 60), at: now };
+    await S.update("releases", cur => [r, ...(cur || []).filter(x => x.at > now - 30 * 864e5)].slice(0, 1000));
     return reply(200, { ok: true }, headers);
   }
   return reply(400, { ok: false, error: "bad_action" }, headers);

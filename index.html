@@ -117,6 +117,25 @@ main{padding:16px 14px 40px;max-width:560px;margin:0 auto}
 .vid-box video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 dialog{border:none;border-radius:20px;padding:0;width:min(92vw,440px);background:var(--card);color:var(--ink);font:inherit;max-height:92vh}
 dialog::backdrop{background:rgba(5,6,20,.6)}
+#extras{margin-bottom:12px}
+.xcard{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:8px}
+.xcard.bday{background:linear-gradient(135deg,rgba(255,210,63,.2),rgba(255,107,214,.14));border-color:transparent;font-size:15px}
+.xhead{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:900;font-size:15px}
+.xhead span{font-weight:500;color:var(--muted);font-size:13px}
+.xsub{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.5}
+.xbtn{border:none;background:var(--break);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.pq{font-size:16px;font-weight:700;margin:6px 0 8px}
+.popt{display:block;width:100%;text-align:start;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:10px 12px;font:inherit;font-size:15px;margin-top:6px;cursor:pointer}
+.pres{position:relative;display:flex;justify-content:space-between;align-items:center;border-radius:12px;background:var(--bg);padding:9px 12px;margin-top:6px;overflow:hidden;font-size:15px}
+.pres i{position:absolute;inset:0 0 0 auto;background:rgba(124,140,255,.28)}
+.pres.mine i{background:rgba(61,220,151,.32)}
+.pres span,.pres b{position:relative}
+.ev1{padding:8px 0;border-top:1px solid var(--line)}
+.ev1:first-of-type{border-top:none}
+.qa1{padding:8px 0;border-top:1px solid var(--line)}
+.qa .qa1:first-of-type{border-top:none}
+.qq{font-weight:700;font-size:15px}
+.qaa{font-size:14px;margin-top:4px;line-height:1.5}
 .new-list{margin:6px 0 0;padding:0 18px 0 0;line-height:1.55;font-size:15px}
 .new-list li{margin-bottom:6px}
 .zm{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:12px 14px;margin-top:14px}
@@ -307,6 +326,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 </dialog>
 <main>
   <div id="updates" hidden></div>
+  <div id="extras" hidden></div>
   <div id="streakPill" hidden></div>
   <div id="absAlert" hidden></div>
   <div id="board" hidden></div>
@@ -398,6 +418,24 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
     <h3>👤 הפרופיל שלי</h3>
     <div id="profBody"></div>
     <div class="btns"><button class="ghost" value="cancel">סגור</button></div>
+  </form>
+</dialog>
+<dialog id="askDlg">
+  <form method="dialog">
+    <h3>❓ שאלה לצוות</h3>
+    <p>השאלה נשלחת <b>בלי שם</b>. כשמורה עונה, השאלה והתשובה מופיעות לכל הכיתה.</p>
+    <label style="font-weight:700;font-size:14px">על מה?</label>
+    <select class="inp" id="askTo" style="margin:6px 0 10px"></select>
+    <textarea id="askText" maxlength="500" placeholder="למשל: מה בדיוק החומר למבחן ביום חמישי?"></textarea>
+    <p class="fb-note" id="askMsg" style="color:#ff5d6c"></p>
+    <div class="btns"><button type="button" class="primary" id="askSend">שליחה</button><button class="ghost" value="cancel">ביטול</button></div>
+  </form>
+</dialog>
+<dialog id="qaDlg">
+  <form method="dialog">
+    <h3>❓ שאלות ותשובות</h3>
+    <div id="qaList" style="max-height:60vh;overflow:auto"></div>
+    <div class="btns"><button class="primary" value="ok">סגור</button></div>
   </form>
 </dialog>
 <dialog id="newDlg">
@@ -910,6 +948,9 @@ function renderProfile(){
   <div class="pf-row"><h4>🎨 תצוגה</h4><div class="pf-sub">צבע לאפליקציה:</div><div class="th-sw">${Object.entries(Theme.THEMES).map(([k,t])=>`<button type="button" class="sw ${Theme.current()===k?"on":""}" data-th="${k}" style="background:${t.grad}" aria-label="${t.name}" title="${t.name}"></button>`).join("")}</div>
     <label class="tgl-row"><input type="checkbox" id="pfBig" ${Theme.big()?"checked":""}> 🔍 טקסט גדול</label></div>
   <div class="pf-row"><h4>👨‍👩‍👦 ההורים</h4><div class="pf-sub">קישור שבו ההורים רואים את המערכת שלך: מה יש היום ומה להביא. בלי ציונים ובלי חיסורים.</div><div class="pf-acts"><button type="button" class="primary" id="pfParent">📤 שליחת קישור להורים</button></div></div>
+  <div class="pf-row"><h4>🎂 יום הולדת</h4><div class="pf-sub">אם תרצה, החברים בכיתה יראו "מזל טוב" ביום ההולדת שלך – רק יום וחודש, בלי שנה.</div>
+    <div class="pf-acts"><select class="inp" id="pfBdD" style="width:auto"><option value="">יום</option>${Array.from({length:31},(_,i)=>`<option ${bdLocal().d==i+1?"selected":""}>${i+1}</option>`).join("")}</select><select class="inp" id="pfBdM" style="width:auto"><option value="">חודש</option>${["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"].map((n,i)=>`<option value="${i+1}" ${bdLocal().m==i+1?"selected":""}>${n}</option>`).join("")}</select></div>
+    <label class="tgl-row"><input type="checkbox" id="pfBdShare" ${bdLocal().share?"checked":""}> להציג לכיתה שלי</label><div class="pf-msg" id="pfBdMsg"></div></div>
   <div class="pf-row"><h4>📬 אימייל</h4>${profile.email
     ?`<div class="pf-sub" dir="ltr" style="text-align:end">${escH(profile.email)}</div><div class="pf-acts"><button type="button" class="ghost" id="pfMailOff">נתק אימייל</button></div>`
     :`<div class="pf-sub">לא מחובר.</div><div class="pf-acts"><input class="inp" id="pfMail" type="email" dir="ltr" placeholder="you@gmail.com"><button type="button" class="primary" id="pfMailOn">חבר</button></div><div class="pf-msg" id="pfMailMsg"></div>`}</div>
@@ -927,6 +968,14 @@ function renderProfile(){
   b.querySelectorAll("[data-th]").forEach(x=>x.onclick=()=>{Theme.setTheme(x.dataset.th);b.querySelectorAll("[data-th]").forEach(y=>y.classList.toggle("on",y===x))});
   $("pfBig").onchange=e=>Theme.setBig(e.target.checked);
   $("pfParent").onclick=shareParent;
+  const bdSave=async()=>{const d=+$("pfBdD").value,m=+$("pfBdM").value,share=$("pfBdShare").checked;
+    try{localStorage.setItem("bday",JSON.stringify({d,m,share}))}catch(e){}
+    const msg=$("pfBdMsg");
+    if(share&&(!d||!m)){msg.textContent="בחר יום וחודש.";return}
+    const md=d&&m?String(m).padStart(2,"0")+"-"+String(d).padStart(2,"0"):"";
+    const r=share?await feedPost({action:"birthday",device:deviceId(),name:`${profile.first} ${profile.last}`.trim(),cls:profile.cls,md}):await feedPost({action:"birthday",device:deviceId(),remove:true});
+    msg.textContent=r.ok?(share?"✓ החברים בכיתה יראו מזל טוב ביום ההולדת":"✓ לא מוצג לכיתה"):"לא הצלחנו לשמור. נסו שוב.";};
+  $("pfBdD").onchange=$("pfBdM").onchange=$("pfBdShare").onchange=bdSave;
   if($("pfMailOff"))$("pfMailOff").onclick=()=>{profile.email="";saveProfile();renderProfile()};
   if($("pfMailOn"))$("pfMailOn").onclick=()=>{const v=$("pfMail").value.trim();if(!/^\S+@\S+\.\S+$/.test(v)){$("pfMailMsg").textContent="האימייל לא תקין.";return}profile.email=v;saveProfile();renderProfile()};
   if($("pfMsOff"))$("pfMsOff").onclick=()=>{if(confirm("לנתק את משוב? הנתונים שנמשכו יימחקו מהטלפון."))Mashov.disconnect(),renderProfile()};
@@ -942,6 +991,7 @@ function renderProfile(){
 
 // ---- ✨ מה חדש: פעם אחת אחרי כל גרסה ----
 function seenVersion(){try{return localStorage.getItem("seenVersion")}catch(e){return null}}
+function bdLocal(){try{return JSON.parse(localStorage.getItem("bday")||"{}")}catch(e){return{}}}
 function openWhatsNew(force){
   if(typeof WHATS_NEW==="undefined"||!WHATS_NEW.length)return;
   const seen=seenVersion(),list=force?WHATS_NEW.slice(0,1):WHATS_NEW.filter(w=>!seen||w.v>seen);
@@ -1114,11 +1164,80 @@ renderAbsAlert();
 (function(){const b=document.getElementById("brand");if(!b||typeof SCHOOL_NAME==="undefined"||!SCHOOL_NAME)return;
   if(SCHOOL_LOGO){const i=document.createElement("img");i.src=SCHOOL_LOGO;i.alt="";i.onerror=()=>i.remove();b.append(i)}
   const t=document.createElement("span");t.textContent=SCHOOL_NAME;b.append(t);b.hidden=false})();
+
+// ---- מהפיד: סקרים, ימי הולדת, אירועים, שאלות ותשובות ----
+function deviceId(){let d=null;try{d=localStorage.getItem("deviceId")}catch(e){}if(!d){d=(crypto.randomUUID?crypto.randomUUID():"d"+Date.now().toString(36)+Math.random().toString(36).slice(2));try{localStorage.setItem("deviceId",d)}catch(e){}}return d}
+const FEED_API=()=>((typeof SERVER_BASE!=="undefined"&&SERVER_BASE)||"")+"/api/feed";
+async function feedPost(body){try{const r=await fetch(FEED_API(),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});return await r.json().catch(()=>({ok:false,error:"server"}))}catch(e){return{ok:false,error:"network"}}}
+const myCls=()=>(profile&&profile.cls)||"y2";
+const forMe=a=>!a||a==="all"||a===myCls();
+const pollVotes=()=>{try{return JSON.parse(localStorage.getItem("pollVotes")||"{}")}catch(e){return{}}};
+const DAYH=["א'","ב'","ג'","ד'","ה'","ו'","שבת"];
+function fmtEventDate(e){const d=new Date(e.date+"T12:00"),t=new Date();t.setHours(12,0,0,0);const diff=Math.round((d-t)/864e5);return (diff===0?"היום":diff===1?"מחר":`יום ${DAYH[d.getDay()]} ${d.getDate()}.${d.getMonth()+1}`)+(e.time?` · ${e.time}`:"")}
+function renderExtras(){
+  const box=document.getElementById("extras");if(!box||!window.Updates)return;
+  const f=Updates.feed(),votes=pollVotes();let h="";
+  // 🎂 ימי הולדת (רק מי שבחר להציג)
+  const bd=(f.birthdays||[]).filter(x=>x.cls===myCls());
+  const today=bd.filter(x=>x.inDays===0),soon=bd.filter(x=>x.inDays>0);
+  if(today.length||soon.length)h+=`<div class="xcard bday">${today.length?`🎂 <b>היום יום ההולדת של ${today.map(x=>escH(x.name)).join(" ו")}!</b> מזל טוב 🎉`:""}${soon.length?`<div class="xsub">🎈 בקרוב: ${soon.map(x=>`${escH(x.name)} (${x.inDays===1?"מחר":"בעוד "+x.inDays+" ימים"})`).join(" · ")}</div>`:""}</div>`;
+  // 📊 סקרים
+  for(const p of (f.polls||[]).filter(p=>forMe(p.audience))){
+    const mine=votes[p.id],voted=mine!=null,tot=p.total||0;
+    h+=`<div class="xcard poll" data-poll="${escH(p.id)}"><div class="xhead">📊 סקר · <span>${escH(p.author||"")}</span></div><div class="pq">${escH(p.q)}</div>
+      ${p.options.map((o,i)=>voted?`<div class="pres ${i===mine?"mine":""}"><i style="width:${tot?Math.round(100*p.counts[i]/tot):0}%"></i><span>${escH(o)}${i===mine?" ✓":""}</span><b>${tot?Math.round(100*p.counts[i]/tot):0}%</b></div>`:`<button type="button" class="popt" data-i="${i}">${escH(o)}</button>`).join("")}
+      <div class="xsub">${voted?`${tot} הצביעו · `:""}נסגר ${fmtEventDate({date:new Date(p.endsAt).toISOString().slice(0,10)})}</div></div>`;
+  }
+  // 📅 אירועים קרובים (שבועיים)
+  const lim=new Date(Date.now()+14*864e5).toISOString().slice(0,10);
+  const ev=(f.events||[]).filter(e=>forMe(e.audience)&&e.date<=lim).slice(0,3);
+  if(ev.length)h+=`<div class="xcard"><div class="xhead">📅 אירועים קרובים</div>${ev.map(e=>`<div class="ev1"><b>${escH(e.title)}</b><div class="xsub">${fmtEventDate(e)}${e.place?` · 📍 ${escH(e.place)}`:""}</div>${e.desc?`<div class="xsub">${escH(e.desc)}</div>`:""}</div>`).join("")}</div>`;
+  // ❓ שאלות ותשובות
+  const ans=(f.answers||[]).filter(a=>!a.cls||a.cls===myCls());
+  h+=`<div class="xcard qa"><div class="xhead">❓ שאלות לצוות <button type="button" class="xbtn" id="askBtn">לשאול (בלי שם)</button></div>
+    ${ans.length?ans.slice(0,2).map(a=>`<div class="qa1"><div class="qq">${escH(a.q)}${a.to?` <span class="xsub">(${escH(a.to)})</span>`:""}</div><div class="qaa">💬 ${escH(a.a)} <span class="xsub">– ${escH(a.by||"")}</span></div></div>`).join("")+(ans.length>2?`<button type="button" class="xbtn" id="allQa">כל ${ans.length} התשובות</button>`:""):`<div class="xsub">שאלה על החומר, על מבחן או על כל דבר אחר? שולחים בלי שם, והתשובה תופיע כאן לכל הכיתה.</div>`}</div>`;
+  box.innerHTML=h;box.hidden=!h;
+  box.querySelectorAll(".poll").forEach(c=>c.querySelectorAll(".popt").forEach(b=>b.onclick=async()=>{
+    c.querySelectorAll(".popt").forEach(x=>x.disabled=true);
+    const r=await feedPost({action:"vote",poll:c.dataset.poll,option:+b.dataset.i,device:deviceId()});
+    if(!r.ok){c.querySelectorAll(".popt").forEach(x=>x.disabled=false);toast("לא הצלחנו לשלוח","בדקו חיבור ונסו שוב.");return}
+    const v=pollVotes();v[c.dataset.poll]=r.mine;try{localStorage.setItem("pollVotes",JSON.stringify(v))}catch(e){}
+    const fc=Updates.feed();fc.polls=(fc.polls||[]).map(p=>p.id===r.poll.id?r.poll:p);try{localStorage.setItem("feedCache",JSON.stringify(fc))}catch(e){}
+    renderExtras();
+  }));
+  const ab=document.getElementById("askBtn");if(ab)ab.onclick=openAsk;
+  const aq=document.getElementById("allQa");if(aq)aq.onclick=()=>{document.getElementById("qaList").innerHTML=ans.map(a=>`<div class="qa1"><div class="qq">${escH(a.q)}${a.to?` <span class="xsub">(${escH(a.to)})</span>`:""}</div><div class="qaa">💬 ${escH(a.a)} <span class="xsub">– ${escH(a.by||"")}</span></div></div>`).join("");document.getElementById("qaDlg").showModal()};
+}
+function openAsk(){
+  const subs=[...new Set(DAYS.flatMap(d=>lessonsOf(d)).map(l=>l.n).filter(n=>!/תפילת|ערבית|סדר ערב|שבת אחים/.test(n)))];
+  document.getElementById("askTo").innerHTML=`<option value="">כללי / למחנך</option>`+subs.map(n=>`<option>${escH(n)}</option>`).join("");
+  document.getElementById("askText").value="";document.getElementById("askMsg").textContent="";
+  document.getElementById("askDlg").showModal();
+}
+document.getElementById("askSend").onclick=async()=>{
+  const text=document.getElementById("askText").value.trim(),m=document.getElementById("askMsg");
+  if(text.length<3){m.textContent="כתבו את השאלה.";return}
+  const b=document.getElementById("askSend");b.disabled=true;
+  const r=await feedPost({action:"ask",text,to:document.getElementById("askTo").value,cls:myCls()});b.disabled=false;
+  if(!r.ok){m.textContent=r.error==="too_many"?"שלחת הרבה שאלות בשעה האחרונה. נסו שוב אחר כך.":"לא הצלחנו לשלוח. בדקו חיבור ונסו שוב.";return}
+  document.getElementById("askDlg").close();toast("✓ השאלה נשלחה","בלי שם. כשהצוות יענה, התשובה תופיע כאן.");
+};
+// סטטיסטיקה אנונימית למנהל: פעם ביום – כיתה ואילו מקצועות בסיכון (בלי שם)
+async function dailyPing(){
+  if(!profile||!profile.cls||window.__DEMO)return;
+  const day=new Date().toDateString();let last=null;try{last=localStorage.getItem("pingDay")}catch(e){}
+  if(last===day)return;
+  const a=typeof absState==="function"?absState():null,subs=a?a.r.subjects.filter(s=>!s.nonBagrut):[];
+  const r=await feedPost({action:"ping",device:deviceId(),cls:profile.cls,mashov:!!a,risk:subs.filter(s=>s.status==="red"||s.status==="lost").map(s=>s.name),warn:subs.filter(s=>s.status==="orange").map(s=>s.name)});
+  if(r.ok)try{localStorage.setItem("pingDay",day)}catch(e){}
+}
+
 // עדכונים מהצוות, בראש המסך
 // עדכון חדש קופץ על המסך פעם אחת (לא באמצע הרשמה/היכרות/חלון פתוח), ואז עף למקום שלו
 if(window.Updates){
   const canPop=()=>["wiz","intro","build"].every(id=>{const e=document.getElementById(id);return !e||e.hidden})&&!document.querySelector("dialog[open]");
   Updates.init(document.getElementById("updates"),()=>(profile&&profile.cls)||"y2",canPop);
+  Updates.onFeed=renderExtras;renderExtras();setTimeout(dailyPing,5000);
   setInterval(()=>Updates.retryPop&&Updates.retryPop(),2500);
 }
 if(location.hash==="#profile"){history.replaceState(null,"",location.pathname);setTimeout(()=>openProfile(),300)}

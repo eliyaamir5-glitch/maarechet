@@ -71,6 +71,10 @@ textarea{min-height:110px;resize:vertical;line-height:1.5}
 .cl{display:inline-block;background:var(--break);border-radius:7px;padding:0 7px;font-size:11px;font-weight:900;margin-inline-start:4px;vertical-align:1px}
 .ls.cur{background:var(--next);border-inline-start-color:var(--green)}
 .empty{color:var(--muted);font-size:14px;padding:6px 2px}
+.bar{position:relative;display:flex;justify-content:space-between;border-radius:10px;background:var(--bg);padding:7px 10px;margin-top:5px;overflow:hidden;font-size:14px}
+.bar i{position:absolute;inset:0 0 0 auto;background:rgba(124,140,255,.28)}
+.bar span,.bar b{position:relative}
+.pill.sch{background:rgba(255,210,63,.25);color:var(--ink)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -87,7 +91,7 @@ const SITE=location.href.split("#")[0].split("?")[0];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const T={get:()=>{try{return localStorage.getItem("staffToken")}catch(e){return null}},set:v=>{try{v?localStorage.setItem("staffToken",v):localStorage.removeItem("staffToken")}catch(e){}}};
-const ERR={bad_video:"הקישור לסרטון לא תקין.",bad_phone:"מספר הטלפון לא תקין.",too_many_sets:"הגעתם למספר הסטים המקסימלי. מחקו סטים ישנים.",too_big:"הסטים תופסים יותר מדי מקום. מחקו סטים ישנים או קצרו.",code_taken:"הקוד הזה כבר בשימוש. בחר קוד אחר.",busy:"השרת עמוס לרגע. נסה שוב.",server:"תקלה בשרת. נסה שוב בעוד רגע.",bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",bad_invite:"הקישור לא תקין.",invite_used:"הקישור הזה כבר שומש.",not_found:"לא נמצא.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
+const ERR={bad_time:"הזמן לא תקין.",too_many:"יותר מדי.",bad_video:"הקישור לסרטון לא תקין.",bad_phone:"מספר הטלפון לא תקין.",too_many_sets:"הגעתם למספר הסטים המקסימלי. מחקו סטים ישנים.",too_big:"הסטים תופסים יותר מדי מקום. מחקו סטים ישנים או קצרו.",code_taken:"הקוד הזה כבר בשימוש. בחר קוד אחר.",busy:"השרת עמוס לרגע. נסה שוב.",server:"תקלה בשרת. נסה שוב בעוד רגע.",bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",bad_invite:"הקישור לא תקין.",invite_used:"הקישור הזה כבר שומש.",not_found:"לא נמצא.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
 const ROLE={admin:"מנהל",teacher:"מורה",staff:"צוות"};
 let me=null,tab="write",welcome=false;
 
@@ -145,11 +149,11 @@ function wireLogin(){
 // ---- המסך הראשי לצוות: לשוניות ----
 function showHome(){
   $("logout").hidden=false;$("who").textContent=`${me.name} · ${ROLE[me.role]||"מורה"}`;
-  const TABS=[["write","✍️ עדכון חדש"],["list","📋 עדכונים"],["sets","🃏 כרטיסיות"],["tt","🗓️ מערכת"],...(me.role==="admin"?[["team","👥 צוות"],["fb","📬 פניות"]]:[]),["me","⚙️ החשבון שלי"]];
+  const TABS=[["write","✍️ עדכון חדש"],["list","📋 עדכונים"],["qs","❓ שאלות"],["polls","📊 סקרים"],["events","📅 אירועים"],["rel","🏃 שחרורים"],["sets","🃏 כרטיסיות"],["tt","🗓️ מערכת"],...(me.role==="admin"?[["team","👥 צוות"],["fb","📬 פניות"],["stats","📈 נתונים"]]:[]),["me","⚙️ החשבון שלי"]];
   if(!TABS.some(t=>t[0]===tab))tab="write";
   $("tabs").hidden=false;$("tabs").innerHTML=TABS.map(([k,l])=>`<button data-t="${k}" class="${k===tab?"on":""}">${l}</button>`).join("");
   $("tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;showHome()});
-  ({write:showWrite,list:showList,tt:showTT,team:showTeam,me:showMe,fb:showFeedback,sets:showSets})[tab]();
+  ({write:showWrite,list:showList,tt:showTT,team:showTeam,me:showMe,fb:showFeedback,sets:showSets,qs:showQuestions,polls:showPolls,events:showEvents,rel:showReleases,stats:showStats})[tab]();
   if(welcome&&tab==="write"){
     const w=document.createElement("div");w.className="card";w.style.borderColor="var(--green)";
     w.innerHTML=`<h2>👋 ברוך הבא, נכנסת כמנהל ראשי</h2><p class="hint" style="margin:0">מכאן כותבים עדכונים לתלמידים, רואים את המערכת של כל כיתה ומורה, ומוסיפים מורים (לשונית 👥 צוות). רוצה קוד כניסה משלך? לשונית <b>⚙️ החשבון שלי</b>.</p><div class="row" style="margin-top:12px"><button class="btn" id="wMe">לבחור קוד משלי</button><button class="btn ghost" id="wX">אחר כך</button></div>`;
@@ -174,6 +178,8 @@ async function showWrite(){
     <label>למי</label><div class="seg" id="aud"><button data-v="all" class="on">כל התלמידים</button><button data-v="y1">י'1</button><button data-v="y2">י'2</button></div>
     <label>לכמה זמן</label><div class="seg" id="dur">${DUR.map(([l,v])=>`<button data-v="${v}" class="${v===60?"on":""}">${l}</button>`).join("")}<button data-v="custom">אחר…</button></div>
     <div class="row" id="custom" hidden style="margin-top:8px"><input id="cNum" type="number" min="1" max="999" value="30" style="width:100px;flex:0 0 auto"><select id="cUnit" style="width:auto;flex:0 0 auto"><option value="1">דקות</option><option value="60">שעות</option><option value="1440">ימים</option></select></div>
+    <label>מתי לשלוח</label><div class="seg" id="when"><button data-v="now" class="on">עכשיו</button><button data-v="later">⏰ בזמן אחר…</button></div>
+    <input type="datetime-local" id="whenAt" hidden style="margin-top:8px">
     <label class="tgl"><input type="checkbox" id="urg"> דחוף (באדום, מופיע ראשון)</label>
     <div class="preview"><div class="ph">כך זה ייראה אצל התלמידים:</div><div id="prev"></div></div>
     <div class="row" style="margin-top:14px"><button class="btn" id="post" style="flex:1">פרסם עדכון</button></div><div id="pMsg" hidden></div></div>`;
@@ -185,6 +191,7 @@ async function showWrite(){
   $("text").oninput=()=>{$("count").textContent=$("text").value.length+"/600";preview()};
   $("video").oninput=()=>{showVideoHint();preview()};
   $("urg").onchange=e=>{urgent=e.target.checked;preview()};
+  seg("when",v=>{$("whenAt").hidden=v!=="later";if(v==="later"&&!$("whenAt").value){const t=new Date(Date.now()+864e5);t.setHours(7,0,0,0);$("whenAt").value=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}T07:00`}});
   $("cNum").oninput=$("cUnit").onchange=preview;
   $("post").onclick=post;
   if(admin){
@@ -226,9 +233,12 @@ async function post(){
   if(!(m>=1&&m<=43200))return msg("pMsg","משך לא תקין (עד 30 ימים).");
   if($("as")&&$("as").value==="__name"&&!$("asName").value.trim())return msg("pMsg","כתוב את השם שיופיע.");
   const vid=videoVal();if(!vid.ok)return msg("pMsg","הקישור לסרטון לא תקין. אפשר להשאיר ריק.");
-  $("post").disabled=true;const r=await api({action:"post",text,minutes:m,audience:aud,urgent,...(vid.url?{video:vid.url}:{}),...author().body});$("post").disabled=false;
+  const later=!$("whenAt").hidden,startsAt=later?new Date($("whenAt").value).getTime():0;
+  if(later&&!(startsAt>Date.now()))return msg("pMsg","בחר זמן בעתיד.");
+  if(later&&startsAt>Date.now()+30*864e5)return msg("pMsg","אפשר לתזמן עד 30 יום קדימה.");
+  $("post").disabled=true;const r=await api({action:"post",text,minutes:m,audience:aud,urgent,...(vid.url?{video:vid.url}:{}),...(later?{startsAt}:{}),...author().body});$("post").disabled=false;
   if(!r.ok){if(r.error==="auth")return showLogin();return msg("pMsg",ERR[r.error]||"שגיאה.")}
-  $("text").value="";$("video").value="";showVideoHint();$("count").textContent="0/600";msg("pMsg",`✅ פורסם${r.update.authorName!==me.name?` בשם ${r.update.authorName}`:""}! יקפוץ לתלמידים בפתיחה הבאה של האפליקציה (או תוך דקה, אם היא פתוחה).`,true);preview();
+  $("text").value="";$("video").value="";showVideoHint();$("count").textContent="0/600";msg("pMsg",r.update.startsAt?`⏰ מתוזמן! יופיע לתלמידים ב-${fmtT(r.update.startsAt)}. אפשר לראות ולבטל בלשונית "עדכונים".`:`✅ פורסם${r.update.authorName!==me.name?` בשם ${r.update.authorName}`:""}! יקפוץ לתלמידים בפתיחה הבאה של האפליקציה (או תוך דקה, אם היא פתוחה).`,true);preview();
 }
 
 // ---- רשימת העדכונים ----
@@ -238,7 +248,7 @@ async function showList(){
   const r=await api({action:"list"});const box=$("list");if(!box)return;
   if(!r.ok){if(r.error==="auth")return showLogin();box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
   if(!r.updates.length){box.innerHTML=`<p class="hint">אין עדכונים בימים האחרונים.</p>`;return}
-  box.innerHTML=r.updates.map(u=>`<div class="item"><div class="m"><span class="pill ${u.active?"on":"off"}">${u.active?"פעיל":"הסתיים"}</span>${u.urgent?`<span class="pill urg">דחוף</span>`:""}<b>${esc(u.authorName)}</b> · ${u.audience==="all"?"כולם":u.audience==="y1"?"י'1":"י'2"} · ${fmtT(u.createdAt)} עד ${fmtT(u.expiresAt)} · 👁 ${u.views||0}${u.postedByName&&u.postedByName!==u.authorName?`<br>נשלח ע"י ${esc(u.postedByName)}`:""}</div><div class="t">${esc(u.text)}</div>${u.video?`<div class="m" style="margin-top:4px">🎬 <a href="${esc(u.video)}" target="_blank" rel="noopener" style="color:var(--accent)">סרטון מצורף</a></div>`:""}
+  box.innerHTML=r.updates.map(u=>`<div class="item"><div class="m"><span class="pill ${u.scheduled?"sch":u.active?"on":"off"}">${u.scheduled?"⏰ מתוזמן ל-"+fmtT(u.startsAt):u.active?"פעיל":"הסתיים"}</span>${u.urgent?`<span class="pill urg">דחוף</span>`:""}<b>${esc(u.authorName)}</b> · ${u.audience==="all"?"כולם":u.audience==="y1"?"י'1":"י'2"} · ${fmtT(u.createdAt)} עד ${fmtT(u.expiresAt)} · 👁 ${u.views||0}${u.postedByName&&u.postedByName!==u.authorName?`<br>נשלח ע"י ${esc(u.postedByName)}`:""}</div><div class="t">${esc(u.text)}</div>${u.video?`<div class="m" style="margin-top:4px">🎬 <a href="${esc(u.video)}" target="_blank" rel="noopener" style="color:var(--accent)">סרטון מצורף</a></div>`:""}
     <div class="row" style="margin-top:8px">${u.active?`<button class="btn sm ghost" data-end="${esc(u.id)}">סיים עכשיו</button>`:""}<button class="btn sm ghost" data-ext="${esc(u.id)}" data-m="60">+ שעה</button><button class="btn sm ghost" data-ext="${esc(u.id)}" data-m="1440">+ יום</button><button class="btn sm danger" data-del="${esc(u.id)}">מחק</button></div></div>`).join("");
   box.querySelectorAll("[data-end]").forEach(b=>b.onclick=async()=>{b.disabled=true;await api({action:"end",id:b.dataset.end});showList()});
   box.querySelectorAll("[data-ext]").forEach(b=>b.onclick=async()=>{b.disabled=true;await api({action:"extend",id:b.dataset.ext,minutes:Number(b.dataset.m)});showList()});
@@ -306,6 +316,103 @@ function editSet(set){
     const ok=document.createElement("div");ok.className="msg ok";ok.textContent=`✅ ${set?"נשמר":"פורסם"}! "${r.set.title}" (${r.set.cards.length} כרטיסים) מופיע אצל ${AUDN[r.set.audience]==="כל התלמידים"?"כל התלמידים":"תלמידי "+AUDN[r.set.audience]} בכרטיסיות.`;
     $("main").firstElementChild.appendChild(ok);
   };
+}
+
+
+// ---- 📊 סקרים ----
+const AUDN2={all:"כולם",y1:"י'1",y2:"י'2"};
+const audSeg=(id,v="all")=>`<div class="seg" id="${id}">${Object.entries(AUDN2).map(([k,l])=>`<button type="button" data-v="${k}" class="${k===v?"on":""}">${l}</button>`).join("")}</div>`;
+const segVal=id=>($(id).querySelector("button.on")||{}).dataset?.v;
+const wireSeg=id=>$(id).querySelectorAll("button").forEach(b=>b.onclick=()=>$(id).querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)));
+async function showPolls(){
+  $("main").innerHTML=`<div class="card"><h2>📊 סקר חדש</h2><p class="hint">התלמידים מצביעים מהאפליקציה (קול אחד לכל טלפון), ורואים את התוצאות אחרי שהצביעו.</p>
+    <label>השאלה</label><input id="pQ" maxlength="200" placeholder="למשל: לאן נוסעים בטיול השנתי?">
+    <label>אפשרויות (2–6)</label><div id="pOpts">${[1,2,3].map(i=>`<input class="popt-in" maxlength="80" placeholder="אפשרות ${i}" style="margin-bottom:6px">`).join("")}</div>
+    <button type="button" class="btn sm ghost" id="pMore">＋ עוד אפשרות</button>
+    <label>למי</label>${audSeg("pAud")}
+    <label>פתוח ל</label><div class="seg" id="pDur"><button type="button" data-v="3">3 שעות</button><button type="button" data-v="24" class="on">יום</button><button type="button" data-v="72">3 ימים</button><button type="button" data-v="168">שבוע</button></div>
+    <div class="row" style="margin-top:14px"><button class="btn" id="pGo" style="flex:1">פרסם סקר</button></div><div id="pMsg" hidden></div></div>
+    <div class="card"><h2>הסקרים</h2><div id="pList"><p class="hint">טוען…</p></div></div>`;
+  wireSeg("pAud");wireSeg("pDur");
+  $("pMore").onclick=()=>{const n=$("pOpts").querySelectorAll("input").length;if(n>=6)return;const i=document.createElement("input");i.className="popt-in";i.maxLength=80;i.placeholder=`אפשרות ${n+1}`;i.style.marginBottom="6px";$("pOpts").append(i);i.focus()};
+  $("pGo").onclick=async()=>{const q=$("pQ").value.trim(),options=[...$("pOpts").querySelectorAll("input")].map(i=>i.value.trim()).filter(Boolean);
+    if(!q)return msg("pMsg","כתוב את השאלה.");if(options.length<2)return msg("pMsg","צריך לפחות 2 אפשרויות.");
+    $("pGo").disabled=true;const r=await api({action:"pollCreate",q,options,audience:segVal("pAud"),hours:+segVal("pDur")});$("pGo").disabled=false;
+    if(!r.ok)return msg("pMsg",ERR[r.error]||"שגיאה.");msg("pMsg","✅ הסקר פורסם. התלמידים יראו אותו בראש המסך.",true);$("pQ").value="";$("pOpts").querySelectorAll("input").forEach(i=>i.value="");loadPolls()};
+  loadPolls();
+}
+async function loadPolls(){
+  const r=await api({action:"pollList"}),box=$("pList");if(!box)return;
+  if(!r.ok){box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
+  if(!r.polls.length){box.innerHTML=`<p class="hint">עוד אין סקרים.</p>`;return}
+  box.innerHTML=r.polls.map(p=>`<div class="item"><div class="m"><span class="pill ${p.active?"on":"off"}">${p.active?"פתוח":"נסגר"}</span>${esc(p.author||"")} · ${AUDN2[p.audience]} · ${p.total} הצביעו</div><div class="t"><b>${esc(p.q)}</b></div>
+    ${p.options.map((o,i)=>{const pc=p.total?Math.round(100*p.counts[i]/p.total):0;return `<div class="bar"><i style="width:${pc}%"></i><span>${esc(o)}</span><b>${p.counts[i]} · ${pc}%</b></div>`}).join("")}
+    ${p.canEdit?`<div class="row" style="margin-top:8px">${p.active?`<button class="btn sm ghost" data-pend="${esc(p.id)}">סגור עכשיו</button>`:""}<button class="btn sm danger" data-pdel="${esc(p.id)}">מחק</button></div>`:""}</div>`).join("");
+  box.querySelectorAll("[data-pend]").forEach(b=>b.onclick=async()=>{await api({action:"pollEnd",id:b.dataset.pend});loadPolls()});
+  box.querySelectorAll("[data-pdel]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את הסקר?"))return;await api({action:"pollDelete",id:b.dataset.pdel});loadPolls()});
+}
+
+// ---- 📅 אירועים ----
+async function showEvents(){
+  $("main").innerHTML=`<div class="card"><h2>📅 אירוע חדש</h2><p class="hint">טיולים, שבתות, ימי שיא, אסיפות. מופיע לתלמידים בראש המסך שבועיים לפני.</p>
+    <label>שם האירוע</label><input id="eT" maxlength="80" placeholder="למשל: שבת אחים">
+    <div class="row" style="align-items:flex-end"><div style="flex:1"><label>תאריך</label><input id="eD" type="date"></div><div style="flex:1"><label>שעה (לא חובה)</label><input id="eH" type="time"></div></div>
+    <label>מקום (לא חובה)</label><input id="eP" maxlength="60" placeholder="למשל: בית המדרש">
+    <label>פרטים (לא חובה)</label><textarea id="eX" maxlength="300" style="min-height:70px" placeholder="מה להביא, הסעות, לבוש…"></textarea>
+    <label>למי</label>${audSeg("eAud")}
+    <div class="row" style="margin-top:14px"><button class="btn" id="eGo" style="flex:1">הוסף ללוח</button></div><div id="eMsg" hidden></div></div>
+    <div class="card"><h2>לוח האירועים</h2><div id="eList"><p class="hint">טוען…</p></div></div>`;
+  wireSeg("eAud");
+  $("eGo").onclick=async()=>{const title=$("eT").value.trim(),date=$("eD").value;if(!title)return msg("eMsg","כתוב שם לאירוע.");if(!date)return msg("eMsg","בחר תאריך.");
+    $("eGo").disabled=true;const r=await api({action:"eventCreate",title,date,time:$("eH").value,place:$("eP").value.trim(),desc:$("eX").value.trim(),audience:segVal("eAud")});$("eGo").disabled=false;
+    if(!r.ok)return msg("eMsg",ERR[r.error]||"שגיאה.");msg("eMsg",r.past?"✅ נוסף (שים לב: התאריך כבר עבר).":"✅ נוסף ללוח.",true);["eT","eD","eH","eP","eX"].forEach(id=>$(id).value="");loadEvents()};
+  loadEvents();
+}
+async function loadEvents(){
+  const r=await api({action:"eventList"}),box=$("eList");if(!box)return;
+  if(!r.ok){box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
+  const up=r.events.filter(e=>e.date>=r.today);
+  if(!up.length){box.innerHTML=`<p class="hint">אין אירועים קרובים.</p>`;return}
+  box.innerHTML=up.map(e=>`<div class="item"><div class="m"><b>${esc(e.date.split("-").reverse().join("."))}${e.time?" · "+esc(e.time):""}</b> · ${AUDN2[e.audience]} · ${esc(e.author||"")}</div><div class="t"><b>${esc(e.title)}</b>${e.place?` · 📍 ${esc(e.place)}`:""}${e.desc?`<br>${esc(e.desc)}`:""}</div>${e.canEdit?`<div class="row" style="margin-top:6px"><button class="btn sm danger" data-edel="${esc(e.id)}">מחק</button></div>`:""}</div>`).join("");
+  box.querySelectorAll("[data-edel]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את האירוע?"))return;await api({action:"eventDelete",id:b.dataset.edel});loadEvents()});
+}
+
+// ---- ❓ שאלות מתלמידים (אנונימיות) ----
+let qFilter="new";
+async function showQuestions(){
+  $("main").innerHTML=`<div class="card"><h2>❓ שאלות מתלמידים</h2><p class="hint">התלמידים שואלים בלי שם. כשעונים, השאלה והתשובה מופיעות לכל הכיתה שממנה הגיעה השאלה. שאלה לא מתאימה – מסתירים.</p>
+    <div class="seg" id="qF"><button data-v="new" class="${qFilter==="new"?"on":""}">מחכות לתשובה</button><button data-v="answered" class="${qFilter==="answered"?"on":""}">נענו</button></div><div id="qList" style="margin-top:10px"><p class="hint">טוען…</p></div></div>`;
+  $("qF").querySelectorAll("button").forEach(b=>b.onclick=()=>{qFilter=b.dataset.v;showQuestions()});
+  const r=await api({action:"qList"}),box=$("qList");if(!box)return;
+  if(!r.ok){box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
+  const list=r.questions.filter(q=>q.status===qFilter);
+  if(!list.length){box.innerHTML=`<p class="hint">${qFilter==="new"?"אין שאלות שמחכות 🎉":"עוד לא נענו שאלות."}</p>`;return}
+  box.innerHTML=list.map(q=>`<div class="item"><div class="m">${q.cls?AUDN2[q.cls]:""}${q.to?" · "+esc(q.to):""} · ${fmtT(q.createdAt)}</div><div class="t"><b>${esc(q.text)}</b></div>
+    ${q.status==="answered"?`<div class="t" style="margin-top:4px">💬 ${esc(q.answer)} <span class="hint">– ${esc(q.answeredBy||"")}</span></div><div class="row" style="margin-top:6px"><button class="btn sm danger" data-qdel="${esc(q.id)}">מחק</button></div>`
+    :`<textarea data-qa="${esc(q.id)}" maxlength="800" style="min-height:60px;margin-top:6px" placeholder="התשובה שלך (תופיע לכל הכיתה)"></textarea><div class="row" style="margin-top:6px"><button class="btn sm" data-qans="${esc(q.id)}">פרסם תשובה</button><button class="btn sm ghost" data-qhide="${esc(q.id)}">הסתר</button></div>`}</div>`).join("");
+  box.querySelectorAll("[data-qans]").forEach(b=>b.onclick=async()=>{const t=box.querySelector(`[data-qa="${CSS.escape(b.dataset.qans)}"]`).value.trim();if(!t)return;b.disabled=true;const x=await api({action:"qAnswer",id:b.dataset.qans,answer:t});if(!x.ok)alert(ERR[x.error]||"שגיאה.");showQuestions()});
+  box.querySelectorAll("[data-qhide]").forEach(b=>b.onclick=async()=>{await api({action:"qHide",id:b.dataset.qhide});showQuestions()});
+  box.querySelectorAll("[data-qdel]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק? היא תיעלם גם אצל התלמידים."))return;await api({action:"qDelete",id:b.dataset.qdel});showQuestions()});
+}
+
+// ---- 🏃 שחרורים שההורים חתמו עליהם ----
+async function showReleases(){
+  $("main").innerHTML=`<div class="card"><h2>🏃 שחרורים</h2><p class="hint">אישורי יציאה שההורים חתמו עליהם בשחרורון, מהשבוע האחרון.</p><div id="rList"><p class="hint">טוען…</p></div></div>`;
+  const r=await api({action:"releasesList"}),box=$("rList");if(!box)return;
+  if(!r.ok){box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
+  if(!r.releases.length){box.innerHTML=`<p class="hint">אין שחרורים בשבוע האחרון.</p>`;return}
+  const byDay={};r.releases.sort((a,b)=>(b.date+b.from).localeCompare(a.date+a.from)).forEach(x=>(byDay[x.date]=byDay[x.date]||[]).push(x));
+  box.innerHTML=Object.entries(byDay).map(([d,l])=>`<div class="day"><h3>${d===r.today?"היום":esc(d.split("-").reverse().join("."))} <small>${l.length} שחרורים</small></h3>${l.map(x=>`<div class="item"><div class="m"><b>${esc(x.from||"")}</b> · ${AUDN2[x.cls]||""}${x.lesson?" · "+esc(x.lesson):""}${x.teacher?" · למורה: "+esc(x.teacher):""}</div><div class="t"><b>${esc(x.name)}</b> – ${esc(x.reason||"")}</div><div class="m">✍️ חתום: ${esc(x.parent||"")}</div></div>`).join("")}</div>`).join("");
+}
+
+// ---- 📈 נתונים למנהל (אנונימי) ----
+async function showStats(){
+  $("main").innerHTML=`<div class="card"><h2>📈 נתונים</h2><p class="hint">7 הימים האחרונים. רק מספרים – בלי שמות. "בסיכון" = מעל 25% חיסורים במקצוע (אצל מי שחיבר משוב).</p><div id="stBody"><p class="hint">טוען…</p></div></div>`;
+  const r=await api({action:"stats"}),box=$("stBody");if(!box)return;
+  if(!r.ok){box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
+  const cls=Object.keys(CLASSES_META);
+  box.innerHTML=cls.map(c=>{const x=r.classes[c]||{active:0,mashov:0,risk:{},warn:{}};const rows=[...new Set([...Object.keys(x.risk),...Object.keys(x.warn)])].sort((a,b)=>((x.risk[b]||0)-(x.risk[a]||0))||((x.warn[b]||0)-(x.warn[a]||0)));
+    return `<div class="day"><h3>${CLASSES_META[c].label} <small>${x.active} תלמידים השתמשו · ${x.mashov} מחוברים למשוב</small></h3>${rows.length?rows.map(n=>`<div class="ls"><div class="sb">${esc(n)}</div><div class="tm" style="flex:0 0 auto">${x.risk[n]?`<span class="pill urg">🔴 ${x.risk[n]} בסיכון</span>`:""}${x.warn[n]?`<span class="pill off">🟠 ${x.warn[n]}</span>`:""}</div></div>`).join(""):`<div class="empty">אין מקצועות בסיכון 🎉</div>`}</div>`}).join("");
 }
 
 // ---- מערכת: לפי כיתה או לפי מורה ----

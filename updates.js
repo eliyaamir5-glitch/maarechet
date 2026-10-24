@@ -117,12 +117,18 @@
       document.body.append(ov);
     },
     url() { return ((typeof SERVER_BASE !== "undefined" && SERVER_BASE) || "") + "/api/updates"; },
+    feedUrl() { return ((typeof SERVER_BASE !== "undefined" && SERVER_BASE) || "") + "/api/feed"; },
+    // סקרים, אירועים, תשובות לשאלות וימי הולדת – מגיעים יחד עם העדכונים
+    feed() { return load("feedCache", { polls: [], events: [], answers: [], birthdays: [] }); },
     cached() { const c = load(KEY, null); return c ? (c.list || []).filter(u => u.expiresAt > Date.now()) : []; },
     async refresh() {
       try {
-        const r = await fetch(this.url(), { cache: "no-store" });
-        const j = await r.json();
-        if (j && j.ok && Array.isArray(j.updates)) { save(KEY, { at: Date.now(), list: j.updates }); return true; }
+        // קודם הפיד המשולב; אם השרת עוד לא מכיר אותו – הכתובת הישנה (רק עדכונים)
+        let j = null;
+        try { const r = await fetch(this.feedUrl(), { cache: "no-store" }); if (r.ok) j = await r.json(); } catch (e) {}
+        if (j && j.ok && Array.isArray(j.updates)) save("feedCache", { at: Date.now(), polls: j.polls || [], events: j.events || [], answers: j.answers || [], birthdays: j.birthdays || [] });
+        else { const r = await fetch(this.url(), { cache: "no-store" }); j = await r.json(); }
+        if (j && j.ok && Array.isArray(j.updates)) { save(KEY, { at: Date.now(), list: j.updates }); if (this.onFeed) try { this.onFeed(); } catch (e) {} return true; }
       } catch (e) {}
       return false;
     },
