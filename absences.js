@@ -102,6 +102,12 @@
       absEvents.push({ ...ev, subject: subj, justified: c.justified });
     }
 
+    // המורה של כל מקצוע (לפי ההקבצה והמגמה של התלמיד). שני מורים באותו מקצוע → "א / ב"
+    const teachers = {};
+    for (let d = 0; d < 6; d++) for (const l of lessonsOfDay(days, d, profile, D)) {
+      const w = String(l.w || "").replace(/\s*\(.*\)\s*$/, "").trim();
+      if (w) (teachers[l.n] = teachers[l.n] || new Set()).add(w);
+    }
     const subjects = names.map(n => {
       const s = per[n] || { absences: 0, justified: 0, unjustified: 0, unknownJust: 0, lates: 0 };
       const total = yearTotals[n] || 0, h = held[n] || 0;
@@ -113,7 +119,7 @@
       // מצב חילוץ: כמה שעות ברצף צריך להגיע כדי לרדת ל-25% (חזרה לכתום)
       const needConsecutive = pct > RED ? Math.max(0, Math.ceil(counted / RED - h)) : 0;
       const weekly = weeklyPeriods(days, profile, D, n);
-      return { name: n, nonBagrut: nonBagrut.includes(n), yearTotal: total, held: h, remaining: total - h, ...s, counted, pct, limit, allowedLeft, status,
+      return { name: n, teacher: teachers[n] ? [...teachers[n]].join(" / ") : "", nonBagrut: nonBagrut.includes(n), yearTotal: total, held: h, remaining: total - h, ...s, counted, pct, limit, allowedLeft, status,
         needConsecutive, weeksToRecover: weekly ? Math.ceil(needConsecutive / weekly) : null, weekly };
     }).sort((a, b) => (b.pct - a.pct) || a.name.localeCompare(b.name, "he"));
 

@@ -66,6 +66,7 @@ main{padding:16px 14px 40px;max-width:560px;margin:0 auto}
 .subj .n{font-weight:700;font-size:16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .subj .tag{border-radius:8px;padding:1px 8px;font-size:11px;font-weight:900;color:#111}
 .subj .s{font-size:13px;color:var(--muted);line-height:1.55;margin-top:2px}
+.subj .tch{font-size:13px;font-weight:500;margin-top:2px;overflow-wrap:anywhere}
 .subj .c{font-size:13px;font-weight:700;margin-top:2px}
 .stk{display:inline-flex;align-items:center;gap:3px;font-weight:900;font-size:14px;color:var(--fire)}
 .stk .f{display:inline-block;animation:flick 1.6s ease-in-out infinite;transform-origin:50% 90%;filter:drop-shadow(0 0 6px rgba(255,140,40,.8))}
@@ -291,6 +292,7 @@ function subjCard(s,st,cls){
   const broke=st.current===0&&st.lastBreak;
   return `<div class="subj ${hot?"hot":""} ${cls}">${ring(s.pct,c)}<div style="flex:1;min-width:0">
     <div class="n">${esc(s.name)}<span class="tag" style="background:${c}">${LABEL[s.status]}</span></div>
+    ${s.teacher?`<div class="tch">👤 ${esc(s.teacher)}</div>`:""}
     <div class="s">${stkHTML(st,"ברצף")}${st.best>st.current?` · שיא ${st.best}`:""}${broke?` · <span class="brk">💔 נשבר ב-${fmtD(st.lastBreak.date)}, בונים מחדש</span>`:""}</div>
     <div class="s">חיסורים: <b>${s.absences}</b>${s.justified?` (${s.justified} מוצדקים)`:""}${s.lates?` · איחורים: ${s.lates}`:""}${s.nonBagrut?"":` · עוד מותר: <b>${Math.max(0,s.allowedLeft)}</b>`}</div>
     <div class="c" style="color:${c}">${esc(Absences.cheer(s))}</div></div></div>`;

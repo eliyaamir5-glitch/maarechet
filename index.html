@@ -155,6 +155,13 @@ dialog textarea{width:100%;min-height:90px;border:1.5px solid var(--line);border
 .brand{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;font-weight:700;letter-spacing:.2px;margin:-6px 0 12px;opacity:.95}
 .brand img{width:24px;height:24px;border-radius:50%;background:#fff;object-fit:contain;padding:1px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
 .brand span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.contact{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:12px;margin:10px 0 4px;font-size:13px;color:var(--muted);line-height:1.5}
+.contact b{color:var(--ink)}
+.contact .cbtns{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.contact .cbtns a{margin:0;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:12px;padding:10px 8px;font-size:14px;font-weight:700;text-decoration:none;min-width:0}
+.contact .wa{background:#25d366;color:#06301c}
+.contact .em{background:var(--next);color:var(--ink)}
+.contact .em span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr}
 .foot .made{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:14px;opacity:.85}
 .foot .made img{width:20px;height:20px;border-radius:50%;background:#fff;object-fit:contain}
 .avatar{flex:0 0 auto;width:48px;height:48px;border-radius:50%;border:2px solid rgba(255,255,255,.75);background:rgba(255,255,255,.2) center/cover no-repeat;color:#fff;font:inherit;font-size:20px;font-weight:900;cursor:pointer;padding:0}
@@ -382,6 +389,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
     <p class="fb-note" id="fbTech" hidden>כדי שנוכל לתקן, יצורפו גם פרטים טכניים: סוג המכשיר והדפדפן, ובאיזה מסך היית.</p>
     <p class="fb-note" id="fbMsg" style="color:#ff5d6c"></p>
     <div class="btns"><button type="button" class="primary" id="fbSend">שליחה</button><button class="ghost" value="cancel">סגור</button></div>
+    <div id="fbContact"></div>
   </form>
 </dialog>
 <dialog id="dlg">
@@ -635,11 +643,21 @@ document.getElementById("instShare").onclick=async()=>{
 const APP_VER="2026.10.15";
 const FB_PH={idea:"מה היית רוצה שיהיה באפליקציה? למשל: תזכורת לפני מבחן",bug:"מה לא עבד? מה עשית לפני שזה קרה? (למשל: לחצתי על נוכחות והמסך נשאר ריק)",other:"מה תרצה להגיד לנו?"};
 let fbKind="idea",fbLast=0;
+// פנייה ישירה למי שבנה את האפליקציה: וואטסאפ ומייל
+function contactHTML(){
+  if(typeof CONTACT==="undefined"||!CONTACT)return "";
+  const intl=String(CONTACT.phone||"").replace(/\D/g,"").replace(/^0/,"972"),show=String(CONTACT.phone||"").replace(/^(\d{3})(\d{3})(\d{4})$/,"$1-$2-$3");
+  const hi=encodeURIComponent(`היי ${CONTACT.name.split(" ")[0]}, לגבי אפליקציית המערכת: `);
+  return `<div class="contact">אפשר גם לפנות ישירות ל<b>${CONTACT.name}</b>, שבנה את האפליקציה:<div class="cbtns">`+
+    (intl?`<a class="wa" href="https://wa.me/${intl}?text=${hi}" target="_blank" rel="noopener">💬 וואטסאפ <bdi dir="ltr">${show}</bdi></a>`:"")+
+    (CONTACT.email?`<a class="em" href="mailto:${CONTACT.email}?subject=${encodeURIComponent("אפליקציית המערכת")}">✉️ <span>${CONTACT.email}</span></a>`:"")+"</div></div>";
+}
 function openFeedback(kind){
   fbKind=kind||"idea";const dlg=document.getElementById("fbDlg");
   const form=document.getElementById("fbForm");
   if(form.dataset.done){form.innerHTML=form.dataset.orig;delete form.dataset.done;wireFeedback()}
   drawFeedbackKind();document.getElementById("fbMsg").textContent="";
+  const fc=document.getElementById("fbContact");if(fc)fc.innerHTML=contactHTML();
   dlg.returnValue="";dlg.showModal();
 }
 function drawFeedbackKind(){
@@ -698,7 +716,7 @@ function applyProfile(){
   document.getElementById("hTitle").textContent=profile?`המערכת של ${profile.first}`:"המערכת שלי";
   document.title=(profile?`המערכת של ${profile.first}`:"המערכת שלי")+` – ${c.label}`;
   document.getElementById("hSub").textContent=`כיתה ${c.label} · ${c.rav}`+(profile?" · 👤 פרופיל":"");
-  document.querySelector(".foot").innerHTML=`כיתה ${c.label} · לחיצה על "ציוד" בכל שיעור פותחת עריכה, והרשימה נשמרת בטלפון`+(isStandalone()?"":`<br><a href="#" id="installLink">📲 איך מוסיפים את האפליקציה למסך הבית?</a>`)+`<br><a href="about.html">ℹ️ על האפליקציה</a> · <a href="#" id="introLink">🎬 ההיכרות הקצרה</a>`+(SCHOOL_NAME?`<div class="made">${SCHOOL_LOGO?`<img src="${SCHOOL_LOGO}" alt="" onerror="this.remove()">`:""}<span>${SCHOOL_NAME}</span></div>`:"")+`<button type="button" class="fb-btn" id="fbOpen">💡 יש רעיון? 🐞 משהו לא עובד? כתבו לנו</button>`+`<a href="staff.html" style="font-size:12px;font-weight:400;color:var(--muted)">כניסת צוות</a>`;
+  document.querySelector(".foot").innerHTML=`כיתה ${c.label} · לחיצה על "ציוד" בכל שיעור פותחת עריכה, והרשימה נשמרת בטלפון`+(isStandalone()?"":`<br><a href="#" id="installLink">📲 איך מוסיפים את האפליקציה למסך הבית?</a>`)+`<br><a href="about.html">ℹ️ על האפליקציה</a> · <a href="#" id="introLink">🎬 ההיכרות הקצרה</a>`+(SCHOOL_NAME?`<div class="made">${SCHOOL_LOGO?`<img src="${SCHOOL_LOGO}" alt="" onerror="this.remove()">`:""}<span>${SCHOOL_NAME}</span></div>`:"")+`<button type="button" class="fb-btn" id="fbOpen">💡 יש רעיון? 🐞 משהו לא עובד? כתבו לנו</button>`+contactHTML()+`<a href="staff.html" style="font-size:12px;font-weight:400;color:var(--muted)">כניסת צוות</a>`;
   renderAvatar(document.getElementById("hAvatar"));
 }
 const STEPS=[
