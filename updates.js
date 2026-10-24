@@ -155,7 +155,7 @@
       const SHOW = 3;
       list.forEach((u, i) => {
         const c = card(u, (i >= SHOW ? "more" : "") + (flying.has(u.id) ? " waiting" : ""));
-        if (rOn) c.append(this.reactBar(u, mine[u.id] || ""));
+        if (rOn && u.reacts && typeof u.reacts === "object") c.append(this.reactBar(u, mine[u.id] || "")); // רק כשהשרת כבר תומך בתגובות
         if (i >= SHOW) c.hidden = true;
         box.append(c);
       });
