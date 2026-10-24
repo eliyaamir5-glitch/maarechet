@@ -76,6 +76,17 @@ mark{background:none;color:var(--accent);font-weight:900}
 .edit button{flex:0 0 auto;padding:8px 12px;font-size:14px}
 .msg{font-size:13px;margin-top:6px;min-height:16px}
 .msg.ok{color:var(--free)}.msg.err{color:var(--bad)}
+/* 💻 מחשב: כל המורים ברשת */
+@media (min-width:1000px){
+  .top{padding-left:max(18px,calc((100% - 1100px)/2 + 14px));padding-right:max(18px,calc((100% - 1100px)/2 + 14px))}
+  main{max-width:1100px;padding:20px 32px 48px}
+  .search{max-width:640px;margin-inline:auto}
+  #list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}
+  #list .ct{margin:0}
+  #list .letter,#list .empty{grid-column:1/-1}
+  #editBar{max-width:640px;margin-inline:auto}
+}
+@media (min-width:1350px){#list{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style>
 </head>
 <body>

@@ -105,6 +105,19 @@ svg text{font-family:Rubik,Arial,sans-serif}
 .pq select{border:1.5px solid var(--line);border-radius:10px;padding:5px;font:inherit;font-size:16px;background:var(--card);color:var(--ink)}
 .pq .r{display:block;font-weight:900;font-size:20px;color:var(--accent);white-space:nowrap;line-height:1.6}
 .pq .w{font-size:13px;color:var(--muted);line-height:1.5;margin-top:2px}
+/* 💻 מחשב: הקלט והמקלדת מימין, הפתרון משמאל – זה לצד זה */
+@media (min-width:1000px){
+  .top{padding-left:max(18px,calc((100% - 1240px)/2 + 14px));padding-right:max(18px,calc((100% - 1240px)/2 + 14px))}
+  main{max-width:1240px;padding:24px 32px 48px}
+  .tiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .tile.big{grid-column:1/-1}
+  #vSolve,#vSys,#vFunc,#vLine,#vTri{display:grid;grid-template-columns:480px minmax(0,1fr);gap:24px;align-items:start}
+  #vSolve>.card:first-child,#vSys>.card:first-child,#vFunc>.card:first-child,#vLine>.card:first-child,#vTri>.card:first-child{position:sticky;top:16px}
+  #sOut:empty::before,#qOut:empty::before,#fOut:empty::before,#lOut:empty::before,#tOut:empty::before{content:"כאן יופיעו התשובה וכל השלבים 👈";display:block;color:var(--muted);text-align:center;padding:60px 20px;border:2px dashed var(--line);border-radius:22px}
+  #vPct .card{max-width:900px;margin:0 auto}
+  #vPct .pq{display:inline-block;width:calc(50% - 8px);vertical-align:top;margin-inline-end:8px}
+  svg.plot{max-width:640px;margin-inline:auto}
+}
 </style>
 </head>
 <body>
