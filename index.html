@@ -160,6 +160,7 @@ dialog textarea{width:100%;min-height:90px;border:1.5px solid var(--line);border
 .contact .cbtns{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 .contact .cbtns a{margin:0;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:12px;padding:10px 8px;font-size:14px;font-weight:700;text-decoration:none;min-width:0}
 .contact .wa{background:#25d366;color:#06301c}
+.contact .sms{background:#0a84ff;color:#fff}
 .contact .em{background:var(--next);color:var(--ink)}
 .contact .em span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr}
 .foot .made{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:14px;opacity:.85}
@@ -643,13 +644,14 @@ document.getElementById("instShare").onclick=async()=>{
 const APP_VER="2026.10.15";
 const FB_PH={idea:"מה היית רוצה שיהיה באפליקציה? למשל: תזכורת לפני מבחן",bug:"מה לא עבד? מה עשית לפני שזה קרה? (למשל: לחצתי על נוכחות והמסך נשאר ריק)",other:"מה תרצה להגיד לנו?"};
 let fbKind="idea",fbLast=0;
-// פנייה ישירה למי שבנה את האפליקציה: וואטסאפ ומייל
+// פנייה ישירה למי שבנה את האפליקציה (מופיע רק בחלון "כתבו לנו"): וואטסאפ, SMS ומייל
 function contactHTML(){
   if(typeof CONTACT==="undefined"||!CONTACT)return "";
   const intl=String(CONTACT.phone||"").replace(/\D/g,"").replace(/^0/,"972"),show=String(CONTACT.phone||"").replace(/^(\d{3})(\d{3})(\d{4})$/,"$1-$2-$3");
   const hi=encodeURIComponent(`היי ${CONTACT.name.split(" ")[0]}, לגבי אפליקציית המערכת: `);
-  return `<div class="contact">אפשר גם לפנות ישירות ל<b>${CONTACT.name}</b>, שבנה את האפליקציה:<div class="cbtns">`+
-    (intl?`<a class="wa" href="https://wa.me/${intl}?text=${hi}" target="_blank" rel="noopener">💬 וואטסאפ <bdi dir="ltr">${show}</bdi></a>`:"")+
+  // "sms:מספר?&body=" עובד גם באייפון וגם באנדרואיד
+  return `<div class="contact">או לשלוח הודעה ישירות ל<b>${CONTACT.name}</b>, שבנה את האפליקציה${show?` (<bdi dir="ltr">${show}</bdi>)`:""}:<div class="cbtns">`+
+    (intl?`<a class="wa" href="https://wa.me/${intl}?text=${hi}" target="_blank" rel="noopener">💬 בוואטסאפ</a><a class="sms" href="sms:+${intl}?&body=${hi}">📱 ב-SMS (הודעה רגילה)</a>`:"")+
     (CONTACT.email?`<a class="em" href="mailto:${CONTACT.email}?subject=${encodeURIComponent("אפליקציית המערכת")}">✉️ <span>${CONTACT.email}</span></a>`:"")+"</div></div>";
 }
 function openFeedback(kind){
@@ -716,7 +718,7 @@ function applyProfile(){
   document.getElementById("hTitle").textContent=profile?`המערכת של ${profile.first}`:"המערכת שלי";
   document.title=(profile?`המערכת של ${profile.first}`:"המערכת שלי")+` – ${c.label}`;
   document.getElementById("hSub").textContent=`כיתה ${c.label} · ${c.rav}`+(profile?" · 👤 פרופיל":"");
-  document.querySelector(".foot").innerHTML=`כיתה ${c.label} · לחיצה על "ציוד" בכל שיעור פותחת עריכה, והרשימה נשמרת בטלפון`+(isStandalone()?"":`<br><a href="#" id="installLink">📲 איך מוסיפים את האפליקציה למסך הבית?</a>`)+`<br><a href="about.html">ℹ️ על האפליקציה</a> · <a href="#" id="introLink">🎬 ההיכרות הקצרה</a>`+(SCHOOL_NAME?`<div class="made">${SCHOOL_LOGO?`<img src="${SCHOOL_LOGO}" alt="" onerror="this.remove()">`:""}<span>${SCHOOL_NAME}</span></div>`:"")+`<button type="button" class="fb-btn" id="fbOpen">💡 יש רעיון? 🐞 משהו לא עובד? כתבו לנו</button>`+contactHTML()+`<a href="staff.html" style="font-size:12px;font-weight:400;color:var(--muted)">כניסת צוות</a>`;
+  document.querySelector(".foot").innerHTML=`כיתה ${c.label} · לחיצה על "ציוד" בכל שיעור פותחת עריכה, והרשימה נשמרת בטלפון`+(isStandalone()?"":`<br><a href="#" id="installLink">📲 איך מוסיפים את האפליקציה למסך הבית?</a>`)+`<br><a href="about.html">ℹ️ על האפליקציה</a> · <a href="#" id="introLink">🎬 ההיכרות הקצרה</a>`+(SCHOOL_NAME?`<div class="made">${SCHOOL_LOGO?`<img src="${SCHOOL_LOGO}" alt="" onerror="this.remove()">`:""}<span>${SCHOOL_NAME}</span></div>`:"")+`<button type="button" class="fb-btn" id="fbOpen">💡 יש רעיון? 🐞 משהו לא עובד? כתבו לנו</button>`+`<a href="staff.html" style="font-size:12px;font-weight:400;color:var(--muted)">כניסת צוות</a>`;
   renderAvatar(document.getElementById("hAvatar"));
 }
 const STEPS=[
