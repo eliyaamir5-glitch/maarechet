@@ -390,7 +390,7 @@ async function loadEvents(){
 let qFilter="new";
 async function showQuestions(){
   $("main").innerHTML=`<div class="card"><h2>❓ שאלות מתלמידים</h2><p class="hint">התלמידים שואלים בלי שם. כשעונים, השאלה והתשובה מופיעות לכל הכיתה שממנה הגיעה השאלה. שאלה לא מתאימה – מסתירים.</p>
-    <div class="seg" id="qF"><button data-v="new" class="${qFilter==="new"?"on":""}">מחכות לתשובה</button><button data-v="answered" class="${qFilter==="answered"?"on":""}">נענו</button><button data-v="hidden" class="${qFilter==="hidden"?"on":""}">מוסתרות</button></div><div id="qList" style="margin-top:10px"><p class="hint">טוען…</p></div></div>`;
+    <div class="seg" id="qF"><button data-v="new" class="${qFilter==="new"?"on":""}">מחכות לתשובה</button><button data-v="answered" class="${qFilter==="answered"?"on":""}">נענו</button>${caps.feed?`<button data-v="hidden" class="${qFilter==="hidden"?"on":""}">מוסתרות</button>`:""}</div><div id="qList" style="margin-top:10px"><p class="hint">טוען…</p></div></div>`;
   $("qF").querySelectorAll("button").forEach(b=>b.onclick=()=>{qFilter=b.dataset.v;showQuestions()});
   const r=await api({action:"qList"}),box=$("qList");if(!box)return;
   if(!r.ok){box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
@@ -425,7 +425,7 @@ async function loadBirthdays(){
 async function showStats(){
   $("main").innerHTML=`<div class="card"><h2>📈 נתונים</h2><p class="hint">7 הימים האחרונים. רק מספרים – בלי שמות. "בסיכון" = מעל 25% חיסורים במקצוע (אצל מי שחיבר משוב).</p><div id="stBody"><p class="hint">טוען…</p></div></div>
     <div class="card"><h2>🎂 ימי הולדת שמוצגים</h2><p class="hint">התלמידים מכניסים את השם בעצמם. אם משהו לא מתאים – אפשר להסיר.</p><div id="bdBox"><p class="hint">טוען…</p></div></div>`;
-  loadBirthdays();
+  if(caps.feed)loadBirthdays();else $("bdBox").closest(".card").remove();
   const r=await api({action:"stats"}),box=$("stBody");if(!box)return;
   if(!r.ok){box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
   const cls=Object.keys(CLASSES_META);
