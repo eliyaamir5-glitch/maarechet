@@ -98,6 +98,9 @@
     return c;
   }
 
+  // אימוג'י מוכנים לבחירה מהירה (ואפשר גם כל אימוג'י מהמקלדת)
+  const PICK = ["👍","❤️","😂","😮","😢","🙏","🔥","👏","🎉","💯","😍","🤔","😅","😎","🥳","🤩","🙌","💪","✅","⭐","🏆","📚","✏️","⚽","🍕","🎂","🤯","😇","🫡","👀","💙","🤣","😴","😬","🥲","🤝","💡","🌟","😡","❌"];
+  const EMOJI_RE = /^(?=.*[\p{Extended_Pictographic}\p{Regional_Indicator}])[\p{Extended_Pictographic}\p{Emoji_Component}\u200d\ufe0f\u20e3]{1,10}$/u;
   const Updates = {
     videoEmbed,
     // נגן סרטון על כל המסך. נסגר ב-✕, בלחיצה בחוץ או ב-Esc
@@ -138,7 +141,8 @@
     // preview: רשימה לתצוגה מקדימה (במסך הצוות), בלי לגעת במטמון
     render(box, cls, preview) {
       const list = preview ? sorted(preview) : this.forClass(cls);
-      const sig = JSON.stringify([list.map(u => [u.id, u.text, u.video, u.urgent, u.expiresAt]), [...(this._flying || [])]]);
+      const rOn = !preview && this.who && this.reactOn && this.reactOn(), mine = load("myReacts", {});
+      const sig = JSON.stringify([list.map(u => [u.id, u.text, u.video, u.urgent, u.expiresAt, rOn ? [u.reacts, mine[u.id]] : 0]), [...(this._flying || [])]]);
       if (!preview && box.__sig === sig && box.childElementCount) return;
       box.__sig = preview ? null : sig;
       const flying = new Set(this._flying || []);
@@ -151,6 +155,7 @@
       const SHOW = 3;
       list.forEach((u, i) => {
         const c = card(u, (i >= SHOW ? "more" : "") + (flying.has(u.id) ? " waiting" : ""));
+        if (rOn) c.append(this.reactBar(u, mine[u.id] || ""));
         if (i >= SHOW) c.hidden = true;
         box.append(c);
       });
@@ -161,6 +166,54 @@
         if (box.__open) more.click();
         box.append(more);
       }
+    },
+
+    // ---- תגובות באימוג'י: כל תלמיד מגיב פעם אחת (אפשר להחליף); השולח והמנהל רואים מי הגיב ----
+    reactBar(u, mine) {
+      const bar = el("div", "upd-react");
+      const counts = Object.entries(u.reacts || {}).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+      for (const [e, n] of counts.slice(0, 8)) {
+        const b = el("button", "upd-rc" + (e === mine ? " mine" : ""), `${e} ${n}`); b.type = "button";
+        b.setAttribute("aria-label", e === mine ? `הסר את התגובה ${e}` : `להגיב ${e}`);
+        b.onclick = () => this.react(u.id, e === mine ? "" : e);
+        bar.append(b);
+      }
+      const add = el("button", "upd-radd", mine ? "שינוי" : "😀＋"); add.type = "button";
+      add.setAttribute("aria-label", "להגיב באימוג'י");
+      add.onclick = () => this.picker(u.id, mine);
+      bar.append(add);
+      return bar;
+    },
+    picker(id, mine) {
+      const ov = el("div", "upd-pick"), sh = el("div", "upd-sheet");
+      sh.append(el("div", "upd-ptitle", "איך הגבת לעדכון?"));
+      const grid = el("div", "upd-pgrid");
+      for (const e of PICK) { const b = el("button", e === mine ? "on" : "", e); b.type = "button"; b.onclick = () => { close(); this.react(id, e); }; grid.append(b); }
+      const row = el("div", "upd-prow"), inp = el("input"), go = el("button", "upd-pgo", "שליחה");
+      inp.placeholder = "או כל אימוג'י מהמקלדת"; inp.maxLength = 16; inp.setAttribute("aria-label", "אימוג'י"); go.type = "button";
+      const msg = el("div", "upd-pmsg");
+      go.onclick = () => { const v = inp.value.trim(); if (!EMOJI_RE.test(v)) { msg.textContent = "אפשר רק אימוג'י אחד, בלי אותיות."; return; } close(); this.react(id, v); };
+      inp.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); go.click(); } };
+      row.append(inp, go); sh.append(grid, row, msg);
+      if (mine) { const rm = el("button", "upd-prm", `להסיר את התגובה שלי (${mine})`); rm.type = "button"; rm.onclick = () => { close(); this.react(id, ""); }; sh.append(rm); }
+      const x = el("button", "upd-pclose", "סגירה"); x.type = "button"; x.onclick = () => close(); sh.append(x);
+      ov.append(sh); document.body.append(ov);
+      const close = () => { ov.remove(); document.removeEventListener("keydown", esc); };
+      const esc = e => { if (e.key === "Escape") close(); };
+      ov.addEventListener("click", e => { if (e.target === ov) close(); });
+      document.addEventListener("keydown", esc);
+    },
+    async react(id, emoji) {
+      const mineAll = load("myReacts", {}), prev = mineAll[id] || "", c = load(KEY, null);
+      const bump = (u, e, d) => { if (!e) return; u.reacts = u.reacts || {}; u.reacts[e] = Math.max(0, (u.reacts[e] || 0) + d); if (!u.reacts[e]) delete u.reacts[e]; };
+      const apply = (from, to) => { if (c && Array.isArray(c.list)) { const u = c.list.find(x => x && x.id === id); if (u) { bump(u, from, -1); bump(u, to, 1); save(KEY, c); } } };
+      const setMine = v => { const m = load("myReacts", {}); if (v) m[id] = v; else delete m[id]; save("myReacts", m); };
+      apply(prev, emoji); setMine(emoji); this.redraw && this.redraw(); // מיד, בלי לחכות לשרת
+      let j = null;
+      try { const who = this.who(); const r = await fetch(this.feedUrl(), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "react", id, emoji, ...who }) }); j = await r.json(); } catch (e) {}
+      if (j && j.ok) { const c2 = load(KEY, null); if (c2 && Array.isArray(c2.list)) { const u = c2.list.find(x => x && x.id === id); if (u) { u.reacts = j.counts || {}; save(KEY, c2); } } }
+      else { apply(emoji, prev); setMine(prev); if (window.toast) window.toast("התגובה לא נשלחה", "בדקו חיבור ונסו שוב."); }
+      this.redraw && this.redraw();
     },
 
     // ---- חלון קופץ לעדכונים שעוד לא נראו ----
@@ -232,6 +285,7 @@
     init(box, getCls, canPop) {
       const ok = () => !canPop || canPop();
       const draw = () => { if (!this._popping) this.render(box, getCls()); };
+      this.redraw = draw;
       const tryPop = () => { if (ok() && !document.hidden) this.popup(box, getCls()); };
       draw();
       const tick = async () => { await this.refresh(); draw(); tryPop(); this.badge(getCls()); }; // מציירים גם אם הרענון נכשל, כדי להעלים עדכונים שפג תוקפם
@@ -261,6 +315,22 @@
   .upd-aud{background:var(--break);border-radius:8px;padding:1px 8px;font-size:11px;font-weight:700}
   .upd-text{font-size:16px;line-height:1.5;margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere}
   .upd-meta{font-size:12px;color:var(--muted);margin-top:6px}
+  .upd-react{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .upd-rc,.upd-radd{border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:3px 10px;font:inherit;font-size:14px;cursor:pointer;line-height:1.4}
+  .upd-rc.mine{border-color:var(--accent);background:rgba(124,140,255,.18);font-weight:700}
+  .upd-radd{color:var(--muted);font-size:13px}
+  .upd-pick{position:fixed;inset:0;z-index:10040;background:rgba(8,10,30,.55);display:flex;align-items:flex-end;justify-content:center;animation:updfade .2s both}
+  .upd-sheet{background:var(--card);color:var(--ink);width:100%;max-width:460px;border-radius:22px 22px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-height:80vh;overflow:auto}
+  .upd-ptitle{font-weight:900;font-size:16px;text-align:center;margin-bottom:10px}
+  .upd-pgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+  .upd-pgrid button{border:none;background:none;font-size:26px;padding:6px 0;border-radius:10px;cursor:pointer}
+  .upd-pgrid button.on,.upd-pgrid button:hover{background:var(--break)}
+  .upd-prow{display:flex;gap:6px;margin-top:12px}
+  .upd-prow input{flex:1;min-width:0;border:1.5px solid var(--line);border-radius:12px;padding:10px;font:inherit;font-size:18px;background:var(--bg);color:var(--ink);text-align:center}
+  .upd-pgo{border:none;border-radius:12px;padding:0 16px;font:inherit;font-weight:800;background:var(--accent);color:#fff;cursor:pointer}
+  .upd-pmsg{color:#ff5d6c;font-size:13px;min-height:16px;margin-top:4px;text-align:center}
+  .upd-prm,.upd-pclose{display:block;width:100%;border:none;background:var(--break);color:var(--ink);border-radius:12px;padding:10px;font:inherit;font-weight:700;margin-top:8px;cursor:pointer}
+  @media (max-width:360px){.upd-pgrid{grid-template-columns:repeat(6,1fr)}}
   .upd-more{display:block;width:100%;border:1.5px dashed var(--line);background:none;color:var(--accent);border-radius:12px;padding:8px;font:inherit;font-weight:700;cursor:pointer;margin-bottom:8px}
   html.upd-lock,html.upd-lock body{overflow:hidden}
   .upd-pop{position:fixed;inset:0;z-index:9999;display:flex;padding:20px;overflow-y:auto;overscroll-behavior:contain}

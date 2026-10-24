@@ -372,3 +372,28 @@ await call("/api/staff", { body: { action: "qHide", id: hq.id }, token: t3 });
 await call("/api/staff", { body: { action: "qRestore", id: hq.id }, token: t3 });
 r = await call("/api/staff", { body: { action: "qList" }, token: t3 });
 ok("hidden question can be restored", r.json.questions.find(q => q.id === hq.id).status === "new");
+// שאלה מחזירה מזהה (כדי שהטלפון יידע כשענו לו)
+r = await call("/api/feed", { body: { action: "ask", text: "שאלה עם מזהה", cls: "y2" } });
+ok("ask returns the question id", r.status === 200 && typeof r.json.id === "string" && r.json.id.length > 5);
+// תגובות באימוג'י לעדכון
+r = await call("/api/staff", { body: { action: "post", text: "עדכון לתגובות", minutes: 60, audience: "all" }, token: t3 });
+const rid = r.json.update.id;
+r = await call("/api/feed", { body: { action: "react", id: rid, device: "device-rrrr-1111", emoji: "👍", name: "נועם לוי", cls: "y1" } });
+ok("student reacts with an emoji", r.status === 200 && r.json.counts["👍"] === 1);
+await call("/api/feed", { body: { action: "react", id: rid, device: "device-rrrr-2222", emoji: "❤️", name: "שירה", cls: "y2" } });
+await call("/api/feed", { body: { action: "react", id: rid, device: "device-rrrr-1111", emoji: "🇮🇱", name: "נועם לוי", cls: "y1" } });
+r = await call("/api/feed", { method: "GET" });
+const fu = r.json.updates.find(u => u.id === rid);
+ok("feed shows counts only (one reaction per device, can change)", fu.reacts["❤️"] === 1 && fu.reacts["🇮🇱"] === 1 && !fu.reacts["👍"] && !JSON.stringify(fu).includes("נועם"));
+for (const bad of ["abc", "__proto__", "👍abc", "x".repeat(40), "<b>"]) {
+  r = await call("/api/feed", { body: { action: "react", id: rid, device: "device-rrrr-3333", emoji: bad, name: "x", cls: "y1" } });
+  ok(`reaction "${bad.slice(0, 10)}" refused`, r.status === 400);
+}
+r = await call("/api/feed", { body: { action: "react", id: "nope", device: "device-rrrr-3333", emoji: "👍", cls: "y1" } });
+ok("reaction to a missing update → 404", r.status === 404);
+r = await call("/api/staff", { body: { action: "list" }, token: t3 });
+const su = r.json.updates.find(u => u.id === rid);
+ok("staff sees who reacted with what", su.reactions.length === 2 && su.reactions.some(x => x.name === "נועם לוי" && x.e === "🇮🇱" && x.cls === "y1"));
+await call("/api/feed", { body: { action: "react", id: rid, device: "device-rrrr-2222", emoji: "", cls: "y2" } });
+r = await call("/api/feed", { method: "GET" });
+ok("reaction can be removed", !r.json.updates.find(u => u.id === rid).reacts["❤️"]);

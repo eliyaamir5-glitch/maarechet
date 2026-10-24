@@ -78,6 +78,9 @@ textarea{min-height:110px;resize:vertical;line-height:1.5}
 [hidden]{display:none!important}
 /* 💻 מחשב: רחב יותר */
 @media (min-width:1000px){main{max-width:1000px;padding:24px 32px 48px}.top .bar,.tabs{max-width:1000px}}
+.rx{margin-top:6px}.rx summary{cursor:pointer;display:flex;flex-wrap:wrap;gap:6px;align-items:center;list-style:none}.rx summary::-webkit-details-marker{display:none}
+.rxc{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:1px 9px;font-size:14px}.rxn{font-size:12px;color:var(--muted);text-decoration:underline}
+.rxl{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 12px;margin-top:6px;font-size:14px}.rxl small{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -104,6 +107,13 @@ async function api(body){
     if(j.error==="auth"&&me){T.set(null);me=null;setTimeout(()=>showLogin("פג תוקף הכניסה. צריך להיכנס שוב."),0)}
     return j;
   }catch(e){return {ok:false,error:"network"}}
+}
+// תגובות התלמידים לעדכון: סיכום לפי אימוג'י, ובלחיצה – מי הגיב מה
+function rxHTML(list){
+  if(!list||!list.length)return"";
+  const c={};for(const x of list)c[x.e]=(c[x.e]||0)+1;
+  const sum=Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([e,n])=>`<span class="rxc">${esc(e)} ${n}</span>`).join("");
+  return `<details class="rx"><summary>${sum}<span class="rxn">${list.length===1?"תגובה אחת":list.length+" תגובות"} · מי הגיב?</span></summary><div class="rxl">${list.map(x=>`<div>${esc(x.e)} ${esc(x.name||"בלי שם")}${x.cls?` <small>(${esc((CLASSES_META[x.cls]||{}).label||"")})</small>`:""}</div>`).join("")}</div></details>`;
 }
 async function act(b,body,after,ask){
   if(ask&&!confirm(ask))return;
@@ -257,7 +267,7 @@ async function showList(){
   const r=await api({action:"list"});const box=$("list");if(!box)return;
   if(!r.ok){if(r.error==="auth")return showLogin();box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
   if(!r.updates.length){box.innerHTML=`<p class="hint">אין עדכונים בימים האחרונים.</p>`;return}
-  box.innerHTML=r.updates.map(u=>`<div class="item"><div class="m"><span class="pill ${u.scheduled?"sch":u.active?"on":"off"}">${u.scheduled?"⏰ מתוזמן ל-"+fmtT(u.startsAt):u.active?"פעיל":"הסתיים"}</span>${u.urgent?`<span class="pill urg">דחוף</span>`:""}<b>${esc(u.authorName)}</b> · ${u.audience==="all"?"כולם":u.audience==="y1"?"י'1":"י'2"} · ${fmtT(u.createdAt)} עד ${fmtT(u.expiresAt)} · 👁 ${u.views||0}${u.postedByName&&u.postedByName!==u.authorName?`<br>נשלח ע"י ${esc(u.postedByName)}`:""}</div><div class="t">${esc(u.text)}</div>${u.video?`<div class="m" style="margin-top:4px">🎬 <a href="${esc(u.video)}" target="_blank" rel="noopener" style="color:var(--accent)">סרטון מצורף</a></div>`:""}
+  box.innerHTML=r.updates.map(u=>`<div class="item"><div class="m"><span class="pill ${u.scheduled?"sch":u.active?"on":"off"}">${u.scheduled?"⏰ מתוזמן ל-"+fmtT(u.startsAt):u.active?"פעיל":"הסתיים"}</span>${u.urgent?`<span class="pill urg">דחוף</span>`:""}<b>${esc(u.authorName)}</b> · ${u.audience==="all"?"כולם":u.audience==="y1"?"י'1":"י'2"} · ${fmtT(u.createdAt)} עד ${fmtT(u.expiresAt)} · 👁 ${u.views||0}${u.postedByName&&u.postedByName!==u.authorName?`<br>נשלח ע"י ${esc(u.postedByName)}`:""}</div><div class="t">${esc(u.text)}</div>${rxHTML(u.reactions)}${u.video?`<div class="m" style="margin-top:4px">🎬 <a href="${esc(u.video)}" target="_blank" rel="noopener" style="color:var(--accent)">סרטון מצורף</a></div>`:""}
     <div class="row" style="margin-top:8px">${u.active?`<button class="btn sm ghost" data-end="${esc(u.id)}">סיים עכשיו</button>`:""}<button class="btn sm ghost" data-ext="${esc(u.id)}" data-m="60">+ שעה</button><button class="btn sm ghost" data-ext="${esc(u.id)}" data-m="1440">+ יום</button><button class="btn sm danger" data-del="${esc(u.id)}">מחק</button></div></div>`).join("");
   box.querySelectorAll("[data-end]").forEach(b=>b.onclick=()=>act(b,{action:"end",id:b.dataset.end},showList,"לסיים את העדכון עכשיו? הוא ייעלם אצל התלמידים."));
   box.querySelectorAll("[data-ext]").forEach(b=>b.onclick=()=>act(b,{action:"extend",id:b.dataset.ext,minutes:Number(b.dataset.m)},showList));

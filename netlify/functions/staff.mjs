@@ -390,9 +390,9 @@ async function handle(req, context, headers) {
   if (action === "list") {
     // מנהל רואה הכל, מורה רואה את שלו. כולל עדכונים שהסתיימו ב-3 הימים האחרונים
     const now = Date.now();
-    const views = await S.get("views") || {};
+    const views = await S.get("views") || {}, rx = await S.get("reactions") || {};
     const list = (await S.get("updates") || []).filter(u => (isAdmin || u.authorId === me.id) && u.expiresAt > now - 3 * 864e5)
-      .sort((a, b) => b.createdAt - a.createdAt).map(u => ({ ...u, active: u.expiresAt > now && (u.startsAt || 0) <= now, scheduled: (u.startsAt || 0) > now && u.expiresAt > now, views: views[u.id] || 0 }));
+      .sort((a, b) => b.createdAt - a.createdAt).map(u => ({ ...u, reactions: Object.values(reactsOf(rx, u.id)).sort((a, b) => b.at - a.at).map(x => ({ e: x.e, name: x.name || "", cls: x.cls || "" })), active: u.expiresAt > now && (u.startsAt || 0) <= now, scheduled: (u.startsAt || 0) > now && u.expiresAt > now, views: views[u.id] || 0 }));
     return reply(200, { ok: true, now, updates: list }, headers);
   }
 
@@ -569,6 +569,10 @@ async function handle(req, context, headers) {
 // GET  /api/feed               → { ok, now, updates, polls, events, answers, birthdays }
 // POST /api/feed {action, ...}  → vote | ask | birthday | ping | release   (ציבורי, עם הגבלות)
 const DEV_RE = /^[A-Za-z0-9-]{8,64}$/;
+// אימוג'י אחד (כולל גוון עור, דגל או צירוף) – בלי אותיות
+const EMOJI_RE = /^(?=.*[\p{Extended_Pictographic}\p{Regional_Indicator}])[\p{Extended_Pictographic}\p{Emoji_Component}\u200d\ufe0f\u20e3]{1,10}$/u;
+const reactsOf = (rx, id) => (rx && Object.hasOwn(rx, id) && rx[id] && typeof rx[id] === "object") ? rx[id] : {};
+const reactCounts = r => { const c = Object.create(null); for (const x of Object.values(r || {})) if (x && x.e) c[x.e] = (c[x.e] || 0) + 1; return c; };
 const devKey = d => sha("dev:" + d).slice(0, 24); // לא שומרים את מזהה המכשיר עצמו
 const strList = (a, n = 30, len = 60) => (Array.isArray(a) ? a : []).slice(0, n).map(x => clean(x, len)).filter(Boolean);
 const IL_DAY = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem", year: "numeric", month: "2-digit", day: "2-digit" });
@@ -602,10 +606,10 @@ function upcomingBirthdays(bd, now = Date.now()) {
 async function feed(req, S, ip, headers) {
   if (req.method === "GET") {
     const now = Date.now(), today = israelDay(now);
-    const [ups, polls, events, qs, bd] = await Promise.all(["updates", "polls", "events", "questions", "birthdays"].map(k => S.get(k)));
+    const [ups, polls, events, qs, bd, rx] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions"].map(k => S.get(k)));
     return reply(200, {
       ok: true, now,
-      updates: activeUpdates(ups, now).map(publicUpdate),
+      updates: activeUpdates(ups, now).map(u => ({ ...publicUpdate(u), reacts: reactCounts(reactsOf(rx, u.id)) })),
       polls: (polls || []).filter(p => p.endsAt > now).sort((a, b) => b.createdAt - a.createdAt).map(publicPoll),
       events: (events || []).filter(e => e.date >= today).sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || ""))).slice(0, 30)
         .map(e => ({ id: e.id, title: e.title, date: e.date, time: e.time || "", place: e.place || "", desc: e.desc || "", audience: e.audience })),
@@ -641,7 +645,27 @@ async function feed(req, S, ip, headers) {
     await rateLimit(S, "askRate", ip, 60);
     const q = { id: newId(), text, to, cls, status: "new", createdAt: now };
     await S.update("questions", cur => [q, ...(cur || []).filter(x => x.createdAt > now - 90 * 864e5)].slice(0, 500));
-    return reply(200, { ok: true }, headers);
+    return reply(200, { ok: true, id: q.id }, headers);
+  }
+  if (action === "react") {
+    const id = String(b.id || ""), emoji = String(b.emoji || "");
+    if (!DEV_RE.test(device) || !id || id.length > 40 || (emoji && (emoji.length > 32 || !EMOJI_RE.test(emoji)))) return reply(400, { ok: false, error: "bad_request" }, headers);
+    await rateLimit(S, "reactRate", ip, 3000);
+    const ups = await S.get("updates") || [];
+    if (!ups.some(u => u.id === id && u.expiresAt > now && (u.startsAt || 0) <= now)) return reply(404, { ok: false, error: "not_found" }, headers);
+    const k = devKey(device), name = clean(b.name, MAX_NAME);
+    let counts = null;
+    await S.update("reactions", cur => {
+      const m = cur && typeof cur === "object" ? cur : {};
+      const live = new Set(ups.filter(u => u.expiresAt > now - 7 * 864e5).map(u => u.id));
+      for (const x of Object.keys(m)) if (!live.has(x)) delete m[x]; // ניקוי תגובות לעדכונים ישנים
+      const r = Object.hasOwn(m, id) ? m[id] : (m[id] = {});
+      if (!emoji) delete r[k];
+      else { if (!r[k] && Object.keys(r).length >= 3000) throw new Fail(413, "too_many"); r[k] = { e: emoji, name, cls, at: now }; }
+      counts = reactCounts(r);
+      return m;
+    });
+    return reply(200, { ok: true, id, counts, mine: emoji }, headers);
   }
   if (action === "birthday") {
     if (!DEV_RE.test(device)) return reply(400, { ok: false, error: "bad_request" }, headers);
