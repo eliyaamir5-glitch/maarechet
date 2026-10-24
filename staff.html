@@ -87,7 +87,7 @@ const SITE=location.href.split("#")[0].split("?")[0];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const T={get:()=>{try{return localStorage.getItem("staffToken")}catch(e){return null}},set:v=>{try{v?localStorage.setItem("staffToken",v):localStorage.removeItem("staffToken")}catch(e){}}};
-const ERR={too_many_sets:"הגעתם למספר הסטים המקסימלי. מחקו סטים ישנים.",too_big:"הסטים תופסים יותר מדי מקום. מחקו סטים ישנים או קצרו.",code_taken:"הקוד הזה כבר בשימוש. בחר קוד אחר.",busy:"השרת עמוס לרגע. נסה שוב.",server:"תקלה בשרת. נסה שוב בעוד רגע.",bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",bad_invite:"הקישור לא תקין.",invite_used:"הקישור הזה כבר שומש.",not_found:"לא נמצא.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
+const ERR={bad_video:"הקישור לסרטון לא תקין.",bad_phone:"מספר הטלפון לא תקין.",too_many_sets:"הגעתם למספר הסטים המקסימלי. מחקו סטים ישנים.",too_big:"הסטים תופסים יותר מדי מקום. מחקו סטים ישנים או קצרו.",code_taken:"הקוד הזה כבר בשימוש. בחר קוד אחר.",busy:"השרת עמוס לרגע. נסה שוב.",server:"תקלה בשרת. נסה שוב בעוד רגע.",bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",bad_invite:"הקישור לא תקין.",invite_used:"הקישור הזה כבר שומש.",not_found:"לא נמצא.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
 const ROLE={admin:"מנהל",teacher:"מורה",staff:"צוות"};
 let me=null,tab="write",welcome=false;
 
@@ -166,7 +166,10 @@ async function showWrite(){
   const admin=me.role==="admin";
   $("main").innerHTML=`<div class="card"><h2>✍️ עדכון חדש לתלמידים</h2><p class="hint">קופץ על המסך אצל כל תלמיד שפותח את האפליקציה, ואז נשאר בראש המסך עד שהזמן נגמר.</p>
     <div class="row" style="margin-bottom:8px">${TPL.map(([l],i)=>`<button class="chip" data-tpl="${i}">${l}</button>`).join("")}</div>
-    <textarea id="text" maxlength="600" placeholder="מה רוצים להגיד לתלמידים?"></textarea><div class="count" id="count">0/600</div>
+    <textarea id="text" maxlength="600" placeholder="מה רוצים להגיד לתלמידים? קישורים שתדביקו כאן יהיו לחיצים."></textarea><div class="count" id="count">0/600</div>
+    <label>🎬 סרטון <small style="font-weight:400;color:var(--muted)">(לא חובה)</small></label>
+    <input id="video" dir="ltr" inputmode="url" autocomplete="off" placeholder="https://youtu.be/...">
+    <div class="hint" id="videoHint" style="margin:6px 0 0;font-size:13px">מעלים את הסרטון ליוטיוב (כ"לא רשום") או לגוגל דרייב (שיתוף: "כל מי שיש לו את הקישור"), ומדביקים כאן את הקישור. התלמידים יראו כפתור ▶️ ויצפו רק אם ירצו.</div>
     ${admin?`<label>בשם מי</label><select id="as"><option value="">אני (${esc(me.name)})</option></select><input id="asName" maxlength="40" placeholder="השם שיופיע, למשל: המזכירות" hidden style="margin-top:8px">`:""}
     <label>למי</label><div class="seg" id="aud"><button data-v="all" class="on">כל התלמידים</button><button data-v="y1">י'1</button><button data-v="y2">י'2</button></div>
     <label>לכמה זמן</label><div class="seg" id="dur">${DUR.map(([l,v])=>`<button data-v="${v}" class="${v===60?"on":""}">${l}</button>`).join("")}<button data-v="custom">אחר…</button></div>
@@ -180,6 +183,7 @@ async function showWrite(){
   seg("dur",v=>{$("custom").hidden=v!=="custom";dur=v==="custom"?"custom":(v==="eod"?"eod":Number(v));preview()});
   $("main").querySelectorAll("[data-tpl]").forEach(b=>b.onclick=()=>{const t=$("text");t.value=TPL[b.dataset.tpl][1]+t.value;t.focus();t.setSelectionRange(t.value.length,t.value.length);t.oninput()});
   $("text").oninput=()=>{$("count").textContent=$("text").value.length+"/600";preview()};
+  $("video").oninput=()=>{showVideoHint();preview()};
   $("urg").onchange=e=>{urgent=e.target.checked;preview()};
   $("cNum").oninput=$("cUnit").onchange=preview;
   $("post").onclick=post;
@@ -198,18 +202,33 @@ function author(){
   if(sel.value==="__name"){const n=$("asName").value.trim();return n?{author:n,role:"staff",body:{asName:n}}:{author:me.name,role:me.role,body:{}}}
   const u=(users||[]).find(x=>x.id===sel.value);return u?{author:u.name,role:u.role,body:{asUser:u.id}}:{author:me.name,role:me.role,body:{}};
 }
+// בדיקת קישור הסרטון: ריק = בלי סרטון; קישור מוכר = ✓; אחר = שגיאה
+function videoVal(){
+  const el=$("video");if(!el)return{ok:true,url:""};
+  const v=el.value.trim();if(!v)return{ok:true,url:""};
+  const url=/^https?:\/\//i.test(v)?v.replace(/^http:/i,"https:"):"https://"+v;
+  return Updates.videoEmbed(url)?{ok:true,url}:{ok:false,url};
+}
+function showVideoHint(){
+  const h=$("videoHint");if(!h)return;const v=videoVal();
+  if(!$("video").value.trim()){h.style.color="";h.textContent="מעלים את הסרטון ליוטיוב (כ\"לא רשום\") או לגוגל דרייב (שיתוף: \"כל מי שיש לו את הקישור\"), ומדביקים כאן את הקישור. התלמידים יראו כפתור ▶️ ויצפו רק אם ירצו.";return}
+  if(v.ok){h.style.color="var(--green)";h.textContent="✓ "+Updates.videoEmbed(v.url).label+" – התלמידים יקבלו כפתור ▶️ לצפייה."}
+  else{h.style.color="var(--red)";h.textContent="הקישור לא נראה כמו סרטון. אפשר קישור מיוטיוב, מגוגל דרייב, מוימאו או לקובץ וידאו."}
+}
 function preview(){
   const text=$("text").value.trim()||"כאן יופיע העדכון",now=Date.now(),m=minutes()||60,a=author();
-  Updates.render($("prev"),null,[{id:"preview",text,author:a.author,role:a.role,audience:aud,urgent,createdAt:now,expiresAt:now+m*60e3}]);
+  const vid=videoVal();
+  Updates.render($("prev"),null,[{id:"preview",text,...(vid.ok&&vid.url?{video:vid.url}:{}),author:a.author,role:a.role,audience:aud,urgent,createdAt:now,expiresAt:now+m*60e3}]);
 }
 async function post(){
   const text=$("text").value.trim(),m=minutes();
   if(!text)return msg("pMsg","כתוב את העדכון.");
   if(!(m>=1&&m<=43200))return msg("pMsg","משך לא תקין (עד 30 ימים).");
   if($("as")&&$("as").value==="__name"&&!$("asName").value.trim())return msg("pMsg","כתוב את השם שיופיע.");
-  $("post").disabled=true;const r=await api({action:"post",text,minutes:m,audience:aud,urgent,...author().body});$("post").disabled=false;
+  const vid=videoVal();if(!vid.ok)return msg("pMsg","הקישור לסרטון לא תקין. אפשר להשאיר ריק.");
+  $("post").disabled=true;const r=await api({action:"post",text,minutes:m,audience:aud,urgent,...(vid.url?{video:vid.url}:{}),...author().body});$("post").disabled=false;
   if(!r.ok){if(r.error==="auth")return showLogin();return msg("pMsg",ERR[r.error]||"שגיאה.")}
-  $("text").value="";$("count").textContent="0/600";msg("pMsg",`✅ פורסם${r.update.authorName!==me.name?` בשם ${r.update.authorName}`:""}! יקפוץ לתלמידים בפתיחה הבאה של האפליקציה (או תוך דקה, אם היא פתוחה).`,true);preview();
+  $("text").value="";$("video").value="";showVideoHint();$("count").textContent="0/600";msg("pMsg",`✅ פורסם${r.update.authorName!==me.name?` בשם ${r.update.authorName}`:""}! יקפוץ לתלמידים בפתיחה הבאה של האפליקציה (או תוך דקה, אם היא פתוחה).`,true);preview();
 }
 
 // ---- רשימת העדכונים ----
@@ -219,7 +238,7 @@ async function showList(){
   const r=await api({action:"list"});const box=$("list");if(!box)return;
   if(!r.ok){if(r.error==="auth")return showLogin();box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
   if(!r.updates.length){box.innerHTML=`<p class="hint">אין עדכונים בימים האחרונים.</p>`;return}
-  box.innerHTML=r.updates.map(u=>`<div class="item"><div class="m"><span class="pill ${u.active?"on":"off"}">${u.active?"פעיל":"הסתיים"}</span>${u.urgent?`<span class="pill urg">דחוף</span>`:""}<b>${esc(u.authorName)}</b> · ${u.audience==="all"?"כולם":u.audience==="y1"?"י'1":"י'2"} · ${fmtT(u.createdAt)} עד ${fmtT(u.expiresAt)} · 👁 ${u.views||0}${u.postedByName&&u.postedByName!==u.authorName?`<br>נשלח ע"י ${esc(u.postedByName)}`:""}</div><div class="t">${esc(u.text)}</div>
+  box.innerHTML=r.updates.map(u=>`<div class="item"><div class="m"><span class="pill ${u.active?"on":"off"}">${u.active?"פעיל":"הסתיים"}</span>${u.urgent?`<span class="pill urg">דחוף</span>`:""}<b>${esc(u.authorName)}</b> · ${u.audience==="all"?"כולם":u.audience==="y1"?"י'1":"י'2"} · ${fmtT(u.createdAt)} עד ${fmtT(u.expiresAt)} · 👁 ${u.views||0}${u.postedByName&&u.postedByName!==u.authorName?`<br>נשלח ע"י ${esc(u.postedByName)}`:""}</div><div class="t">${esc(u.text)}</div>${u.video?`<div class="m" style="margin-top:4px">🎬 <a href="${esc(u.video)}" target="_blank" rel="noopener" style="color:var(--accent)">סרטון מצורף</a></div>`:""}
     <div class="row" style="margin-top:8px">${u.active?`<button class="btn sm ghost" data-end="${esc(u.id)}">סיים עכשיו</button>`:""}<button class="btn sm ghost" data-ext="${esc(u.id)}" data-m="60">+ שעה</button><button class="btn sm ghost" data-ext="${esc(u.id)}" data-m="1440">+ יום</button><button class="btn sm danger" data-del="${esc(u.id)}">מחק</button></div></div>`).join("");
   box.querySelectorAll("[data-end]").forEach(b=>b.onclick=async()=>{b.disabled=true;await api({action:"end",id:b.dataset.end});showList()});
   box.querySelectorAll("[data-ext]").forEach(b=>b.onclick=async()=>{b.disabled=true;await api({action:"extend",id:b.dataset.ext,minutes:Number(b.dataset.m)});showList()});

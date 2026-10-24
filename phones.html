@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#5b6cff">
+<meta name="robots" content="noindex">
+<title>ספר טלפונים</title>
+<script src="demo-shim.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+html{overscroll-behavior:none;-webkit-text-size-adjust:100%}
+body{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior-y:none}
+input{-webkit-user-select:text;user-select:text}
+:root{
+  --bg:#0f1226; --card:#1d2247; --ink:#f4f5ff; --muted:#9aa0c7; --line:#2b3162;
+  --next:#243a8a; --break:#2a2f5c; --accent:#7c8cff; --accent-ink:#0b0e24; --free:#3ddc97; --warn:#ffd23f; --bad:#ff6b6b;
+  --grad:linear-gradient(135deg,#5b6cff 0%,#a259ff 60%,#ff6bd6 100%);
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#f3f2fb; --card:#ffffff; --ink:#191b33; --muted:#6c7093; --line:#e3e2f2; --next:#e5e9ff; --break:#eceaf7; --accent:#5b6cff; --accent-ink:#fff; --free:#1fb57a; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Rubik,"Segoe UI",Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+.top{background:var(--grad);color:#fff;padding:calc(16px + env(safe-area-inset-top)) 18px 18px;border-radius:0 0 28px 28px}
+.top a{display:inline-flex;align-items:center;gap:6px;color:#fff;text-decoration:none;font-size:16px;font-weight:700;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);border-radius:999px;padding:10px 18px;margin-bottom:6px}
+.top h1{margin:6px 0 0;font-size:26px;font-weight:900}
+.top p{margin:4px 0 0;font-size:14px;opacity:.85}
+main{padding:14px 14px 40px;max-width:560px;margin:0 auto}
+[hidden]{display:none!important}
+/* חיפוש */
+.search{position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 0 8px}
+.sbox{position:relative}
+.sbox input{width:100%;border:2px solid var(--line);border-radius:16px;padding:13px 44px 13px 14px;font:inherit;font-size:17px;background:var(--card);color:var(--ink)}
+.sbox input:focus{outline:none;border-color:var(--accent)}
+.sbox .ic{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none}
+.sbox .x{position:absolute;left:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:18px;padding:8px;cursor:pointer}
+.sug{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--card);border:1.5px solid var(--line);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.35);overflow:hidden;z-index:6}
+.sug button{display:flex;align-items:center;gap:10px;width:100%;text-align:start;background:none;border:none;border-bottom:1px solid var(--line);color:var(--ink);font:inherit;font-size:16px;padding:11px 14px;cursor:pointer}
+.sug button:last-child{border-bottom:none}
+.sug button.on,.sug button:hover{background:var(--next)}
+.sug small{color:var(--muted);font-size:12px;margin-inline-start:auto}
+mark{background:none;color:var(--accent);font-weight:900}
+.chips{display:flex;gap:6px;margin-top:8px;overflow-x:auto;scrollbar-width:none}
+.chips button{flex:0 0 auto;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.chips button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.count{font-size:13px;color:var(--muted);margin:10px 4px 6px}
+/* רשימה */
+.ct{display:flex;gap:12px;align-items:center;background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:12px;margin-bottom:8px;transition:border-color .3s,box-shadow .3s}
+.ct.hl{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,140,255,.25)}
+.av{flex:0 0 46px;height:46px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px}
+.info{flex:1;min-width:0}
+.info b{display:block;font-size:16px}
+.info small{display:block;color:var(--muted);font-size:13px;margin-top:2px;line-height:1.4}
+.info .ph{font-size:14px;font-weight:700;margin-top:3px;direction:ltr;text-align:right}
+.info .none{color:var(--muted);font-size:12px;font-style:italic;margin-top:3px}
+.acts{display:flex;gap:6px;flex:0 0 auto}
+.acts a{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;text-decoration:none}
+.acts .call{background:var(--free)}.acts .wa{background:#25d366}.acts .sms{background:#0a84ff}
+.letter{font-size:13px;font-weight:900;color:var(--accent);margin:14px 6px 6px}
+.empty{text-align:center;color:var(--muted);padding:30px 10px;line-height:1.6}
+.foot{text-align:center;font-size:12px;color:var(--muted);margin-top:20px;line-height:1.7}
+.foot button{background:none;border:none;color:var(--accent);font:inherit;font-size:14px;font-weight:700;cursor:pointer;padding:6px}
+/* עריכה */
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:14px;margin-bottom:10px}
+.card h2{margin:0 0 4px;font-size:17px;font-weight:900}
+.hint{color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 8px}
+.inp{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:16px;background:var(--bg);color:var(--ink)}
+.btn{border:none;border-radius:12px;padding:11px 14px;font:inherit;font-size:15px;font-weight:900;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:var(--break);color:var(--ink)}
+.row{display:flex;gap:8px;align-items:center}
+.edit{display:flex;gap:6px;margin-top:6px}
+.edit input{flex:1;min-width:0;direction:ltr;text-align:right;padding:8px 10px;font-size:15px}
+.edit button{flex:0 0 auto;padding:8px 12px;font-size:14px}
+.msg{font-size:13px;margin-top:6px;min-height:16px}
+.msg.ok{color:var(--free)}.msg.err{color:var(--bad)}
+</style>
+</head>
+<body>
+<div class="top">
+  <a href="./">🏠 חזרה למערכת</a>
+  <h1>📞 ספר טלפונים</h1>
+  <p id="sub">כל המורים בישיבה – לחיצה ומתקשרים</p>
+</div>
+<main>
+  <div id="editBar" hidden></div>
+  <div class="search">
+    <div class="sbox">
+      <span class="ic">🔍</span>
+      <input id="q" type="search" autocomplete="off" placeholder="חיפוש מורה לפי שם או מקצוע" aria-label="חיפוש מורה" enterkeyhint="search">
+      <button class="x" id="qx" hidden aria-label="נקה">✕</button>
+      <div class="sug" id="sug" hidden></div>
+    </div>
+    <div class="chips" id="chips">
+      <button data-f="all" class="on">כולם</button>
+      <button data-f="mine">👤 המורים שלי</button>
+      <button data-f="phone">📞 עם מספר</button>
+    </div>
+  </div>
+  <div class="count" id="count"></div>
+  <div id="list"></div>
+  <div class="foot">
+    🔒 המספרים בשביל תלמידי הישיבה בלבד – לא להעביר הלאה.<br>
+    <button id="editBtn">🔑 עריכת מספרים (לצוות)</button>
+  </div>
+</main>
+
+<script src="data.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const API=((typeof SERVER_BASE!=="undefined"&&SERVER_BASE)||"")+"/api/contacts";
+const profile=load("profile",null);
+
+// ---- המורים מתוך המערכת: שם → המקצועות שהוא מלמד ----
+const clean=t=>String(t||"").replace(/\s*\(.*\)\s*$/,"").trim();
+const T=new Map();
+const addT=(name,subj,mine)=>{name=clean(name);if(!name)return;const t=T.get(name)||{name,subj:new Set(),mine:false};if(subj)t.subj.add(subj);if(mine)t.mine=true;T.set(name,t)};
+const myCls=profile&&profile.cls;
+for(const [cls,days] of [["y1",DAYS_Y1],["y2",DAYS_Y2]])for(const d of days)for(const l of d.lessons||[])if(!l.key&&l.w)addT(l.w,l.n,cls===myCls);
+for(const [k,v] of Object.entries(ENG))addT(v,"אנגלית",profile&&profile.eng===k);
+for(const [k,v] of Object.entries(MATH))addT(v,"מתמטיקה",profile&&profile.math===k);
+for(const [k,m] of Object.entries(MAJORS))if(m.w)addT(m.w,"מגמת "+m.n,profile&&profile.major===k);
+
+// ---- המספרים מהשרת (נשמרים גם בטלפון, כדי שיעבוד בלי אינטרנט) ----
+let contacts=load("contactsCache",[]);
+async function refresh(){
+  try{const r=await fetch(API,{cache:"no-store"});const j=await r.json();if(j.ok&&Array.isArray(j.contacts)){contacts=j.contacts;save("contactsCache",contacts);draw()}}catch(e){}
+}
+function people(){
+  const byName=new Map(contacts.map(c=>[c.name,c]));
+  const list=[...T.values()].map(t=>({name:t.name,subj:[...t.subj],mine:t.mine,phone:(byName.get(t.name)||{}).phone||"",note:(byName.get(t.name)||{}).note||""}));
+  for(const c of contacts)if(!T.has(c.name))list.push({name:c.name,subj:[],mine:false,phone:c.phone||"",note:c.note||"",extra:true});
+  return list.sort((a,b)=>sortKey(a.name).localeCompare(sortKey(b.name),"he"));
+}
+
+// ---- חיפוש: בלי "הרב", בלי גרשיים, מתחילת מילה קודם ----
+const norm=s=>String(s||"").replace(/[֑-ׇ"'״׳]/g,"").replace(/\s+/g," ").trim().toLowerCase();
+const sortKey=n=>norm(n).replace(/^הרב /,"");
+function score(p,q){
+  if(!q)return 0;
+  const n=norm(p.name),words=n.replace(/^הרב /,"").split(" ");
+  if(words.some(w=>w.startsWith(q))||n.replace(/^הרב /,"").startsWith(q)||n.startsWith(q))return 3;
+  if(n.includes(q))return 2;
+  if(p.subj.some(s=>norm(s).includes(q))||norm(p.note).includes(q))return 1;
+  return -1;
+}
+const hl=(name,q)=>{if(!q)return esc(name);const n=norm(name);let i=-1;const words=[...n.matchAll(/\S+/g)];for(const w of words)if(w[0].startsWith(q)&&w[0]!=="הרב"){i=w.index;break}if(i<0)i=n.indexOf(q);if(i<0)return esc(name);
+  // מיקום ההתאמה בשם המקורי (השם בלי ניקוד/גרשיים זהה כמעט תמיד)
+  return esc(name.slice(0,i))+"<mark>"+esc(name.slice(i,i+q.length))+"</mark>"+esc(name.slice(i+q.length))};
+
+let filter="all",picked=null,sugIdx=-1;
+const initials=n=>{const w=n.replace(/^הרב\s+/,"").split(/\s+/).filter(Boolean);return w.length>1?w[0][0]+w[1][0]:(w[0]||"?").slice(0,2)};
+const intl=p=>p.replace(/\D/g,"").replace(/^0/,"972");
+
+function draw(){
+  const q=norm($("q").value),all=people();
+  let list=all.map(p=>({p,s:score(p,q)})).filter(x=>x.s>=0);
+  if(filter==="mine")list=list.filter(x=>x.p.mine);
+  if(filter==="phone")list=list.filter(x=>x.p.phone);
+  if(q)list.sort((a,b)=>b.s-a.s||sortKey(a.p.name).localeCompare(sortKey(b.p.name),"he"));
+  const withPhone=all.filter(p=>p.phone).length;
+  $("count").textContent=q||filter!=="all"?`נמצאו ${list.length}`:`${all.length} אנשי קשר · ${withPhone} עם מספר`;
+  if(!list.length){$("list").innerHTML=`<div class="empty">${filter==="mine"&&!profile?"כדי לראות את המורים שלך – צריך קודם להירשם במערכת.":"לא נמצא אף מורה כזה.<br>אולי בשם אחר? נסו רק את שם המשפחה."}</div>`;return}
+  let h="",letter="";
+  for(const {p} of list){
+    if(!q&&filter==="all"){const L=sortKey(p.name)[0]||"";if(L!==letter){letter=L;h+=`<div class="letter">${esc(L)}</div>`}}
+    const sub=p.extra?esc(p.note):esc(p.subj.slice(0,3).join(" · "))+(p.subj.length>3?` · +${p.subj.length-3}`:"")+(p.note?` · ${esc(p.note)}`:"");
+    const hi=encodeURIComponent("שלום, ");
+    h+=`<div class="ct${picked===p.name?" hl":""}" data-n="${esc(p.name)}"><div class="av">${esc(initials(p.name))}</div><div class="info"><b>${hl(p.name,q)}</b>${sub?`<small>${sub}</small>`:""}${p.phone?`<div class="ph">${esc(p.phone)}</div>`:`<div class="none">אין מספר עדיין</div>`}
+      ${editing?`<div class="edit"><input class="inp" inputmode="tel" value="${esc(p.phone)}" placeholder="050-000-0000" data-ph="${esc(p.name)}"><button class="btn" data-save="${esc(p.name)}">שמור</button>${p.extra?`<button class="btn ghost" data-del="${esc(p.name)}">✕</button>`:""}</div><div class="msg" data-m="${esc(p.name)}"></div>`:""}</div>
+      ${p.phone&&!editing?`<div class="acts"><a class="call" href="tel:${esc(p.phone.replace(/-/g,""))}" aria-label="התקשרות ל${esc(p.name)}">📞</a><a class="wa" href="https://wa.me/${intl(p.phone)}?text=${hi}" target="_blank" rel="noopener" aria-label="וואטסאפ ל${esc(p.name)}">💬</a><a class="sms" href="sms:${esc(p.phone.replace(/-/g,""))}" aria-label="SMS ל${esc(p.name)}">📱</a></div>`:""}</div>`;
+  }
+  $("list").innerHTML=h;
+  if(editing)wireEdit();
+}
+
+// ---- השלמה אוטומטית ----
+function suggest(){
+  const q=norm($("q").value),box=$("sug");$("qx").hidden=!$("q").value;
+  picked=null;
+  if(!q){box.hidden=true;draw();return}
+  const s=people().map(p=>({p,s:score(p,q)})).filter(x=>x.s>=2).sort((a,b)=>b.s-a.s||sortKey(a.p.name).localeCompare(sortKey(b.p.name),"he")).slice(0,6);
+  sugIdx=-1;
+  if(!s.length){box.hidden=true;draw();return}
+  box.innerHTML=s.map(({p},i)=>`<button type="button" data-pick="${esc(p.name)}"><span>${hl(p.name,q)}</span><small>${esc((p.subj[0]||p.note||"")+(p.phone?" · 📞":""))}</small></button>`).join("");
+  box.hidden=false;draw();
+}
+function pick(name){
+  $("q").value=name;$("sug").hidden=true;$("qx").hidden=false;picked=name;draw();
+  const el=document.querySelector(`.ct[data-n="${CSS.escape(name)}"]`);if(el)el.scrollIntoView({block:"center",behavior:"smooth"});
+  $("q").blur();
+}
+$("q").addEventListener("input",suggest);
+$("q").addEventListener("focus",()=>{if($("q").value&&!picked)suggest()});
+$("q").addEventListener("keydown",e=>{
+  const items=[...$("sug").querySelectorAll("button")];
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){if(!items.length)return;e.preventDefault();sugIdx=(sugIdx+(e.key==="ArrowDown"?1:-1)+items.length)%items.length;items.forEach((b,i)=>b.classList.toggle("on",i===sugIdx))}
+  else if(e.key==="Enter"){e.preventDefault();const b=items[sugIdx>=0?sugIdx:0];if(b&&!$("sug").hidden)pick(b.dataset.pick);else{$("sug").hidden=true;$("q").blur()}}
+  else if(e.key==="Escape")$("sug").hidden=true;
+});
+$("sug").addEventListener("pointerdown",e=>e.preventDefault());
+$("sug").addEventListener("click",e=>{const b=e.target.closest("[data-pick]");if(b)pick(b.dataset.pick)});
+document.addEventListener("click",e=>{if(!e.target.closest(".sbox"))$("sug").hidden=true});
+$("qx").onclick=()=>{$("q").value="";picked=null;$("sug").hidden=true;$("qx").hidden=true;draw();$("q").focus()};
+$("chips").addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(!b)return;filter=b.dataset.f;$("chips").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));draw()});
+
+// ---- עריכה (רק עם קוד עריכה, או מנהל שמחובר בכניסת הצוות באותו טלפון) ----
+let editing=false;
+const auth=()=>{const c=load("pbCode",null);if(c)return{body:{code:c},headers:{}};let t=null;try{t=localStorage.getItem("staffToken")}catch(e){}return t?{body:{},headers:{Authorization:"Bearer "+t}}:null};
+async function call(body,a=auth()){
+  try{const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json",...((a&&a.headers)||{})},body:JSON.stringify({...body,...((a&&a.body)||{})})});return await r.json()}catch(e){return{ok:false,error:"network"}}
+}
+const ERR={bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסו שוב בעוד 15 דקות.",auth:"צריך קוד עריכה.",bad_phone:"המספר לא תקין. למשל: 050-1234567",bad_request:"חסר שם.",network:"אין חיבור לשרת.",too_many:"יותר מדי אנשי קשר."};
+function editBar(){
+  const b=$("editBar");
+  if(!editing){b.hidden=true;b.innerHTML="";return}
+  b.hidden=false;
+  b.innerHTML=`<div class="card"><h2>✏️ מצב עריכה</h2><p class="hint">מה שתשמרו יופיע מיד אצל כל התלמידים. מספר ריק + שמור = מחיקת המספר.</p>
+    <details><summary style="cursor:pointer;font-weight:700;font-size:14px">＋ איש קשר שלא במערכת (מזכירות, יועצת…)</summary>
+      <div style="display:grid;gap:6px;margin-top:8px"><input class="inp" id="nName" placeholder="שם, למשל: מזכירות הישיבה" maxlength="40"><input class="inp" id="nPhone" inputmode="tel" placeholder="מספר טלפון" style="direction:ltr;text-align:right"><input class="inp" id="nNote" placeholder="הערה (לא חובה), למשל: בשעות 8–14" maxlength="60"><button class="btn" id="nAdd">הוסף</button><div class="msg" id="nMsg"></div></div></details>
+    <div class="row" style="margin-top:10px"><button class="btn ghost" id="eDone" style="flex:1">סיום עריכה</button><button class="btn ghost" id="eOut">יציאה מהקוד</button></div></div>`;
+  $("eDone").onclick=()=>{editing=false;editBar();draw()};
+  $("eOut").onclick=()=>{try{localStorage.removeItem("pbCode")}catch(e){}editing=false;editBar();draw()};
+  $("nAdd").onclick=async()=>{const name=$("nName").value.trim(),phone=$("nPhone").value.trim(),note=$("nNote").value.trim();if(!name||!phone){$("nMsg").className="msg err";$("nMsg").textContent="צריך שם ומספר.";return}
+    const r=await call({action:"set",name,phone,note,extra:true});if(!r.ok){$("nMsg").className="msg err";$("nMsg").textContent=ERR[r.error]||"שגיאה.";return}
+    $("nName").value=$("nPhone").value=$("nNote").value="";$("nMsg").className="msg ok";$("nMsg").textContent="✓ נוסף";await refresh()};
+}
+function wireEdit(){
+  document.querySelectorAll("[data-save]").forEach(b=>b.onclick=async()=>{
+    const name=b.dataset.save,inp=document.querySelector(`[data-ph="${CSS.escape(name)}"]`),m=document.querySelector(`[data-m="${CSS.escape(name)}"]`);
+    b.disabled=true;const old=contacts.find(c=>c.name===name);
+    const r=await call({action:"set",name,phone:inp.value.trim(),note:old?old.note:"",extra:!!(old&&old.extra)});b.disabled=false;
+    if(!r.ok){m.className="msg err";m.textContent=ERR[r.error]||"שגיאה.";return}
+    const i=contacts.findIndex(c=>c.name===name);if(i>=0)contacts[i]=r.contact;else contacts.push(r.contact);save("contactsCache",contacts);
+    m.className="msg ok";m.textContent=r.contact.phone?`✓ נשמר: ${r.contact.phone}`:"✓ המספר נמחק";setTimeout(()=>{if(m.isConnected)m.textContent=""},2500);
+    const ph=b.closest(".info").querySelector(".ph,.none");if(ph){ph.className=r.contact.phone?"ph":"none";ph.textContent=r.contact.phone||"אין מספר עדיין"}
+  });
+  document.querySelectorAll("[data-ph]").forEach(i=>i.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();document.querySelector(`[data-save="${CSS.escape(i.dataset.ph)}"]`).click()}}));
+  document.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!confirm(`למחוק את "${b.dataset.del}" מספר הטלפונים?`))return;const r=await call({action:"remove",name:b.dataset.del});if(r.ok)await refresh();else alert(ERR[r.error]||"שגיאה.")});
+}
+$("editBtn").onclick=async()=>{
+  if(editing)return;
+  // כבר יש קוד (או כניסת מנהל) בטלפון הזה? נכנסים ישר
+  if(auth()){const r=await call({action:"check"});if(r.ok){editing=true;editBar();draw();window.scrollTo({top:0,behavior:"smooth"});return}if(r.error==="bad_code")try{localStorage.removeItem("pbCode")}catch(e){}}
+  const b=$("editBar");b.hidden=false;
+  b.innerHTML=`<div class="card"><h2>🔑 עריכת מספרים</h2><p class="hint">מקלידים את קוד העריכה. אחרי פעם אחת הוא נשמר בטלפון.</p><div class="row"><input class="inp" id="eCode" dir="ltr" autocomplete="off" autocapitalize="characters" placeholder="XXXX-XXXX" style="text-align:center;letter-spacing:2px"><button class="btn" id="eGo">כניסה</button></div><div class="msg err" id="eMsg"></div><button class="btn ghost" id="eCancel" style="width:100%;margin-top:8px">ביטול</button></div>`;
+  window.scrollTo({top:0,behavior:"smooth"});$("eCode").focus();
+  const go=async()=>{const code=$("eCode").value.trim();if(!code)return;$("eGo").disabled=true;const r=await call({action:"check",code},null);$("eGo").disabled=false;
+    if(!r.ok){$("eMsg").textContent=ERR[r.error]||"שגיאה.";return}save("pbCode",code);editing=true;editBar();draw()};
+  $("eGo").onclick=go;$("eCode").onkeydown=e=>{if(e.key==="Enter")go()};$("eCancel").onclick=()=>{b.hidden=true;b.innerHTML=""};
+};
+
+draw();refresh();
+</script>
+<script>
+document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
+document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
+</script>
+</body>
+</html>

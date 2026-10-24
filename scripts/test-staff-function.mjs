@@ -228,3 +228,35 @@ ok("publishing needs a sign-in", r.status === 401);
 r = await call("/api/staff", { body: { action: "setDelete", id: setId }, token: t3 });
 r = await call("/api/sets", { method: "GET" });
 ok("a deleted set disappears for students", r.json.sets.length === 0);
+
+// סרטון בעדכון
+r = await call("/api/staff", { body: { action: "post", text: "צפו בסרטון", minutes: 60, video: "https://youtu.be/dQw4w9WgXcQ" }, token: t3 });
+ok("update with a video link is saved", r.status === 200 && r.json.update.video === "https://youtu.be/dQw4w9WgXcQ");
+r = await call("/api/updates", { method: "GET" });
+ok("students get the video link", r.json.updates.some(u => u.video === "https://youtu.be/dQw4w9WgXcQ"));
+r = await call("/api/staff", { body: { action: "post", text: "x", minutes: 60, video: "javascript:alert(1)" }, token: t3 });
+ok("a non-https 'video' is refused", r.status === 400 && r.json.error === "bad_video");
+
+// ספר טלפונים: קוד עריכה או מנהל; תלמידים רק קוראים
+mod.__setPhoneHash(crypto.createHash("sha256").update("PHON1234").digest("hex"));
+r = await call("/api/contacts", { method: "GET" });
+ok("contacts start empty", r.status === 200 && r.json.contacts.length === 0);
+r = await call("/api/contacts", { body: { action: "set", name: "טוני כהן", phone: "0501234567" } });
+ok("a student (no code) cannot add a number", r.status === 401);
+r = await call("/api/contacts", { body: { action: "check", code: "WRONG-CODE" }, ip: "13.0.0.1" });
+ok("wrong edit code is refused", r.status === 403);
+r = await call("/api/contacts", { body: { action: "check", code: "phon-1234" }, ip: "13.0.0.2" });
+ok("edit code works (any case, with dash)", r.status === 200 && r.json.who === "editor");
+r = await call("/api/contacts", { body: { action: "set", code: "PHON-1234", name: "טוני כהן", phone: "+972 50-123 4567" } });
+ok("number saved in a uniform format", r.status === 200 && r.json.contact.phone === "050-123-4567", JSON.stringify(r.json));
+r = await call("/api/contacts", { body: { action: "set", code: "PHON-1234", name: "מזכירות", phone: "08-6123456", note: "בשעות 8–14", extra: true } });
+ok("landline + extra contact", r.json.contact.phone === "08-612-3456" && r.json.contact.extra === true, JSON.stringify(r.json));
+r = await call("/api/contacts", { body: { action: "set", code: "PHON-1234", name: "טוני כהן", phone: "12345" } });
+ok("invalid number refused", r.status === 400 && r.json.error === "bad_phone");
+r = await call("/api/contacts", { body: { action: "set", name: "אדיר חניה", phone: "052-7654321" }, token: t3 });
+ok("the principal can edit with his sign-in", r.status === 200 && r.json.contact.phone === "052-765-4321");
+r = await call("/api/contacts", { method: "GET" });
+ok("students see all numbers", r.json.contacts.length === 3 && r.json.contacts.find(c => c.name === "מזכירות").note === "בשעות 8–14");
+r = await call("/api/contacts", { body: { action: "remove", code: "PHON-1234", name: "מזכירות" } });
+r = await call("/api/contacts", { method: "GET" });
+ok("remove works", r.json.contacts.length === 2 && !r.json.contacts.some(c => c.name === "מזכירות"));

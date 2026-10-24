@@ -1,6 +1,7 @@
 // עדכוני צוות באפליקציה: מושך את העדכונים הפעילים מהשרת ומציג אותם בראש המסך.
 // עדכון חדש קופץ פעם אחת על כל המסך, ואחרי "הבנתי" עף למקום שלו ברשימת העדכונים ונשאר שם.
-// התוכן מוצג כטקסט בלבד (textContent), לעולם לא כ-HTML.
+// התוכן מוצג כטקסט בלבד (textContent), לעולם לא כ-HTML. קישורים הופכים ללחיצים (נבנים כאלמנטים, לא כ-HTML),
+// וסרטון (יוטיוב / גוגל דרייב / וימאו / קובץ וידאו) מוצג ככפתור ▶️ – מתנגן רק אם התלמיד לוחץ.
 (function () {
   const KEY = "updatesCache", SEEN = "updatesSeen";
   const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
@@ -32,6 +33,56 @@
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const sorted = list => list.slice().sort((a, b) => (b.urgent - a.urgent) || (b.createdAt - a.createdAt));
 
+  // ---- קישורים וסרטונים ----
+  const URL_RE = /(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+)/gi;
+  const trimUrl = u => u.replace(/[.,;:!?)\]}'"״׳]+$/, "");
+  function linkify(text) {
+    const box = el("div", "upd-text"), t = String(text || "");
+    let last = 0;
+    t.replace(URL_RE, (m, _x, i) => {
+      const url = trimUrl(m), end = i + url.length;
+      box.append(document.createTextNode(t.slice(last, i)));
+      const href = /^https?:/i.test(url) ? url : "https://" + url;
+      const a = el("a", "upd-link"); a.href = href; a.target = "_blank"; a.rel = "noopener noreferrer";
+      let host = url; try { const u = new URL(href); host = u.hostname.replace(/^www\./, "") + (u.pathname.length > 1 ? "/…" : ""); } catch (e) {}
+      a.textContent = "🔗 " + host;
+      a.addEventListener("click", e => e.stopPropagation());
+      box.append(a); last = end; return m;
+    });
+    box.append(document.createTextNode(t.slice(last)));
+    return box;
+  }
+  // איך מנגנים סרטון מקישור: iframe (יוטיוב/דרייב/וימאו) או <video> (קובץ ישיר). null = לא סרטון
+  function videoEmbed(url) {
+    let u; try { u = new URL(url); } catch (e) { return null; }
+    if (u.protocol !== "https:") return null;
+    const h = u.hostname.replace(/^(www|m)\./, "");
+    let id = null, vertical = false;
+    if (h === "youtu.be") id = u.pathname.slice(1).split("/")[0];
+    else if (h === "youtube.com" || h === "music.youtube.com") {
+      if (u.pathname === "/watch") id = u.searchParams.get("v");
+      else { const m = u.pathname.match(/^\/(shorts|embed|live)\/([\w-]{6,})/); if (m) { id = m[2]; vertical = m[1] === "shorts"; } }
+    }
+    if (id && /^[\w-]{6,20}$/.test(id)) return { kind: "iframe", src: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1`, thumb: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`, vertical, label: "יוטיוב" };
+    if (h === "drive.google.com") { const m = u.pathname.match(/\/file\/d\/([\w-]+)/) || [null, u.searchParams.get("id")]; if (m[1]) return { kind: "iframe", src: `https://drive.google.com/file/d/${m[1]}/preview`, label: "גוגל דרייב" }; }
+    if (h === "vimeo.com") { const m = u.pathname.match(/^\/(\d+)/); if (m) return { kind: "iframe", src: `https://player.vimeo.com/video/${m[1]}?autoplay=1`, label: "וימאו" }; }
+    if (/\.(mp4|webm|mov|m4v)$/i.test(u.pathname)) return { kind: "video", src: u.href, label: "סרטון" };
+    return null;
+  }
+  // הסרטון של העדכון: השדה video, או קישור לסרטון שהודבק בטקסט
+  function videoOf(u) {
+    if (u.video && videoEmbed(u.video)) return u.video;
+    const m = String(u.text || "").match(URL_RE) || [];
+    return m.map(trimUrl).find(x => videoEmbed(x)) || null;
+  }
+  function videoBtn(url) {
+    const v = videoEmbed(url), b = el("button", "upd-video"); b.type = "button";
+    if (v.thumb) { const img = el("img"); img.src = v.thumb; img.alt = ""; img.loading = "lazy"; img.onerror = () => img.remove(); b.append(img); b.classList.add("thumb"); }
+    b.append(el("span", "upd-play", "▶"), el("span", "upd-vlabel", "צפייה בסרטון"));
+    b.addEventListener("click", e => { e.stopPropagation(); Updates.playVideo(url); });
+    return b;
+  }
+
   // כרטיס עדכון אחד (משמש גם ברשימה וגם בחלון הקופץ)
   function card(u, extra) {
     const c = el("div", "upd" + (u.urgent ? " urgent" : "") + (extra ? " " + extra : ""));
@@ -41,11 +92,30 @@
     top.append(who);
     if (u.urgent) top.append(el("span", "upd-urgent", "דחוף"));
     if (AUD[u.audience]) top.append(el("span", "upd-aud", AUD[u.audience]));
-    c.append(top, el("div", "upd-text", u.text), el("div", "upd-meta", `${ago(u.createdAt)} · ${until(u.expiresAt)}`));
+    c.append(top, linkify(u.text));
+    const vid = videoOf(u); if (vid) c.append(videoBtn(vid));
+    c.append(el("div", "upd-meta", `${ago(u.createdAt)} · ${until(u.expiresAt)}`));
     return c;
   }
 
   const Updates = {
+    videoEmbed,
+    // נגן סרטון על כל המסך. נסגר ב-✕, בלחיצה בחוץ או ב-Esc
+    playVideo(url) {
+      const v = videoEmbed(url); if (!v) { window.open(url, "_blank", "noopener"); return; }
+      const ov = el("div", "upd-vid"), frame = el("div", "upd-vframe" + (v.vertical ? " vert" : "")), x = el("button", "upd-vclose", "✕ סגירה");
+      x.type = "button";
+      let media;
+      if (v.kind === "iframe") { media = el("iframe"); media.src = v.src; media.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen"; media.allowFullscreen = true; media.referrerPolicy = "strict-origin-when-cross-origin"; }
+      else { media = el("video"); media.src = v.src; media.controls = true; media.autoplay = true; media.playsInline = true; }
+      frame.append(media); ov.append(x, frame);
+      const open = el("a", "upd-vopen", "פתיחה באפליקציה ↗"); open.href = url; open.target = "_blank"; open.rel = "noopener noreferrer"; ov.append(open);
+      const close = () => { ov.remove(); document.removeEventListener("keydown", esc); };
+      const esc = e => { if (e.key === "Escape") close(); };
+      x.onclick = close; ov.addEventListener("click", e => { if (e.target === ov) close(); });
+      document.addEventListener("keydown", esc);
+      document.body.append(ov);
+    },
     url() { return ((typeof SERVER_BASE !== "undefined" && SERVER_BASE) || "") + "/api/updates"; },
     cached() { const c = load(KEY, null); return c ? (c.list || []).filter(u => u.expiresAt > Date.now()) : []; },
     async refresh() {
@@ -187,6 +257,18 @@
   .upd.big .upd-text{font-size:19px;font-weight:500}
   .upd.big .upd-top{font-size:15px}
   .upd-ok{align-self:center;border:none;border-radius:999px;padding:13px 34px;font:inherit;font-size:17px;font-weight:900;background:#fff;color:#1b1f45;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.3);animation:updpop .5s cubic-bezier(.2,1.4,.4,1) .2s both}
+  .upd-link{color:var(--accent);font-weight:700;text-decoration:none;background:var(--break);border-radius:8px;padding:1px 7px;margin:0 2px;white-space:nowrap;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;direction:ltr}
+  .upd-video{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:64px;margin-top:10px;border:none;border-radius:14px;overflow:hidden;cursor:pointer;background:linear-gradient(135deg,#1b1f45,#3a2f7a);color:#fff;font:inherit;font-weight:900;font-size:16px;padding:0}
+  .upd-video.thumb{aspect-ratio:16/9;min-height:0;max-height:220px}
+  .upd-video img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.6}
+  .upd-play{position:relative;width:46px;height:46px;border-radius:50%;background:#ff3b5c;display:flex;align-items:center;justify-content:center;font-size:20px;padding-inline-start:3px;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+  .upd-vlabel{position:relative;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+  .upd-vid{position:fixed;inset:0;z-index:10050;background:rgba(5,6,20,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;animation:updfade .25s both}
+  .upd-vframe{width:100%;max-width:900px;aspect-ratio:16/9;max-height:78vh;background:#000;border-radius:14px;overflow:hidden}
+  .upd-vframe.vert{aspect-ratio:9/16;width:auto;height:78vh;max-width:100%}
+  .upd-vframe iframe,.upd-vframe video{width:100%;height:100%;border:0;display:block}
+  .upd-vclose{align-self:center;border:none;border-radius:999px;padding:10px 22px;font:inherit;font-weight:900;font-size:15px;background:#fff;color:#1b1f45;cursor:pointer}
+  .upd-vopen{color:#cfd4ff;font-size:13px;text-decoration:underline}
   @keyframes updfade{from{opacity:0}}
   @keyframes updpop{from{opacity:0;transform:scale(.7) translateY(30px)}}`;
   document.head.appendChild(css);

@@ -5,6 +5,9 @@
 // POST /api/updates {seen:[ids]}    → ספירת צפיות אנונימית (כמה תלמידים ראו)
 // POST /api/feedback {kind,text,..} → רעיון / תקלה מתלמיד (ציבורי, עם הגבלת כמות). מנהלים רואים ב"פניות"
 // GET  /api/sets                    → { ok, sets:[סטי כרטיסיות שהצוות פרסם] }    (ציבורי, לכרטיסיות)
+// GET  /api/contacts                → { ok, contacts:[{name, phone, note, extra}] } (ספר הטלפונים של המורים)
+// POST /api/contacts {action, ...}  → check | set | remove. מותר רק עם "קוד עריכת טלפונים" (scripts/make-phone-code.mjs)
+//                                     או עם כניסת מנהל (טוקן). תלמידים רק קוראים.
 // GET  /api/staff                   → { ok, needsSetup }                      (האם כבר הוגדר מנהל)
 // POST /api/staff {action, ...}     → check_invite | setup | login | me | updateMe | post | end | extend | delete | list
 //                                     | users | addUser | resetUser | removeUser | feedback | feedbackDone | feedbackDelete
@@ -20,7 +23,7 @@
 // תוכן העדכונים הוא טקסט בלבד, והאפליקציה מציגה אותו כטקסט (לא HTML).
 import crypto from "node:crypto";
 
-export const config = { path: ["/api/updates", "/api/staff", "/api/feedback", "/api/sets"] };
+export const config = { path: ["/api/updates", "/api/staff", "/api/feedback", "/api/sets", "/api/contacts"] };
 
 const ALLOWED = [/^https:\/\/eliyaamir5-glitch\.github\.io$/, /^https:\/\/[a-z0-9-]+\.netlify\.app$/, /^http:\/\/localhost(:\d+)?$/];
 const MAX_FEEDBACK = 1000, FEEDBACK_KINDS = ["idea", "bug", "other"], FEEDBACK_PER_HOUR = 30;
@@ -31,6 +34,10 @@ const MAX_SETS = 200, MAX_CARDS = 300, MAX_SIDE = 300, MAX_SETS_BYTES = 3e6; // 
 // sha256 של מפתח ההזמנה למנהל. נוצר ע"י: node scripts/make-invite.mjs
 let INVITE_HASH = "568b920bf334e23fd0f8d6b9b11446dd7d9de4c716b47a18d95a95e5c381ab14";
 export function __setInviteHash(h) { INVITE_HASH = h; }
+// sha256 של קוד העריכה לספר הטלפונים. נוצר ע"י: node scripts/make-phone-code.mjs
+let PHONE_HASH = "f2ab971e878bd1ab9072853dc15a6ad4e8e533c824eae1e2b341fff1b7c5be37";
+export function __setPhoneHash(h) { PHONE_HASH = h; }
+const MAX_CONTACTS = 300;
 const sha = s => crypto.createHash("sha256").update(String(s)).digest("hex");
 const norm = c => String(c || "").replace(/[\s-]/g, "").toUpperCase(); // "abcd-efgh" = "ABCDEFGH"
 const isInvite = c => !!INVITE_HASH && !!norm(c) && safeEq(sha(norm(c)), INVITE_HASH);
@@ -190,7 +197,7 @@ async function handle(req, context, headers) {
     }
     if (req.method !== "GET") return reply(405, { ok: false, error: "method" }, headers);
     const list = await S.get("updates") || [];
-    const updates = activeUpdates(list).map(u => ({ id: u.id, text: u.text, author: u.authorName, role: u.role, audience: u.audience, urgent: !!u.urgent, createdAt: u.createdAt, expiresAt: u.expiresAt }));
+    const updates = activeUpdates(list).map(u => ({ id: u.id, text: u.text, ...(u.video ? { video: u.video } : {}), author: u.authorName, role: u.role, audience: u.audience, urgent: !!u.urgent, createdAt: u.createdAt, expiresAt: u.expiresAt }));
     return reply(200, { ok: true, now: Date.now(), updates }, { ...headers, "Cache-Control": "public, max-age=20" });
   }
 
@@ -200,6 +207,9 @@ async function handle(req, context, headers) {
     const sets = (await S.get("sets") || []).slice().sort((a, b) => b.updatedAt - a.updatedAt).map(publicSet);
     return reply(200, { ok: true, sets }, { ...headers, "Cache-Control": "public, max-age=60" });
   }
+
+  // ---- ספר הטלפונים של המורים ----
+  if (url.pathname.endsWith("/contacts")) return contacts(req, S, ip, headers);
 
   // ---- ציבורי: רעיון או תקלה מתלמיד ----
   if (url.pathname.endsWith("/feedback")) {
@@ -311,7 +321,10 @@ async function handle(req, context, headers) {
       author = { authorId: me.id, authorName: clean(body.asName, MAX_NAME), role: "staff" };
     }
     const now = Date.now();
-    const upd = { id: newId(), text, ...author, postedBy: me.id, postedByName: me.name, audience, urgent: !!body.urgent, createdAt: now, expiresAt: now + minutes * 60e3 };
+    // קישור לסרטון (יוטיוב, גוגל דרייב וכו'): התלמיד רואה כפתור ▶️ וצופה רק אם הוא רוצה
+    const video = clean(body.video, 400);
+    if (video && !/^https:\/\/[^\s<>"']+$/i.test(video)) return reply(400, { ok: false, error: "bad_video" }, headers);
+    const upd = { id: newId(), text, ...(video ? { video } : {}), ...author, postedBy: me.id, postedByName: me.name, audience, urgent: !!body.urgent, createdAt: now, expiresAt: now + minutes * 60e3 };
     await S.update("updates", cur => [...(cur || []).filter(u => u.expiresAt > now - 7 * 864e5), upd]); // + ניקוי ישנים
     return reply(200, { ok: true, update: upd }, headers);
   }
@@ -419,6 +432,63 @@ async function handle(req, context, headers) {
       if (list.find(x => x.id === body.id)?.owner) throw new Fail(403, "forbidden");
       return list.filter(x => x.id !== body.id);
     });
+    return reply(200, { ok: true }, headers);
+  }
+  return reply(400, { ok: false, error: "bad_action" }, headers);
+}
+
+// ---------- ספר טלפונים ----------
+// מספר בפורמט אחיד: 0501234567 → 050-123-4567. מקבל גם +972
+function normPhone(p) {
+  let d = String(p || "").replace(/[^\d+]/g, "");
+  if (d.startsWith("+972")) d = "0" + d.slice(4); else if (d.startsWith("972") && d.length >= 11) d = "0" + d.slice(3);
+  d = d.replace(/\D/g, "");
+  if (!/^0\d{8,9}$/.test(d)) return null;
+  return d.length === 10 ? `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}` : `${d.slice(0, 2)}-${d.slice(2, 5)}-${d.slice(5)}`;
+}
+async function contacts(req, S, ip, headers) {
+  if (req.method === "GET") {
+    const c = await S.get("contacts") || {};
+    const list = Object.entries(c).map(([name, x]) => ({ name, phone: x.phone || "", note: x.note || "", extra: !!x.extra }));
+    return reply(200, { ok: true, contacts: list }, { ...headers, "Cache-Control": "public, max-age=30" });
+  }
+  if (req.method !== "POST") return reply(405, { ok: false, error: "method" }, headers);
+  let body; try { body = await req.json(); } catch { return reply(400, { ok: false, error: "bad_request" }, headers); }
+  // מי מורשה לערוך: קוד העריכה, או מנהל מחובר
+  let who = null;
+  const code = norm(body.code);
+  if (code) {
+    if (await tooManyFailures(S, ip)) return reply(429, { ok: false, error: "locked" }, headers);
+    if (PHONE_HASH && safeEq(sha(code), PHONE_HASH)) who = "editor";
+    else { await recordFailure(S, ip); return reply(403, { ok: false, error: "bad_code" }, headers); }
+  } else {
+    const cfg = await S.get("config");
+    const auth = cfg && verify((req.headers.get("authorization") || "").replace(/^Bearer\s+/i, ""), cfg.secret);
+    const users = auth ? await S.get("users") || [] : [];
+    const me = auth && users.find(x => x.id === auth.uid && (x.tv || 0) === (auth.tv || 0));
+    if (me && me.role === "admin") who = me.name;
+  }
+  if (!who) return reply(401, { ok: false, error: "auth" }, headers);
+  const action = String(body.action || "");
+  if (action === "check") return reply(200, { ok: true, who }, headers);
+  const name = clean(body.name, MAX_NAME);
+  if (!name) return reply(400, { ok: false, error: "bad_request" }, headers);
+  if (action === "set") {
+    const raw = clean(body.phone, 30), phone = raw ? normPhone(raw) : "";
+    if (raw && !phone) return reply(400, { ok: false, error: "bad_phone" }, headers);
+    const note = clean(body.note, 60);
+    let out = null;
+    await S.update("contacts", cur => {
+      const c = cur || {};
+      if (!c[name] && Object.keys(c).length >= MAX_CONTACTS) throw new Fail(413, "too_many");
+      c[name] = { ...(c[name] || {}), phone, note, extra: !!(body.extra ?? (c[name] && c[name].extra)), updatedAt: Date.now(), by: who };
+      out = { name, phone, note: c[name].note, extra: c[name].extra };
+      return c;
+    });
+    return reply(200, { ok: true, contact: out }, headers);
+  }
+  if (action === "remove") {
+    await S.update("contacts", cur => { const c = cur || {}; delete c[name]; return c; });
     return reply(200, { ok: true }, headers);
   }
   return reply(400, { ok: false, error: "bad_action" }, headers);
