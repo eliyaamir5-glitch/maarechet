@@ -569,8 +569,17 @@ async function handle(req, context, headers) {
 // GET  /api/feed               → { ok, now, updates, polls, events, answers, birthdays }
 // POST /api/feed {action, ...}  → vote | ask | birthday | ping | release   (ציבורי, עם הגבלות)
 const DEV_RE = /^[A-Za-z0-9-]{8,64}$/;
-// אימוג'י אחד (כולל גוון עור, דגל או צירוף) – בלי אותיות
-const EMOJI_RE = /^(?=.*[\p{Extended_Pictographic}\p{Regional_Indicator}])[\p{Extended_Pictographic}\p{Emoji_Component}\u200d\ufe0f\u20e3]{1,10}$/u;
+// אימוג'י אחד (כולל גוון עור, דגל או צירוף) – בלי אותיות. בודקים לפי טווחי קוד, בלי \p{…},
+// כי בשרת של נטליפיי הביטוי עם \p{…} דחה גם אימוג'י תקינים
+const EMOJI_PIC = c => (c >= 0x1F000 && c <= 0x1FAFF) || (c >= 0x2600 && c <= 0x27BF) || (c >= 0x2300 && c <= 0x23FF) || (c >= 0x2B00 && c <= 0x2BFF) ||
+  (c >= 0x2190 && c <= 0x21FF) || (c >= 0x25A0 && c <= 0x25FF) || (c >= 0x2934 && c <= 0x2935) || [0xA9, 0xAE, 0x203C, 0x2049, 0x2122, 0x2139, 0x3030, 0x303D, 0x3297, 0x3299].includes(c);
+const EMOJI_JOIN = c => c === 0x200D || c === 0xFE0F || c === 0x20E3 || (c >= 0xE0020 && c <= 0xE007F);
+function isEmoji(s) {
+  if (typeof s !== "string" || !s || s.length > 32) return false;
+  const cps = [...s].map(ch => ch.codePointAt(0)), keycap = cps.includes(0x20E3);
+  if (cps.length > 10 || !cps.some(EMOJI_PIC) && !keycap) return false;
+  return cps.every(c => EMOJI_PIC(c) || EMOJI_JOIN(c) || (keycap && (c === 0x23 || c === 0x2A || (c >= 0x30 && c <= 0x39))));
+}
 const reactsOf = (rx, id) => (rx && Object.hasOwn(rx, id) && rx[id] && typeof rx[id] === "object") ? rx[id] : {};
 const reactCounts = r => { const c = Object.create(null); for (const x of Object.values(r || {})) if (x && x.e) c[x.e] = (c[x.e] || 0) + 1; return c; };
 const devKey = d => sha("dev:" + d).slice(0, 24); // לא שומרים את מזהה המכשיר עצמו
@@ -649,7 +658,7 @@ async function feed(req, S, ip, headers) {
   }
   if (action === "react") {
     const id = String(b.id || ""), emoji = String(b.emoji || "");
-    if (!DEV_RE.test(device) || !id || id.length > 40 || (emoji && (emoji.length > 32 || !EMOJI_RE.test(emoji)))) return reply(400, { ok: false, error: "bad_request" }, headers);
+    if (!DEV_RE.test(device) || !id || id.length > 40 || (emoji && !isEmoji(emoji))) return reply(400, { ok: false, error: "bad_request" }, headers);
     await rateLimit(S, "reactRate", ip, 3000);
     const ups = await S.get("updates") || [];
     if (!ups.some(u => u.id === id && u.expiresAt > now && (u.startsAt || 0) <= now)) return reply(404, { ok: false, error: "not_found" }, headers);
