@@ -29,7 +29,7 @@ const LOCK_FAILS = 20, LOCK_MIN = 15; // 20 קודים שגויים ב-15 דקו
 const AUDIENCES = ["all", "y1", "y2"];
 const MAX_SETS = 200, MAX_CARDS = 300, MAX_SIDE = 300, MAX_SETS_BYTES = 3e6; // סטי כרטיסיות של הצוות
 // sha256 של מפתח ההזמנה למנהל. נוצר ע"י: node scripts/make-invite.mjs
-let INVITE_HASH = "3cfc136db2d1d5b4403c8de0b99eaa57623b01b6eaa1b1110e191d4f63f9d20d";
+let INVITE_HASH = "568b920bf334e23fd0f8d6b9b11446dd7d9de4c716b47a18d95a95e5c381ab14";
 export function __setInviteHash(h) { INVITE_HASH = h; }
 const sha = s => crypto.createHash("sha256").update(String(s)).digest("hex");
 const norm = c => String(c || "").replace(/[\s-]/g, "").toUpperCase(); // "abcd-efgh" = "ABCDEFGH"
@@ -39,6 +39,9 @@ const isInvite = c => !!INVITE_HASH && !!norm(c) && safeEq(sha(norm(c)), INVITE_
 class Fail extends Error { constructor(status, error) { super(error); this.status = status; this.error = error; } }
 
 // ---- אחסון: Netlify Blobs בייצור, מפה בזיכרון בבדיקות ----
+// שם חדש לאחסון = התחלה נקייה לגמרי (בלי מנהל, מורים, עדכונים, סטים ופניות).
+// הוחלף ב-24.10.2026: איפוס אחרי בדיקה, לפני המסירה למנהל. הנתונים הישנים לא נמחקים, פשוט לא בשימוש.
+const STORE_NAME = "maarechet-staff-2";
 // update(key, fn): קורא, מחשב ערך חדש (fn), וכותב רק אם אף אחד לא כתב בינתיים. אחרת מנסה שוב.
 let memStore = null;
 export function __useMemoryStore() {
@@ -51,7 +54,7 @@ export function __useMemoryStore() {
 async function store() {
   if (memStore) return memStore;
   const { getStore } = await import("@netlify/blobs");
-  const s = getStore({ name: "maarechet-staff", consistency: "strong" });
+  const s = getStore({ name: STORE_NAME, consistency: "strong" });
   return {
     get: k => s.get(k, { type: "json" }),
     set: (k, v) => s.setJSON(k, v),
