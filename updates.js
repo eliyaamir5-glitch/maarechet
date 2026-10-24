@@ -126,6 +126,8 @@
         // קודם הפיד המשולב; אם השרת עוד לא מכיר אותו – הכתובת הישנה (רק עדכונים)
         let j = null;
         try { const r = await fetch(this.feedUrl(), { cache: "no-store" }); if (r.ok) j = await r.json(); } catch (e) {}
+        // האם השרת כבר מכיר את הפיד המשולב (סקרים, שאלות וכו') – אם לא, התכונות האלה מוסתרות
+        try { localStorage.setItem("feedOk", j && j.ok ? "1" : "0"); } catch (e) {}
         if (j && j.ok && Array.isArray(j.updates)) save("feedCache", { at: Date.now(), polls: j.polls || [], events: j.events || [], answers: j.answers || [], birthdays: j.birthdays || [] });
         else { const r = await fetch(this.url(), { cache: "no-store" }); j = await r.json(); }
         if (j && j.ok && Array.isArray(j.updates)) { save(KEY, { at: Date.now(), list: j.updates }); if (this.onFeed) try { this.onFeed(); } catch (e) {} return true; }

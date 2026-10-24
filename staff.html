@@ -91,7 +91,7 @@ const SITE=location.href.split("#")[0].split("?")[0];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const T={get:()=>{try{return localStorage.getItem("staffToken")}catch(e){return null}},set:v=>{try{v?localStorage.setItem("staffToken",v):localStorage.removeItem("staffToken")}catch(e){}}};
-const ERR={bad_time:"הזמן לא תקין.",too_many:"יותר מדי.",bad_video:"הקישור לסרטון לא תקין.",bad_phone:"מספר הטלפון לא תקין.",too_many_sets:"הגעתם למספר הסטים המקסימלי. מחקו סטים ישנים.",too_big:"הסטים תופסים יותר מדי מקום. מחקו סטים ישנים או קצרו.",code_taken:"הקוד הזה כבר בשימוש. בחר קוד אחר.",busy:"השרת עמוס לרגע. נסה שוב.",server:"תקלה בשרת. נסה שוב בעוד רגע.",bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",bad_invite:"הקישור לא תקין.",invite_used:"הקישור הזה כבר שומש.",not_found:"לא נמצא.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
+const ERR={bad_action:"התכונה הזאת עוד לא פעילה בשרת. היא תעבוד לבד אחרי שהשרת (נטליפיי) יתעדכן.",bad_time:"הזמן לא תקין.",too_many:"יותר מדי.",bad_video:"הקישור לסרטון לא תקין.",bad_phone:"מספר הטלפון לא תקין.",too_many_sets:"הגעתם למספר הסטים המקסימלי. מחקו סטים ישנים.",too_big:"הסטים תופסים יותר מדי מקום. מחקו סטים ישנים או קצרו.",code_taken:"הקוד הזה כבר בשימוש. בחר קוד אחר.",busy:"השרת עמוס לרגע. נסה שוב.",server:"תקלה בשרת. נסה שוב בעוד רגע.",bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",bad_invite:"הקישור לא תקין.",invite_used:"הקישור הזה כבר שומש.",not_found:"לא נמצא.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
 const ROLE={admin:"מנהל",teacher:"מורה",staff:"צוות"};
 let me=null,tab="write",welcome=false;
 
@@ -191,6 +191,8 @@ async function showWrite(){
   $("text").oninput=()=>{$("count").textContent=$("text").value.length+"/600";preview()};
   $("video").oninput=()=>{showVideoHint();preview()};
   $("urg").onchange=e=>{urgent=e.target.checked;preview()};
+  const wl=$("when").previousElementSibling;$("when").hidden=true;wl.hidden=true;
+  fetch(API.replace(/\/api\/staff$/,"/api/feed"),{cache:"no-store"}).then(r=>{if(r.ok&&$("when")){$("when").hidden=false;wl.hidden=false}}).catch(()=>{});
   seg("when",v=>{$("whenAt").hidden=v!=="later";if(v==="later"&&!$("whenAt").value){const t=new Date(Date.now()+864e5);t.setHours(7,0,0,0);$("whenAt").value=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}T07:00`}});
   $("cNum").oninput=$("cUnit").onchange=preview;
   $("post").onclick=post;

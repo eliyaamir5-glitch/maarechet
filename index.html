@@ -948,7 +948,7 @@ function renderProfile(){
   <div class="pf-row"><h4>🎨 תצוגה</h4><div class="pf-sub">צבע לאפליקציה:</div><div class="th-sw">${Object.entries(Theme.THEMES).map(([k,t])=>`<button type="button" class="sw ${Theme.current()===k?"on":""}" data-th="${k}" style="background:${t.grad}" aria-label="${t.name}" title="${t.name}"></button>`).join("")}</div>
     <label class="tgl-row"><input type="checkbox" id="pfBig" ${Theme.big()?"checked":""}> 🔍 טקסט גדול</label></div>
   <div class="pf-row"><h4>👨‍👩‍👦 ההורים</h4><div class="pf-sub">קישור שבו ההורים רואים את המערכת שלך: מה יש היום ומה להביא. בלי ציונים ובלי חיסורים.</div><div class="pf-acts"><button type="button" class="primary" id="pfParent">📤 שליחת קישור להורים</button></div></div>
-  <div class="pf-row"><h4>🎂 יום הולדת</h4><div class="pf-sub">אם תרצה, החברים בכיתה יראו "מזל טוב" ביום ההולדת שלך – רק יום וחודש, בלי שנה.</div>
+  <div class="pf-row" ${feedOk()?"":"hidden"}><h4>🎂 יום הולדת</h4><div class="pf-sub">אם תרצה, החברים בכיתה יראו "מזל טוב" ביום ההולדת שלך – רק יום וחודש, בלי שנה.</div>
     <div class="pf-acts"><select class="inp" id="pfBdD" style="width:auto"><option value="">יום</option>${Array.from({length:31},(_,i)=>`<option ${bdLocal().d==i+1?"selected":""}>${i+1}</option>`).join("")}</select><select class="inp" id="pfBdM" style="width:auto"><option value="">חודש</option>${["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"].map((n,i)=>`<option value="${i+1}" ${bdLocal().m==i+1?"selected":""}>${n}</option>`).join("")}</select></div>
     <label class="tgl-row"><input type="checkbox" id="pfBdShare" ${bdLocal().share?"checked":""}> להציג לכיתה שלי</label><div class="pf-msg" id="pfBdMsg"></div></div>
   <div class="pf-row"><h4>📬 אימייל</h4>${profile.email
@@ -991,6 +991,7 @@ function renderProfile(){
 
 // ---- ✨ מה חדש: פעם אחת אחרי כל גרסה ----
 function seenVersion(){try{return localStorage.getItem("seenVersion")}catch(e){return null}}
+const feedOk=()=>{try{return localStorage.getItem("feedOk")==="1"}catch(e){return false}};
 function bdLocal(){try{return JSON.parse(localStorage.getItem("bday")||"{}")}catch(e){return{}}}
 function openWhatsNew(force){
   if(typeof WHATS_NEW==="undefined"||!WHATS_NEW.length)return;
@@ -1176,6 +1177,7 @@ const DAYH=["א'","ב'","ג'","ד'","ה'","ו'","שבת"];
 function fmtEventDate(e){const d=new Date(e.date+"T12:00"),t=new Date();t.setHours(12,0,0,0);const diff=Math.round((d-t)/864e5);return (diff===0?"היום":diff===1?"מחר":`יום ${DAYH[d.getDay()]} ${d.getDate()}.${d.getMonth()+1}`)+(e.time?` · ${e.time}`:"")}
 function renderExtras(){
   const box=document.getElementById("extras");if(!box||!window.Updates)return;
+  if(!feedOk()){box.hidden=true;return} // השרת עוד לא עודכן
   const f=Updates.feed(),votes=pollVotes();let h="";
   // 🎂 ימי הולדת (רק מי שבחר להציג)
   const bd=(f.birthdays||[]).filter(x=>x.cls===myCls());
