@@ -35,7 +35,7 @@ const MAX_SETS = 200, MAX_CARDS = 300, MAX_SIDE = 300, MAX_SETS_BYTES = 3e6; // 
 let INVITE_HASH = "568b920bf334e23fd0f8d6b9b11446dd7d9de4c716b47a18d95a95e5c381ab14";
 export function __setInviteHash(h) { INVITE_HASH = h; }
 // sha256 של קוד העריכה לספר הטלפונים. נוצר ע"י: node scripts/make-phone-code.mjs
-let PHONE_HASH = "f2ab971e878bd1ab9072853dc15a6ad4e8e533c824eae1e2b341fff1b7c5be37";
+let PHONE_HASH = "af6d01a88a81ba0c1eaeae3c628b5825b8ef6e33f3e3e89d7caa459f8a741b7f";
 export function __setPhoneHash(h) { PHONE_HASH = h; }
 const MAX_CONTACTS = 300;
 const CAPS = { feed: true, schedule: true };
