@@ -116,3 +116,14 @@ const gemBlocks = t0.blocks.filter(b => b.n === "גמרא"), gIdx = gemBlocks.in
 ok("per-subject: Gemara streak breaks, other subjects untouched", ss["גמרא"].current === gemBlocks.length - gIdx - 1 && ss["גמרא"].lastBreak.lost === gIdx && ss["אנגלית"].current === t0.blocks.filter(b => b.n === "אנגלית").length && ss["אנגלית"].lastBreak === null, `gemara=${ss["גמרא"].current} english=${ss["אנגלית"].current}`);
 ok("per-subject: every subject in the timetable has a streak", Object.keys(ss).length === new Set(t0.blocks.map(b => b.n)).size);
 ok("fire tiers", A.tierOf(0).cls === "ash" && A.tierOf(3).cls === "small" && A.tierOf(12).cls === "mid" && A.tierOf(20).cls === "big" && A.tierOf(40).cls === "blue");
+
+// שיעורים לפי הקבצה/מגמה (only / alt)
+const weekOf = p => [0, 1, 2, 3, 4].map(i => A.lessonsOfDay(D.DAYS_Y1, i, p, D));
+const sunEng = p => weekOf(p)[0].filter(l => l.n === "אנגלית").length;
+ok("Sunday 17:15 English only for Minervi/Hadad, not Bokobza", sunEng({ ...profile, eng: "hadad" }) === 2 && sunEng({ ...profile, eng: "minervi" }) === 2 && sunEng({ ...profile, eng: "bokobza" }) === 1);
+const tue18 = p => weekOf(p)[2].find(l => l.s === "18:00").n;
+ok("Tuesday 18:00 (י'1): CS major → מדעי המחשב, others → חנ\"ג", tue18({ ...profile, major: "cs" }) === "מדעי המחשב" && tue18({ ...profile, major: "phys" }) === "חינוך גופני" && tue18({ ...profile, major: "econ" }) === "חינוך גופני");
+const thuMincha = p => weekOf(p)[4].some(l => l.s === "13:30");
+ok("Thursday mincha: econ prays, phys/cs leave (exit not counted as a subject)", thuMincha({ ...profile, major: "econ" }) && !thuMincha({ ...profile, major: "phys" }) && !thuMincha({ ...profile, major: "cs" }));
+ok("forProfile: no group chosen yet → still sees the lesson", D.forProfile({ s: "17:15", e: "18:00", n: "אנגלית", key: "eng", only: { eng: ["hadad"] } }, {}) !== null);
+ok("forProfile: exit label for phys", D.forProfile(D.DAYS_Y2[4].lessons.find(l => l.s === "13:30"), { major: "phys" }).n === "יציאה למגמת פיזיקה");

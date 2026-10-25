@@ -536,7 +536,9 @@ const fmt=m=>`${pad(Math.floor(m/60))}:${pad(m%60)}`;
 const gearList=n=>(gear[n]||"").split(/[,\n]/).map(x=>x.trim()).filter(Boolean);
 function resolve(l){
   const p=profile||{};
-  if(l.key==="eng")return {...l,w:ENG[p.eng]||"מיקי בוקובזה / יהודית מינרבי / אתי חדד"};
+  l=forProfile(l,p);
+  if(!l)return null;
+  if(l.key==="eng")return {...l,w:ENG[p.eng]||(l.only&&l.only.eng?l.only.eng.map(k=>ENG[k].replace(/\s*\(.*\)$/,"")).join(" / "):"מיקי בוקובזה / יהודית מינרבי / אתי חדד")};
   if(l.key==="math")return {...l,w:MATH[p.math]||"טוני כהן / הראל פרלמן / אדיר חניה"};
   if(l.key==="major"){
     const m=MAJORS[p.major];
@@ -545,7 +547,7 @@ function resolve(l){
   }
   return l;
 }
-const lessonsOf=d=>(d.lessons||[]).map(resolve);
+const lessonsOf=d=>(d.lessons||[]).map(resolve).filter(Boolean);
 const hue=n=>{let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))%360;return h};
 let sel=new Date().getDay();
 const FREE_LINES=[
@@ -1176,7 +1178,7 @@ function absState(){
   const key=md.at+"|"+countJ+"|"+profile.cls+profile.eng+profile.math+profile.major+"|"+new Date().toDateString();
   const C=absState.cache||(absState.cache={key:null,val:null}); // שמור על הפונקציה עצמה: render() רץ לפני שהקוד הזה נטען
   if(C.key===key)return C.val;
-  const days=CLASSES[profile.cls].days,D={ENG,MATH,MAJORS};
+  const days=CLASSES[profile.cls].days,D={ENG,MATH,MAJORS,forProfile};
   const at=new Date(md.at),until=`${at.getFullYear()}-${pad(at.getMonth()+1)}-${pad(at.getDate())}`;
   const r=Absences.analyze({days,profile,data:D,year:SCHOOL_YEAR,behave:md.behave||[],today:until,countJustified:countJ,nonBagrut:NON_BAGRUT});
   const tl=Absences.timeline({days,profile,data:D,year:SCHOOL_YEAR,behave:md.behave||[],until,untilMin:at.getHours()*60+at.getMinutes()});

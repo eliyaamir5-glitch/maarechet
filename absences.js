@@ -22,6 +22,7 @@
     const d = days[dayIdx];
     if (!d || !d.lessons) return [];
     return d.lessons.map(l => {
+      if (D.forProfile) { l = D.forProfile(l, p); if (!l || l.stats === false) return null; } // הקבצה/מגמה מסוימת בלבד
       if (l.key === "eng") return { ...l, w: D.ENG[p.eng] || "" };
       if (l.key === "math") return { ...l, w: D.MATH[p.math] || "" };
       if (l.key === "major") { const m = D.MAJORS[p.major]; return m ? { ...l, n: m.n, w: m.w } : null; }
@@ -317,7 +318,7 @@
     return "עבר את ה-30%. צריך לדבר עם המחנך עכשיו";
   }
 
-  const api = { analyze, classify, matchSubject, periodsOf, isSchoolDay, periodsBetween, statusOf, LIMIT, RED, ORANGE,
+  const api = { analyze, classify, matchSubject, periodsOf, isSchoolDay, periodsBetween, lessonsOfDay, statusOf, LIMIT, RED, ORANGE,
     behaviorKind, timeline, streaks, subjectStreaks, praiseStreak, tierOf, TIERS, EVENT_UI, cheer };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.Absences = api;
 })(typeof window !== "undefined" ? window : globalThis);

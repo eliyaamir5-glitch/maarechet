@@ -5,7 +5,7 @@
 //   node gen-cal.js --check    – רק בדיקה שהקבצים בתיקייה מעודכנים (יוצא עם שגיאה אם לא)
 const fs = require("fs");
 const path = require("path");
-const { ENG, MATH, DAYS_Y1, DAYS_Y2, CLASSES_META, DEFAULT_GEAR, MAJORS, SCHOOL_YEAR } = require("./data.js");
+const { ENG, MATH, DAYS_Y1, DAYS_Y2, CLASSES_META, DEFAULT_GEAR, MAJORS, SCHOOL_YEAR, forProfile } = require("./data.js");
 const { BOARD } = require("./board.js");
 
 const OUT_DIR = path.join(__dirname, "cal");
@@ -35,6 +35,8 @@ const exdates = (weekday, hhmm, shiftDays = 0) => OFF_BY_WEEKDAY[weekday]
 const gearOf = n => (DEFAULT_GEAR[n] || "").split(/[,\n]/).map(x => x.trim()).filter(Boolean);
 
 function resolve(l, p) {
+  l = forProfile(l, p);
+  if (!l) return null;
   if (l.key === "eng") return { ...l, w: ENG[p.eng] };
   if (l.key === "math") return { ...l, w: MATH[p.math] };
   if (l.key === "major") { const m = MAJORS[p.major]; return m ? { ...l, n: m.n, w: m.w } : null; } // בלי מגמה ידועה – אין אירוע

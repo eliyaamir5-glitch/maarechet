@@ -452,10 +452,12 @@ const groupOf=t=>(String(t||"").match(/\((.*)\)/)||[])[1]||"";
 function slots(){
   const out=[];
   for(const [c,days] of Object.entries(CLS))days.forEach((d,di)=>(d.lessons||[]).forEach(l=>{
-    if(l.key==="eng")Object.values(ENG).forEach(t=>out.push({c,d:di,s:l.s,e:l.e,n:"אנגלית",w:nameOf(t),g:groupOf(t),group:true}));
+    if(l.key==="eng")Object.entries(ENG).filter(([k])=>!(l.only&&l.only.eng)||l.only.eng.includes(k)).forEach(([,t])=>out.push({c,d:di,s:l.s,e:l.e,n:"אנגלית",w:nameOf(t),g:groupOf(t),group:true}));
     else if(l.key==="math")Object.values(MATH).forEach(t=>out.push({c,d:di,s:l.s,e:l.e,n:"מתמטיקה",w:nameOf(t),g:groupOf(t)||"הקבצה",group:true}));
     else if(l.key==="major")Object.values(MAJORS).forEach(m=>out.push({c,d:di,s:l.s,e:l.e,n:"מגמת "+m.n,w:m.w,group:true}));
     else out.push({c,d:di,s:l.s,e:l.e,n:l.n,w:l.w});
+    // שיעור אחר למגמה מסוימת (למשל מדעי המחשב במקום חנ"ג) – גם המורה שלו רואה אותו
+    for(const f in l.alt||{})for(const a of Object.values(l.alt[f]))if(a.w)out.push({c,d:di,s:l.s,e:l.e,n:a.n||l.n,w:a.w,group:true});
   }));
   return out;
 }

@@ -64,7 +64,7 @@ const DAYN=["ראשון","שני","שלישי","רביעי","חמישי","שיש
 const toMin=t=>{const[a,b]=t.split(":").map(Number);return a*60+b};
 const clean=t=>String(t||"").replace(/\s*\(.*\)\s*$/,"").trim();
 function lessonsOf(d){
-  return (d.lessons||[]).map(l=>{
+  return (d.lessons||[]).map(l=>forProfile(l,{eng:p.e,math:p.m,major:p.j})).filter(Boolean).map(l=>{
     if(l.key==="eng")return {...l,w:clean(ENG[p.e])};
     if(l.key==="math")return {...l,w:clean(MATH[p.m])};
     if(l.key==="major"){const m=MAJORS[p.j];return m?{...l,n:"מגמת "+m.n,w:m.w}:l}
