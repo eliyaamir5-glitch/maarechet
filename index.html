@@ -102,6 +102,13 @@ main{padding:16px 14px 40px;max-width:560px;margin:0 auto;display:flex;flex-dire
 .row .who{font-size:13px;color:var(--muted);margin-top:2px}
 .row .g{margin-top:8px;font-size:14px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .row.joke{background:linear-gradient(135deg,rgba(61,220,151,.15),rgba(124,140,255,.15));border-style:dashed}
+/* 🔄 שינויים מהצוות: בוטל / מחליף / שעה אחרת / הערה */
+.row.cancel{opacity:.6;border-style:dashed}
+.row.cancel .n{text-decoration:line-through;text-decoration-thickness:2px}
+.chg{display:inline-block;border-radius:8px;padding:2px 8px;font-size:12px;font-weight:700;margin-inline-start:6px;vertical-align:middle;background:#ffe2e2;color:#8a1020;text-decoration:none}
+.chg.m,.chg.s{background:#fff3c4;color:#5c4400}
+.chgn{font-size:13px;margin-top:3px;color:var(--ink)}
+.chg-sum{background:#fff3c4;color:#5c4400;border-radius:14px;padding:9px 12px;font-size:14px;font-weight:700;text-align:center}
 .chip{background:var(--break);border-radius:8px;padding:3px 9px;font-size:13px}
 .edit{background:none;border:1px dashed var(--muted);color:var(--muted);border-radius:8px;padding:2px 9px;font:inherit;font-size:13px;cursor:pointer}
 .gap{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--break);border:1.5px dashed var(--muted);color:var(--ink);border-radius:14px;padding:9px 12px;font-size:14px;font-weight:700}
@@ -548,6 +555,28 @@ function resolve(l){
   return l;
 }
 const lessonsOf=d=>(d.lessons||[]).map(resolve).filter(Boolean);
+// ---- 🔄 שינויים במערכת מהצוות (בוטל / מחליף / שעה אחרת / הערה), מגיעים עם הפיד ----
+const nmT=t=>String(t||"").replace(/\s*\(.*\)\s*$/,"").replace(/^מגמת /,"").trim();
+const dateOfTab=i=>{const d=new Date();d.setDate(d.getDate()+((i-d.getDay()+7)%7));return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+function changesOn(iso){
+  const c=(profile&&profile.cls)||"y2";
+  try{return Updates.feed().changes.filter(x=>x&&x.date===iso&&(x.cls==="all"||x.cls===c))}catch(e){return []}
+}
+function withChanges(ls,iso){
+  const ch=changesOn(iso);if(!ch.length)return ls;
+  return ls.map(l=>{
+    // אותו שיעור = אותה שעת התחלה ואותו מקצוע, ובשיעורי הקבצה גם אותו מורה
+    const x=ch.find(x=>x.s===l.s&&nmT(x.n)===nmT(l.n)&&(!x.w||nmT(l.w)===nmT(x.w)));
+    if(!x)return l;
+    const o={...l,chg:x};
+    if(x.kind==="sub")o.w=`🔄 ${escH(x.sub)} (במקום ${escH(nmT(l.w)||"המורה")})`;
+    if(x.kind==="move"){const[a,e]=x.to.split("-");o.s=a;o.e=e}
+    return o;
+  }).sort((a,b)=>toMin(a.s)-toMin(b.s));
+}
+const isCancel=l=>!!(l.chg&&l.chg.kind==="cancel");
+const chgTag=l=>!l.chg?"":l.chg.kind==="cancel"?`<span class="chg">❌ בוטל</span>`:l.chg.kind==="move"?`<span class="chg m">⏰ הוזז (במקור ${l.chg.s})</span>`:l.chg.kind==="sub"?`<span class="chg s">🔄 מורה מחליף</span>`:"";
+const chgNote=l=>l.chg&&l.chg.note?`<div class="chgn">📌 ${escH(l.chg.note)}</div>`:"";
 const hue=n=>{let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))%360;return h};
 let sel=new Date().getDay();
 const FREE_LINES=[
@@ -612,11 +641,12 @@ function render(animate){
     c.innerHTML=`<div class="free"><div class="emoji">${f[0]}</div><h2>${f[1]}</h2><p>${f[2]}</p><p>${f[3]}</p>${tomorrowGear(6).replace('class="gear-tmrw"','class="gear-tmrw" style="text-align:start"')}</div>`;
     return;
   }
-  const L=lessonsOf(d).map(l=>({...l,sm:toMin(l.s),em:toMin(l.e)})).flatMap(splitLesson);
+  const L=withChanges(lessonsOf(d),dateOfTab(sel)).map(l=>({...l,sm:toMin(l.s),em:toMin(l.e)})).flatMap(splitLesson);
   let cur=-1,nxt=-1;
   if(sel===today){
-    cur=L.findIndex(l=>nowMin>=l.sm&&nowMin<l.em);
-    nxt=L.findIndex(l=>l.sm>nowMin);
+    // שיעור שבוטל לא נחשב "עכשיו" או "הבא"
+    cur=L.findIndex(l=>!isCancel(l)&&nowMin>=l.sm&&nowMin<l.em);
+    nxt=L.findIndex(l=>!isCancel(l)&&l.sm>nowMin);
   }
   // hero: now + next in one card
   const nextBlock=l=>l?`<div class="nxt"><div class="lbl">השיעור הבא · מתחיל בעוד ${dur(l.sm-nowMin)}</div><div class="nb">${l.n}${l.part>1?"":stkTag(l.n)}${partTag(l)}</div>${mustTag(l.n)}<div class="sub">${l.w?l.w+" · ":""}${l.s}–${l.e} · ${dur(l.em-l.sm)}</div>${l.joke||l.part>1?"":gearBlock(l.n)}</div>`:"";
@@ -632,19 +662,21 @@ function render(animate){
     }
   }else{
     const first=L[0],last=L[L.length-1];
-    hero.innerHTML=`<div class="hero idle"><div class="lbl">יום ${d.name}</div><div class="big">${L.length} שיעורים</div><div class="sub">${first.s} – ${last.e}</div></div>`;
+    hero.innerHTML=`<div class="hero idle"><div class="lbl">יום ${d.name}</div><div class="big">${L.filter(l=>!isCancel(l)).length} שיעורים</div><div class="sub">${first.s} – ${last.e}</div></div>`;
   }
   // list
   let html='<div class="list">';
+  const nChg=new Set(L.filter(l=>l.chg).map(l=>l.chg.id)).size;
+  if(nChg)html+=`<div class="chg-sum">🔄 ${nChg===1?"יש שינוי אחד":"יש "+nChg+" שינויים"} במערכת ${sel===today?"היום":"ביום "+d.name}</div>`;
   L.forEach((l,i)=>{
     if(i>0){const g=l.sm-L[i-1].em;if(g>=10)html+=`<div class="gap">☕ הפסקה ${dur(g)} <span>${fmt(L[i-1].em)}–${fmt(l.sm)}</span></div>`}
     const cls=sel===today?(i===cur?"now":i===nxt?"next":l.em<=nowMin?"done":""):"";
     const gl=l.joke||l.part>1?[]:gearList(l.n);
-    html+=`<div class="row ${cls} ${l.joke?"joke":""} ${mustOf(l.n)==="must"&&!cls.includes("done")?"must-row":""}" style="--c:hsl(${hue(l.n)} 70% 60%)"><div class="bar-c"></div><div class="t"><b>${l.s}</b>${l.e}<span class="dur">${durPill(l.em-l.sm)}</span></div><div><div class="n">${l.n}${l.joke||l.part>1?"":stkTag(l.n)}${partTag(l)}</div>${l.w?`<div class="who">${l.w}</div>`:""}${mustTag(l.n)}${l.joke||l.part>1?"":`<div class="g">${gl.map(x=>`<span class="chip">${escH(x)}</span>`).join("")}<button class="edit" data-n="${l.n.replace(/"/g,"&quot;")}">${gl.length?"ערוך ציוד":"+ ציוד"}</button></div>`}</div></div>`;
+    html+=`<div class="row ${cls} ${l.joke?"joke":""} ${isCancel(l)?"cancel":""} ${mustOf(l.n)==="must"&&!cls.includes("done")?"must-row":""}" style="--c:hsl(${hue(l.n)} 70% 60%)"><div class="bar-c"></div><div class="t"><b>${l.s}</b>${l.e}<span class="dur">${durPill(l.em-l.sm)}</span></div><div><div class="n">${l.n}${l.joke||l.part>1?"":stkTag(l.n)}${partTag(l)}${chgTag(l)}</div>${l.w?`<div class="who">${l.w}</div>`:""}${chgNote(l)}${mustTag(l.n)}${l.joke||l.part>1||isCancel(l)?"":`<div class="g">${gl.map(x=>`<span class="chip">${escH(x)}</span>`).join("")}<button class="edit" data-n="${l.n.replace(/"/g,"&quot;")}">${gl.length?"ערוך ציוד":"+ ציוד"}</button></div>`}</div></div>`;
   });
   html+='</div>';
   // summary of what to pack
-  const all=[...new Set(L.filter(l=>!l.joke).flatMap(l=>gearList(l.n)))];
+  const all=[...new Set(L.filter(l=>!l.joke&&!isCancel(l)).flatMap(l=>gearList(l.n)))];
   html+=`<div class="sum"><h3>מה להביא ביום ${d.name}</h3><div class="chips">${all.length?all.map(x=>`<span class="chip">${escH(x)}</span>`).join(""):'<span style="color:var(--muted);font-size:14px">עוד לא הוגדר ציוד ליום הזה</span>'}</div></div>`;
   c.innerHTML=html;
   if(animate===true)c.querySelectorAll(".row").forEach((r,i)=>r.style.animationDelay=(i*70)+"ms");else c.querySelectorAll(".row").forEach(r=>r.style.animation="none");
@@ -1363,7 +1395,7 @@ if(window.Updates){
   Updates.who=()=>({device:deviceId(),name:profile?`${profile.first||""} ${profile.last||""}`.trim():"",cls:(profile&&profile.cls)||""});
   Updates.reactOn=()=>feedOk()&&!!(profile&&profile.cls);
   Updates.init(document.getElementById("updates"),()=>(profile&&profile.cls)||"y2",canPop);
-  Updates.onFeed=renderExtras;renderExtras();setTimeout(dailyPing,5000);setTimeout(()=>{bdSync().catch(()=>{})},6000);
+  Updates.onFeed=()=>{renderExtras();render()};renderExtras();setTimeout(dailyPing,5000);setTimeout(()=>{bdSync().catch(()=>{})},6000);
   setInterval(()=>Updates.retryPop&&Updates.retryPop(),2500);
 }
 if(location.hash==="#profile"){history.replaceState(null,"",location.pathname);setTimeout(()=>openProfile(),300)}

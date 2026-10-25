@@ -317,6 +317,29 @@ ok("teachers can't see stats", r.status === 403);
 r = await call("/api/feed", { body: { action: "release", name: "יוסי כהן", cls: "y2", reason: "רופא שיניים", from: "11:00", parent: "אבא" } });
 r = await call("/api/staff", { body: { action: "releasesList" }, token: eTok });
 ok("signed release shows for staff", r.json.releases.some(x => x.name === "יוסי כהן" && x.reason === "רופא שיניים"));
+// 🔄 שינויים במערכת
+const dayIn = n => new Date(Date.now() + n * 864e5 + 3 * 3600e3).toISOString().slice(0, 10);
+const D1 = dayIn(1);
+r = await call("/api/staff", { body: { action: "changeCreate", date: D1, cls: "all", s: "16:15", n: "אנגלית", w: "מיקי בוקובזה", kind: "cancel", note: "המורה חולה" }, token: eTok });
+const chId = r.json.change && r.json.change.id;
+ok("teacher marks a lesson as cancelled", r.status === 200 && r.json.change.kind === "cancel");
+r = await call("/api/staff", { body: { action: "changeCreate", date: D1, cls: "y2", s: "10:30", n: "מבוא למדעים", w: "אהרון אדרי", kind: "sub", sub: "" }, token: eTok });
+ok("substitute without a name is refused", r.status === 400);
+r = await call("/api/staff", { body: { action: "changeCreate", date: D1, cls: "y2", s: "10:30", n: "מבוא למדעים", w: "אהרון אדרי", kind: "move", to: "12:00-11:00" }, token: eTok });
+ok("move with end before start is refused", r.status === 400);
+r = await call("/api/staff", { body: { action: "changeCreate", date: dayIn(90), cls: "y2", s: "10:30", n: "ספרות", w: "", kind: "note", note: "x" }, token: eTok });
+ok("change too far ahead is refused", r.status === 400);
+r = await call("/api/staff", { body: { action: "changeCreate", date: D1, cls: "y2", s: "10:30", n: "מבוא למדעים", w: "אהרון אדרי", kind: "sub", sub: "הרב שחר שאלתיאל" }, token: t3 });
+r = await call("/api/staff", { body: { action: "changeCreate", date: D1, cls: "y2", s: "10:30", n: "מבוא למדעים", w: "אהרון אדרי", kind: "move", to: "12:00-12:45" }, token: t3 });
+r = await call("/api/feed", { method: "GET" });
+const pubCh = r.json.changes || [];
+ok("feed shows the changes, newest replaces the same lesson", pubCh.length === 2 && pubCh.some(x => x.kind === "cancel" && x.note === "המורה חולה") && pubCh.some(x => x.kind === "move" && x.to === "12:00-12:45"));
+ok("public changes don't leak author ids", pubCh.every(x => !("authorId" in x) && !("author" in x)));
+r = await call("/api/staff", { body: { action: "changeDelete", id: pubCh.find(x => x.kind === "move").id }, token: eTok });
+ok("teacher can't delete someone else's change", r.status === 403);
+r = await call("/api/staff", { body: { action: "changeDelete", id: chId }, token: eTok });
+r = await call("/api/staff", { body: { action: "changeList" }, token: t3 });
+ok("teacher deletes his own change; principal sees the rest", r.status === 200 && r.json.changes.length === 1 && r.json.changes[0].canEdit === true);
 
 // ---- אבטחה (מעבר יסודי 25.10) ----
 // אי אפשר לנחש קודים של אחרים דרך "קוד תפוס": כל בדיקה נספרת, ואחרי 20 – נעילה

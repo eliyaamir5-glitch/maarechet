@@ -122,7 +122,7 @@
     url() { return ((typeof SERVER_BASE !== "undefined" && SERVER_BASE) || "") + "/api/updates"; },
     feedUrl() { return ((typeof SERVER_BASE !== "undefined" && SERVER_BASE) || "") + "/api/feed"; },
     // סקרים, אירועים, תשובות לשאלות וימי הולדת – מגיעים יחד עם העדכונים
-    feed() { const f = load("feedCache", null) || {}, A = x => Array.isArray(x) ? x : []; return { polls: A(f.polls), events: A(f.events), answers: A(f.answers), birthdays: A(f.birthdays) }; },
+    feed() { const f = load("feedCache", null) || {}, A = x => Array.isArray(x) ? x : []; return { polls: A(f.polls), events: A(f.events), answers: A(f.answers), birthdays: A(f.birthdays), changes: A(f.changes) }; },
     cached() { const c = load(KEY, null); return c && Array.isArray(c.list) ? c.list.filter(u => u && typeof u === "object" && u.expiresAt > Date.now()) : []; },
     async refresh() {
       try {
@@ -131,7 +131,7 @@
         try { const r = await fetch(this.feedUrl(), { cache: "no-store" }); answered = r.status === 404 || r.ok; if (r.ok) j = await r.json(); } catch (e) {}
         // האם השרת כבר מכיר את הפיד המשולב (סקרים, שאלות וכו') – אם לא, התכונות האלה מוסתרות
         if (answered) try { localStorage.setItem("feedOk", j && j.ok ? "1" : "0"); } catch (e) {}
-        if (j && j.ok && Array.isArray(j.updates)) save("feedCache", { at: Date.now(), polls: j.polls || [], events: j.events || [], answers: j.answers || [], birthdays: j.birthdays || [] });
+        if (j && j.ok && Array.isArray(j.updates)) save("feedCache", { at: Date.now(), polls: j.polls || [], events: j.events || [], answers: j.answers || [], birthdays: j.birthdays || [], changes: j.changes || [] });
         else { const r = await fetch(this.url(), { cache: "no-store" }); j = await r.json(); }
         if (j && j.ok && Array.isArray(j.updates)) { save(KEY, { at: Date.now(), list: j.updates }); if (this.onFeed) try { this.onFeed(); } catch (e) {} return true; }
       } catch (e) {}

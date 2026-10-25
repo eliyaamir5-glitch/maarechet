@@ -96,7 +96,7 @@ const SITE=location.href.split("#")[0].split("?")[0];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const T={get:()=>{try{return localStorage.getItem("staffToken")}catch(e){return null}},set:v=>{try{v?localStorage.setItem("staffToken",v):localStorage.removeItem("staffToken")}catch(e){}}};
-const ERR={bad_action:"התכונה הזאת עוד לא פעילה בשרת. היא תעבוד לבד אחרי שהשרת (נטליפיי) יתעדכן.",bad_time:"הזמן לא תקין.",too_many:"יותר מדי.",bad_video:"הקישור לסרטון לא תקין.",bad_phone:"מספר הטלפון לא תקין.",too_many_sets:"הגעתם למספר הסטים המקסימלי. מחקו סטים ישנים.",too_big:"הסטים תופסים יותר מדי מקום. מחקו סטים ישנים או קצרו.",code_taken:"הקוד הזה כבר בשימוש. בחר קוד אחר.",busy:"השרת עמוס לרגע. נסה שוב.",server:"תקלה בשרת. נסה שוב בעוד רגע.",bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",bad_invite:"הקישור לא תקין.",invite_used:"הקישור הזה כבר שומש.",not_found:"לא נמצא.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
+const ERR={bad_date:"אפשר לסמן שינוי רק מאתמול ועד חודשיים קדימה.",bad_action:"התכונה הזאת עוד לא פעילה בשרת. היא תעבוד לבד אחרי שהשרת (נטליפיי) יתעדכן.",bad_time:"הזמן לא תקין.",too_many:"יותר מדי.",bad_video:"הקישור לסרטון לא תקין.",bad_phone:"מספר הטלפון לא תקין.",too_many_sets:"הגעתם למספר הסטים המקסימלי. מחקו סטים ישנים.",too_big:"הסטים תופסים יותר מדי מקום. מחקו סטים ישנים או קצרו.",code_taken:"הקוד הזה כבר בשימוש. בחר קוד אחר.",busy:"השרת עמוס לרגע. נסה שוב.",server:"תקלה בשרת. נסה שוב בעוד רגע.",bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",bad_invite:"הקישור לא תקין.",invite_used:"הקישור הזה כבר שומש.",not_found:"לא נמצא.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
 const ROLE={admin:"מנהל",teacher:"מורה",staff:"צוות"};
 let me=null,tab="write",welcome=false,caps={};
 
@@ -167,11 +167,11 @@ function wireLogin(){
 // ---- המסך הראשי לצוות: לשוניות ----
 function showHome(){
   $("logout").hidden=false;$("who").textContent=`${me.name} · ${ROLE[me.role]||"מורה"}`;
-  const TABS=[["write","✍️ עדכון חדש"],["list","📋 עדכונים"],["qs","❓ שאלות"],["polls","📊 סקרים"],["events","📅 אירועים"],["rel","🏃 שחרורים"],["sets","🃏 כרטיסיות"],["tt","🗓️ מערכת"],...(me.role==="admin"?[["team","👥 צוות"],["fb","📬 פניות"],["stats","📈 נתונים"]]:[]),["me","⚙️ החשבון שלי"]];
+  const TABS=[["write","✍️ עדכון חדש"],["list","📋 עדכונים"],["chg","🔄 שינויים במערכת"],["qs","❓ שאלות"],["polls","📊 סקרים"],["events","📅 אירועים"],["rel","🏃 שחרורים"],["sets","🃏 כרטיסיות"],["tt","🗓️ מערכת"],...(me.role==="admin"?[["team","👥 צוות"],["fb","📬 פניות"],["stats","📈 נתונים"]]:[]),["me","⚙️ החשבון שלי"]];
   if(!TABS.some(t=>t[0]===tab))tab="write";
   $("tabs").hidden=false;$("tabs").innerHTML=TABS.map(([k,l])=>`<button data-t="${k}" class="${k===tab?"on":""}">${l}</button>`).join("");
   $("tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;showHome()});
-  ({write:showWrite,list:showList,tt:showTT,team:showTeam,me:showMe,fb:showFeedback,sets:showSets,qs:showQuestions,polls:showPolls,events:showEvents,rel:showReleases,stats:showStats})[tab]();
+  ({write:showWrite,list:showList,chg:showChanges,tt:showTT,team:showTeam,me:showMe,fb:showFeedback,sets:showSets,qs:showQuestions,polls:showPolls,events:showEvents,rel:showReleases,stats:showStats})[tab]();
   if(welcome&&tab==="write"){
     const w=document.createElement("div");w.className="card";w.style.borderColor="var(--green)";
     w.innerHTML=`<h2>👋 ברוך הבא, נכנסת כמנהל ראשי</h2><p class="hint" style="margin:0">מכאן כותבים עדכונים לתלמידים, רואים את המערכת של כל כיתה ומורה, ומוסיפים מורים (לשונית 👥 צוות). רוצה קוד כניסה משלך? לשונית <b>⚙️ החשבון שלי</b>.</p><div class="row" style="margin-top:12px"><button class="btn" id="wMe">לבחור קוד משלי</button><button class="btn ghost" id="wX">אחר כך</button></div>`;
@@ -396,6 +396,57 @@ async function loadEvents(){
   box.querySelectorAll("[data-edel]").forEach(b=>b.onclick=()=>act(b,{action:"eventDelete",id:b.dataset.edel},loadEvents,"למחוק את האירוע?"));
 }
 
+// ---- 🔄 שינויים במערכת: בוטל / מורה מחליף / שעה אחרת / הערה ----
+const CHG_KINDS=[["cancel","❌ בוטל"],["sub","🔄 מורה מחליף"],["move","⏰ שעה אחרת"],["note","📌 הערה"]];
+const isoDay=(n=0)=>{const d=new Date(Date.now()+n*864e5);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+const chgText=x=>x.kind==="cancel"?"❌ בוטל":x.kind==="sub"?`🔄 מחליף: ${esc(x.sub)}`:x.kind==="move"?`⏰ עבר ל-${esc(x.to.replace("-","–"))}`:"📌 הערה";
+let chgCls="y1",chgOpts=[];
+function showChanges(){
+  $("main").innerHTML=`<div class="card"><h2>🔄 שינוי במערכת</h2><p class="hint">שיעור שבוטל, מורה מחליף, שיעור שעבר שעה, או הערה (למשל: בחדר אחר). התלמידים רואים את זה ישר בשיעור, במערכת שלהם. שינוי בשיעור הקבצה (אנגלית, מתמטיקה, מגמה) מגיע רק לתלמידים של אותה הקבצה, משתי הכיתות.</p>
+    <label>תאריך</label><div class="row"><input id="cD" type="date" value="${isoDay()}" style="flex:1"><button type="button" class="btn sm ghost" id="cToday">היום</button><button type="button" class="btn sm ghost" id="cTmrw">מחר</button></div>
+    <label>כיתה</label><div class="seg" id="cC">${Object.keys(CLS).map(c=>`<button type="button" data-v="${c}" class="${c===chgCls?"on":""}">${CLASSES_META[c].label}</button>`).join("")}</div>
+    <label>איזה שיעור</label><select id="cL"></select>
+    <label>מה השתנה</label><div class="seg" id="cK">${CHG_KINDS.map(([k,l],i)=>`<button type="button" data-v="${k}" class="${i?"":"on"}">${l}</button>`).join("")}</div>
+    <div id="cSubBox" hidden><label>מי מחליף</label><input id="cSub" maxlength="60" list="cTeachers" placeholder="שם המורה המחליף"><datalist id="cTeachers">${TEACHERS.map(t=>`<option value="${esc(t)}">`).join("")}</datalist></div>
+    <div id="cMoveBox" hidden class="row" style="align-items:flex-end"><div style="flex:1"><label>שעה חדשה: מ-</label><input id="cFrom" type="time"></div><div style="flex:1"><label>עד</label><input id="cTo" type="time"></div></div>
+    <label id="cNoteL">הערה (לא חובה)</label><input id="cNote" maxlength="120" placeholder="למשל: המורה חולה / בחדר 12">
+    <div class="row" style="margin-top:14px"><button class="btn" id="cGo" style="flex:1">פרסם שינוי</button></div><div id="cMsg" hidden></div></div>
+    <div class="card"><h2>שינויים קרובים</h2><div id="cList"><p class="hint">טוען…</p></div></div>`;
+  // השיעורים של הכיתה ביום שנבחר (שיעורי הקבצה – שורה לכל מורה)
+  const fill=()=>{
+    const date=$("cD").value,wd=date?new Date(date+"T12:00:00").getDay():-1;
+    chgOpts=SL.filter(x=>x.c===chgCls&&x.d===wd&&!PRAY.test(x.n)).sort((a,b)=>a.s<b.s?-1:a.s>b.s?1:0);
+    $("cL").innerHTML=chgOpts.length?chgOpts.map((x,i)=>`<option value="${i}">${x.s}–${x.e} · ${esc(x.n)}${x.w?" · "+esc(x.w):""}${x.g?" ("+esc(x.g)+")":""}</option>`).join(""):`<option value="">אין שיעורים ביום הזה</option>`;
+    const x=chgOpts[0];$("cFrom").value=x?x.s:"";$("cTo").value=x?x.e:"";
+  };
+  const kind=()=>{const k=segVal("cK");$("cSubBox").hidden=k!=="sub";$("cMoveBox").hidden=k!=="move";$("cNoteL").textContent=k==="note"?"ההערה":"הערה (לא חובה)"};
+  $("cC").querySelectorAll("button").forEach(b=>b.onclick=()=>{chgCls=b.dataset.v;$("cC").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));fill()});
+  $("cK").querySelectorAll("button").forEach(b=>b.onclick=()=>{$("cK").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));kind()});
+  $("cD").onchange=fill;$("cToday").onclick=()=>{$("cD").value=isoDay();fill()};$("cTmrw").onclick=()=>{$("cD").value=isoDay(1);fill()};
+  $("cL").onchange=()=>{const x=chgOpts[+$("cL").value];if(x){$("cFrom").value=x.s;$("cTo").value=x.e}};
+  fill();kind();
+  $("cGo").onclick=async()=>{
+    const x=chgOpts[+$("cL").value],k=segVal("cK"),note=$("cNote").value.trim(),sub=$("cSub").value.trim(),from=$("cFrom").value,to=$("cTo").value;
+    if(!$("cD").value)return msg("cMsg","בחר תאריך.");if(!x)return msg("cMsg","בחר שיעור.");
+    if(k==="sub"&&!sub)return msg("cMsg","כתוב מי מחליף.");if(k==="move"&&!(from&&to&&from<to))return msg("cMsg","בחר שעה חדשה (התחלה לפני סוף).");if(k==="note"&&!note)return msg("cMsg","כתוב את ההערה.");
+    $("cGo").disabled=true;
+    const r=await api({action:"changeCreate",date:$("cD").value,cls:x.shared?"all":chgCls,s:x.s,n:x.n,w:x.w||"",kind:k,sub,to:from+"-"+to,note});
+    $("cGo").disabled=false;
+    if(!r.ok)return msg("cMsg",ERR[r.error]||"שגיאה.");
+    msg("cMsg","✅ פורסם. התלמידים יראו את השינוי בשיעור עצמו.",true);["cNote","cSub"].forEach(id=>$(id).value="");loadChanges();
+  };
+  loadChanges();
+}
+async function loadChanges(){
+  const r=await api({action:"changeList"}),box=$("cList");if(!box)return;
+  if(!r.ok){box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
+  const up=r.changes.filter(x=>x.date>=r.today);
+  if(!up.length){box.innerHTML=`<p class="hint">אין שינויים קרובים.</p>`;return}
+  const byDay=Object.create(null);up.forEach(x=>(byDay[x.date]=byDay[x.date]||[]).push(x));
+  box.innerHTML=Object.entries(byDay).map(([d,l])=>`<div class="day"><h3>${d===r.today?"היום":DAYN[new Date(d+"T12:00:00").getDay()]+" "+esc(d.split("-").reverse().slice(0,2).join("."))}</h3>${l.map(x=>`<div class="item"><div class="m"><b>${esc(x.s)}</b> · ${x.cls==="all"?"הקבצה (שתי הכיתות)":AUDN2[x.cls]} · ${esc(x.author||"")}</div><div class="t"><b>${esc(x.n)}</b>${x.w?" · "+esc(x.w):""} – ${chgText(x)}${x.note?`<br>${esc(x.note)}`:""}</div>${x.canEdit?`<div class="row" style="margin-top:6px"><button class="btn sm danger" data-cdel="${esc(x.id)}">בטל את השינוי</button></div>`:""}</div>`).join("")}</div>`).join("");
+  box.querySelectorAll("[data-cdel]").forEach(b=>b.onclick=()=>act(b,{action:"changeDelete",id:b.dataset.cdel},loadChanges,"לבטל את השינוי? התלמידים יראו שוב את השיעור הרגיל."));
+}
+
 // ---- ❓ שאלות מתלמידים (אנונימיות) ----
 let qFilter="new";
 async function showQuestions(){
@@ -452,9 +503,10 @@ const groupOf=t=>(String(t||"").match(/\((.*)\)/)||[])[1]||"";
 function slots(){
   const out=[];
   for(const [c,days] of Object.entries(CLS))days.forEach((d,di)=>(d.lessons||[]).forEach(l=>{
-    if(l.key==="eng")Object.entries(ENG).filter(([k])=>!(l.only&&l.only.eng)||l.only.eng.includes(k)).forEach(([,t])=>out.push({c,d:di,s:l.s,e:l.e,n:"אנגלית",w:nameOf(t),g:groupOf(t),group:true}));
-    else if(l.key==="math")Object.values(MATH).forEach(t=>out.push({c,d:di,s:l.s,e:l.e,n:"מתמטיקה",w:nameOf(t),g:groupOf(t)||"הקבצה",group:true}));
-    else if(l.key==="major")Object.values(MAJORS).forEach(m=>out.push({c,d:di,s:l.s,e:l.e,n:"מגמת "+m.n,w:m.w,group:true}));
+    // shared = הקבצה/מגמה שמשותפת לשתי הכיתות (שינוי בה מגיע לתלמידים של ההקבצה בשתיהן)
+    if(l.key==="eng")Object.entries(ENG).filter(([k])=>!(l.only&&l.only.eng)||l.only.eng.includes(k)).forEach(([,t])=>out.push({c,d:di,s:l.s,e:l.e,n:"אנגלית",w:nameOf(t),g:groupOf(t),group:true,shared:true}));
+    else if(l.key==="math")Object.values(MATH).forEach(t=>out.push({c,d:di,s:l.s,e:l.e,n:"מתמטיקה",w:nameOf(t),g:groupOf(t)||"הקבצה",group:true,shared:true}));
+    else if(l.key==="major")Object.values(MAJORS).forEach(m=>out.push({c,d:di,s:l.s,e:l.e,n:"מגמת "+m.n,w:m.w,group:true,shared:true}));
     else out.push({c,d:di,s:l.s,e:l.e,n:l.n,w:l.w});
     // שיעור אחר למגמה מסוימת (למשל מדעי המחשב במקום חנ"ג) – גם המורה שלו רואה אותו
     for(const f in l.alt||{})for(const a of Object.values(l.alt[f]))if(a.w)out.push({c,d:di,s:l.s,e:l.e,n:a.n||l.n,w:a.w,group:true});

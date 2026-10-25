@@ -480,6 +480,32 @@ async function handle(req, context, headers) {
     });
     return reply(200, { ok: true }, headers);
   }
+  // ---- 🔄 שינויים במערכת (שיעור בוטל / מורה מחליף / שעה אחרת / הערה) ----
+  if (action === "changeCreate") {
+    const c = cleanChange(body);
+    if (!c) return reply(400, { ok: false, error: "bad_request" }, headers);
+    const today = israelDay();
+    if (c.date < israelDay(Date.now() - 864e5) || c.date > israelDay(Date.now() + 60 * 864e5)) return reply(400, { ok: false, error: "bad_date" }, headers);
+    const ch = { id: newId(), ...c, author: me.name, authorId: me.id, createdAt: Date.now() };
+    // אותו שיעור באותו יום – השינוי החדש מחליף את הקודם
+    const same = x => x.date === ch.date && x.cls === ch.cls && x.s === ch.s && x.n === ch.n && x.w === ch.w;
+    await S.update("changes", cur => [...(cur || []).filter(x => x.date >= israelDay(Date.now() - 14 * 864e5) && !same(x)), ch].slice(-500));
+    return reply(200, { ok: true, change: ch, today }, headers);
+  }
+  if (action === "changeList") {
+    const since = israelDay(Date.now() - 7 * 864e5);
+    const changes = (await S.get("changes") || []).filter(x => x.date >= since).sort((a, b) => (a.date + a.s).localeCompare(b.date + b.s)).map(x => ({ ...x, canEdit: isAdmin || x.authorId === me.id }));
+    return reply(200, { ok: true, changes, today: israelDay() }, headers);
+  }
+  if (action === "changeDelete") {
+    await S.update("changes", cur => {
+      const list = cur || [], x = list.find(y => y.id === body.id);
+      if (!x) throw new Fail(404, "not_found");
+      if (!isAdmin && x.authorId !== me.id) throw new Fail(403, "forbidden");
+      return list.filter(y => y !== x);
+    });
+    return reply(200, { ok: true }, headers);
+  }
   // ---- שאלות מתלמידים (אנונימיות) ----
   if (action === "qList") {
     const qs = (await S.get("questions") || []).sort((a, b) => b.createdAt - a.createdAt);
@@ -588,6 +614,23 @@ const IL_DAY = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem", ye
 const israelDay = (t = Date.now()) => IL_DAY.format(new Date(t)); // YYYY-MM-DD לפי שעון ישראל (קיץ/חורף)
 const validDate = d => /^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(Date.parse(d + "T12:00:00Z")) && new Date(d + "T12:00:00Z").toISOString().slice(0, 10) === d;
 const validTime = t => /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
+// שינוי במערכת: לאיזה שיעור (תאריך, כיתה, שעת התחלה, מקצוע, מורה) ומה קרה לו
+const CHANGE_KINDS = ["cancel", "sub", "move", "note"];
+function cleanChange(b) {
+  const date = String(b.date || ""), s = String(b.s || ""), cls = AUDIENCES.includes(b.cls) ? b.cls : "";
+  const n = clean(b.n, 60), w = clean(b.w, 60), kind = CHANGE_KINDS.includes(b.kind) ? b.kind : "";
+  if (!validDate(date) || !validTime(s) || !cls || !n || !kind) return null;
+  const c = { date, cls, s, n, w, kind, note: clean(b.note, 120) };
+  if (kind === "sub") { c.sub = clean(b.sub, 60); if (!c.sub) return null; }
+  if (kind === "move") {
+    const [a, e] = String(b.to || "").split("-");
+    if (!validTime(a) || !validTime(e) || a >= e) return null;
+    c.to = a + "-" + e;
+  }
+  if (kind === "note" && !c.note) return null;
+  return c;
+}
+const publicChange = x => ({ id: x.id, date: x.date, cls: x.cls, s: x.s, n: x.n, w: x.w, kind: x.kind, ...(x.sub ? { sub: x.sub } : {}), ...(x.to ? { to: x.to } : {}), note: x.note || "" });
 const SAFE_KEY = k => !["__proto__", "constructor", "prototype", "toString", "valueOf", "hasOwnProperty"].includes(k);
 const publicUpdate = u => ({ id: u.id, text: u.text, ...(u.video ? { video: u.video } : {}), author: u.authorName, role: u.role, audience: u.audience, urgent: !!u.urgent, createdAt: u.startsAt || u.createdAt, expiresAt: u.expiresAt });
 const pollCounts = p => p.options.map((_, i) => (p.votes && p.votes[i]) || 0);
@@ -615,7 +658,7 @@ function upcomingBirthdays(bd, now = Date.now()) {
 async function feed(req, S, ip, headers) {
   if (req.method === "GET") {
     const now = Date.now(), today = israelDay(now);
-    const [ups, polls, events, qs, bd, rx] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions"].map(k => S.get(k)));
+    const [ups, polls, events, qs, bd, rx, chg] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions", "changes"].map(k => S.get(k)));
     return reply(200, {
       ok: true, now,
       updates: activeUpdates(ups, now).map(u => ({ ...publicUpdate(u), reacts: reactCounts(reactsOf(rx, u.id)) })),
@@ -625,6 +668,7 @@ async function feed(req, S, ip, headers) {
       answers: (qs || []).filter(q => q.status === "answered" && q.answeredAt > now - 21 * 864e5).sort((a, b) => b.answeredAt - a.answeredAt).slice(0, 30)
         .map(q => ({ id: q.id, q: q.text, a: q.answer, to: q.to, cls: q.cls, by: q.answeredBy, at: q.answeredAt })),
       birthdays: upcomingBirthdays(bd, now),
+      changes: (chg || []).filter(x => x.date >= today).sort((a, b) => (a.date + a.s).localeCompare(b.date + b.s)).slice(0, 200).map(publicChange),
     }, { ...headers, "Cache-Control": "public, max-age=20" });
   }
   if (req.method !== "POST") return reply(405, { ok: false, error: "method" }, headers);
