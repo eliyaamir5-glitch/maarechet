@@ -62,7 +62,8 @@ main{padding:16px 14px 40px;max-width:560px;margin:0 auto;display:flex;flex-dire
 #hero.noanim *{animation:none!important;transition:none!important}
 /* בטלפון: עמודה אחת, באותו סדר כמו תמיד */
 .col-main,.col-side{display:contents}
-#updates{order:1}#extras{order:2}#streakPill{order:3}#absAlert{order:4}#board{order:5}#hero{order:6}#content{order:7}#zmanim{order:8}#qaBox{order:9}#imgBtn{order:10}main>.foot{order:11}
+#maintBar{order:0}#ownBox{order:1}#updates{order:1}
+body.maint #hero{order:2}body.maint #content{order:3}body.maint :is(#updates,#extras,#board,#zmanim,#qaBox){order:20}#extras{order:2}#streakPill{order:3}#absAlert{order:4}#board{order:5}#hero{order:6}#content{order:7}#zmanim{order:8}#qaBox{order:9}#imgBtn{order:10}main>.foot{order:11}
 /* 💻 מחשב: הכל נפרס – המערכת מימין, עדכונים וזמנים משמאל */
 @media (min-width:1000px){
   .top{padding-left:32px;padding-right:32px}
@@ -158,6 +159,37 @@ dialog::backdrop{background:rgba(5,6,20,.6)}
 .bdrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
 .bdrow .wz-in{width:auto;margin:0;padding:10px 12px;font-size:17px}
 .xlink{background:none;border:none;color:var(--muted);font:inherit;font-size:12px;text-decoration:underline;cursor:pointer;padding:4px 0;margin-top:4px}
+/* ⛔ השעיה: מחסום על כל המסך */
+#suspWall{position:fixed;inset:0;z-index:100000;background:radial-gradient(circle at 50% 30%,#3a1020,#0b0612 70%);color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}
+#suspWall .sw{max-width:420px;animation:swin .5s cubic-bezier(.2,1.3,.4,1) both}
+#suspWall .ic{font-size:76px;line-height:1;animation:swshake 2.4s ease-in-out infinite}
+#suspWall h2{font-size:24px;font-weight:900;margin:14px 0 8px;line-height:1.35}
+#suspWall p{margin:6px 0;color:#f3c9d2;font-size:15px;line-height:1.55}
+#suspWall .why{background:rgba(255,255,255,.08);border-radius:14px;padding:10px 14px;margin-top:12px;color:#fff}
+#suspWall .tape{position:absolute;left:-10%;right:-10%;height:34px;background:repeating-linear-gradient(45deg,#ffc400 0 22px,#111 22px 44px);opacity:.85;transform:rotate(-6deg)}
+#suspWall .tape.t1{top:8%}#suspWall .tape.t2{bottom:9%;transform:rotate(5deg)}
+html.susp-lock,html.susp-lock body{overflow:hidden!important}
+@keyframes swin{from{opacity:0;transform:scale(.8)}}
+@keyframes swshake{0%,100%{transform:rotate(0)}10%{transform:rotate(-12deg)}20%{transform:rotate(10deg)}30%{transform:rotate(0)}}
+/* 🚧 מצב עדכון: רק המערכת גלויה, כל השאר "בעבודה" */
+#maintBar{display:none;position:relative;overflow:hidden;border-radius:20px;margin-bottom:14px;padding:16px 16px 14px;background:linear-gradient(135deg,#ffb300,#ff7a00);color:#1d1300;box-shadow:0 12px 30px rgba(255,140,0,.3)}
+body.maint #maintBar{display:block}
+#maintBar .mt{display:flex;align-items:center;gap:12px}
+#maintBar .crane{font-size:40px;animation:crane 2.2s ease-in-out infinite;transform-origin:50% 90%}
+#maintBar b{display:block;font-size:19px;font-weight:900}
+#maintBar small{display:block;font-size:14px;font-weight:600;opacity:.85;margin-top:2px}
+#maintBar .bar{height:8px;border-radius:99px;background:rgba(0,0,0,.18);overflow:hidden;margin-top:12px}
+#maintBar .bar i{display:block;height:100%;width:40%;border-radius:99px;background:repeating-linear-gradient(45deg,#1d1300 0 10px,#3b2a00 10px 20px);animation:mload 1.6s ease-in-out infinite}
+@keyframes crane{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(8deg)}}
+@keyframes mload{0%{transform:translateX(160%)}100%{transform:translateX(-260%)}}
+body.maint :is(.actions,#updates,#extras,#board,#zmanim,#qaBox,#imgBtn,#streakPill,#absAlert){position:relative;pointer-events:none;user-select:none}
+body.maint :is(.actions,#updates,#extras,#board,#zmanim,#qaBox,#imgBtn)>*{filter:blur(2px) grayscale(.6);opacity:.45}
+body.maint :is(.actions,#updates,#extras,#board,#zmanim,#qaBox,#imgBtn)::after{content:"🚧 בעבודה";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#1d1300;border-radius:16px;
+  background:repeating-linear-gradient(-45deg,rgba(255,196,0,.55) 0 18px,rgba(20,20,20,.35) 18px 36px);text-shadow:0 1px 0 rgba(255,255,255,.4);z-index:5}
+body.maint :is(#streakPill,#absAlert){display:none!important}
+@media (prefers-reduced-motion:reduce){#maintBar .crane,#maintBar .bar i,#suspWall .ic{animation:none}}
+.xcard.ownmsg{border-color:#ffb300;background:linear-gradient(135deg,rgba(255,179,0,.16),var(--card) 70%)}
+.xcard.ownmsg .om{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:1.5;margin-top:6px}
 .xcard.myans{border-color:var(--accent);background:linear-gradient(135deg,rgba(124,140,255,.16),var(--card) 70%)}
 .xcard.bday.mine{text-align:center;font-size:17px}
 .bd-conf{position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden}
@@ -369,10 +401,12 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
   <div class="col-main">
   <div id="streakPill" hidden role="button" tabindex="0"></div>
   <div id="absAlert" hidden role="button" tabindex="0"></div>
+  <div id="maintBar" role="status" aria-live="polite"></div>
   <div id="hero"></div>
   <div id="content"></div>
   </div>
   <div class="col-side">
+  <div id="ownBox" hidden></div>
   <div id="updates" hidden></div>
   <div id="extras" hidden></div>
   <div id="board" hidden role="button" tabindex="0"></div>
@@ -1344,6 +1378,9 @@ function renderExtras(){
   // ❓ שאלות ותשובות
   const ans=(f.answers||[]).filter(a=>!a.cls||a.cls===myCls());
   // 💬 הצוות ענה על שאלה ששלחתי – מופיע למעלה עד שלוחצים "קראתי"
+  // 📩 הודעות ממנהל המערכת – עד שלוחצים "קראתי"
+  const omr=ownRead(),om=ownMsgs().filter(m=>!omr.includes(m.id));
+  const omH=om.map(m=>`<div class="xcard ownmsg"><div class="xhead">📩 הודעה ממנהל המערכת <button type="button" class="xbtn" data-omread="${escH(m.id)}">קראתי ✓</button></div><div class="om">${escH(m.text)}</div></div>`).join("");
   const mq=myQs(),readQ=readQs();
   const mineAns=(f.answers||[]).filter(a=>mq.includes(a.id)&&!readQ.includes(a.id));
   if(mineAns.length)h=mineAns.map(a=>`<div class="xcard myans"><div class="xhead">💬 הצוות ענה על השאלה שלך <button type="button" class="xbtn" data-readq="${escH(a.id)}">קראתי ✓</button></div><div class="qa1"><div class="qq">${escH(a.q)}${a.to?` <span class="xsub">(${escH(a.to)})</span>`:""}</div><div class="qaa">💬 ${escH(a.a)} <span class="xsub">– ${escH(a.by||"")}</span></div></div></div>`).join("")+h;
@@ -1353,7 +1390,9 @@ function renderExtras(){
     qa.innerHTML=`<details class="xcard qa qa-fold"${open?" open":""}><summary>❓ שאלה לצוות, בלי שם${ans.length?`<span class="qbadge">${ans.length===1?"תשובה אחת":ans.length+" תשובות"}</span>`:""}</summary><div style="margin-top:10px">${qh}</div></details>`;qa.hidden=false}
   // שומרים מה שהתלמיד כבר בחר בתזכורת (הרשימה מתרעננת כל דקה)
   const keep={d:(document.getElementById("xBdD")||{}).value,m:(document.getElementById("xBdM")||{}).value};
+  const ob=document.getElementById("ownBox");if(ob){ob.innerHTML=omH;ob.hidden=!omH}
   box.innerHTML=h;box.hidden=!h;
+  (ob||box).querySelectorAll("[data-omread]").forEach(b=>b.onclick=()=>{const r=ownRead();r.push(b.dataset.omread);try{localStorage.setItem("ownerRead",JSON.stringify(r.slice(-100)))}catch(e){}renderExtras()});
   if(document.getElementById("xBdD")){if(keep.d)document.getElementById("xBdD").value=keep.d;if(keep.m)document.getElementById("xBdM").value=keep.m}
   const bok=document.getElementById("xBdOk");if(bok)bok.onclick=async()=>{
     const d=+document.getElementById("xBdD").value,m=+document.getElementById("xBdM").value,msg=document.getElementById("xBdMsg");
@@ -1394,6 +1433,56 @@ document.getElementById("askSend").onclick=async()=>{
   document.getElementById("askDlg").close();toast("✓ השאלה נשלחה","בלי שם. כשהצוות יענה, תקבל הודעה כאן בעדכונים.");
 };
 // סטטיסטיקה אנונימית למנהל: פעם ביום – כיתה ואילו מקצועות בסיכון (בלי שם)
+// "שלום" לשרת: מי נכנס ומתי (שם, כיתה, הקבצות, סוג מכשיר) – לדף מנהל המערכת. בפתיחה, וכל 10 דקות כשהאפליקציה פתוחה
+function platLabel(){
+  const u=navigator.userAgent||"";
+  const os=/iPhone/.test(u)?"iPhone":(/iPad/.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1))?"iPad":/Android/.test(u)?"Android":/CrOS/.test(u)?"Chromebook":/Windows/.test(u)?"Windows":/Mac OS X/.test(u)?"Mac":/Linux/.test(u)?"Linux":"אחר";
+  const br=/SamsungBrowser/.test(u)?"Samsung":/EdgA?\//.test(u)?"Edge":/CriOS|Chrome\//.test(u)?"Chrome":/FxiOS|Firefox\//.test(u)?"Firefox":/Safari\//.test(u)?"Safari":"";
+  return br?os+" · "+br:os;
+}
+let helloAt=0;
+async function hello(){
+  if(!profile||!profile.cls||window.__DEMO||document.hidden||Date.now()-helloAt<150e3)return;
+  helloAt=Date.now();
+  const inst=!!((window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone);
+  const r=await feedPost({action:"hello",device:deviceId(),name:`${profile.first||""} ${profile.last||""}`.trim(),cls:profile.cls,eng:profile.eng||"",math:profile.math||"",major:profile.major||"",
+    mashov:!!(typeof Mashov!=="undefined"&&Mashov.connected&&Mashov.connected()),ver:typeof APP_VERSION!=="undefined"?APP_VERSION:"",plat:platLabel(),inst});
+  if(r&&r.ok){
+    try{localStorage.setItem("appCtl",JSON.stringify({maint:r.maint||null,susp:r.susp||null,at:Date.now()}))}catch(e){}
+    if(Array.isArray(r.msgs)){const old=ownMsgs(),seen=new Set(old.map(m=>m.id)),fresh=r.msgs.filter(m=>m&&m.id&&!seen.has(m.id)&&!ownRead().includes(m.id));
+      try{localStorage.setItem("ownerMsgs",JSON.stringify(r.msgs.filter(m=>m&&typeof m.text==="string").slice(0,30)))}catch(e){}
+      if(fresh.length&&typeof toast==="function")toast("📩 הודעה ממנהל המערכת",escH(fresh[0].text.slice(0,80)));}
+    applyCtl();if(typeof renderExtras==="function")renderExtras();
+  }else if(r&&r.error==="suspended"){applyCtl()}
+}
+// ---- מצב מהשרת: השעיה (מחסום) ומצב עדכון (פס + "בעבודה") ----
+function appCtl(){try{const c=JSON.parse(localStorage.getItem("appCtl")||"{}");return c&&typeof c==="object"?c:{}}catch(e){return{}}}
+function ownMsgs(){try{const a=JSON.parse(localStorage.getItem("ownerMsgs")||"[]");return Array.isArray(a)?a.filter(m=>m&&typeof m==="object"&&m.exp>Date.now()):[]}catch(e){return[]}}
+function ownRead(){try{const a=JSON.parse(localStorage.getItem("ownerRead")||"[]");return Array.isArray(a)?a:[]}catch(e){return[]}}
+const live=x=>!!x&&typeof x==="object"&&(x.until==null||x.until>Date.now());
+function untilTxt(t){if(t==null)return"";const d=new Date(t),n=new Date(),m=Math.round((t-Date.now())/60e3);if(m<60)return`בעוד ${Math.max(1,m)} דק'`;const hm=d.toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"});return d.toDateString()===n.toDateString()?`היום ב-${hm}`:`ב${d.toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"numeric"})} ב-${hm}`}
+let ctlTimer=null;
+function applyCtl(){
+  if(window.__DEMO)return;
+  const c=appCtl(),f=window.Updates?Updates.feed():{},fm=f.maint,cm=c.maint;
+  // מצב עדכון: מה שהגיע אחרון (הפיד מתעדכן כל דקה, ה"שלום" כל כמה דקות)
+  const m=(+f.at||0)>=(+c.at||0)?fm:cm;
+  const maint=live(m)?m:null;
+  document.body.classList.toggle("maint",!!maint);
+  const mb=document.getElementById("maintBar");
+  if(mb)mb.innerHTML=maint?`<div class="mt"><span class="crane" aria-hidden="true">🏗️</span><div><b>🚧 האפליקציה בעדכון</b><small>${maint.msg?escH(maint.msg)+" · ":""}${maint.until?"נחזור "+untilTxt(maint.until):"נחזור בקרוב"} · המערכת שלך ממשיכה לעבוד כרגיל 👇</small></div></div><div class="bar"><i></i></div>`:"";
+  // השעיה
+  const sp=live(c.susp)?c.susp:null;let w=document.getElementById("suspWall");
+  if(sp){
+    if(!w){w=document.createElement("div");w.id="suspWall";w.setAttribute("role","alertdialog");w.setAttribute("aria-modal","true");document.body.appendChild(w)}
+    w.innerHTML=`<div class="tape t1"></div><div class="tape t2"></div><div class="sw"><div class="ic">⛔</div><h2>מנהל המערכת הוריד לך את הזכות להשתמש באפליקציה</h2>
+      ${sp.reason?`<p class="why">${escH(sp.reason)}</p>`:""}<p>${sp.until?"הגישה תחזור "+untilTxt(sp.until)+".":"הגישה תחזור כשמנהל המערכת יחזיר אותך."}</p><p style="opacity:.7;font-size:13px">אם זו טעות – פנה למנהל המערכת.</p></div>`;
+    document.documentElement.classList.add("susp-lock");document.querySelectorAll("dialog[open]").forEach(d=>{try{d.close()}catch(e){}});
+  }else if(w){w.remove();document.documentElement.classList.remove("susp-lock")}
+  // כשהזמן נגמר – מתעדכן לבד
+  clearTimeout(ctlTimer);const ends=[maint&&maint.until,sp&&sp.until].filter(Boolean).map(t=>t-Date.now()).filter(t=>t>0);
+  if(ends.length)ctlTimer=setTimeout(applyCtl,Math.min(Math.min(...ends)+500,60e3));
+}
 async function dailyPing(){
   if(!profile||!profile.cls||window.__DEMO)return;
   const day=new Date().toDateString();let last=null;try{last=localStorage.getItem("pingDay")}catch(e){}
@@ -1412,7 +1501,7 @@ if(window.Updates){
   Updates.init(document.getElementById("updates"),()=>(profile&&profile.cls)||"y2",canPop);
   // תקלה בכרטיס אחד מהפיד לא עוצרת את המערכת עצמה (ולא את שאר הקוד שנטען אחרי)
   const safe=f=>{try{f()}catch(e){console.warn(e)}};
-  Updates.onFeed=()=>{safe(renderExtras);safe(render)};safe(renderExtras);setTimeout(dailyPing,5000);setTimeout(()=>{bdSync().catch(()=>{})},6000);
+  Updates.onFeed=()=>{safe(renderExtras);safe(render);safe(applyCtl)};safe(renderExtras);setTimeout(dailyPing,5000);setTimeout(hello,1500);setInterval(hello,3*60e3);applyCtl();document.addEventListener("visibilitychange",()=>{if(!document.hidden)hello()});setTimeout(()=>{bdSync().catch(()=>{})},6000);
   setInterval(()=>Updates.retryPop&&Updates.retryPop(),2500);
 }
 if(location.hash==="#profile"){history.replaceState(null,"",location.pathname);setTimeout(()=>openProfile(),300)}

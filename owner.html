@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f1226">
+<title>ניהול המערכת</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E👑%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="data.js"></script>
+<style>
+:root{--bg:#0f1226;--card:#1a1f42;--card2:#21275a;--ink:#f4f5ff;--muted:#9aa0c7;--line:#2b3162;--accent:#7c8cff;--accent-ink:#0b0e24;--red:#ff5d6c;--green:#3ddc97;--amber:#ffc24b;--grad:linear-gradient(135deg,#5b6cff 0%,#a259ff 60%,#ff6bd6 100%)}
+@media (prefers-color-scheme: light){:root{--bg:#f3f2fb;--card:#fff;--card2:#f6f5fe;--ink:#191b33;--muted:#5f6488;--line:#e3e2f2;--accent:#5b6cff;--accent-ink:#fff;--red:#d92d40;--green:#13996a;--amber:#b77900}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Rubik,"Segoe UI",Arial,sans-serif}
+button{font:inherit;cursor:pointer}
+.top{background:var(--grad);color:#fff;padding:calc(18px + env(safe-area-inset-top)) 16px 22px;border-radius:0 0 28px 28px}
+.top .bar{display:flex;justify-content:space-between;align-items:center;gap:10px;max-width:1180px;margin:0 auto;flex-wrap:wrap}
+.top h1{margin:0;font-size:24px;font-weight:900}
+.top p{margin:4px 0 0;font-size:13px;opacity:.9}
+.top .acts{display:flex;gap:8px}
+.top .acts button{color:#fff;font-size:14px;font-weight:700;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);border-radius:999px;padding:8px 14px}
+main{padding:18px 16px 50px;max-width:1180px;margin:0 auto}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:20px;padding:18px;margin-bottom:16px}
+.card h2{margin:0 0 4px;font-size:18px;font-weight:900;display:flex;align-items:center;gap:8px}
+.hint{color:var(--muted);font-size:13px;line-height:1.55;margin:0 0 12px}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:14px 16px;position:relative;overflow:hidden}
+.kpi b{display:block;font-size:30px;font-weight:900;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi span{display:block;font-size:13px;color:var(--muted);margin-top:4px;line-height:1.35}
+.kpi.live b{color:var(--green)}
+.kpi.live b::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--green);margin-inline-end:8px;vertical-align:middle;animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(61,220,151,.6)}100%{box-shadow:0 0 0 10px rgba(61,220,151,0)}}
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.chart{display:flex;align-items:flex-end;gap:4px;height:150px;padding-top:8px}
+.chart .c{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+.chart .c i{display:block;width:100%;border-radius:6px 6px 2px 2px;background:var(--accent);min-height:2px;transition:height .4s}
+.chart .c.we i{opacity:.35}.chart .c.today i{background:var(--green)}
+.chart .c small{font-size:10px;color:var(--muted);margin-top:4px;height:12px;white-space:nowrap}
+.chart .c em{font-style:normal;font-size:10px;color:var(--muted);height:13px}
+.bars .r{display:grid;grid-template-columns:minmax(80px,auto) 1fr 40px;gap:10px;align-items:center;margin:7px 0;font-size:14px}
+.bars .t{height:10px;background:var(--card2);border-radius:99px;overflow:hidden}
+.bars .t i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.bars .n{text-align:left;font-variant-numeric:tabular-nums;color:var(--muted)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tools input,.tools select{border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:15px;background:var(--bg);color:var(--ink)}
+.tools input{flex:1;min-width:180px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:700}
+.chips button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:start;font-size:12px;color:var(--muted);font-weight:700;padding:8px 8px;border-bottom:1.5px solid var(--line);white-space:nowrap}
+td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr{cursor:pointer}tbody tr:hover{background:var(--card2)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-inline-end:8px;vertical-align:middle}
+.d-now{background:var(--green);box-shadow:0 0 0 3px rgba(61,220,151,.25)}.d-today{background:var(--accent)}.d-week{background:var(--amber)}.d-old{background:var(--muted);opacity:.5}
+.nm{font-weight:700}
+.sub{color:var(--muted);font-size:12px}
+.ic{white-space:nowrap;letter-spacing:2px}
+.pill{display:inline-block;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:700;background:var(--card2);color:var(--muted);white-space:nowrap}
+.pill.warn{background:rgba(255,194,75,.18);color:var(--amber)}
+.tablewrap{overflow-x:auto;margin:0 -6px}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.stat{background:var(--card2);border-radius:14px;padding:10px 12px}
+.stat b{display:block;font-size:22px;font-weight:900}.stat span{font-size:12px;color:var(--muted)}
+.links{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.links a{color:var(--ink);text-decoration:none;background:var(--card2);border-radius:12px;padding:9px 14px;font-weight:700;font-size:14px}
+.staff div{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+/* כניסה */
+.login{max-width:420px;margin:12vh auto 0;padding:0 16px}
+.login .card{padding:26px}
+.login h2{font-size:22px}
+.login input{width:100%;border:1.5px solid var(--line);border-radius:14px;padding:14px;font:inherit;font-size:18px;background:var(--bg);color:var(--ink);text-align:center;letter-spacing:2px;direction:ltr}
+.btn{border:none;border-radius:14px;padding:13px 18px;font-size:16px;font-weight:800;background:var(--accent);color:var(--accent-ink);width:100%;margin-top:12px}
+.btn.danger{background:var(--red);color:#fff;width:auto;padding:9px 14px;font-size:14px;margin:0}
+.btn:disabled{opacity:.5}
+.err{color:var(--red);font-size:14px;min-height:20px;margin-top:10px;text-align:center}
+/* פרטי תלמיד */
+dialog{border:none;border-radius:22px;padding:0;background:var(--card);color:var(--ink);width:min(560px,94vw);max-height:88vh;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+dialog::backdrop{background:rgba(8,10,30,.6);backdrop-filter:blur(4px)}
+.dlg{padding:20px;overflow:auto;max-height:88vh}
+.dlg h3{margin:0;font-size:21px;font-weight:900}
+.kv{display:grid;grid-template-columns:minmax(110px,auto) 1fr;gap:6px 14px;font-size:14px;margin:14px 0}
+.kv dt{color:var(--muted)}.kv dd{margin:0;font-weight:500}
+.dev{background:var(--card2);border-radius:14px;padding:12px;margin-top:10px}
+.cal{display:grid;grid-template-columns:repeat(15,1fr);gap:3px;margin-top:6px}
+.cal i{aspect-ratio:1;border-radius:4px;background:var(--line)}.cal i.on{background:var(--green)}
+.close{background:var(--card2);border:none;color:var(--ink);border-radius:12px;padding:10px 16px;font-weight:700;margin-top:14px;width:100%}
+.ctl textarea,.ctl input[type=text],.ctl select,.dlg textarea,.dlg select,.dlg input[type=text]{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:15px;background:var(--bg);color:var(--ink)}
+.ctl textarea,.dlg textarea{min-height:80px;resize:vertical;line-height:1.5}
+.ctl .row,.dlg .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}.ctl .row>*{flex:1;min-width:130px}
+.b2{border:none;border-radius:12px;padding:10px 16px;font-weight:800;font-size:15px;background:var(--accent);color:var(--accent-ink)}
+.b2.warn{background:linear-gradient(135deg,#ffb300,#ff7a00);color:#1d1300}.b2.red{background:var(--red);color:#fff}.b2.ghost{background:var(--card2);color:var(--ink)}.b2:disabled{opacity:.5}
+.mlive{display:flex;align-items:center;gap:10px;background:rgba(255,179,0,.14);border:1.5px solid rgba(255,179,0,.5);border-radius:14px;padding:12px;margin-bottom:10px;font-weight:700}
+.mlive .crane{font-size:30px;animation:crane 2.2s ease-in-out infinite}@keyframes crane{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(8deg)}}
+.msg1{background:var(--card2);border-radius:12px;padding:10px 12px;margin-top:8px;font-size:14px}
+.msg1 .t{white-space:pre-wrap;overflow-wrap:anywhere}
+.selbar{display:none;align-items:center;gap:8px;flex-wrap:wrap;background:var(--card2);border-radius:14px;padding:10px 12px;margin-top:10px}
+.selbar.on{display:flex}
+td.ck{width:30px}td.ck input{width:18px;height:18px;cursor:pointer}
+.pill.red{background:rgba(255,93,108,.18);color:var(--red)}
+.sus{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.priv{font-size:13px;color:var(--muted);line-height:1.6}
+.priv b{color:var(--ink)}
+.empty{color:var(--muted);text-align:center;padding:24px;font-size:14px}
+@media (max-width:1000px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.grid2,.grid3{grid-template-columns:minmax(0,1fr)}}
+.card,.kpi{min-width:0}.chart{overflow:hidden}
+@media (max-width:560px){.chart .c em{display:none}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi b{font-size:26px}.hide-s{display:none}td,th{padding:9px 5px}.top h1{font-size:21px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+<script>
+const API=((typeof SERVER_BASE!=="undefined"&&SERVER_BASE)||"")+"/api/owner";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const T={get(){try{return localStorage.getItem("ownerToken")}catch(e){return null}},set(v){try{v?localStorage.setItem("ownerToken",v):localStorage.removeItem("ownerToken")}catch(e){}}};
+async function api(body,auth=true){
+  const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),25e3);
+  try{const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json",...(auth&&T.get()?{Authorization:"Bearer "+T.get()}:{})},body:JSON.stringify(body),signal:ctl.signal,cache:"no-store"});
+    const j=await r.json().catch(()=>({ok:false,error:"server"}));if(r.status===401&&auth&&body.action!=="login"){T.set(null);showLogin("נגמר הזמן של הכניסה. צריך להיכנס שוב.");}return j}
+  catch(e){return{ok:false,error:"network"}}finally{clearTimeout(tm)}
+}
+const ERR={bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד רבע שעה.",network:"אין חיבור לשרת.",server:"שגיאה בשרת.",bad_request:"הקוד לא תקין."};
+
+// ---- כניסה ----
+function showLogin(msg){
+  $("app").innerHTML=`<div class="login"><div class="card"><h2>👑 ניהול המערכת</h2><p class="hint">הדף הזה רק בשבילך. מקלידים את הקוד הסודי של מנהל המערכת.</p>
+    <input id="code" type="password" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX" aria-label="קוד סודי" maxlength="40">
+    <button class="btn" id="go">כניסה</button><div class="err" id="err">${esc(msg||"")}</div></div></div>`;
+  const go=async()=>{const c=$("code").value.trim();if(!c){$("code").focus();return}$("go").disabled=true;$("err").textContent="";
+    const r=await api({action:"login",code:c},false);$("go").disabled=false;
+    if(!r.ok){$("err").textContent=ERR[r.error]||"לא הצלחנו להיכנס.";return}T.set(r.token);showDash()};
+  $("go").onclick=go;$("code").onkeydown=e=>{if(e.key==="Enter")go()};setTimeout(()=>$("code").focus(),50);
+}
+
+// ---- עזרים ----
+const clsL=c=>(typeof CLASSES_META!=="undefined"&&CLASSES_META[c]&&CLASSES_META[c].label)||c||"–";
+const engL=k=>(typeof ENG!=="undefined"&&ENG[k])||k||"–";
+const mathL=k=>(typeof MATH!=="undefined"&&MATH[k])||k||"–";
+const majL=k=>(typeof MAJORS!=="undefined"&&MAJORS[k]&&MAJORS[k].n)||k||"–";
+const CUR=typeof APP_VERSION!=="undefined"?APP_VERSION:"";
+function ago(t,now){if(!t)return"–";const m=Math.round((now-t)/60e3);if(m<2)return"עכשיו";if(m<60)return`לפני ${m} דק'`;const h=Math.round(m/60);if(h<24)return h===1?"לפני שעה":h===2?"לפני שעתיים":`לפני ${h} שעות`;const d=Math.round(h/24);if(d===1)return"אתמול";if(d<14)return`לפני ${d} ימים`;return new Date(t).toLocaleDateString("he-IL")}
+const fmtD=t=>t?new Date(t).toLocaleDateString("he-IL",{day:"numeric",month:"numeric",year:"2-digit"}):"–";
+const fmtDT=t=>t?new Date(t).toLocaleString("he-IL",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"–";
+function status(last,now){const m=(now-last)/60e3;return m<=10?"now":m<=60*18&&new Date(last).toDateString()===new Date(now).toDateString()?"today":m<=7*1440?"week":"old"}
+const ST={now:["d-now","מחובר עכשיו"],today:["d-today","נכנס היום"],week:["d-week","נכנס השבוע"],old:["d-old","לא נכנס שבוע+"]};
+const devKind=p=>/iPhone|Android/.test(p)?"טלפון":/iPad/.test(p)?"טאבלט":p?"מחשב":"לא ידוע";
+
+let D=null,filt={q:"",cls:"",st:"",sort:"last"},timer=null;const sel=new Set();
+const SUS_OPTS=[["60","שעה"],["1440","יום"],["4320","3 ימים"],["10080","שבוע"],["","עד שאחזיר"]];
+// רשימת המושעים: לפי שם+כיתה (וגם מכשירים שהושעו לבד)
+function susList(){
+  const byP=(D.suspended||[]).filter(x=>x.person),rows=byP.map(x=>{const i=x.person.lastIndexOf("|"),cls=x.person.slice(i+1),nm=x.person.slice(0,i);
+    const st=D.students.find(s=>(s.name||"").replace(/\s+/g," ").trim().toLowerCase()===nm&&s.cls===cls);
+    return{label:(st?st.name:nm)+" · "+clsL(cls),until:x.until,reason:x.reason,payload:{people:[{name:st?st.name:nm,cls}],keys:D.students.filter(s=>(s.name||"").replace(/\s+/g," ").trim().toLowerCase()===nm&&s.cls===cls).map(s=>s.key)}}});
+  const lone=(D.suspended||[]).filter(x=>x.key&&!rows.some(r=>r.payload.keys.includes(x.key))).map(x=>{const st=D.students.find(s=>s.key===x.key);return{label:st?st.name+" · "+clsL(st.cls):"מכשיר "+x.key.slice(0,6),until:x.until,reason:x.reason,payload:{keys:[x.key]}}});
+  return [...rows,...lone].map(r=>`<div class="sus"><div><b>${esc(r.label)}</b><div class="sub">${r.until?"עד "+esc(fmtDT(r.until)):"עד שתחזיר"}${r.reason?" · "+esc(r.reason):""}</div></div><button class="b2 ghost" data-unsus="${esc(JSON.stringify(r.payload))}">✅ להחזיר</button></div>`).join("");
+}
+function susDialog(list){
+  if(!list.length)return;
+  $("dlgBody").innerHTML=`<h3>⛔ השעיה</h3><p class="sub" style="margin-top:6px">${esc(list.map(p=>p.name).join(", "))}</p>
+    <p class="hint" style="margin-top:10px">התלמיד יראה מסך חסום: "מנהל המערכת הוריד לך את הזכות להשתמש באפליקציה" – עד שהזמן נגמר או עד שתחזיר אותו. נחסם במכשירים שלו וגם אם יירשם שוב באותו שם (תוך כמה דקות).</p>
+    <label class="sub">לכמה זמן</label><select id="sMin">${SUS_OPTS.map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select>
+    <label class="sub" style="display:block;margin-top:8px">סיבה (התלמיד יראה אותה, לא חובה)</label><input type="text" id="sWhy" maxlength="200">
+    <div class="row" style="margin-top:12px"><button class="b2 red" id="sGo">⛔ להשעות</button><button class="b2 ghost" id="sNo">ביטול</button></div>`;
+  $("sNo").onclick=()=>$("dlg").close();
+  $("sGo").onclick=async()=>{$("sGo").disabled=true;const v=$("sMin").value;
+    const r=await api({action:"suspend",keys:list.flatMap(p=>p.devs.map(d=>d.key)),people:list.map(p=>({name:p.name,cls:p.cls})),minutes:v?+v:null,reason:$("sWhy").value.trim()});
+    if(!r.ok){$("sGo").disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}sel.clear();$("dlg").close();load()};
+  if(!$("dlg").open)$("dlg").showModal();
+}
+// תלמיד = שם + כיתה (אם נכנס מכמה מכשירים – שורה אחת עם כל המכשירים)
+function people(){
+  const m=new Map();
+  for(const s of D.students){const k=(s.name||"(בלי שם)")+"|"+s.cls;if(!m.has(k))m.set(k,{name:s.name||"(בלי שם)",cls:s.cls,devs:[]});m.get(k).devs.push(s)}
+  return [...m.values()].map(p=>{const d=p.devs.slice().sort((a,b)=>b.last-a.last),top=d[0],days=new Set(d.flatMap(x=>x.days||[]));
+    return{...p,devs:d,top,last:top.last,first:Math.min(...d.map(x=>x.first||top.last)),d7:new Set([...days].filter(x=>x>=D.daily[23].day)).size,d30:days.size,opens:d.reduce((a,x)=>a+(x.opens||0),0),
+      reacts:Math.max(...d.map(x=>x.reacts||0)),bday:d.map(x=>x.bday).find(Boolean)||"",inst:d.some(x=>x.inst),mashov:d.some(x=>x.mashov),old:CUR&&top.ver&&top.ver<CUR}});
+}
+
+async function showDash(){
+  if(!$("kp"))$("app").innerHTML=`<header class="top"><div class="bar"><div><h1>👑 ניהול המערכת</h1><p id="upd">טוען…</p></div><div class="acts"><button id="ref">↻ רענון</button><button id="out">יציאה</button></div></div></header><main id="main"><div id="kp"></div></main>`;
+  $("ref").onclick=()=>load(true);$("out").onclick=()=>{if(!confirm("לצאת מדף הניהול?"))return;T.set(null);clearInterval(timer);showLogin()};
+  await load();clearInterval(timer);timer=setInterval(()=>{const a=document.activeElement;if(!document.hidden&&!$("dlg").open&&!(a&&/TEXTAREA|INPUT|SELECT/.test(a.tagName)&&a.value))load()},60e3);
+}
+async function load(manual){
+  if(manual)$("upd").textContent="מרענן…";
+  const r=await api({action:"overview"});if(!r.ok){if(T.get())$("upd").textContent=ERR[r.error]||"לא הצלחנו לטעון.";return}
+  D=r;draw();
+}
+function draw(){
+  const now=D.now,P=people(),stOf=p=>status(p.last,now);
+  const cnt=k=>P.filter(p=>stOf(p)===k).length,now10=cnt("now"),today=P.filter(p=>["now","today"].includes(stOf(p))).length,week=P.filter(p=>p.d7>0).length;
+  const pct=n=>P.length?Math.round(100*n/P.length)+"%":"–";
+  $("upd").textContent=`עודכן ${new Date(now).toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"})} · מתרענן לבד כל דקה`;
+  const max=Math.max(1,...D.daily.map(d=>d.n));
+  const byCls=Object.keys(typeof CLASSES_META!=="undefined"?CLASSES_META:{}).map(c=>[clsL(c),P.filter(p=>p.cls===c).length,P.filter(p=>p.cls===c&&p.d7>0).length]);
+  const tally=(f)=>{const m={};for(const p of P){const k=f(p);m[k]=(m[k]||0)+1}return Object.entries(m).sort((a,b)=>b[1]-a[1])};
+  const bars=rows=>{const mx=Math.max(1,...rows.map(r=>r[1]));return`<div class="bars">${rows.map(([l,n])=>`<div class="r"><span>${esc(l)}</span><div class="t"><i style="width:${Math.round(100*n/mx)}%"></i></div><span class="n">${n}</span></div>`).join("")||`<div class="empty">אין עדיין נתונים</div>`}</div>`};
+  const c=D.content||{};
+  $("main").innerHTML=`
+  <div class="kpis">
+    <div class="kpi"><b>${P.length}</b><span>תלמידים רשומים<br><small>(לפי שם וכיתה)</small></span></div>
+    <div class="kpi live"><b>${now10}</b><span>מחוברים עכשיו<br><small>(ב-10 הדקות האחרונות)</small></span></div>
+    <div class="kpi"><b>${today}</b><span>נכנסו היום</span></div>
+    <div class="kpi"><b>${week}</b><span>נכנסו השבוע<br><small>(7 ימים)</small></span></div>
+    <div class="kpi"><b>${pct(P.filter(p=>p.inst).length)}</b><span>התקינו למסך הבית</span></div>
+    <div class="kpi"><b>${pct(P.filter(p=>p.mashov).length)}</b><span>חיברו משוב</span></div>
+  </div>
+  <div class="grid2">
+    <div class="card ctl"><h2>🚧 מצב עדכון לכל האפליקציה</h2><p class="hint">כל התלמידים רואים פס "האפליקציה בעדכון" עם אנימציה. המערכת שלהם נשארת גלויה, וכל השאר עטוף ב"בעבודה". מגיע אליהם תוך דקה.</p>
+      ${D.maint?`<div class="mlive"><span class="crane">🏗️</span><div>מצב עדכון פעיל · ${D.maint.until?"נגמר "+esc(fmtDT(D.maint.until)):"עד שתעצור"}${D.maint.msg?`<div class="sub">"${esc(D.maint.msg)}"</div>`:""}</div></div><button class="b2 ghost" id="mStop">⏹ לעצור את מצב העדכון</button>`
+      :`<input type="text" id="mMsg" maxlength="200" placeholder="הודעה לתלמידים (לא חובה), למשל: מוסיפים פיצ'ר חדש 🚀"><div class="row"><select id="mMin" aria-label="לכמה זמן"><option value="15">15 דקות</option><option value="30" selected>חצי שעה</option><option value="60">שעה</option><option value="120">שעתיים</option><option value="240">4 שעות</option><option value="">עד שאעצור</option></select><button class="b2 warn" id="mGo">🚧 להפעיל מצב עדכון</button></div>`}
+    </div>
+    <div class="card ctl"><h2>✉️ הודעה ממך</h2><p class="hint">מופיעה לתלמידים למעלה עד שהם לוחצים "קראתי" (מגיעה תוך כמה דקות). לבחירת תלמידים – מסמנים ✔ בטבלה למטה.</p>
+      <textarea id="oText" maxlength="500" placeholder="מה רצית להגיד?"></textarea>
+      <div class="row"><select id="oTo" aria-label="למי"><option value="all">לכולם</option>${Object.keys(CLASSES_META).map(k=>`<option value="${k}">רק ל${esc(clsL(k))}</option>`).join("")}<option value="some" ${sel.size?"selected":""}>לתלמידים שסימנתי (${sel.size})</option></select>
+        <select id="oHrs" aria-label="לכמה זמן"><option value="24">ליום</option><option value="72">ל-3 ימים</option><option value="168">לשבוע</option></select><button class="b2" id="oGo">שליחה</button></div>
+      ${(D.msgs||[]).length?`<div class="sub" style="margin-top:12px">הודעות פעילות:</div>`+(D.msgs||[]).map(m=>`<div class="msg1"><div class="t">${esc(m.text)}</div><div class="row" style="justify-content:space-between"><span class="sub">${m.to==="all"?"לכולם":m.to==="some"?"ל: "+esc((m.names||[]).slice(0,6).join(", "))+((m.names||[]).length>6?" ועוד":""):"ל"+esc(clsL(m.to))} · עד ${esc(fmtDT(m.expiresAt))}</span><button class="b2 ghost" style="flex:0 0 auto;padding:6px 12px;font-size:13px" data-mdel="${esc(m.id)}">מחיקה</button></div></div>`).join(""):""}
+    </div>
+  </div>
+  ${(D.suspended||[]).length?`<div class="card"><h2>⛔ מושעים כרגע (${D.suspended.filter(x=>x.person).length||D.suspended.length})</h2>${susList()}</div>`:""}
+  <div class="grid2">
+    <div class="card"><h2>📈 כמה תלמידים נכנסו בכל יום</h2><p class="hint">30 הימים האחרונים. ירוק = היום, חלש = שישי ושבת.</p>
+      <div class="chart">${D.daily.map((d,i)=>{const dt=new Date(d.day+"T12:00"),we=dt.getDay()>=5;return`<div class="c${we?" we":""}${i===29?" today":""}" title="${esc(dt.toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"numeric"}))}: ${d.n}"><em>${d.n||""}</em><i style="height:${Math.round(100*d.n/max)}%"></i><small>${i%5===4||i===29?dt.getDate()+"."+(dt.getMonth()+1):""}</small></div>`}).join("")}</div></div>
+    <div class="card"><h2>🏫 לפי כיתה</h2><p class="hint">רשומים / נכנסו השבוע</p>
+      <div class="bars">${byCls.map(([l,n,a])=>`<div class="r"><span>${esc(l)}</span><div class="t"><i style="width:${n?Math.round(100*a/n):0}%"></i></div><span class="n">${a}/${n}</span></div>`).join("")}</div>
+      <h2 style="margin-top:16px">📱 מכשירים</h2>${bars(tally(p=>devKind(p.top.plat)))}</div>
+  </div>
+  <div class="grid3">
+    <div class="card"><h2>🇬🇧 הקבצות אנגלית</h2>${bars(tally(p=>engL(p.top.eng)))}</div>
+    <div class="card"><h2>📐 הקבצות מתמטיקה</h2>${bars(tally(p=>mathL(p.top.math)))}</div>
+    <div class="card"><h2>🎓 מגמות</h2>${bars(tally(p=>majL(p.top.major)))}</div>
+  </div>
+  <div class="card"><h2>👥 התלמידים</h2><p class="hint">לחיצה על שורה = כל הפרטים. 📲 התקין למסך הבית · 📊 חיבר משוב · 🎂 שיתף יום הולדת · 😀 תגובות לעדכונים</p>
+    <div class="tools"><input id="q" placeholder="🔍 חיפוש לפי שם" value="${esc(filt.q)}" aria-label="חיפוש">
+      <select id="fc" aria-label="כיתה"><option value="">כל הכיתות</option>${byCls.map((_,i)=>{const k=Object.keys(CLASSES_META)[i];return`<option value="${k}" ${filt.cls===k?"selected":""}>${esc(clsL(k))}</option>`}).join("")}</select>
+      <select id="so" aria-label="מיון"><option value="last" ${filt.sort==="last"?"selected":""}>מיון: נכנס לאחרונה</option><option value="name" ${filt.sort==="name"?"selected":""}>מיון: שם</option><option value="act" ${filt.sort==="act"?"selected":""}>מיון: הכי פעיל</option><option value="first" ${filt.sort==="first"?"selected":""}>מיון: הצטרף לאחרונה</option></select></div>
+    <div class="chips" id="fs">${[["","הכל",P.length],["now","🟢 עכשיו",now10],["today","היום",cnt("today")+now10],["week","השבוע",cnt("week")],["old","לא נכנסו שבוע+",cnt("old")],["oldver","גרסה ישנה",P.filter(p=>p.old).length]].map(([v,l,n])=>`<button data-v="${v}" class="${filt.st===v?"on":""}">${l} (${n})</button>`).join("")}</div>
+    <div class="selbar" id="selbar"><b id="selN"></b><button class="b2" id="selMsg">✉️ הודעה לנבחרים</button><button class="b2 red" id="selSus">⛔ השעיה</button><button class="b2 ghost" id="selClr">ניקוי בחירה</button></div>
+    <div class="tablewrap" style="margin-top:10px"><table><thead><tr><th></th><th>שם</th><th>כיתה</th><th>נכנס לאחרונה</th><th class="hide-s">ימים פעיל (7/30)</th><th class="hide-s">מכשיר</th><th></th></tr></thead><tbody id="tb"></tbody></table></div></div>
+  <div class="grid2">
+    <div class="card"><h2>🗂️ מה יש במערכת</h2><div class="stats">
+      ${[["עדכונים פעילים",c.updatesActive],["צפיות בעדכונים",c.views],["תגובות אימוג'י",c.reactions],["סקרים פתוחים",c.pollsActive],["אירועים קרובים",c.events],["שאלות שמחכות",c.qNew],["שאלות שנענו",c.qAnswered],["פניות פתוחות",c.fbOpen],["אנשי קשר בספר",c.contacts],["שחרורים (8 ימים)",c.releases],["שינויים קרובים",c.changes],["סטי כרטיסיות",c.sets],["ימי הולדת",c.birthdays]].map(([l,n])=>`<div class="stat"><b>${+n||0}</b><span>${l}</span></div>`).join("")}</div>
+      <div class="links"><a href="staff.html" target="_blank" rel="noopener">📢 כניסת צוות</a><a href="index.html" target="_blank" rel="noopener">📱 האפליקציה</a><a href="phones.html" target="_blank" rel="noopener">📞 ספר טלפונים</a><a href="demo.html" target="_blank" rel="noopener">🎛️ דמו</a></div></div>
+    <div class="card"><h2>🧑‍🏫 הצוות (${(D.staff||[]).length})</h2><div class="staff">${(D.staff||[]).map(u=>`<div><span>${esc(u.name)}</span><span class="sub">${u.owner?"מנהל ראשי":u.role==="admin"?"מנהל":"מורה"}</span></div>`).join("")||`<div class="empty">המנהל עוד לא הקים את כניסת הצוות</div>`}</div></div>
+  </div>
+  <div class="card priv"><h2>🔒 מה הדף הזה רואה, ומה לא</h2>
+    <b>רואה:</b> שם וכיתה (כמו שהתלמיד כתב בפרופיל), הקבצות ומגמה, מתי נכנס בפעם הראשונה ובפעם האחרונה, באילו ימים, סוג מכשיר ודפדפן, אם התקין את האפליקציה, גרסה, אם חיבר משוב (כן/לא), כמה תגובות נתן, ויום הולדת אם שיתף.<br>
+    <b>לא רואה:</b> ציונים וחיסורים, סיסמאות, כתובת IP או מיקום, מי שאל איזו שאלה, ומה הצביעו בסקרים.<br>
+    <b>שימו לב:</b> השם הוא מה שהתלמיד הקליד – אין אימות. רשומה של מכשיר שלא נכנס 120 יום נמחקת לבד.</div>`;
+  const drawRows=()=>{
+    let L=P.filter(p=>(!filt.cls||p.cls===filt.cls)&&(!filt.q||p.name.includes(filt.q.trim()))&&(!filt.st||(filt.st==="oldver"?p.old:filt.st==="today"?["now","today"].includes(stOf(p)):stOf(p)===filt.st)));
+    L.sort(filt.sort==="name"?(a,b)=>a.name.localeCompare(b.name,"he"):filt.sort==="act"?(a,b)=>b.d30-a.d30||b.last-a.last:filt.sort==="first"?(a,b)=>b.first-a.first:(a,b)=>b.last-a.last);
+    $("tb").innerHTML=L.map(p=>{const s=ST[stOf(p)];const pk=p.name+"|"+p.cls;return`<tr data-k="${esc(pk)}"><td class="ck"><input type="checkbox" data-sel="${esc(pk)}" ${sel.has(pk)?"checked":""} aria-label="לבחור את ${esc(p.name)}"></td><td><span class="dot ${s[0]}" title="${s[1]}"></span><span class="nm">${esc(p.name)}</span>${p.devs.length>1?` <span class="pill">${p.devs.length} מכשירים</span>`:""}${p.old?` <span class="pill warn">גרסה ישנה</span>`:""}${p.devs.some(d=>d.susp)?` <span class="pill red">⛔ מושעה</span>`:""}</td>
+      <td>${esc(clsL(p.cls))}</td><td>${esc(ago(p.last,D.now))}</td><td class="hide-s">${p.d7} / ${p.d30}</td><td class="hide-s sub">${esc(p.top.plat||"–")}</td>
+      <td class="ic">${p.inst?"📲":""}${p.mashov?"📊":""}${p.bday?"🎂":""}${p.reacts?"😀":""}</td></tr>`}).join("")||`<tr><td colspan="7" class="empty">אין תלמידים שמתאימים לחיפוש</td></tr>`;
+    $("tb").querySelectorAll("tr[data-k]").forEach(tr=>tr.onclick=e=>{if(e.target.closest("td.ck"))return;detail(P.find(p=>p.name+"|"+p.cls===tr.dataset.k))});
+    $("tb").querySelectorAll("[data-sel]").forEach(c=>c.onchange=()=>{c.checked?sel.add(c.dataset.sel):sel.delete(c.dataset.sel);selUi()});
+    selUi();
+  };
+  const selUi=()=>{$("selbar").classList.toggle("on",sel.size>0);$("selN").textContent=`נבחרו ${sel.size}`;const o=$("oTo")&&$("oTo").querySelector('option[value="some"]');if(o)o.textContent=`לתלמידים שסימנתי (${sel.size})`};
+  const chosen=()=>P.filter(p=>sel.has(p.name+"|"+p.cls));
+  $("selClr").onclick=()=>{sel.clear();drawRows()};
+  $("selMsg").onclick=()=>{$("oTo").value="some";$("oText").focus();$("oText").scrollIntoView({behavior:"smooth",block:"center"})};
+  $("selSus").onclick=()=>susDialog(chosen());
+  // מצב עדכון
+  if($("mGo"))$("mGo").onclick=async()=>{const min=$("mMin").value;if(!confirm(`להפעיל מצב עדכון לכל התלמידים ${min?"ל-"+$("mMin").selectedOptions[0].textContent:"עד שתעצור"}?`))return;
+    $("mGo").disabled=true;const r=await api({action:"maint",on:true,minutes:min?+min:null,msg:$("mMsg").value.trim()});if(!r.ok){$("mGo").disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}load()};
+  if($("mStop"))$("mStop").onclick=async()=>{$("mStop").disabled=true;const r=await api({action:"maint",on:false});if(!r.ok){$("mStop").disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}load()};
+  // הודעות
+  $("oGo").onclick=async()=>{const text=$("oText").value.trim(),to=$("oTo").value;if(!text){$("oText").focus();return}
+    const list=to==="some"?chosen():[];if(to==="some"&&!list.length){alert("לא סימנת תלמידים בטבלה.");return}
+    if(!confirm(to==="all"?"לשלוח את ההודעה לכל התלמידים?":to==="some"?`לשלוח ל-${list.length} תלמידים?`:`לשלוח ל${clsL(to)}?`))return;
+    $("oGo").disabled=true;const r=await api({action:"msgSend",text,to,hours:+$("oHrs").value,keys:list.flatMap(p=>p.devs.map(d=>d.key)),people:list.map(p=>({name:p.name,cls:p.cls})),names:list.map(p=>p.name)});
+    if(!r.ok){$("oGo").disabled=false;alert(ERR[r.error]||"לא הצלחנו לשלוח.");return}$("oText").value="";load()};
+  document.querySelectorAll("[data-mdel]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את ההודעה? היא תיעלם אצל התלמידים."))return;b.disabled=true;await api({action:"msgDelete",id:b.dataset.mdel});load()});
+  document.querySelectorAll("[data-unsus]").forEach(b=>b.onclick=async()=>{b.disabled=true;const x=JSON.parse(b.dataset.unsus);const r=await api({action:"unsuspend",...x});if(!r.ok){b.disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}load()});
+  drawRows();
+  $("q").oninput=e=>{filt.q=e.target.value;drawRows()};
+  $("fc").onchange=e=>{filt.cls=e.target.value;drawRows()};
+  $("so").onchange=e=>{filt.sort=e.target.value;drawRows()};
+  $("fs").querySelectorAll("button").forEach(b=>b.onclick=()=>{filt.st=b.dataset.v;$("fs").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));drawRows()});
+}
+function detail(p){
+  if(!p)return;const s=ST[status(p.last,D.now)];
+  const days=new Set(p.devs.flatMap(x=>x.days||[]));
+  const bd=p.bday?p.bday.split("-").reverse().map(Number).join("."):"לא שיתף";
+  $("dlgBody").innerHTML=`<h3>${esc(p.name)}</h3><div class="sub"><span class="dot ${s[0]}"></span>${s[1]} · ${esc(clsL(p.cls))}</div>
+    <dl class="kv"><dt>נכנס לאחרונה</dt><dd>${esc(ago(p.last,D.now))} <span class="sub">(${esc(fmtDT(p.last))})</span></dd>
+      <dt>הצטרף</dt><dd>${esc(fmtD(p.first))}</dd><dt>ימים פעיל</dt><dd>${p.d7} מתוך 7 · ${p.d30} מתוך 30</dd><dt>כניסות</dt><dd>${p.opens} <span class="sub">(הפרש של חצי שעה = כניסה חדשה)</span></dd>
+      <dt>אנגלית</dt><dd>${esc(engL(p.top.eng))}</dd><dt>מתמטיקה</dt><dd>${esc(mathL(p.top.math))}</dd><dt>מגמה</dt><dd>${esc(majL(p.top.major))}</dd>
+      <dt>משוב</dt><dd>${p.mashov?"מחובר":"לא מחובר"}</dd><dt>יום הולדת</dt><dd>${esc(bd)}</dd><dt>תגובות לעדכונים</dt><dd>${p.reacts}</dd></dl>
+    <div class="sub">30 הימים האחרונים (ירוק = נכנס)</div><div class="cal">${D.daily.map(d=>`<i class="${days.has(d.day)?"on":""}" title="${esc(new Date(d.day+"T12:00").toLocaleDateString("he-IL"))}"></i>`).join("")}</div>
+    ${p.devs.map(d=>`<div class="dev"><b>📱 ${esc(d.plat||"מכשיר לא ידוע")}</b>${d.inst?` <span class="pill">מותקן</span>`:""}${CUR&&d.ver&&d.ver<CUR?` <span class="pill warn">גרסה ישנה</span>`:""}
+      <div class="sub" style="margin-top:4px">גרסה ${esc(d.ver||"?")} · נכנס לאחרונה ${esc(fmtDT(d.last))} · הצטרף ${esc(fmtD(d.first))}</div>
+      <div style="margin-top:8px"><button class="btn danger" data-del="${esc(d.key)}">מחק את הרשומה של המכשיר</button></div></div>`).join("")}
+    <div class="dev"><b>✉️ הודעה אישית</b><textarea id="pMsg" maxlength="500" placeholder="ההודעה תופיע רק לו"></textarea><div class="row"><select id="pHrs" style="flex:1"><option value="24">ליום</option><option value="72">ל-3 ימים</option><option value="168">לשבוע</option></select><button class="b2" id="pSend">שליחה</button></div></div>
+    <div class="dev">${p.devs.some(d=>d.susp)?`<b>⛔ מושעה</b> <span class="sub">${(()=>{const x=p.devs.map(d=>d.susp).find(Boolean);return x.until?"עד "+esc(fmtDT(x.until)):"עד שתחזיר"})()}</span><div class="row"><button class="b2" id="pUn">✅ להחזיר למערכת</button></div>`:`<button class="b2 red" id="pSus">⛔ להשעות את ${esc(p.name)}</button>`}</div>
+    <button class="close" id="cl">סגירה</button>`;
+  $("pSend").onclick=async()=>{const text=$("pMsg").value.trim();if(!text){$("pMsg").focus();return}$("pSend").disabled=true;
+    const r=await api({action:"msgSend",to:"some",text,hours:+$("pHrs").value,keys:p.devs.map(d=>d.key),people:[{name:p.name,cls:p.cls}],names:[p.name]});
+    $("pSend").disabled=false;if(!r.ok){alert(ERR[r.error]||"לא הצלחנו לשלוח.");return}$("pMsg").value="";$("pSend").textContent="✓ נשלח";setTimeout(()=>{if($("pSend"))$("pSend").textContent="שליחה"},2000);load()};
+  if($("pSus"))$("pSus").onclick=()=>susDialog([p]);
+  if($("pUn"))$("pUn").onclick=async()=>{$("pUn").disabled=true;const r=await api({action:"unsuspend",keys:p.devs.map(d=>d.key),people:[{name:p.name,cls:p.cls}]});if(!r.ok){$("pUn").disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}$("dlg").close();load()};
+  $("cl").onclick=()=>$("dlg").close();
+  $("dlgBody").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("למחוק את הרשומה של המכשיר הזה? אם התלמיד ייכנס שוב, הוא יופיע מחדש."))return;
+    b.disabled=true;const r=await api({action:"forget",key:b.dataset.del});if(!r.ok){b.disabled=false;alert(ERR[r.error]||"לא הצלחנו למחוק.");return}
+    $("dlg").close();load();
+  });
+  $("dlg").showModal();
+}
+$("dlg").addEventListener("click",e=>{if(e.target===$("dlg"))$("dlg").close()});
+T.get()?showDash():showLogin();
+</script>
+</body>
+</html>

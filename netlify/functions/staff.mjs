@@ -25,7 +25,7 @@
 // תוכן העדכונים הוא טקסט בלבד, והאפליקציה מציגה אותו כטקסט (לא HTML).
 import crypto from "node:crypto";
 
-export const config = { path: ["/api/updates", "/api/staff", "/api/feedback", "/api/sets", "/api/contacts", "/api/feed"] };
+export const config = { path: ["/api/updates", "/api/staff", "/api/feedback", "/api/sets", "/api/contacts", "/api/feed", "/api/owner"] };
 
 const ALLOWED = [/^https:\/\/eliyaamir5-glitch\.github\.io$/, /^https:\/\/([a-z0-9-]+--)?lucent-crepe-6db22c\.netlify\.app$/, /^http:\/\/localhost(:\d+)?$/];
 const MAX_FEEDBACK = 1000, FEEDBACK_KINDS = ["idea", "bug", "other"], FEEDBACK_PER_HOUR = 30;
@@ -39,6 +39,10 @@ export function __setInviteHash(h) { INVITE_HASH = h; }
 // sha256 של קוד העריכה לספר הטלפונים. נוצר ע"י: node scripts/make-phone-code.mjs
 let PHONE_HASH = "af6d01a88a81ba0c1eaeae3c628b5825b8ef6e33f3e3e89d7caa459f8a741b7f";
 export function __setPhoneHash(h) { PHONE_HASH = h; }
+// מנהל המערכת (owner.html): רק salt + scrypt של הקוד הסודי. נוצר ע"י: node scripts/make-owner-code.mjs
+let OWNER = { salt: "4b224ec01c8291a91669d5b08af86068", hash: "507e491633b1ae373a1b048c04e042d2dac6346849f75b93c3c0df17ab83ac96" };
+export function __setOwner(o) { OWNER = o; }
+const PRESENCE_MAX = 3000, PRESENCE_DAYS = 120, OWNER_DAYS = 7;
 const MAX_CONTACTS = 300, MAX_USERS = 200, MAX_UPDATES = 1000, RELEASE_DAYS = 8;
 const CAPS = { feed: true, schedule: true, phoneCode: true, backup: true };
 const sha = s => crypto.createHash("sha256").update(String(s)).digest("hex");
@@ -242,6 +246,9 @@ async function handle(req, context, headers) {
 
   // ---- פיד לתלמידים ----
   if (url.pathname.endsWith("/feed")) return feed(req, S, ip, headers);
+
+  // ---- דף מנהל המערכת ----
+  if (url.pathname.endsWith("/owner")) return owner(req, S, ip, headers);
 
   // ---- ספר הטלפונים של המורים ----
   if (url.pathname.endsWith("/contacts")) return contacts(req, S, ip, headers);
@@ -707,10 +714,124 @@ function upcomingBirthdays(bd, now = Date.now()) {
   }
   return out.sort((a, b) => a.inDays - b.inDays);
 }
+// ---- מנהל המערכת: כניסה בקוד סודי, ואז תמונת מצב מלאה ----
+// הסוד לחתימת הכניסות נשמר במפתח נפרד (לא ב-config, כדי לא לבלבל את הקמת המנהל של בית הספר)
+// control = { maint: {until|null, msg, at} | null, susp: { [deviceKey]: {until|null, reason, at, name, cls} }, suspN: { ["שם|כיתה"]: same } }
+const personKey = (name, cls) => String(name || "").replace(/\s+/g, " ").trim().toLowerCase() + "|" + (cls || "");
+const liveUntil = (x, now) => !!x && (x.until == null || x.until > now);
+function maintOf(ctl, now) { const m = ctl && ctl.maint; return liveUntil(m, now) ? { until: m.until ?? null, msg: m.msg || "" } : null; }
+function suspOf(ctl, k, pk, now) {
+  const a = ctl && ctl.susp && Object.hasOwn(ctl.susp, k) ? ctl.susp[k] : null, b = ctl && ctl.suspN && Object.hasOwn(ctl.suspN, pk) ? ctl.suspN[pk] : null;
+  const x = [a, b].find(y => liveUntil(y, now));
+  return x ? { until: x.until ?? null, reason: x.reason || "" } : null;
+}
+const MSG_MAX = 300, MSG_TEXT = 500;
+const minutesOrNull = v => v == null || v === "" ? null : Math.max(1, Math.min(60 * 24 * 60, Math.round(Number(v)) || 0)) || null;
+// הודעות שמגיעות למכשיר הזה: לכולם, לכיתה שלו, או אליו (לפי מכשיר או שם+כיתה)
+const msgsFor = (list, k, pk, cls, now) => (Array.isArray(list) ? list : []).filter(m => m.expiresAt > now && (m.to === "all" || m.to === cls || (m.to === "some" && ((m.keys || []).includes(k) || (m.people || []).includes(pk)))))
+  .map(m => ({ id: m.id, text: m.text, at: m.createdAt, exp: m.expiresAt }));
+
+async function ownerSecret(S) {
+  let sec = null;
+  await S.update("ownerConf", cur => { if (cur && cur.secret) { sec = cur.secret; return undefined; } sec = crypto.randomBytes(32).toString("hex"); return { secret: sec, createdAt: Date.now() }; });
+  return sec;
+}
+async function owner(req, S, ip, headers) {
+  if (req.method !== "POST") return reply(405, { ok: false, error: "method" }, headers);
+  let b; try { b = await req.json(); } catch { b = null; }
+  if (!b || typeof b !== "object") return reply(400, { ok: false, error: "bad_request" }, headers);
+  const secret = await ownerSecret(S), now = Date.now(), ov = String(OWNER.hash || "").slice(0, 12);
+  if (b.action === "login") {
+    const code = norm(b.code);
+    if (!code || code.length > 64) return reply(400, { ok: false, error: "bad_request" }, headers);
+    await attempt(S, ip);
+    if (!OWNER.hash || !safeEq(await hashCodeAsync(code, OWNER.salt), OWNER.hash)) return reply(401, { ok: false, error: "bad_code" }, headers);
+    await forgive(S, ip);
+    return reply(200, { ok: true, token: sign({ own: 1, ov, exp: now + OWNER_DAYS * 864e5 }, secret) }, headers);
+  }
+  const p = verify((req.headers.get("authorization") || "").replace(/^Bearer\s+/i, ""), secret);
+  if (!p || p.own !== 1 || p.ov !== ov) return reply(401, { ok: false, error: "auth" }, headers);
+  if (b.action === "forget") { // מחיקת רשומה של מכשיר (למשל לבקשת תלמיד)
+    const k = String(b.key || "");
+    if (!/^[0-9a-f]{24}$/.test(k)) return reply(400, { ok: false, error: "bad_request" }, headers);
+    await S.update("presence", cur => { const m = cur || {}; if (!Object.hasOwn(m, k)) return undefined; delete m[k]; return m; });
+    return reply(200, { ok: true }, headers);
+  }
+  if (b.action === "maint") { // מצב עדכון לכולם: לזמן קצוב (דקות) או עד שעוצרים
+    const on = !!b.on, min = minutesOrNull(b.minutes), msg = clean(b.msg, 200);
+    await S.update("control", cur => { const c = cur && typeof cur === "object" ? cur : {}; c.maint = on ? { until: min ? now + min * 60e3 : null, msg, at: now } : null; return c; });
+    return reply(200, { ok: true }, headers);
+  }
+  if (b.action === "suspend" || b.action === "unsuspend") { // השעיה לפי מכשירים + לפי שם וכיתה (כדי שהרשמה מחדש באותו שם לא תעקוף)
+    const keys = (Array.isArray(b.keys) ? b.keys : []).map(String).filter(k => /^[0-9a-f]{24}$/.test(k)).slice(0, 50);
+    const people = (Array.isArray(b.people) ? b.people : []).map(p => personKey(clean(p?.name, MAX_NAME), AUDIENCES.includes(p?.cls) ? p.cls : "")).filter(p => p.length > 2 && SAFE_KEY(p)).slice(0, 50);
+    if (!keys.length && !people.length) return reply(400, { ok: false, error: "bad_request" }, headers);
+    const min = minutesOrNull(b.minutes), rec = { until: min ? now + min * 60e3 : null, reason: clean(b.reason, 200), at: now };
+    await S.update("control", cur => {
+      const c = cur && typeof cur === "object" ? cur : {};
+      c.susp = c.susp && typeof c.susp === "object" ? c.susp : {}; c.suspN = c.suspN && typeof c.suspN === "object" ? c.suspN : {};
+      for (const k of keys) b.action === "suspend" ? (c.susp[k] = rec) : delete c.susp[k];
+      for (const p of people) b.action === "suspend" ? (c.suspN[p] = rec) : delete c.suspN[p];
+      for (const m of [c.susp, c.suspN]) for (const x of Object.keys(m)) if (!liveUntil(m[x], now)) delete m[x]; // ניקוי השעיות שנגמרו
+      return c;
+    });
+    return reply(200, { ok: true }, headers);
+  }
+  if (b.action === "msgSend") { // הודעה ממנהל המערכת: לכולם / לכיתה / לתלמידים שנבחרו
+    const text = clean(b.text, MSG_TEXT), to = ["all", "y1", "y2", "some"].includes(b.to) ? b.to : "";
+    const hours = Math.max(1, Math.min(24 * 14, Math.round(Number(b.hours)) || 24));
+    const keys = (Array.isArray(b.keys) ? b.keys : []).map(String).filter(k => /^[0-9a-f]{24}$/.test(k)).slice(0, 300);
+    const people = (Array.isArray(b.people) ? b.people : []).map(p => personKey(clean(p?.name, MAX_NAME), AUDIENCES.includes(p?.cls) ? p.cls : "")).filter(p => p.length > 2).slice(0, 300);
+    if (!text || !to || (to === "some" && !keys.length && !people.length)) return reply(400, { ok: false, error: "bad_request" }, headers);
+    const m = { id: newId(), text, to, ...(to === "some" ? { keys, people, names: (Array.isArray(b.names) ? b.names : []).map(x => clean(x, MAX_NAME)).filter(Boolean).slice(0, 300) } : {}), createdAt: now, expiresAt: now + hours * 3600e3 };
+    await S.update("ownerMsgs", cur => [m, ...(Array.isArray(cur) ? cur : []).filter(x => x.expiresAt > now - 7 * 864e5)].slice(0, MSG_MAX));
+    return reply(200, { ok: true, id: m.id }, headers);
+  }
+  if (b.action === "msgDelete") {
+    await S.update("ownerMsgs", cur => { const l = Array.isArray(cur) ? cur : []; return l.some(x => x.id === b.id) ? l.filter(x => x.id !== b.id) : undefined; });
+    return reply(200, { ok: true }, headers);
+  }
+  if (b.action !== "overview") return reply(400, { ok: false, error: "bad_action" }, headers);
+  const keys = ["presence", "users", "updates", "polls", "events", "questions", "feedback", "contacts", "releases", "changes", "reactions", "birthdays", "sets", "views", "control", "ownerMsgs"];
+  const v = Object.fromEntries(await Promise.all(keys.map(async k => [k, await S.get(k)])));
+  const arr = x => Array.isArray(x) ? x : [], obj = x => x && typeof x === "object" && !Array.isArray(x) ? x : {};
+  // תגובות לפי שם (השם שהתלמיד כתב בפרופיל), ימי הולדת לפי שם+כיתה
+  const rxBy = Object.create(null);
+  for (const r of Object.values(obj(v.reactions))) for (const x of Object.values(obj(r))) if (x && x.name) rxBy[x.name] = (rxBy[x.name] || 0) + 1;
+  const bdBy = Object.create(null);
+  for (const x of Object.values(obj(v.birthdays))) if (x && x.name) bdBy[x.name + "|" + x.cls] = x.md;
+  const last30 = Array.from({ length: 30 }, (_, i) => israelDay(now - (29 - i) * 864e5));
+  const students = Object.entries(obj(v.presence)).filter(([, x]) => x && typeof x === "object").map(([key, x]) => {
+    const days = arr(x.days);
+    return { key, name: x.name || "", cls: x.cls || "", eng: x.eng || "", math: x.math || "", major: x.major || "", mashov: !!x.mashov, ver: x.ver || "", plat: x.plat || "", inst: !!x.inst,
+      first: x.first || 0, last: x.last || 0, opens: x.opens || 0, d7: days.filter(d => d >= last30[23]).length, d30: days.filter(d => d >= last30[0]).length,
+      days: days.filter(d => d >= last30[0]), reacts: rxBy[x.name] || 0, bday: bdBy[(x.name || "") + "|" + (x.cls || "")] || "", susp: suspOf(v.control, key, personKey(x.name, x.cls), now) };
+  }).sort((a, b) => b.last - a.last);
+  const daily = last30.map(d => ({ day: d, n: students.filter(s => s.days.includes(d)).length }));
+  const today = israelDay(now);
+  const ctl = obj(v.control);
+  return reply(200, { ok: true, now, today, students, daily, maint: maintOf(ctl, now),
+    suspended: [...Object.entries(obj(ctl.suspN)).map(([p, x]) => ({ person: p, ...x })), ...Object.entries(obj(ctl.susp)).map(([k, x]) => ({ key: k, ...x }))].filter(x => liveUntil(x, now)),
+    msgs: arr(v.ownerMsgs).filter(m => m.expiresAt > now).map(m => ({ id: m.id, text: m.text, to: m.to, names: m.names || [], count: (m.keys || []).length, createdAt: m.createdAt, expiresAt: m.expiresAt })),
+    staff: arr(v.users).map(u => ({ name: u.name, role: u.role, owner: !!u.owner, createdAt: u.createdAt || 0 })),
+    content: {
+      updatesActive: activeUpdates(v.updates, now).length, updatesTotal: arr(v.updates).length,
+      views: Object.values(obj(v.views)).reduce((a, n) => a + (+n || 0), 0),
+      pollsActive: arr(v.polls).filter(x => x.endsAt > now).length, events: arr(v.events).filter(e => e.date >= today).length,
+      qNew: arr(v.questions).filter(q => q.status === "new").length, qAnswered: arr(v.questions).filter(q => q.status === "answered").length,
+      fbOpen: arr(v.feedback).filter(x => !x.done).length, fbTotal: arr(v.feedback).length,
+      contacts: Array.isArray(v.contacts) ? v.contacts.length : Object.keys(obj(v.contacts)).length,
+      releases: arr(v.releases).filter(r => r.at > now - RELEASE_DAYS * 864e5).length,
+      changes: arr(v.changes).filter(c => c && c.date >= today).length, sets: arr(v.sets).length,
+      reactions: Object.values(rxBy).reduce((a, n) => a + n, 0), birthdays: Object.keys(obj(v.birthdays)).length,
+    },
+  }, { ...headers, "Cache-Control": "no-store" });
+}
+
 async function feed(req, S, ip, headers) {
   if (req.method === "GET") {
     const now = Date.now(), today = israelDay(now);
-    const [ups, polls, events, qs, bd, rx, chg] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions", "changes"].map(k => S.get(k)));
+    const [ups, polls, events, qs, bd, rx, chg, ctl] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions", "changes", "control"].map(k => S.get(k)));
     return reply(200, {
       ok: true, now,
       updates: activeUpdates(ups, now).map(u => ({ ...publicUpdate(u), reacts: reactCounts(reactsOf(rx, u.id)) })),
@@ -721,12 +842,17 @@ async function feed(req, S, ip, headers) {
         .map(q => ({ id: q.id, q: q.text, a: q.answer, to: q.to, cls: q.cls, by: q.answeredBy, at: q.answeredAt })),
       birthdays: upcomingBirthdays(bd, now),
       changes: (chg || []).filter(x => x.date >= today).sort((a, b) => (a.date + a.s).localeCompare(b.date + b.s)).slice(0, 200).map(publicChange),
+      maint: maintOf(ctl, now),
     }, { ...headers, "Cache-Control": "public, max-age=20" });
   }
   if (req.method !== "POST") return reply(405, { ok: false, error: "method" }, headers);
   let b; try { b = await req.json(); } catch { return reply(400, { ok: false, error: "bad_request" }, headers); }
   const action = String(b?.action || ""), now = Date.now();
   const device = String(b?.device || ""), cls = AUDIENCES.includes(b?.cls) && b.cls !== "all" ? b.cls : "";
+  if (["vote", "react", "birthday", "ask"].includes(action) && DEV_RE.test(device)) {
+    const ctl = await S.get("control");
+    if (suspOf(ctl, devKey(device), personKey(b?.name, cls), now)) return reply(403, { ok: false, error: "suspended" }, headers);
+  }
   if (action === "vote") {
     if (!DEV_RE.test(device)) return reply(400, { ok: false, error: "bad_request" }, headers);
     await rateLimit(S, "voteRate", ip, 400);
@@ -771,6 +897,25 @@ async function feed(req, S, ip, headers) {
       return m;
     });
     return reply(200, { ok: true, id, counts, mine: emoji }, headers);
+  }
+  if (action === "hello") {
+    if (!DEV_RE.test(device) || !cls) return reply(400, { ok: false, error: "bad_request" }, headers);
+    await rateLimit(S, "helloRate", ip, 6000);
+    const k = devKey(device), day = israelDay(now), key = x => /^[a-z]{2,12}$/.test(String(x || "")) ? String(x) : "";
+    const rec = { name: clean(b.name, MAX_NAME), cls, eng: key(b.eng), math: key(b.math), major: key(b.major), mashov: !!b.mashov, ver: clean(b.ver, 20), plat: clean(b.plat, 40), inst: !!b.inst };
+    const sig = x => JSON.stringify([x.name, x.cls, x.eng, x.math, x.major, x.mashov, x.ver, x.plat, x.inst]);
+    await S.update("presence", cur => {
+      const m = cur && typeof cur === "object" ? cur : {};
+      const old = Object.hasOwn(m, k) && m[k] && typeof m[k] === "object" ? m[k] : null;
+      if (old && old.days && old.days.includes(day) && now - old.last < 2 * 60e3 && sig(old) === sig(rec)) return undefined; // לא כותבים שוב כל רגע
+      for (const x of Object.keys(m)) if (!m[x] || now - m[x].last > PRESENCE_DAYS * 864e5) delete m[x];
+      if (!old && Object.keys(m).length >= PRESENCE_MAX) throw new Fail(413, "too_many");
+      const days = old && Array.isArray(old.days) ? old.days : [];
+      m[k] = { ...rec, first: old?.first || now, last: now, opens: (old?.opens || 0) + (!old || now - old.last > 30 * 60e3 ? 1 : 0), days: days.includes(day) ? days : [...days, day].slice(-60) };
+      return m;
+    });
+    const [ctl, om] = await Promise.all([S.get("control"), S.get("ownerMsgs")]), pk = personKey(rec.name, cls);
+    return reply(200, { ok: true, maint: maintOf(ctl, now), susp: suspOf(ctl, k, pk, now), msgs: msgsFor(om, k, pk, cls, now) }, headers);
   }
   if (action === "birthday") {
     if (!DEV_RE.test(device)) return reply(400, { ok: false, error: "bad_request" }, headers);
