@@ -5,16 +5,58 @@
 // POST /api/mashov  { username, password, semel, year }
 //   → { ok:true, fetchedAt, student:{name}, behave:[...], grades:[...], groups:[...], lessonsCount:[...] }
 //   → { ok:false, error:"bad_login" | "bad_request" | "mashov_down" | "no_student" }
+//   → 429 { ok:false, error:"mashov_down", reason:"too_many" }  אחרי יותר מדי סיסמאות שגויות (לחשבון / לכתובת), ל-15 דקות
 //
 // הממשק של משוב לא רשמי ויכול להשתנות. מבוסס על node-mashov, mashovapi-js ו-MashovMCP (קוד פתוח).
+
+import crypto from "node:crypto";
 
 const BASE = process.env.MASHOV_BASE || "https://web.mashov.info/api";
 const APP = { appName: "info.mashov.students", apiVersion: "3.20210425", appVersion: "3.20210425", appBuild: "3.20210425",
   deviceUuid: "maarechet-web", devicePlatform: "web", deviceManufacturer: "web", deviceModel: "web", deviceVersion: "1" };
-const ALLOWED = [/^https:\/\/eliyaamir5-glitch\.github\.io$/, /^https:\/\/[a-z0-9-]+\.netlify\.app$/, /^http:\/\/localhost(:\d+)?$/];
+// רק האתרים של הפרויקט: GitHub Pages, האתר בנטליפיי (וגרסאות התצוגה שלו xxx--lucent-crepe-6db22c), ומחשב מקומי.
+// לא "כל netlify.app": אחרת כל אתר שמישהו מעלה לנטליפיי יכול לשלוח דרכנו סיסמאות של משוב מהדפדפן
+const ALLOWED = [/^https:\/\/eliyaamir5-glitch\.github\.io$/, /^https:\/\/([a-z0-9-]+--)?lucent-crepe-6db22c\.netlify\.app$/, /^http:\/\/localhost(:\d+)?$/];
 const TIMEOUT_MS = 15000;
+// הגבלת התחברויות שנכשלו (סיסמה שגויה), כדי שאי אפשר לנחש סיסמאות של תלמידים דרכנו
+// (וכדי שמשוב לא יחסום את השרת שלנו לכולם). כל בית הספר יכול לצאת מאותה כתובת – לכן המכסה לכתובת נדיבה.
+const FAIL_WIN = 15 * 60e3, IP_FAILS = 100, USER_FAILS = 10;
 
 export const config = { path: "/api/mashov" };
+
+// ---- אחסון קטן לספירת כישלונות: Netlify Blobs בייצור, מפה בזיכרון בבדיקות. תקלה באחסון לא חוסמת אף אחד ----
+let memStore = null;
+export function __useMemoryStore(custom) {
+  if (custom) { memStore = custom; return null; } // בבדיקות: אחסון מדומה (למשל אחד שלא עונה)
+  const m = new Map();
+  memStore = { get: async k => m.has(k) ? JSON.parse(m.get(k)) : null, set: async (k, v) => { m.set(k, JSON.stringify(v)); } };
+  return m;
+}
+async function store() {
+  if (memStore) return memStore;
+  const { getStore } = await import("@netlify/blobs");
+  const s = getStore({ name: "maarechet-mashov", consistency: "strong" });
+  return { get: k => s.get(k, { type: "json" }), set: (k, v) => s.setJSON(k, v) };
+}
+// אחסון איטי לא תוקע את ההתחברות: אחרי 3 שניות ממשיכים בלעדיו
+const within = (p, ms = 3000) => { let t; return Promise.race([p, new Promise((_, rej) => { t = setTimeout(() => rej(new Error("timeout")), ms); t.unref?.(); })]).finally(() => clearTimeout(t)); };
+const sha = s => crypto.createHash("sha256").update(String(s)).digest("hex").slice(0, 32);
+// המפתחות: כתובת, ו-hash של בית ספר+שם משתמש (לא שומרים שמות משתמש)
+const failKeys = (ip, semel, username) => [["ip:" + ip, IP_FAILS], ["u:" + sha(semel + ":" + username.toLowerCase()), USER_FAILS]];
+async function isBlocked(keys) {
+  try {
+    const f = await within((async () => (await store()).get("fails"))()) || {}, now = Date.now();
+    return keys.some(([k, max]) => Object.hasOwn(f, k) && Array.isArray(f[k]) && f[k].filter(t => now - t < FAIL_WIN).length >= max);
+  } catch { return false; }
+}
+async function addFail(keys) {
+  try {
+    const S = await store(), f = await within(S.get("fails")) || {}, now = Date.now();
+    for (const [k] of keys) f[k] = [...(Object.hasOwn(f, k) && Array.isArray(f[k]) ? f[k] : []).filter(t => now - t < FAIL_WIN), now].slice(-200);
+    for (const k of Object.keys(f)) if (!Array.isArray(f[k]) || !f[k].some(t => now - t < FAIL_WIN)) delete f[k];
+    await within(S.set("fails", f));
+  } catch {}
+}
 
 const isGuid = v => typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 const pick = (o, ...keys) => { for (const k of keys) if (o && o[k] !== undefined && o[k] !== null && o[k] !== "") return o[k]; return undefined; };
@@ -83,17 +125,28 @@ const slimCounts = arr => (Array.isArray(arr) ? arr : []).map(e => ({
   groupId: pick(e, "groupId") ?? null, lessonCount: pick(e, "lessonCount") ?? null, weeklyHours: pick(e, "weeklyHours") ?? null,
 }));
 
-export default async (req) => {
+export default async (req, context) => {
   const headers = corsHeaders(req.headers.get("origin"));
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (req.method !== "POST") return reply(405, { ok: false, error: "method" }, headers);
+  // תקלה לא צפויה מחזירה תשובה מסודרת (עם CORS), ולא שגיאת 500 ריקה שהאפליקציה לא מבינה
+  try { return await handle(req, context, headers); }
+  catch (e) { console.error("mashov function error:", e && e.message); return reply(502, { ok: false, error: "mashov_down" }, headers); }
+};
 
+async function handle(req, context, headers) {
   let body;
   try { body = await req.json(); } catch { return reply(400, { ok: false, error: "bad_request" }, headers); }
   const username = String(body?.username ?? "").trim(), password = String(body?.password ?? "");
   const semel = Number(body?.semel), year = Number(body?.year);
   if (!username || username.length > 80 || !password || password.length > 200 || !Number.isInteger(semel) || semel < 100 || semel > 99999999 || !(year >= 2015 && year <= 2100))
     return reply(400, { ok: false, error: "bad_request" }, headers);
+
+  // 0. יותר מדי סיסמאות שגויות לאותו חשבון / מאותה כתובת → מחכים 15 דקות (גם סיסמה נכונה, כדי שלא יהיה אפשר לנחש)
+  const ip = String((context && context.ip) || req.headers.get("x-nf-client-connection-ip") || "unknown").replace(/[^0-9a-fA-F:.]/g, "").slice(0, 64) || "unknown";
+  const keys = failKeys(ip, semel, username);
+  // האפליקציה מכירה את "mashov_down" ("נסה שוב בעוד כמה דקות"); reason מפרט למה
+  if (await isBlocked(keys)) return reply(429, { ok: false, error: "mashov_down", reason: "too_many" }, headers);
 
   // 1. התחברות
   let loginRes, loginData;
@@ -108,7 +161,7 @@ export default async (req) => {
   } catch {
     return reply(502, { ok: false, error: "mashov_down" }, headers);
   } finally { t1.done(); }
-  if (loginRes.status === 401 || loginRes.status === 403 || (loginRes.status === 400 && loginData)) return reply(401, { ok: false, error: "bad_login" }, headers);
+  if (loginRes.status === 401 || loginRes.status === 403 || (loginRes.status === 400 && loginData)) { await addFail(keys); return reply(401, { ok: false, error: "bad_login" }, headers); }
   if (!loginRes.ok || !loginData) return reply(502, { ok: false, error: "mashov_down" }, headers);
 
   const csrf = loginRes.headers.get("x-csrf-token") || "";
@@ -138,4 +191,4 @@ export default async (req) => {
     behave: slimBehave(behave), grades: slimGrades(grades), groups: slimGroups(groups), lessonsCount: slimCounts(lessonsCount),
     partial: [behave, grades, groups, lessonsCount].some(x => x === null),
   }, headers);
-};
+}

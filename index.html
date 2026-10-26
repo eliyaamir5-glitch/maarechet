@@ -529,8 +529,11 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 const CLASSES={y1:{...CLASSES_META.y1,days:DAYS_Y1},y2:{...CLASSES_META.y2,days:DAYS_Y2}};
 let profile=null;
 try{profile=JSON.parse(localStorage.getItem("profile")||"null")}catch(e){profile=null}
+if(!profile||typeof profile!=="object"||Array.isArray(profile))profile=null; // נתון פגום בטלפון = כמו משתמש חדש
 // מעבר מהשאלה הישנה (פיזיקה כן/לא) לבחירת מגמה
 if(profile&&!profile.major&&profile.phys==="yes"){profile.major="phys";try{localStorage.setItem("profile",JSON.stringify(profile))}catch(e){}}
+// כיתה/הקבצה/מגמה שלא קיימות (נתון ישן או פגום) נמחקות, והאשף ישאל עליהן שוב
+if(profile)for(const [k,o] of [["cls",CLASSES_META],["eng",ENG],["math",MATH],["major",MAJORS]])if(profile[k]!=null&&!Object.prototype.hasOwnProperty.call(o,String(profile[k])))delete profile[k];
 let DAYS=CLASSES[(profile&&CLASSES[profile.cls]&&profile.cls)||"y2"].days;
 let gear={};
 try{gear=Object.assign({},DEFAULT_GEAR,JSON.parse(localStorage.getItem("gear")||"{}"))}catch(e){gear=Object.assign({},DEFAULT_GEAR)}
@@ -558,9 +561,14 @@ const lessonsOf=d=>(d.lessons||[]).map(resolve).filter(Boolean);
 // ---- 🔄 שינויים במערכת מהצוות (בוטל / מחליף / שעה אחרת / הערה), מגיעים עם הפיד ----
 const nmT=t=>String(t||"").replace(/\s*\(.*\)\s*$/,"").replace(/^מגמת /,"").trim();
 const dateOfTab=i=>{const d=new Date();d.setDate(d.getDate()+((i-d.getDay()+7)%7));return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+// שינוי תקין בלבד: שינוי פגום או מסוג לא מוכר מהשרת מתעלמים ממנו (ולא מפילים את המסך)
+const HM=/^([01]\d|2[0-3]):[0-5]\d$/;
+const okChange=x=>!!x&&typeof x==="object"&&typeof x.date==="string"&&typeof x.s==="string"&&HM.test(x.s)&&typeof x.n==="string"&&!!x.n&&
+  (x.kind==="cancel"||x.kind==="note"&&!!x.note||x.kind==="sub"&&typeof x.sub==="string"&&!!x.sub.trim()||
+   x.kind==="move"&&typeof x.to==="string"&&(([a,e])=>HM.test(a||"")&&HM.test(e||"")&&a<e)(x.to.split("-")));
 function changesOn(iso){
   const c=(profile&&profile.cls)||"y2";
-  try{return Updates.feed().changes.filter(x=>x&&x.date===iso&&(x.cls==="all"||x.cls===c))}catch(e){return []}
+  try{return Updates.feed().changes.filter(x=>okChange(x)&&x.date===iso&&(x.cls==="all"||x.cls===c))}catch(e){return []}
 }
 function withChanges(ls,iso){
   const ch=changesOn(iso);if(!ch.length)return ls;
@@ -575,7 +583,8 @@ function withChanges(ls,iso){
   }).sort((a,b)=>toMin(a.s)-toMin(b.s));
 }
 const isCancel=l=>!!(l.chg&&l.chg.kind==="cancel");
-const chgTag=l=>!l.chg?"":l.chg.kind==="cancel"?`<span class="chg">❌ בוטל</span>`:l.chg.kind==="move"?`<span class="chg m">⏰ הוזז (במקור ${l.chg.s})</span>`:l.chg.kind==="sub"?`<span class="chg s">🔄 מורה מחליף</span>`:"";
+const chgTag=l=>!l.chg?"":l.chg.kind==="cancel"?`<span class="chg">❌ בוטל</span>`:l.chg.kind==="move"?`<span class="chg m">⏰ הוזז (במקור ${escH(l.chg.s)})</span>`:l.chg.kind==="sub"?`<span class="chg s">🔄 מורה מחליף</span>`:"";
+const isoOf=dt=>`${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
 const chgNote=l=>l.chg&&l.chg.note?`<div class="chgn">📌 ${escH(l.chg.note)}</div>`:"";
 const hue=n=>{let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))%360;return h};
 let sel=new Date().getDay();
@@ -608,7 +617,7 @@ const partTag=l=>l.parts?`<span class="pt">שיעור ${l.part} מתוך ${l.par
 // חופשה לפי SCHOOL_YEAR ב-data.js (חגים, וגם לפני/אחרי שנת הלימודים)
 function vacationOf(dt){
   if(typeof SCHOOL_YEAR==="undefined")return null;
-  const iso=`${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
+  const iso=isoOf(dt);
   if(iso>SCHOOL_YEAR.end)return{emoji:"🏖️",title:"חופש גדול!",text:"שנת הלימודים נגמרה. נתראה בספטמבר 😎"};
   if(iso<SCHOOL_YEAR.start)return{emoji:"🎒",title:"עוד מעט מתחילים",text:"שנת הלימודים מתחילה ב-"+SCHOOL_YEAR.start.split("-").reverse().slice(0,2).join(".")};
   const o=SCHOOL_YEAR.off.find(x=>iso>=x.from&&iso<=x.to);
@@ -620,7 +629,7 @@ function render(animate){
   document.getElementById("clock").textContent=`${pad(now.getHours())}:${pad(now.getMinutes())}`;
   const today=now.getDay();
   const tabs=document.getElementById("tabs");
-  tabs.innerHTML=DAYS.map((d,i)=>`<button class="tab ${i===sel?"on":""} ${i===today?"today":""}" data-i="${i}">${d.name}</button>`).join("");
+  tabs.innerHTML=DAYS.map((d,i)=>`<button class="tab ${i===sel?"on":""} ${i===today?"today":""}" data-i="${i}" aria-pressed="${i===sel}"${i===today?' aria-current="date"':""}>${d.name}</button>`).join("");
   tabs.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{sel=+b.dataset.i;render()});
   const d=DAYS[sel]; const hero=document.getElementById("hero"); const c=document.getElementById("content");
   hero.classList.toggle("noanim",animate!==true&&!!hero.innerHTML);
@@ -656,13 +665,17 @@ function render(animate){
       const l=L[cur];
       hero.innerHTML=`<div class="hero"><div class="lbl">עכשיו</div><div class="big">${l.n}${stkTag(l.n)}${partTag(l)}</div>${mustTag(l.n)}<div class="sub">${l.w?l.w+" · ":""}${l.s}–${l.e} · ${dur(l.em-l.sm)}</div><div class="left">נשארו ${dur(l.em-nowMin)}</div><div class="bar"><i style="width:${Math.round(100*(nowMin-l.sm)/(l.em-l.sm))}%"></i></div>${l.joke?"":gearBlock(l.n)}${nextBlock(nl)}</div>`;
     }else if(nl){
-      hero.innerHTML=`<div class="hero idle"><div class="lbl">${nxt===0?"עוד לא התחלנו":"☕ הפסקה"}</div><div class="big">${nxt===0?"היום מתחילים ב-"+nl.s:"עד "+nl.s}</div><div class="left">עוד ${dur(nl.sm-nowMin)}</div>${nextBlock(nl)}</div>`;
+      // "עוד לא התחלנו" גם כשהשיעור הראשון בוטל (אין עדיין שיעור שהתקיים)
+      const first=!L.some((l,i)=>i<nxt&&!isCancel(l));
+      hero.innerHTML=`<div class="hero idle"><div class="lbl">${first?"עוד לא התחלנו":"☕ הפסקה"}</div><div class="big">${first?"היום מתחילים ב-"+nl.s:"עד "+nl.s}</div><div class="left">עוד ${dur(nl.sm-nowMin)}</div>${nextBlock(nl)}</div>`;
     }else{
       hero.innerHTML=`<div class="hero idle"><div class="lbl">היום</div><div class="big">סיימנו להיום 🎉</div>${(()=>{const n=nextSchoolDay(today);return n?`<div class="sub">הלימודים הבאים: ${n.label}</div>`:""})()}${tomorrowGear(today)}</div>`;
     }
   }else{
-    const first=L[0],last=L[L.length-1];
-    hero.innerHTML=`<div class="hero idle"><div class="lbl">יום ${d.name}</div><div class="big">${L.filter(l=>!isCancel(l)).length} שיעורים</div><div class="sub">${first.s} – ${last.e}</div></div>`;
+    // שיעור שבוטל לא נספר, וגם לא קובע מתי היום מתחיל/נגמר
+    const act=L.filter(l=>!isCancel(l));
+    const first=act[0],last=act.reduce((a,l)=>!a||l.em>a.em?l:a,null);
+    hero.innerHTML=`<div class="hero idle"><div class="lbl">יום ${d.name}</div><div class="big">${act.length} שיעורים</div>${first?`<div class="sub">${first.s} – ${last.e}</div>`:""}</div>`;
   }
   // list
   let html='<div class="list">';
@@ -672,7 +685,7 @@ function render(animate){
     if(i>0){const g=l.sm-L[i-1].em;if(g>=10)html+=`<div class="gap">☕ הפסקה ${dur(g)} <span>${fmt(L[i-1].em)}–${fmt(l.sm)}</span></div>`}
     const cls=sel===today?(i===cur?"now":i===nxt?"next":l.em<=nowMin?"done":""):"";
     const gl=l.joke||l.part>1?[]:gearList(l.n);
-    html+=`<div class="row ${cls} ${l.joke?"joke":""} ${isCancel(l)?"cancel":""} ${mustOf(l.n)==="must"&&!cls.includes("done")?"must-row":""}" style="--c:hsl(${hue(l.n)} 70% 60%)"><div class="bar-c"></div><div class="t"><b>${l.s}</b>${l.e}<span class="dur">${durPill(l.em-l.sm)}</span></div><div><div class="n">${l.n}${l.joke||l.part>1?"":stkTag(l.n)}${partTag(l)}${chgTag(l)}</div>${l.w?`<div class="who">${l.w}</div>`:""}${chgNote(l)}${mustTag(l.n)}${l.joke||l.part>1||isCancel(l)?"":`<div class="g">${gl.map(x=>`<span class="chip">${escH(x)}</span>`).join("")}<button class="edit" data-n="${l.n.replace(/"/g,"&quot;")}">${gl.length?"ערוך ציוד":"+ ציוד"}</button></div>`}</div></div>`;
+    html+=`<div class="row ${cls} ${l.joke?"joke":""} ${isCancel(l)?"cancel":""} ${mustOf(l.n)==="must"&&!cls.includes("done")&&!isCancel(l)?"must-row":""}" style="--c:hsl(${hue(l.n)} 70% 60%)"><div class="bar-c"></div><div class="t"><b>${l.s}</b>${l.e}<span class="dur">${durPill(l.em-l.sm)}</span></div><div><div class="n">${l.n}${l.joke||l.part>1?"":stkTag(l.n)}${partTag(l)}${chgTag(l)}</div>${l.w?`<div class="who">${l.w}</div>`:""}${chgNote(l)}${isCancel(l)?"":mustTag(l.n)}${l.joke||l.part>1||isCancel(l)?"":`<div class="g">${gl.map(x=>`<span class="chip">${escH(x)}</span>`).join("")}<button class="edit" data-n="${l.n.replace(/"/g,"&quot;")}">${gl.length?"ערוך ציוד":"+ ציוד"}</button></div>`}</div></div>`;
   });
   html+='</div>';
   // summary of what to pack
@@ -725,7 +738,7 @@ function nextSchoolDay(fromDay){
 }
 function tomorrowGear(fromDay){
   const n=nextSchoolDay(fromDay);if(!n)return "";
-  const all=[...new Set(lessonsOf(n.d).filter(l=>!l.joke).flatMap(l=>gearList(l.n)))];
+  const all=[...new Set(withChanges(lessonsOf(n.d),isoOf(n.dt)).filter(l=>!l.joke&&!isCancel(l)).flatMap(l=>gearList(l.n)))];
   return `<div class="gear-tmrw">🎒 <b>${n.label} (${n.d.name}) להביא:</b> ${all.length?all.map(escH).join(" · "):"לא הוגדר ציוד"}</div>`;
 }
 let hebParts={date:"",parsha:""};
@@ -885,7 +898,7 @@ let wzStep=0,wzData={},wzEditing=false,wzMashovSubmit=null,wzBusy=false;
 function openOnb(editing){
   wzEditing=editing;wzData=Object.assign({},profile||{});
   // משתמש קיים שחסר לו רק פרט אחד (למשל מגמה) מתחיל ישר מהשאלה החסרה
-  const miss=STEPS.findIndex(s=>s.opts&&!wzData[s.k]);
+  const miss=STEPS.findIndex(s=>s.opts&&!s.opts.some(o=>o[0]===wzData[s.k]));
   wzStep=editing&&wzData.first&&miss>0?miss:0;
   document.getElementById("wiz").hidden=false;drawStep();
 }
@@ -920,7 +933,7 @@ function drawStep(){
   }else if(st.type==="mashov"){
     if(Mashov.connected()){
       const c=Mashov.conn();
-      body.innerHTML=`<div class="wz-opt sel" style="justify-content:center;cursor:default"><span class="ic">✅</span><span>מחובר ל${c.schoolName}<small>אפשר לנתק מתוך הפרופיל</small></span></div>`;
+      body.innerHTML=`<div class="wz-opt sel" style="justify-content:center;cursor:default"><span class="ic">✅</span><span>מחובר ל${escH(c.schoolName)}<small>אפשר לנתק מתוך הפרופיל</small></span></div>`;
       wzMashovSubmit=null;
     }else{
       body.innerHTML=Mashov.formHTML()+`<button type="button" class="wz-opt" id="wzMsSkip" style="margin-top:10px;justify-content:center"><span class="ic">⏭️</span><span>לא עכשיו, אולי בהמשך</span></button>`;
@@ -1295,9 +1308,10 @@ const FEED_API=()=>((typeof SERVER_BASE!=="undefined"&&SERVER_BASE)||"")+"/api/f
 async function feedPost(body){try{const r=await fetch(FEED_API(),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});return await r.json().catch(()=>({ok:false,error:"server"}))}catch(e){return{ok:false,error:"network"}}}
 const myCls=()=>(profile&&profile.cls)||"y2";
 const forMe=a=>!a||a==="all"||a===myCls();
-const pollVotes=()=>{try{return JSON.parse(localStorage.getItem("pollVotes")||"{}")}catch(e){return{}}};
+const pollVotes=()=>{try{const v=JSON.parse(localStorage.getItem("pollVotes")||"{}");return v&&typeof v==="object"&&!Array.isArray(v)?v:{}}catch(e){return{}}};
+const readQs=()=>{try{const a=JSON.parse(localStorage.getItem("readQs")||"[]");return Array.isArray(a)?a:[]}catch(e){return[]}};
 const DAYH=["א'","ב'","ג'","ד'","ה'","ו'","שבת"];
-function fmtEventDate(e){const d=new Date(e.date+"T12:00"),t=new Date();t.setHours(12,0,0,0);const diff=Math.round((d-t)/864e5);return (diff===0?"היום":diff===1?"מחר":`יום ${DAYH[d.getDay()]} ${d.getDate()}.${d.getMonth()+1}`)+(e.time?` · ${e.time}`:"")}
+function fmtEventDate(e){const d=new Date(e.date+"T12:00"),t=new Date();t.setHours(12,0,0,0);const diff=Math.round((d-t)/864e5);return (diff===0?"היום":diff===1?"מחר":`יום ${DAYH[d.getDay()]} ${d.getDate()}.${d.getMonth()+1}`)+(e.time?` · ${escH(e.time)}`:"")}
 function renderExtras(){
   const box=document.getElementById("extras");if(!box||!window.Updates)return;
   const qa=document.getElementById("qaBox");
@@ -1312,25 +1326,25 @@ function renderExtras(){
     <div class="bdrow"><select class="inp" id="xBdD" style="width:auto" aria-label="יום">${bdDayOpts()}</select><select class="inp" id="xBdM" style="width:auto" aria-label="חודש">${bdMonOpts()}</select><button type="button" class="xbtn" id="xBdOk">שמירה</button></div>
     <div class="xsub" id="xBdMsg" style="color:#ff5d6c"></div><button type="button" class="xlink" id="xBdNo">לא רוצה שיראו את יום ההולדת שלי</button></div>`;
   if(myToday)h+=`<div class="xcard bday mine">🎉 <b>מזל טוב ${escH(profile.first||"")}!</b> 🎂<div class="xsub">יום הולדת שמח! היום כל השכבה רואה שזה יום ההולדת שלך</div></div>`;
-  const lbl=c=>CLASSES[c]?` (${CLASSES[c].label})`:"";
-  const bd=(f.birthdays||[]).filter(x=>!(myToday&&x.inDays===0&&x.name===meName));
+  const lbl=c=>c==="y1"||c==="y2"?` (${CLASSES[c].label})`:"";
+  const bd=(f.birthdays||[]).filter(x=>Number.isInteger(x.inDays)&&x.inDays>=0&&!(myToday&&x.inDays===0&&x.name===meName));
   const today=bd.filter(x=>x.inDays===0),soon=bd.filter(x=>x.inDays>0);
   if(today.length||soon.length)h+=`<div class="xcard bday">${today.length?`🎂 <b>היום יום ההולדת של ${today.map(x=>escH(x.name)+lbl(x.cls)).join(" ו")}!</b> מזל טוב 🎉`:""}${soon.length?`<div class="xsub">🎈 בקרוב: ${soon.map(x=>`${escH(x.name)}${lbl(x.cls)} – ${x.inDays===1?"מחר":"בעוד "+x.inDays+" ימים"}`).join(" · ")}</div>`:""}</div>`;
   // 📊 סקרים
-  for(const p of (f.polls||[]).filter(p=>forMe(p.audience))){
-    const mine=votes[p.id],voted=mine!=null,tot=p.total||0;
+  for(const p of (f.polls||[]).filter(p=>forMe(p.audience)&&p.id!=null&&Array.isArray(p.options)&&p.options.length)){
+    const mine=votes[p.id],voted=mine!=null,tot=+p.total||0,cnt=i=>(Array.isArray(p.counts)&&+p.counts[i])||0,end=new Date(p.endsAt);
     h+=`<div class="xcard poll" data-poll="${escH(p.id)}"><div class="xhead">📊 סקר · <span>${escH(p.author||"")}</span></div><div class="pq">${escH(p.q)}</div>
-      ${p.options.map((o,i)=>voted?`<div class="pres ${i===mine?"mine":""}"><i style="width:${tot?Math.round(100*p.counts[i]/tot):0}%"></i><span>${escH(o)}${i===mine?" ✓":""}</span><b>${tot?Math.round(100*p.counts[i]/tot):0}%</b></div>`:`<button type="button" class="popt" data-i="${i}">${escH(o)}</button>`).join("")}
-      <div class="xsub">${voted?`${tot} הצביעו · `:""}נסגר ${fmtEventDate({date:new Date(p.endsAt).toISOString().slice(0,10)})}</div></div>`;
+      ${p.options.map((o,i)=>voted?`<div class="pres ${i===mine?"mine":""}"><i style="width:${tot?Math.round(100*cnt(i)/tot):0}%"></i><span>${escH(o)}${i===mine?" ✓":""}</span><b>${tot?Math.round(100*cnt(i)/tot):0}%</b></div>`:`<button type="button" class="popt" data-i="${i}">${escH(o)}</button>`).join("")}
+      <div class="xsub">${voted?`${tot} הצביעו · `:""}${isNaN(end)?"":"נסגר "+fmtEventDate({date:isoOf(end)})}</div></div>`;
   }
   // 📅 אירועים קרובים (שבועיים)
-  const lim=new Date(Date.now()+14*864e5).toISOString().slice(0,10);
-  const ev=(f.events||[]).filter(e=>forMe(e.audience)&&e.date<=lim).slice(0,3);
+  const lim=isoOf(new Date(Date.now()+14*864e5));
+  const ev=(f.events||[]).filter(e=>forMe(e.audience)&&typeof e.date==="string"&&e.date<=lim).slice(0,3);
   if(ev.length)h+=`<div class="xcard"><div class="xhead">📅 אירועים קרובים</div>${ev.map(e=>`<div class="ev1"><b>${escH(e.title)}</b><div class="xsub">${fmtEventDate(e)}${e.place?` · 📍 ${escH(e.place)}`:""}</div>${e.desc?`<div class="xsub">${escH(e.desc)}</div>`:""}</div>`).join("")}</div>`;
   // ❓ שאלות ותשובות
   const ans=(f.answers||[]).filter(a=>!a.cls||a.cls===myCls());
   // 💬 הצוות ענה על שאלה ששלחתי – מופיע למעלה עד שלוחצים "קראתי"
-  const mq=myQs(),readQ=(()=>{try{return JSON.parse(localStorage.getItem("readQs")||"[]")}catch(e){return[]}})();
+  const mq=myQs(),readQ=readQs();
   const mineAns=(f.answers||[]).filter(a=>mq.includes(a.id)&&!readQ.includes(a.id));
   if(mineAns.length)h=mineAns.map(a=>`<div class="xcard myans"><div class="xhead">💬 הצוות ענה על השאלה שלך <button type="button" class="xbtn" data-readq="${escH(a.id)}">קראתי ✓</button></div><div class="qa1"><div class="qq">${escH(a.q)}${a.to?` <span class="xsub">(${escH(a.to)})</span>`:""}</div><div class="qaa">💬 ${escH(a.a)} <span class="xsub">– ${escH(a.by||"")}</span></div></div></div>`).join("")+h;
   let qh=`<button type="button" class="xbtn" id="askBtn">לשאול שאלה (בלי שם)</button>
@@ -1348,15 +1362,16 @@ function renderExtras(){
     bok.disabled=true;const o=bdLocal();bdSet({d,m,share:true,synced:o.synced});const r=await bdSync();
     toast("🎂 נשמר!",r.ok?"ביום ההולדת שלך כל השכבה תראה מזל טוב.":"נשמר בטלפון. יישלח כשיהיה חיבור.");renderExtras();
   };
-  box.querySelectorAll("[data-readq]").forEach(b=>b.onclick=()=>{const r=(()=>{try{return JSON.parse(localStorage.getItem("readQs")||"[]")}catch(e){return[]}})();r.push(b.dataset.readq);try{localStorage.setItem("readQs",JSON.stringify(r.slice(-100)))}catch(e){}renderExtras()});
+  box.querySelectorAll("[data-readq]").forEach(b=>b.onclick=()=>{const r=readQs();r.push(b.dataset.readq);try{localStorage.setItem("readQs",JSON.stringify(r.slice(-100)))}catch(e){}renderExtras()});
   const bno=document.getElementById("xBdNo");if(bno)bno.onclick=()=>{if(!confirm("לא להציג את יום ההולדת שלך לשכבה? אפשר לשנות מתי שתרצה בפרופיל."))return;bdSet({optOut:true,synced:bdLocal().synced});bdSync();renderExtras()};
-  if(myToday){const k=now.toDateString();let seen="";try{seen=localStorage.getItem("bdConf")}catch(e){}if(seen!==k){try{localStorage.setItem("bdConf",k)}catch(e){}setTimeout(bdConfetti,400)}}
+  // קונפטי פעם אחת ביום (גם כשאין גישה לאחסון – אז פעם אחת בכל פתיחה, ולא בכל רענון)
+  if(myToday){const k=now.toDateString();let seen="";try{seen=localStorage.getItem("bdConf")}catch(e){}if(seen!==k&&window.__bdConf!==k){window.__bdConf=k;try{localStorage.setItem("bdConf",k)}catch(e){}setTimeout(bdConfetti,400)}}
   box.querySelectorAll(".poll").forEach(c=>c.querySelectorAll(".popt").forEach(b=>b.onclick=async()=>{
     c.querySelectorAll(".popt").forEach(x=>x.disabled=true);
     const r=await feedPost({action:"vote",poll:c.dataset.poll,option:+b.dataset.i,device:deviceId()});
     if(!r.ok){c.querySelectorAll(".popt").forEach(x=>x.disabled=false);toast("לא הצלחנו לשלוח","בדקו חיבור ונסו שוב.");return}
     const v=pollVotes();v[c.dataset.poll]=r.mine;try{localStorage.setItem("pollVotes",JSON.stringify(v))}catch(e){}
-    const fc=Updates.feed();fc.polls=(fc.polls||[]).map(p=>p.id===r.poll.id?r.poll:p);try{localStorage.setItem("feedCache",JSON.stringify(fc))}catch(e){}
+    if(r.poll&&r.poll.id!=null){const fc=Updates.feed();fc.polls=fc.polls.map(p=>p.id===r.poll.id?r.poll:p);try{localStorage.setItem("feedCache",JSON.stringify(fc))}catch(e){}}
     renderExtras();
   }));
   const ab=document.getElementById("askBtn");if(ab)ab.onclick=openAsk;
@@ -1395,7 +1410,9 @@ if(window.Updates){
   Updates.who=()=>({device:deviceId(),name:profile?`${profile.first||""} ${profile.last||""}`.trim():"",cls:(profile&&profile.cls)||""});
   Updates.reactOn=()=>feedOk()&&!!(profile&&profile.cls);
   Updates.init(document.getElementById("updates"),()=>(profile&&profile.cls)||"y2",canPop);
-  Updates.onFeed=()=>{renderExtras();render()};renderExtras();setTimeout(dailyPing,5000);setTimeout(()=>{bdSync().catch(()=>{})},6000);
+  // תקלה בכרטיס אחד מהפיד לא עוצרת את המערכת עצמה (ולא את שאר הקוד שנטען אחרי)
+  const safe=f=>{try{f()}catch(e){console.warn(e)}};
+  Updates.onFeed=()=>{safe(renderExtras);safe(render)};safe(renderExtras);setTimeout(dailyPing,5000);setTimeout(()=>{bdSync().catch(()=>{})},6000);
   setInterval(()=>Updates.retryPop&&Updates.retryPop(),2500);
 }
 if(location.hash==="#profile"){history.replaceState(null,"",location.pathname);setTimeout(()=>openProfile(),300)}

@@ -46,7 +46,7 @@ function CardEditor(list,onChange){
     r.innerHTML=`<div class="ec-h"><span class="ec-n"></span><button type="button" class="ec-x" aria-label="מחק כרטיס">✕</button></div>
       <input class="inp ec-t" placeholder="מונח / שאלה" enterkeyhint="next" dir="auto" autocomplete="off">
       <input class="inp ec-d" placeholder="הגדרה / תשובה" enterkeyhint="next" dir="auto" autocomplete="off">`;
-    if(c){r.querySelector(".ec-t").value=c.t;r.querySelector(".ec-d").value=c.d}
+    if(c){r.querySelector(".ec-t").value=c.t??"";r.querySelector(".ec-d").value=c.d??""}
     list.insertBefore(r,before||null);return r;
   }
   function sync(){

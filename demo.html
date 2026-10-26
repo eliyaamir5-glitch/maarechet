@@ -218,16 +218,19 @@ const newCode=()=>Array.from({length:8},()=>"ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[M
 host.polls=[{id:"dp1",q:"לאן הטיול השנתי?",options:["צפון – רמת הגולן","דרום – מכתש רמון","ירושלים"],audience:"all",author:"המנהל",authorId:"admin",votes:{0:14,1:9,2:6},voters:{},createdAt:Date.now()-5*3600e3,endsAt:Date.now()+3*864e5}];
 host.events=[{id:"de1",title:"שבת אחים",date:new Date(Date.now()+4*864e5).toISOString().slice(0,10),time:"",place:"בית המדרש",desc:"מביאים שק שינה",audience:"all",author:"המנהל",authorId:"admin"},{id:"de2",title:"טיול שנתי",date:new Date(Date.now()+11*864e5).toISOString().slice(0,10),time:"07:00",place:"יציאה מהשער",desc:"",audience:"all",author:"המנהל",authorId:"admin"}];
 host.questions=[{id:"dq1",text:"מה בדיוק החומר למבחן באנגלית?",to:"אנגלית",cls:"y2",status:"answered",answer:"יחידות 3–4 ואוצר המילים מהדף. בהצלחה!",answeredBy:"המורה לאנגלית",createdAt:Date.now()-864e5,answeredAt:Date.now()-20*3600e3},{id:"dq2",text:"אפשר להגיש את העבודה בהיסטוריה ביום ראשון?",to:"היסטוריה",cls:"y1",status:"new",createdAt:Date.now()-3600e3}];
+// 🔄 שינויים במערכת בדמו (בוטל / מחליף / שעה אחרת / הערה) – נכתבים בכניסת הצוות ומופיעים אצל התלמיד
+host.changes=[];
 host.releases=[{id:"dr1",name:"נועם לוי",cls:"y1",reason:"תור לרופא שיניים",date:new Date().toISOString().slice(0,10),from:"11:00",parent:"אמא של נועם (אמא)",lesson:"היסטוריה",teacher:"הרב הראל עובדיה",at:Date.now()-2*3600e3}];
 // עותק של נתוני הדוגמה ההתחלתיים, בשביל "איפוס הדמו"
-const INITIAL=JSON.stringify({fb:host.fb,staffSets:host.staffSets,contactList:host.contactList,polls:host.polls,events:host.events,questions:host.questions,releases:host.releases,staffUsers:host.staffUsers,views:{},reacts:{}});
+const INITIAL=JSON.stringify({changes:[],fb:host.fb,staffSets:host.staffSets,contactList:host.contactList,polls:host.polls,events:host.events,questions:host.questions,releases:host.releases,staffUsers:host.staffUsers,views:{},reacts:{}});
 const pubPoll=p=>{const counts=p.options.map((_,i)=>p.votes[i]||0);return{id:p.id,q:p.q,options:p.options,audience:p.audience,endsAt:p.endsAt,author:p.author,counts,total:counts.reduce((a,b)=>a+b,0)}};
 host.feed=(method,b)=>{const t=now(),ok=x=>({status:200,body:{ok:true,...x}});
   host.reacts=host.reacts||{};const rc=id=>{const c={};for(const x of Object.values(host.reacts[id]||{}))c[x.e]=(c[x.e]||0)+1;return c};
-  if(method==="GET"){const up=host.updates("GET").body.updates.map(u=>({...u,reacts:rc(u.id)})),today=new Date(t).toISOString().slice(0,10);
+  if(method==="GET"){const up=host.updates("GET").body.updates.map(u=>({...u,reacts:rc(u.id)})),today=isoOf(new Date(t));
     return ok({now:t,updates:up,polls:host.polls.filter(p=>p.endsAt>t).map(pubPoll),events:host.events.filter(e=>e.date>=today),
       answers:host.questions.filter(q=>q.status==="answered").map(q=>({id:q.id,q:q.text,a:q.answer,to:q.to,cls:q.cls,by:q.answeredBy,at:q.answeredAt})),
-      birthdays:[{name:"דניאל אברהם",cls:"y2",md:"",inDays:0},{name:"איתי כהן",cls:"y1",md:"",inDays:2}]})}
+      birthdays:[{name:"דניאל אברהם",cls:"y2",md:"",inDays:0},{name:"איתי כהן",cls:"y1",md:"",inDays:2}],
+      changes:(host.changes||[]).filter(x=>x.date>=isoOf(new Date(t))).sort((a,b)=>(a.date+a.s).localeCompare(b.date+b.s)).map(({id,date,cls,s,n,w,kind,sub,to,note})=>({id,date,cls,s,n,w,kind,...(sub?{sub}:{}),...(to?{to}:{}),note:note||""}))})}
   b=b||{};
   if(b.action==="vote"){const p=host.polls.find(x=>x.id===b.poll);if(!p)return{status:404,body:{ok:false,error:"not_found"}};if(p.voters[b.device]==null){p.voters[b.device]=b.option;p.votes[b.option]=(p.votes[b.option]||0)+1}return ok({poll:pubPoll(p),mine:p.voters[b.device]})}
   if(b.action==="ask"){const id="dq"+Math.random().toString(36).slice(2,7);host.questions.unshift({id,text:String(b.text||""),to:String(b.to||""),cls:b.cls||"",status:"new",createdAt:t});return ok({id})}
@@ -242,11 +245,21 @@ host.staffExtra=(b,me,admin)=>{const t=now(),ok=x=>({status:200,body:{ok:true,..
     case"pollList":return ok({polls:host.polls.map(p=>({...pubPoll(p),active:p.endsAt>t,canEdit:admin||p.authorId===me.id}))});
     case"pollEnd":case"pollDelete":{const p=host.polls.find(x=>x.id===b.id);if(!p)return err(404,"not_found");if(b.action==="pollDelete")host.polls=host.polls.filter(x=>x!==p);else p.endsAt=t-1;return ok({})}
     case"eventCreate":{if(!b.title||!b.date)return err(400,"bad_request");host.events.push({id:"de"+Math.random().toString(36).slice(2,7),title:b.title,date:b.date,time:b.time||"",place:b.place||"",desc:b.desc||"",audience:b.audience||"all",author:me.name,authorId:me.id});return ok({})}
-    case"eventList":return ok({events:host.events.slice().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).map(e=>({...e,canEdit:admin||e.authorId===me.id})),today:new Date(t).toISOString().slice(0,10)});
+    case"eventList":return ok({events:host.events.slice().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).map(e=>({...e,canEdit:admin||e.authorId===me.id})),today:isoOf(new Date(t))});
     case"eventDelete":host.events=host.events.filter(e=>e.id!==b.id);return ok({});
     case"qList":return ok({questions:host.questions});
     case"qAnswer":case"qHide":case"qDelete":{const q=host.questions.find(x=>x.id===b.id);if(!q)return err(404,"not_found");if(b.action==="qDelete")host.questions=host.questions.filter(x=>x!==q);else if(b.action==="qHide")q.status="hidden";else Object.assign(q,{status:"answered",answer:b.answer,answeredBy:me.name,answeredAt:t});return ok({})}
-    case"releasesList":return ok({releases:host.releases,today:new Date(t).toISOString().slice(0,10)});
+    case"changeCreate":{const tm=/^([01]\d|2[0-3]):[0-5]\d$/,txt=(v,n)=>String(v||"").trim().slice(0,n),c={date:String(b.date||""),cls:["all","y1","y2"].includes(b.cls)?b.cls:"",s:String(b.s||""),n:txt(b.n,60),w:txt(b.w,60),kind:["cancel","sub","move","note"].includes(b.kind)?b.kind:"",note:txt(b.note,120)};
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(c.date)||!tm.test(c.s)||!c.cls||!c.n||!c.kind)return err(400,"bad_request");
+      if(c.kind==="sub"){c.sub=txt(b.sub,60);if(!c.sub)return err(400,"bad_request")}
+      if(c.kind==="move"){const[a,e]=String(b.to||"").split("-");if(!tm.test(a||"")||!tm.test(e||"")||a>=e)return err(400,"bad_request");c.to=a+"-"+e}
+      if(c.kind==="note"&&!c.note)return err(400,"bad_request");
+      const today=isoOf(new Date(t)),max=isoOf(new Date(t+60*864e5));if(c.date<isoOf(new Date(t-864e5))||c.date>max)return err(400,"bad_date");
+      const ch={id:"dc"+Math.random().toString(36).slice(2,8),...c,author:me.name,authorId:me.id,createdAt:t},same=x=>x.date===ch.date&&x.cls===ch.cls&&x.s===ch.s&&x.n===ch.n&&x.w===ch.w;
+      host.changes=[...(host.changes||[]).filter(x=>!same(x)),ch];return ok({change:ch,today})}
+    case"changeList":return ok({changes:(host.changes||[]).slice().sort((a,b)=>(a.date+a.s).localeCompare(b.date+b.s)).map(x=>({...x,canEdit:admin||x.authorId===me.id})),today:isoOf(new Date(t))});
+    case"changeDelete":{const x=(host.changes||[]).find(y=>y.id===b.id);if(!x)return err(404,"not_found");if(!admin&&x.authorId!==me.id)return err(403,"forbidden");host.changes=host.changes.filter(y=>y!==x);return ok({})}
+    case"releasesList":return ok({releases:host.releases,today:isoOf(new Date(t))});
     case"stats":return admin?ok({classes:{y1:{active:21,mashov:15,risk:{"אנגלית":2},warn:{"גמרא":3,"היסטוריה":1}},y2:{active:24,mashov:19,risk:{},warn:{"מתמטיקה":2}}}}):err(403,"forbidden");
   }
   return null;

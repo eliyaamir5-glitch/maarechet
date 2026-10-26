@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#5b6cff">
 <meta name="robots" content="noindex">
 <title>כניסת צוות · המערכת</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📢%3C/text%3E%3C/svg%3E">
 <script src="demo-shim.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -96,17 +97,19 @@ const SITE=location.href.split("#")[0].split("?")[0];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const T={get:()=>{try{return localStorage.getItem("staffToken")}catch(e){return null}},set:v=>{try{v?localStorage.setItem("staffToken",v):localStorage.removeItem("staffToken")}catch(e){}}};
-const ERR={bad_date:"אפשר לסמן שינוי רק מאתמול ועד חודשיים קדימה.",bad_action:"התכונה הזאת עוד לא פעילה בשרת. היא תעבוד לבד אחרי שהשרת (נטליפיי) יתעדכן.",bad_time:"הזמן לא תקין.",too_many:"יותר מדי.",bad_video:"הקישור לסרטון לא תקין.",bad_phone:"מספר הטלפון לא תקין.",too_many_sets:"הגעתם למספר הסטים המקסימלי. מחקו סטים ישנים.",too_big:"הסטים תופסים יותר מדי מקום. מחקו סטים ישנים או קצרו.",code_taken:"הקוד הזה כבר בשימוש. בחר קוד אחר.",busy:"השרת עמוס לרגע. נסה שוב.",server:"תקלה בשרת. נסה שוב בעוד רגע.",bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",bad_invite:"הקישור לא תקין.",invite_used:"הקישור הזה כבר שומש.",not_found:"לא נמצא.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
+const ERR={change_taken:"כבר יש שינוי לשיעור הזה שמורה אחר פרסם. רק מי שפרסם אותו או מנהל יכולים להחליף אותו.",bad_date:"אפשר לסמן שינוי רק מאתמול ועד חודשיים קדימה.",bad_action:"התכונה הזאת עוד לא פעילה בשרת. היא תעבוד לבד אחרי שהשרת (נטליפיי) יתעדכן.",bad_time:"הזמן לא תקין.",too_many:"יותר מדי.",bad_video:"הקישור לסרטון לא תקין.",bad_phone:"מספר הטלפון לא תקין.",too_many_sets:"הגעתם למספר הסטים המקסימלי. מחקו סטים ישנים.",too_big:"הסטים תופסים יותר מדי מקום. מחקו סטים ישנים או קצרו.",code_taken:"הקוד הזה כבר בשימוש. בחר קוד אחר.",busy:"השרת עמוס לרגע. נסה שוב.",server:"תקלה בשרת. נסה שוב בעוד רגע.",bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",bad_invite:"הקישור לא תקין.",invite_used:"הקישור הזה כבר שומש.",not_found:"לא נמצא.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
 const ROLE={admin:"מנהל",teacher:"מורה",staff:"צוות"};
 let me=null,tab="write",welcome=false,caps={};
 
 async function api(body){
+  // שרת שלא עונה לא משאיר כפתור "תקוע" לנצח: אחרי 25 שניות מוותרים ומראים שגיאת חיבור
+  const ctl=window.AbortController?new AbortController():null,tm=ctl&&setTimeout(()=>ctl.abort(),25e3);
   try{
-    const r=await fetch(API,{method:body?"POST":"GET",headers:{"Content-Type":"application/json",...(T.get()?{Authorization:"Bearer "+T.get()}:{})},body:body?JSON.stringify(body):undefined,cache:"no-store"});
+    const r=await fetch(API,{method:body?"POST":"GET",headers:{"Content-Type":"application/json",...(T.get()?{Authorization:"Bearer "+T.get()}:{})},body:body?JSON.stringify(body):undefined,cache:"no-store",...(ctl?{signal:ctl.signal}:{})});
     const j=await r.json().catch(()=>({ok:false,error:"network"}));
     if(j.error==="auth"&&me){T.set(null);me=null;setTimeout(()=>showLogin("פג תוקף הכניסה. צריך להיכנס שוב."),0)}
     return j;
-  }catch(e){return {ok:false,error:"network"}}
+  }catch(e){return {ok:false,error:"network"}}finally{clearTimeout(tm)}
 }
 // תגובות התלמידים לעדכון: סיכום לפי אימוג'י, ובלחיצה – מי הגיב מה
 function rxHTML(list){
@@ -398,7 +401,8 @@ async function loadEvents(){
 
 // ---- 🔄 שינויים במערכת: בוטל / מורה מחליף / שעה אחרת / הערה ----
 const CHG_KINDS=[["cancel","❌ בוטל"],["sub","🔄 מורה מחליף"],["move","⏰ שעה אחרת"],["note","📌 הערה"]];
-const isoDay=(n=0)=>{const d=new Date(Date.now()+n*864e5);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+// התאריך לפי שעון ישראל (כמו בשרת), גם אם השעון של המחשב מכוון לאזור אחר
+const isoDay=(n=0)=>{const t=Date.now()+n*864e5;try{return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Jerusalem",year:"numeric",month:"2-digit",day:"2-digit"}).format(t)}catch(e){const d=new Date(t);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}};
 const chgText=x=>x.kind==="cancel"?"❌ בוטל":x.kind==="sub"?`🔄 מחליף: ${esc(x.sub)}`:x.kind==="move"?`⏰ עבר ל-${esc(x.to.replace("-","–"))}`:"📌 הערה";
 let chgCls="y1",chgOpts=[];
 function showChanges(){
@@ -496,7 +500,7 @@ async function showStats(){
 
 // ---- מערכת: לפי כיתה או לפי מורה ----
 const CLS={y1:DAYS_Y1,y2:DAYS_Y2};
-const DAYN=["ראשון","שני","שלישי","רביעי","חמישי","שישי"];
+const DAYN=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
 const nameOf=t=>String(t||"").replace(/\s*\(.*\)\s*$/,"").trim();
 const groupOf=t=>(String(t||"").match(/\((.*)\)/)||[])[1]||"";
 // כל השיעורים כ"משבצות": שיעורי הקבצה ומגמה נפרשים לכל המורים שמלמדים במקביל
@@ -619,7 +623,13 @@ async function showTeam(){
     <div class="row" style="margin-top:12px"><button class="btn" id="uAdd" style="flex:1">צור קוד</button></div>
     <div id="uMsg" hidden></div>
     ${TEACHERS.length?`<p class="hint" style="margin-top:14px">בחירה מהירה מהמערכת:</p><div class="row">${TEACHERS.map(t=>`<button class="chip" data-n="${esc(t)}">${esc(t)}</button>`).join("")}</div>`:""}</div>
-    <div class="card"><h2>הצוות</h2><div id="users"><p class="hint">טוען…</p></div></div>`;
+    <div class="card"><h2>הצוות</h2><div id="users"><p class="hint">טוען…</p></div></div>
+    ${caps.phoneCode?`<div class="card"><h2>📞 קוד עריכה לספר הטלפונים</h2><p class="hint" id="pcInfo">טוען…</p>
+      <div class="row"><button class="btn ghost" id="pcNew" style="flex:1">צור קוד עריכה חדש לספר הטלפונים</button></div><div id="pcMsg" hidden></div></div>`:""}
+    ${caps.backup?`<div class="card"><h2>⬇️ גיבוי</h2><p class="hint">קובץ עם כל הנתונים שבשרת: הצוות (בלי קודי כניסה), עדכונים, סקרים, אירועים, שאלות, ימי הולדת, שחרורים, ספר הטלפונים, כרטיסיות, פניות ותגובות. יש בו שמות תלמידים ומספרי טלפון – שומרים אותו במקום בטוח ולא משתפים.</p>
+      <div class="row"><button class="btn ghost" id="bkGo" style="flex:1">⬇️ גיבוי</button></div><div id="bkMsg" hidden></div></div>`:""}`;
+  if(caps.phoneCode)wirePhoneCode();
+  if(caps.backup)$("bkGo").onclick=backup;
   let role="teacher";
   $("uRole").querySelectorAll("button").forEach(b=>b.onclick=()=>{$("uRole").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));role=b.dataset.v});
   $("main").querySelectorAll("[data-n]").forEach(b=>b.onclick=()=>{$("uName").value=b.dataset.n;$("uName").scrollIntoView({block:"center",behavior:"smooth"})});
@@ -636,6 +646,36 @@ async function loadUsers(){
   box.innerHTML=r.users.map(u=>`<div class="item row" style="justify-content:space-between"><span><b>${esc(u.name)}</b> <span class="pill off">${u.owner?"מנהל ראשי":ROLE[u.role]}</span></span>${u.id===me.id?`<span class="hint" style="margin:0">זה אתה</span>`:u.owner?"":`<span class="row"><button class="btn sm ghost" data-reset="${esc(u.id)}">קוד חדש</button><button class="btn sm danger" data-rm="${esc(u.id)}">הסר</button></span>`}</div>`).join("");
   box.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{if(!confirm("ליצור קוד חדש? הקוד הישן יפסיק לעבוד."))return;const x=await api({action:"resetUser",id:b.dataset.reset});if(x.ok){showCode(x.user,x.code);$("uMsg").scrollIntoView({block:"center",behavior:"smooth"})}else alert(ERR[x.error]||"שגיאה.")});
   box.querySelectorAll("[data-rm]").forEach(b=>b.onclick=async()=>{if(!confirm("להסיר? הוא לא יוכל להיכנס יותר."))return;const x=await api({action:"removeUser",id:b.dataset.rm});if(!x.ok)alert(ERR[x.error]||"שגיאה.");loadUsers()});
+}
+// ---- 📞 קוד עריכה חדש לספר הטלפונים (מנהל) ----
+// הקוד נוצר בשרת ומוצג פעם אחת בלבד. מרגע היצירה הקוד הקודם (גם הישן מהאתר) מפסיק לעבוד
+async function loadPhoneCode(){
+  const el=$("pcInfo");if(!el)return;const r=await api({action:"phoneCodeStatus"});if(!$("pcInfo"))return;
+  if(!r.ok){el.textContent=ERR[r.error]||"שגיאה.";return}
+  el.innerHTML=r.set?`מי שיש לו את הקוד יכול להוסיף ולשנות מספרים בספר הטלפונים (תלמידים רק רואים). הקוד הנוכחי נוצר ב-<b>${esc(fmtT(r.at))}</b>${r.by?` ע"י ${esc(r.by)}`:""}. שכחתם אותו? יוצרים קוד חדש, והקודם מפסיק לעבוד.`
+    :`מי שיש לו את הקוד יכול להוסיף ולשנות מספרים בספר הטלפונים (תלמידים רק רואים). <b>כרגע עובד הקוד הישן</b>, שנשמר בקוד של האתר ולכן פחות מוגן. מומלץ ליצור קוד חדש.`;
+}
+function wirePhoneCode(){
+  loadPhoneCode();
+  $("pcNew").onclick=async()=>{
+    if(!confirm("ליצור קוד עריכה חדש לספר הטלפונים?\n\nהקוד הקודם יפסיק לעבוד מיד, וכל מי שעורך את ספר הטלפונים יצטרך להקליד את הקוד החדש.\nהקוד החדש יוצג רק פעם אחת – כדאי להעתיק ולשמור אותו."))return;
+    const b=$("pcNew");b.disabled=true;const r=await api({action:"phoneCodeNew"});if(!$("pcNew"))return;b.disabled=false;
+    if(!r.ok)return msg("pcMsg",ERR[r.error]||"שגיאה.");
+    const box=$("pcMsg");box.className="msg ok";box.hidden=false;
+    box.innerHTML=`✅ הקוד החדש (מוצג רק עכשיו):<div class="code" id="pcCode">${esc(r.code)}</div>בספר הטלפונים: "🔑 עריכת מספרים" ← מקלידים את הקוד. הקוד הקודם כבר לא עובד.<div class="row" style="margin-top:8px"><button class="btn ghost" id="pcCpy">העתק קוד</button></div>`;
+    $("pcCpy").onclick=async()=>{try{await navigator.clipboard.writeText(r.code);$("pcCpy").textContent="הועתק ✓"}catch(e){$("pcCpy").textContent="לא הצלחנו להעתיק – סמנו את הקוד והעתיקו"}};
+    loadPhoneCode();
+  };
+}
+// ---- ⬇️ גיבוי (מנהל): כל הנתונים כקובץ JSON. אין שחזור אוטומטי ----
+async function backup(){
+  const b=$("bkGo");b.disabled=true;const r=await api({action:"backup"});if(!$("bkGo"))return;b.disabled=false;
+  if(!r.ok)return msg("bkMsg",ERR[r.error]||"שגיאה.");
+  try{
+    const url=URL.createObjectURL(new Blob([JSON.stringify(r.backup,null,2)],{type:"application/json"}));
+    const a=document.createElement("a");a.href=url;a.download=`maarechet-backup-${isoDay()}.json`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60e3);
+    msg("bkMsg","✅ הקובץ ירד. שמרו אותו במקום בטוח – יש בו שמות תלמידים ומספרי טלפון.",true);
+  }catch(e){msg("bkMsg","לא הצלחנו להוריד את הקובץ בדפדפן הזה. נסו ממחשב.")}
 }
 function showCode(u,code){
   const link=`${SITE}#code=${code}`;

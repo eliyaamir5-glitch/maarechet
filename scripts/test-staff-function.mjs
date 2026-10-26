@@ -165,6 +165,7 @@ fresh.__setInviteHash(crypto.createHash("sha256").update("ABCDEFGHJKLM").digest(
 const res = await fresh.default(new Request("http://localhost/api/staff", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "login", code: "ABCD-EFGH-JKLM" }) }), { ip: "9.1.1.1" });
 const j = await res.json();
 ok("on a fresh install the principal code creates the account", res.status === 200 && j.user.role === "admin" && j.user.name === "המנהל");
+ok("…and the first sign-in also tells the page what the server supports (caps)", j.caps && j.caps.schedule === true && j.caps.phoneCode === true);
 
 // רעיונות ותקלות מתלמידים
 r = await call("/api/feedback", { body: { kind: "idea", text: "להוסיף מצב לילה <b>", name: "יוסי", cls: "י'2", page: "index", device: "iPhone" }, ip: "10.0.0.1" });
@@ -420,3 +421,162 @@ ok("staff sees who reacted with what", su.reactions.length === 2 && su.reactions
 await call("/api/feed", { body: { action: "react", id: rid, device: "device-rrrr-2222", emoji: "", cls: "y2" } });
 r = await call("/api/feed", { method: "GET" });
 ok("reaction can be removed", !r.json.updates.find(u => u.id === rid).reacts["❤️"]);
+
+// ---- מעבר אבטחה 26.10 ----
+r = await call("/api/staff", { body: { action: "addUser", name: "מורה לבדיקות 2" }, token: t3 });
+r = await call("/api/staff", { body: { action: "login", code: r.json.code }, ip: "80.0.0.1" });
+const tk2 = r.json.token;
+r = await call("/api/staff", { body: { action: "addUser", name: "מורה לבדיקות 3" }, token: t3 });
+r = await call("/api/staff", { body: { action: "login", code: r.json.code }, ip: "80.0.0.2" });
+const tk3 = r.json.token;
+ok("login/me tell the page about the phone-code and backup tools", r.json.caps && r.json.caps.phoneCode === true && r.json.caps.backup === true);
+
+// קודים: נשמרים בצורה אחידה – בכניסה בודקים פעם אחת לכל משתמש, ומשתמש ישן עובר לצורה האחידה
+{
+  const users = JSON.parse(raw.get("users"));
+  ok("new codes are stored in the uniform form (cv:1)", users.every(u => u.cv === 1));
+  const salt = "00112233445566778899aabbccddeeff";
+  const legacy = { id: "legacyUser1", name: "מורה ותיק", role: "teacher", salt, hash: crypto.scryptSync("Old-Code-77", salt, 32).toString("hex"), tv: 0, createdAt: 1 };
+  raw.set("users", JSON.stringify([...users, legacy]));
+  r = await call("/api/staff", { body: { action: "login", code: "Old-Code-77" }, ip: "81.0.0.1" });
+  ok("an old-style account still signs in with its code", r.status === 200 && r.json.user.id === "legacyUser1");
+  const lt = r.json.token;
+  const after = JSON.parse(raw.get("users")).find(u => u.id === "legacyUser1");
+  ok("…and is moved to the uniform form on that sign-in", after.cv === 1 && after.hash !== legacy.hash && after.tv === 0);
+  r = await call("/api/staff", { body: { action: "me" }, token: lt });
+  ok("…without signing him out", r.status === 200);
+  r = await call("/api/staff", { body: { action: "login", code: "old code 77" }, ip: "81.0.0.1" });
+  ok("…and afterwards the code works in any case / with spaces", r.status === 200 && r.json.user.id === "legacyUser1");
+  r = await call("/api/staff", { body: { action: "updateMe", code: "a-b-c-d-e" }, token: lt });
+  ok("a code that is shorter than 6 without dashes is refused", r.status === 400);
+}
+
+// check_invite נספר בהגבלת הניסיונות
+{
+  let last = null;
+  for (let i = 0; i < 21; i++) last = await call("/api/staff", { body: { action: "check_invite", invite: "GUESS-" + i }, ip: "82.0.0.1" });
+  ok("guessing invite codes via check_invite gets locked", last.status === 429);
+}
+// כתובת מוזרה (כמו "__proto__") לא מפילה את השרת
+r = await call("/api/staff", { body: { action: "login", code: "WRONG-CODE" }, ip: "__proto__" });
+ok("a weird client address does not crash the rate limiter", r.status === 401);
+
+// 🔄 שינויים: מורה לא "מחליף" (= מוחק) שינוי של מורה אחר באותו שיעור
+{
+  const D2 = dayIn(2), base = { action: "changeCreate", date: D2, cls: "y1", s: "09:00", n: "תנ״ך", w: "הרב בדיקה" };
+  r = await call("/api/staff", { body: { ...base, kind: "cancel" }, token: tk2 });
+  ok("teacher A marks a lesson as cancelled", r.status === 200);
+  r = await call("/api/staff", { body: { ...base, kind: "note", note: "דווקא כן" }, token: tk3 });
+  ok("teacher B can't overwrite A's change of the same lesson", r.status === 409 && r.json.error === "change_taken");
+  r = await call("/api/feed", { method: "GET" });
+  ok("…A's change is still there", r.json.changes.some(x => x.date === D2 && x.s === "09:00" && x.kind === "cancel"));
+  r = await call("/api/staff", { body: { ...base, kind: "sub", sub: "הרב מחליף" }, token: tk2 });
+  ok("A can replace his own change", r.status === 200);
+  r = await call("/api/staff", { body: { ...base, kind: "move", to: "10:00-10:45" }, token: t3 });
+  r = await call("/api/feed", { method: "GET" });
+  const mine = r.json.changes.filter(x => x.date === D2 && x.s === "09:00");
+  ok("the principal can replace anyone's change (one change per lesson)", mine.length === 1 && mine[0].kind === "move");
+  r = await call("/api/staff", { body: { ...base, kind: "bogus" }, token: tk2 });
+  ok("unknown change kind refused", r.status === 400);
+  r = await call("/api/staff", { body: { ...base, cls: "__proto__", kind: "cancel" }, token: tk2 });
+  ok("unknown class refused", r.status === 400);
+  r = await call("/api/staff", { body: { ...base, date: dayIn(-3), kind: "cancel" }, token: tk2 });
+  ok("change in the past refused", r.status === 400 && r.json.error === "bad_date");
+  r = await call("/api/staff", { body: { ...base, s: "25:00", kind: "cancel" }, token: tk2 });
+  ok("impossible lesson time refused", r.status === 400);
+  r = await call("/api/staff", { body: { ...base, kind: "note", note: "<script>alert(1)</script>".repeat(20) }, token: t3 });
+  ok("change note is cut to 120 chars (plain text)", r.status === 200 && r.json.change.note.length === 120);
+  r = await call("/api/staff", { body: { ...base, kind: "cancel" } });
+  ok("changes need a sign-in", r.status === 401);
+}
+
+// תקרות: עדכונים ומשתמשים לא גדלים בלי סוף
+{
+  const savedUpd = raw.get("updates");
+  const now = Date.now();
+  raw.set("updates", JSON.stringify(Array.from({ length: 1000 }, (_, i) => ({ id: "fill" + i, text: "x", authorId: "z", audience: "all", createdAt: now, expiresAt: now + 3600e3 }))));
+  r = await call("/api/staff", { body: { action: "post", text: "עוד אחד", minutes: 10 }, token: t3 });
+  ok("at most 1000 stored updates", r.status === 413 && r.json.error === "too_many");
+  raw.set("updates", savedUpd);
+  const savedUsers = raw.get("users");
+  const us = JSON.parse(savedUsers);
+  raw.set("users", JSON.stringify([...us, ...Array.from({ length: 200 - us.length }, (_, i) => ({ id: "fillU" + i, name: "x", role: "teacher", salt: "s", hash: "h", cv: 1 }))]));
+  r = await call("/api/staff", { body: { action: "addUser", name: "עוד מורה" }, token: t3 });
+  ok("at most 200 staff accounts", r.status === 413);
+  raw.set("users", savedUsers);
+}
+
+// שחרורים: נשמרים 8 ימים בלבד (להורה כתוב "שבוע")
+{
+  const rel = JSON.parse(raw.get("releases"));
+  raw.set("releases", JSON.stringify([...rel, { id: "oldRel", name: "ישן", cls: "y1", reason: "", date: "2026-01-01", at: Date.now() - 9 * 864e5 }, { id: "midRel", name: "בינוני", cls: "y1", reason: "", date: "2026-01-01", at: Date.now() - 7.5 * 864e5 }]));
+  r = await call("/api/staff", { body: { action: "releasesList" }, token: tk2 });
+  const stored = JSON.parse(raw.get("releases"));
+  ok("releases older than 8 days are deleted from the server", !stored.some(x => x.id === "oldRel") && stored.some(x => x.id === "midRel"));
+  ok("staff see only the last 7 days", !r.json.releases.some(x => x.id === "midRel") && r.json.releases.some(x => x.name === "יוסי כהן"));
+  raw.set("releases", JSON.stringify([...JSON.parse(raw.get("releases")), { id: "oldRel2", name: "ישן", cls: "y1", at: Date.now() - 9 * 864e5 }]));
+  await call("/api/feed", { body: { action: "release", name: "חדש", cls: "y2", reason: "x" }, ip: "83.0.0.1" });
+  ok("…also when a new release comes in", !JSON.parse(raw.get("releases")).some(x => x.id === "oldRel2"));
+}
+
+// סטטיסטיקה: שינוי באותו יום (למשל מקצוע עבר ל"כמעט") נשמר
+await call("/api/feed", { body: { action: "ping", device: "device-ssss-5555", cls: "y1", risk: [], warn: [] } });
+await call("/api/feed", { body: { action: "ping", device: "device-ssss-5555", cls: "y1", risk: [], warn: ["היסטוריה"] } });
+r = await call("/api/staff", { body: { action: "stats" }, token: t3 });
+ok("same-day stats change (warn) is recorded", r.json.classes.y1.warn["היסטוריה"] === 1);
+
+// ספר טלפונים: בקשה שבורה / שמות של prototype
+{
+  const res = await handler(new Request("http://localhost/api/contacts", { method: "POST", headers: { "Content-Type": "application/json" }, body: "null" }), { ip: "86.0.0.1" });
+  ok("contacts: JSON null body → 400 (not a crash)", res.status === 400);
+}
+r = await call("/api/contacts", { body: { action: "set", name: "isPrototypeOf", phone: "0501112222" }, token: t3 });
+ok("a name that exists on Object.prototype is saved as a normal contact", r.status === 200 && r.json.contact.extra === false && r.json.contact.phone === "050-111-2222");
+await call("/api/contacts", { body: { action: "remove", name: "isPrototypeOf" }, token: t3 });
+
+// 📞 קוד עריכה חדש לספר הטלפונים: רק מנהל, נשמר רק כ-hash, והקוד הישן מפסיק לעבוד
+r = await call("/api/staff", { body: { action: "phoneCodeNew" }, token: tk2 });
+ok("a teacher can't create a phone-book code", r.status === 403);
+r = await call("/api/staff", { body: { action: "phoneCodeStatus" }, token: t3 });
+ok("before: the old code is in use", r.status === 200 && r.json.set === false && r.json.legacy === true);
+r = await call("/api/contacts", { body: { action: "check", code: "PHON-1234" }, ip: "84.0.0.1" });
+ok("before: the old code still works", r.status === 200);
+r = await call("/api/staff", { body: { action: "phoneCodeNew" }, token: t3 });
+const pc1 = r.json.code;
+ok("principal gets a new 12-character code (shown once)", r.status === 200 && /^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(pc1), pc1);
+ok("only a salted hash is stored (no plain code)", !raw.get("config").includes(pc1.replace(/-/g, "")) && JSON.parse(raw.get("config")).phoneCode.salt.length === 32);
+r = await call("/api/contacts", { body: { action: "check", code: "PHON-1234" }, ip: "84.0.0.2" });
+ok("after: the old code is refused", r.status === 403 && r.json.error === "bad_code");
+r = await call("/api/contacts", { body: { action: "check", code: pc1.toLowerCase().replace(/-/g, " ") }, ip: "84.0.0.3" });
+ok("after: the new code works (any case, spaces)", r.status === 200 && r.json.who === "editor");
+r = await call("/api/contacts", { body: { action: "set", code: pc1, name: "מורה חדש בספר", phone: "0521234567" }, ip: "84.0.0.3" });
+ok("…and can edit numbers", r.status === 200 && r.json.contact.phone === "052-123-4567");
+r = await call("/api/contacts", { body: { action: "set", name: "מנהל עורך", phone: "0521234568" }, token: t3 });
+ok("the principal's own sign-in still edits", r.status === 200);
+r = await call("/api/staff", { body: { action: "phoneCodeStatus" }, token: t3 });
+ok("status shows when and by whom", r.json.set === true && r.json.legacy === false && r.json.by === "הרב יוסף" && r.json.at > 0);
+r = await call("/api/staff", { body: { action: "phoneCodeNew" }, token: t3 });
+const pc2 = r.json.code;
+r = await call("/api/contacts", { body: { action: "check", code: pc1 }, ip: "84.0.0.4" });
+ok("a newer code replaces the previous one", r.status === 403 && pc2 !== pc1);
+r = await call("/api/contacts", { body: { action: "check", code: pc2 }, ip: "84.0.0.4" });
+ok("…and the newest works", r.status === 200);
+r = await call("/api/staff", { body: { action: "me" }, token: t3 });
+ok("principal sign-ins survive the phone-code change", r.status === 200);
+{
+  let locked = false;
+  for (let i = 0; i < 22; i++) { const x = await call("/api/contacts", { body: { action: "check", code: "GUESS" + i }, ip: "85.0.0.1" }); if (x.status === 429) { locked = true; break; } }
+  ok("guessing the phone-book code gets locked", locked);
+}
+
+// ⬇️ גיבוי: מנהל בלבד, בלי קודים / מלחים / סודות / מזהי מכשירים
+r = await call("/api/staff", { body: { action: "backup" }, token: tk2 });
+ok("a teacher can't download a backup", r.status === 403);
+r = await call("/api/staff", { body: { action: "backup" }, token: t3 });
+{
+  const b = r.json.backup, s = JSON.stringify(b), cfg = JSON.parse(raw.get("config"));
+  ok("principal downloads a backup", r.status === 200 && b.app === "maarechet" && Array.isArray(b.users) && b.users.length > 3);
+  ok("backup has the data", ["updates", "polls", "events", "questions", "birthdays", "releases", "contacts", "sets", "feedback", "reactions", "changes"].every(k => k in b) && b.contacts.some(c => c.name === "מורה חדש בספר") && b.changes.length > 0 && b.releases.length > 0);
+  ok("backup has no code hashes, salts or secrets", !/"(hash|salt|secret|phoneCode|tv|cv)"/.test(s) && !s.includes(cfg.secret) && !s.includes(cfg.phoneCode.hash));
+  ok("backup has no device ids (voters / birthday keys / reaction keys)", !/"voters"/.test(s) && !s.includes(crypto.createHash("sha256").update("dev:" + DEV1).digest("hex").slice(0, 24)) && !s.includes(crypto.createHash("sha256").update("dev:device-rrrr-1111").digest("hex").slice(0, 24)));
+}

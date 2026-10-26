@@ -24,8 +24,9 @@
   async function draw(canvas, opts) {
     try { await Promise.all([document.fonts.load("900 40px Rubik"), document.fonts.load("700 20px Rubik"), document.fonts.load("400 16px Rubik")]); } catch (e) {}
     const all = opts.weekLessons.flat();
-    const first = Math.floor(Math.min(...all.map(l => toMin(l.s))) / 30) * 30;
-    const last = Math.ceil(Math.max(...all.map(l => toMin(l.e))) / 30) * 30;
+    // שבוע בלי שיעורים (למשל הכל בוטל) – ציר ברירת מחדל, ולא Infinity שמפיל את הציור
+    const first = all.length ? Math.floor(Math.min(...all.map(l => toMin(l.s))) / 30) * 30 : 8 * 60;
+    const last = all.length ? Math.ceil(Math.max(...all.map(l => toMin(l.e))) / 30) * 30 : 18 * 60;
     const S = 1.55;                  // פיקסלים לדקה
     const W = 2000, AX = 110, PAD = 40, HEAD = 190, COLH = 60, FOOT = 70;
     const colW = (W - PAD * 2 - AX) / 5;
@@ -98,12 +99,17 @@
     if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], text }); return "shared"; } catch (e) { if (e && e.name === "AbortError") return "cancel"; } }
     download(file, name); return "downloaded";
   }
+  // jsPDF מ-cdnjs, עם בדיקת שלמות (integrity): קובץ שהשתנה בדרך לא ירוץ. רשת תקועה = מוותרים אחרי 20 שניות
+  let jsPDFp = null;
   function loadJsPDF() {
-    return new Promise((res, rej) => {
-      if (window.jspdf) return res(window.jspdf.jsPDF);
+    if (window.jspdf) return Promise.resolve(window.jspdf.jsPDF);
+    return jsPDFp || (jsPDFp = new Promise((res, rej) => {
       const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-      s.onload = () => res(window.jspdf.jsPDF); s.onerror = rej; document.head.appendChild(s);
-    });
+      s.integrity = "sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA=="; s.crossOrigin = "anonymous"; s.referrerPolicy = "no-referrer";
+      const fail = e => { clearTimeout(t); s.remove(); jsPDFp = null; rej(e || new Error("jspdf")); }, t = setTimeout(() => fail(new Error("timeout")), 20e3);
+      s.onload = () => { clearTimeout(t); window.jspdf ? res(window.jspdf.jsPDF) : fail(); }; s.onerror = () => fail();
+      document.head.appendChild(s);
+    }));
   }
   async function pdf(canvas, name) {
     const JsPDF = await loadJsPDF();

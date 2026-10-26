@@ -10,7 +10,11 @@
   const pad = n => String(n).padStart(2, "0");
   const AUD = { all: "", y1: "י'1", y2: "י'2" };
   const ROLE = { admin: ["מנהל", "admin"], teacher: ["מורה", "teacher"], staff: ["צוות", "staff"] };
-  const roleOf = r => ROLE[r] || ROLE.teacher;
+  const own = (o, k) => typeof k === "string" && Object.prototype.hasOwnProperty.call(o, k);
+  const roleOf = r => own(ROLE, r) ? ROLE[r] : ROLE.teacher;
+  // מטמון פגום בטלפון (לא רשימה / לא אובייקט) = מתחילים מחדש, בלי לקרוס
+  const loadArr = k => { const v = load(k, []); return Array.isArray(v) ? v : []; };
+  const loadObj = k => { const v = load(k, {}); return v && typeof v === "object" && !Array.isArray(v) ? v : {}; };
 
   function ago(t) {
     const m = Math.round((Date.now() - t) / 60000);
@@ -86,21 +90,23 @@
   // כרטיס עדכון אחד (משמש גם ברשימה וגם בחלון הקופץ)
   function card(u, extra) {
     const c = el("div", "upd" + (u.urgent ? " urgent" : "") + (extra ? " " + extra : ""));
-    c.dataset.id = u.id;
+    c.dataset.id = String(u.id);
     const top = el("div", "upd-top"), who = el("span", "upd-who"), [rl, rc] = roleOf(u.role);
     who.append(el("span", "upd-role " + rc, rl), el("b", "", u.author));
     top.append(who);
     if (u.urgent) top.append(el("span", "upd-urgent", "דחוף"));
-    if (AUD[u.audience]) top.append(el("span", "upd-aud", AUD[u.audience]));
+    if (own(AUD, u.audience) && AUD[u.audience]) top.append(el("span", "upd-aud", AUD[u.audience]));
     c.append(top, linkify(u.text));
     const vid = videoOf(u); if (vid) c.append(videoBtn(vid));
-    c.append(el("div", "upd-meta", `${ago(u.createdAt)} · ${until(u.expiresAt)}`));
+    c.append(el("div", "upd-meta", (+u.createdAt ? ago(+u.createdAt) + " · " : "") + until(+u.expiresAt)));
     return c;
   }
 
   // אימוג'י מוכנים לבחירה מהירה (ואפשר גם כל אימוג'י מהמקלדת)
   const PICK = ["👍","❤️","😂","😮","😢","🙏","🔥","👏","🎉","💯","😍","🤔","😅","😎","🥳","🤩","🙌","💪","✅","⭐","🏆","📚","✏️","⚽","🍕","🎂","🤯","😇","🫡","👀","💙","🤣","😴","😬","🥲","🤝","💡","🌟","😡","❌"];
-  const EMOJI_RE = /^(?=.*[\p{Extended_Pictographic}\p{Regional_Indicator}])[\p{Extended_Pictographic}\p{Emoji_Component}\u200d\ufe0f\u20e3]{1,10}$/u;
+  const EMOJI_RE = /^(?=.*[\p{Extended_Pictographic}\p{Regional_Indicator}\u20e3])[\p{Extended_Pictographic}\p{Emoji_Component}\u200d\ufe0f\u20e3]{1,10}$/u;
+  // תו אחד שנראה (grapheme): "👍🏽" או "👨‍👩‍👦" = אחד, "😀😀" = שניים
+  const oneEmoji = v => { if (!EMOJI_RE.test(v)) return false; try { if (window.Intl && Intl.Segmenter) return [...new Intl.Segmenter().segment(v)].length === 1; } catch (e) {} return true; };
   const Updates = {
     videoEmbed,
     // נגן סרטון על כל המסך. נסגר ב-✕, בלחיצה בחוץ או ב-Esc
@@ -122,8 +128,8 @@
     url() { return ((typeof SERVER_BASE !== "undefined" && SERVER_BASE) || "") + "/api/updates"; },
     feedUrl() { return ((typeof SERVER_BASE !== "undefined" && SERVER_BASE) || "") + "/api/feed"; },
     // סקרים, אירועים, תשובות לשאלות וימי הולדת – מגיעים יחד עם העדכונים
-    feed() { const f = load("feedCache", null) || {}, A = x => Array.isArray(x) ? x : []; return { polls: A(f.polls), events: A(f.events), answers: A(f.answers), birthdays: A(f.birthdays), changes: A(f.changes) }; },
-    cached() { const c = load(KEY, null); return c && Array.isArray(c.list) ? c.list.filter(u => u && typeof u === "object" && u.expiresAt > Date.now()) : []; },
+    feed() { const f = load("feedCache", null) || {}, A = x => Array.isArray(x) ? x.filter(o => o && typeof o === "object") : []; return { polls: A(f.polls), events: A(f.events), answers: A(f.answers), birthdays: A(f.birthdays), changes: A(f.changes) }; },
+    cached() { const c = load(KEY, null); return c && Array.isArray(c.list) ? c.list.filter(u => u && typeof u === "object" && u.id != null && +u.expiresAt > Date.now()) : []; },
     async refresh() {
       try {
         // קודם הפיד המשולב; אם השרת עוד לא מכיר אותו – הכתובת הישנה (רק עדכונים)
@@ -141,7 +147,7 @@
     // preview: רשימה לתצוגה מקדימה (במסך הצוות), בלי לגעת במטמון
     render(box, cls, preview) {
       const list = preview ? sorted(preview) : this.forClass(cls);
-      const rOn = !preview && this.who && this.reactOn && this.reactOn(), mine = load("myReacts", {});
+      const rOn = !preview && this.who && this.reactOn && this.reactOn(), mine = loadObj("myReacts");
       const sig = JSON.stringify([list.map(u => [u.id, u.text, u.video, u.urgent, u.expiresAt, rOn ? [u.reacts, mine[u.id]] : 0]), [...(this._flying || [])]]);
       if (!preview && box.__sig === sig && box.childElementCount) return;
       box.__sig = preview ? null : sig;
@@ -192,7 +198,7 @@
       const row = el("div", "upd-prow"), inp = el("input"), go = el("button", "upd-pgo", "שליחה");
       inp.placeholder = "או כל אימוג'י מהמקלדת"; inp.maxLength = 16; inp.setAttribute("aria-label", "אימוג'י"); go.type = "button";
       const msg = el("div", "upd-pmsg");
-      go.onclick = () => { const v = inp.value.trim(); if (!EMOJI_RE.test(v)) { msg.textContent = "אפשר רק אימוג'י אחד, בלי אותיות."; return; } close(); this.react(id, v); };
+      go.onclick = () => { const v = inp.value.trim(); if (!oneEmoji(v)) { msg.textContent = "אפשר רק אימוג'י אחד, בלי אותיות."; return; } close(); this.react(id, v); };
       inp.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); go.click(); } };
       row.append(inp, go); sh.append(grid, row, msg);
       if (mine) { const rm = el("button", "upd-prm", `להסיר את התגובה שלי (${mine})`); rm.type = "button"; rm.onclick = () => { close(); this.react(id, ""); }; sh.append(rm); }
@@ -204,14 +210,14 @@
       document.addEventListener("keydown", esc);
     },
     async react(id, emoji) {
-      const mineAll = load("myReacts", {}), prev = mineAll[id] || "", c = load(KEY, null);
+      const mineAll = loadObj("myReacts"), prev = mineAll[id] || "", c = load(KEY, null);
       const bump = (u, e, d) => { if (!e) return; u.reacts = u.reacts || {}; u.reacts[e] = Math.max(0, (u.reacts[e] || 0) + d); if (!u.reacts[e]) delete u.reacts[e]; };
       const apply = (from, to) => { if (c && Array.isArray(c.list)) { const u = c.list.find(x => x && x.id === id); if (u) { bump(u, from, -1); bump(u, to, 1); save(KEY, c); } } };
-      const setMine = v => { const m = load("myReacts", {}); if (v) m[id] = v; else delete m[id]; save("myReacts", m); };
+      const setMine = v => { const m = loadObj("myReacts"); if (v) m[id] = v; else delete m[id]; save("myReacts", m); };
       apply(prev, emoji); setMine(emoji); this.redraw && this.redraw(); // מיד, בלי לחכות לשרת
       let j = null;
       try { const who = this.who(); const r = await fetch(this.feedUrl(), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "react", id, emoji, ...who }) }); j = await r.json(); } catch (e) {}
-      if (j && j.ok) { const c2 = load(KEY, null); if (c2 && Array.isArray(c2.list)) { const u = c2.list.find(x => x && x.id === id); if (u) { u.reacts = j.counts || {}; save(KEY, c2); } } }
+      if (j && j.ok) { const c2 = load(KEY, null); if (c2 && Array.isArray(c2.list)) { const u = c2.list.find(x => x && x.id === id); if (u) { u.reacts = j.counts && typeof j.counts === "object" ? j.counts : {}; save(KEY, c2); } } }
       else { apply(emoji, prev); setMine(prev); if (window.toast) window.toast("התגובה לא נשלחה", "בדקו חיבור ונסו שוב."); }
       this.redraw && this.redraw();
     },
@@ -219,9 +225,9 @@
     // ---- חלון קופץ לעדכונים שעוד לא נראו ----
     // מספר על אייקון האפליקציה (כמו בוואטסאפ) = כמה עדכונים חדשים. עובד בטלפונים ומחשבים שתומכים
     badge(cls) { try { const n = this.unseen(cls).length; if (navigator.setAppBadge) n ? navigator.setAppBadge(n) : navigator.clearAppBadge(); } catch (e) {} },
-    unseen(cls) { const seen = load(SEEN, []); return this.forClass(cls).filter(u => !seen.includes(u.id)); },
+    unseen(cls) { const seen = loadArr(SEEN); return this.forClass(cls).filter(u => !seen.includes(u.id)); },
     markSeen(ids) {
-      const seen = load(SEEN, []);
+      const seen = loadArr(SEEN);
       save(SEEN, [...new Set([...seen, ...ids])].slice(-300));
       // ספירת צפיות אנונימית, כדי שהצוות יידע כמה ראו
       try { fetch(this.url(), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ seen: ids }), keepalive: true }).catch(() => {}); } catch (e) {}
@@ -236,6 +242,8 @@
       ov.append(bk, stage); document.body.append(ov);
       document.documentElement.classList.add("upd-lock");
       try { const ua = navigator.userActivation; if (navigator.vibrate && (!ua || ua.hasBeenActive)) navigator.vibrate(queue.some(u => u.urgent) ? [60, 40, 60] : 40); } catch (e) {}
+      // גם אם משהו נכשל באמצע – המסך לא נשאר נעול (בלי גלילה) והעדכונים לא נשארים מוסתרים
+      try {
       for (let i = 0; i < queue.length; i++) {
         const u = queue[i];
         stage.textContent = "";
@@ -250,9 +258,12 @@
         this._flying = this._flying.filter(x => x !== u.id);
         this.markSeen([u.id]); this.badge(cls);
       }
-      ov.remove();
-      document.documentElement.classList.remove("upd-lock");
-      this._popping = false;
+      } finally {
+        ov.remove();
+        document.documentElement.classList.remove("upd-lock");
+        this._popping = false;
+        if (this._flying.length) { this._flying = []; this.render(box, cls); }
+      }
     },
     // אנימציית "מעוף": הכרטיס הגדול מתכווץ ועף בדיוק למקום שלו ברשימה
     async fly(c, box, id, title, btn, bk) {

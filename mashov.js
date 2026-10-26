@@ -11,6 +11,7 @@
     bad_login: "שם המשתמש או הסיסמה לא נכונים. אלה אותם פרטים של אתר משוב. שכחת? אפשר לאפס בקישור למטה.",
     bad_request: "חסרים פרטים. צריך לבחור בית ספר ולמלא שם משתמש וסיסמה.",
     mashov_down: "משוב לא עונה כרגע. נסה שוב בעוד כמה דקות.",
+    too_many: "יותר מדי ניסיונות עם סיסמה שגויה. חכה רבע שעה ונסה שוב.",
     no_student: "התחברנו, אבל לא מצאנו חשבון תלמיד. חשבון הורה או מורה לא נתמך כרגע.",
     offline: "אין חיבור לאינטרנט.",
     no_server: "החיבור למשוב עוד לא פעיל באתר הזה. הוא יופעל בקרוב.",
@@ -30,12 +31,15 @@
     async _call(body) {
       if (!navigator.onLine) return { ok: false, error: "offline" };
       let res;
+      // משוב שלא עונה לא תוקע את הטופס על "מתחבר…" לנצח: אחרי 45 שניות מוותרים
+      const ctl = window.AbortController ? new AbortController() : null, tm = ctl && setTimeout(() => ctl.abort(), 45e3);
       try {
-        res = await fetch(this.endpoint(), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), cache: "no-store" });
-      } catch (e) { return { ok: false, error: "mashov_down" }; }
+        res = await fetch(this.endpoint(), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), cache: "no-store", ...(ctl ? { signal: ctl.signal } : {}) });
+      } catch (e) { return { ok: false, error: "mashov_down" }; } finally { clearTimeout(tm); }
       if (res.status === 404 || res.status === 405 && !res.headers.get("content-type")?.includes("json")) return { ok: false, error: "no_server" };
       const j = await res.json().catch(() => null);
       if (!j) return { ok: false, error: res.status === 404 ? "no_server" : "mashov_down" };
+      if (j.reason === "too_many") return { ok: false, error: "too_many" }; // הרבה ניסיונות שגויים – השרת עוצר ל-15 דקות
       return j;
     },
 
@@ -114,7 +118,8 @@
         </div>
         <input class="ms-in" id="msUser" placeholder="שם משתמש במשוב (בדרך כלל ת״ז)" dir="ltr" autocomplete="username" inputmode="numeric">
         <input class="ms-in" id="msPass" type="password" placeholder="סיסמה של משוב" dir="ltr" autocomplete="current-password">
-        <label class="ms-rem"><input type="checkbox" id="msRem" checked> לזכור בטלפון הזה, כדי שהנתונים יתעדכנו לבד</label>
+        <label class="ms-rem"><input type="checkbox" id="msRem"> לזכור את הסיסמה בטלפון הזה, כדי שהנתונים יתעדכנו לבד</label>
+        <div class="ms-warn">⚠️ רק בטלפון אישי שאף אחד אחר לא משתמש בו. הסיסמה נשמרת בטלפון כמו שהיא (בלי הצפנה), ומי שמשתמש בטלפון יכול להגיע אליה. בלי הסימון מקלידים את הסיסמה בכל רענון.</div>
         <div class="ms-note">🔒 הפרטים נשלחים ישירות למשוב רק כדי למשוך את הנוכחות והציונים שלך. השרת שלנו לא שומר את הסיסמה. אם בחרת "לזכור", היא נשמרת רק בטלפון הזה.</div>
         <div class="ms-msg" id="msMsg"></div>
         <details class="ms-forgot"><summary>שכחת את הסיסמה של משוב?</summary>
@@ -162,7 +167,8 @@
   .ms-in{width:100%;border:2px solid var(--line);border-radius:14px;padding:12px;font:inherit;font-size:16px;background:var(--bg);color:var(--ink)}
   .ms-school{position:relative}.ms-res{position:absolute;inset-inline:0;top:100%;z-index:5;background:var(--card);border:1.5px solid var(--line);border-radius:12px;margin-top:4px;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.25)}
   .ms-res button{display:block;width:100%;text-align:start;background:none;border:none;border-bottom:1px solid var(--line);padding:10px 12px;font:inherit;font-size:14px;color:var(--ink);cursor:pointer}
-  .ms-res button small{color:var(--muted)}.ms-rem{display:flex;gap:8px;align-items:center;font-size:14px}
+  .ms-res button small{color:var(--muted)}.ms-rem{display:flex;gap:8px;align-items:center;font-size:14px}.ms-rem input{width:20px;height:20px;flex:0 0 auto}
+  .ms-warn{font-size:12px;line-height:1.5;font-weight:700;color:var(--ink);background:rgba(255,210,63,.16);border:1.5px solid #e0b000;border-radius:10px;padding:8px 10px;margin-top:-4px}
   .ms-note{font-size:12px;color:var(--muted);line-height:1.5}.ms-msg{font-size:14px;font-weight:700;min-height:18px}
   .ms-forgot{font-size:13px;color:var(--muted)}.ms-forgot summary{cursor:pointer;color:var(--accent);font-weight:700}
   .ms-forgot div{margin-top:6px;line-height:1.6}.ms-forgot ol{margin:6px 0;padding-inline-start:20px}.ms-forgot a{color:var(--accent)}`;

@@ -76,7 +76,7 @@ textarea{min-height:80px;resize:vertical}
   <h2>1. פרטי הבקשה</h2>
   <p class="hint">ממלאים סיבה ושעה, ושולחים להורה לאישור. ההורה חותם ושולח למורה.</p>
   <div class="row2">
-    <div><label>שם התלמיד</label><input class="inp" id="fName" placeholder="שם מלא"></div>
+    <div><label>שם התלמיד</label><input class="inp" id="fName" placeholder="שם מלא" maxlength="40"></div>
     <div><label>כיתה</label><select id="fCls"><option value="y1">י'1</option><option value="y2">י'2</option></select></div>
   </div>
   <div class="row2">
@@ -85,9 +85,9 @@ textarea{min-height:80px;resize:vertical}
   </div>
   <div class="info" id="lessonInfo">בחר שעה כדי לראות מאיזה שיעור יוצאים ולמי נשלח האישור.</div>
   <label>סיבת היציאה</label>
-  <textarea id="fReason" placeholder="למשל: תור לרופא שיניים"></textarea>
+  <textarea id="fReason" maxlength="200" placeholder="למשל: תור לרופא שיניים"></textarea>
   <label>פירוט נוסף <small>(לא חובה)</small></label>
-  <textarea id="fDetails" placeholder="מי אוסף, אם חוזרים אחר כך, וכו'"></textarea>
+  <textarea id="fDetails" maxlength="300" placeholder="מי אוסף, אם חוזרים אחר כך, וכו'"></textarea>
   <div class="err" id="stErr"></div>
   <button class="btn wa" id="btnToParent">📤 שלח להורה לאישור</button>
   <button class="btn ghost" id="btnCopy">🔗 העתק קישור לבקשה</button>
@@ -99,7 +99,7 @@ textarea{min-height:80px;resize:vertical}
   <p class="hint">בקשת יציאה שנשלחה אליך. בדקו את הפרטים, מלאו את שמכם וחתמו באצבע. אחרי החתימה פרטי האישור יוצגו גם לצוות הישיבה למשך שבוע.</p>
   <div class="kv" id="reqView"></div>
   <div class="row2">
-    <div><label>שם ההורה</label><input class="inp" id="pName" placeholder="שם מלא"></div>
+    <div><label>שם ההורה</label><input class="inp" id="pName" placeholder="שם מלא" maxlength="40"></div>
     <div><label>קרבה</label><select id="pRel"><option>אמא</option><option>אבא</option><option>אפוטרופוס</option></select></div>
   </div>
   <label class="chk"><input type="checkbox" id="pOk"><span id="pOkText"></span></label>
@@ -131,7 +131,7 @@ const dec=s=>{try{return JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/
 const fmtDate=iso=>{const[y,m,d]=iso.split("-");return `${d}.${m}.${y}`};
 const DAYNAMES=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
 let profile=null;try{profile=JSON.parse(localStorage.getItem("profile")||"null")}catch(e){}
-const PHYS_TEACHER="יבגני קלנר";
+if(!profile||typeof profile!=="object")profile=null;
 
 const isoNow=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
 // הערות על התאריך: עבר, חופשה/חג, שישי/שבת, מחוץ לשנת הלימודים
@@ -154,16 +154,31 @@ function lessonAt(cls,dateIso,time){
   const d=days[new Date(dateIso+"T12:00:00").getDay()];
   if(!d||!d.lessons)return null;
   const m=toMin(time);
-  const p=profile||{};
-  const mj=MAJORS[p.major||(p.phys==="yes"?"phys":"")];
-  const teacher=l=>l.key==="eng"?(ENG[p.eng]||"המורה לאנגלית"):l.key==="math"?(MATH[p.math]||"המורה למתמטיקה"):l.key==="major"?((mj&&mj.w)||"המורה במגמה"):l.w;
+  const p=profile||{},major=p.major||(p.phys==="yes"?"phys":"");
+  const mj=MAJORS[major],rav=CLASSES_META[cls].rav;
+  // בלי מורה (תפילה, "יציאה למגמה") – האישור נכתב למורה של המגמה או למחנך, ולא לשורה ריקה
+  const teacher=l=>l.key==="eng"?(ENG[p.eng]||"המורה לאנגלית"):l.key==="math"?(MATH[p.math]||"המורה למתמטיקה"):l.key==="major"?((mj&&mj.w)||"המורה במגמה"):l.w||(l.stats===false&&mj&&mj.w)||rav;
   const name=l=>l.key==="major"&&mj?mj.n:l.n;
-  const ls=d.lessons.map(l=>forProfile(l,{...p,major:p.major||(p.phys==="yes"?"phys":"")})).filter(Boolean);
-  let cur=ls.find(l=>m>=toMin(l.s)&&m<toMin(l.e));
-  if(cur)return {n:name(cur),w:teacher(cur),s:cur.s,e:cur.e,kind:"during"};
+  const ls=withChanges(d.lessons.map(l=>forProfile(l,{...p,major})).filter(Boolean).map(l=>({n:name(l),w:teacher(l),s:l.s,e:l.e})),cls,dateIso);
+  const cur=ls.find(l=>m>=toMin(l.s)&&m<toMin(l.e));
+  if(cur)return {...cur,kind:"during"};
   const nxt=ls.find(l=>toMin(l.s)>m);
-  if(nxt)return {n:name(nxt),w:teacher(nxt),s:nxt.s,e:nxt.e,kind:"before"};
+  if(nxt)return {...nxt,kind:"before"};
   return null;
+}
+// 🔄 שינויים מהצוות לאותו יום (מהפיד ששמור בטלפון, כמו במסך הראשי): שיעור שבוטל לא נחשב, מורה מחליף מקבל את האישור, שיעור שזז – בשעה החדשה
+const nmT=t=>String(t||"").replace(/\s*\(.*\)\s*$/,"").replace(/^מגמת /,"").trim();
+function withChanges(ls,cls,dateIso){
+  let ch=[];try{const f=JSON.parse(localStorage.getItem("feedCache")||"null");ch=(f&&Array.isArray(f.changes)?f.changes:[]).filter(x=>x&&typeof x==="object"&&x.date===dateIso&&(x.cls==="all"||x.cls===cls))}catch(e){}
+  if(!ch.length)return ls;
+  return ls.map(l=>{
+    const x=ch.find(x=>x.s===l.s&&nmT(x.n)===nmT(l.n)&&(!x.w||nmT(l.w)===nmT(x.w)));
+    if(!x)return l;
+    if(x.kind==="cancel")return null;
+    if(x.kind==="sub"&&x.sub)return {...l,w:String(x.sub).slice(0,60),chg:"sub"};
+    if(x.kind==="move"&&/^\d\d:\d\d-\d\d:\d\d$/.test(x.to||"")){const[a,e]=x.to.split("-");return {...l,s:a,e,chg:"move"}}
+    return l;
+  }).filter(Boolean).sort((a,b)=>toMin(a.s)-toMin(b.s));
 }
 
 // ---- שלב 1: התלמיד ----
@@ -180,8 +195,8 @@ function showLesson(){
   const cls=$("fCls").value,dt=$("fDate").value,t=$("fTime").value;const box=$("lessonInfo");
   if(!dt||!t){box.textContent="בחר שעה כדי לראות מאיזה שיעור יוצאים ולמי נשלח האישור.";return}
   const L=lessonAt(cls,dt,t),notes=dayNotes(dt).map(n=>`<span class="warn">⚠️ ${n}</span>`).join("");
-  if(!L){box.innerHTML=notes+`ביום ${DAYNAMES[new Date(dt+"T12:00:00").getDay()]} בשעה ${t} אין שיעור. האישור ייכתב למחנך הכיתה, <b>${CLASSES_META[cls].rav}</b>.`;return}
-  box.innerHTML=notes+(L.kind==="during"?`יוצאים באמצע <b>${L.n}</b> (${L.s}–${L.e})`:`יוצאים לפני <b>${L.n}</b> (${L.s}–${L.e})`)+`<br>האישור נכתב למורה: <b>${L.w}</b>`;
+  if(!L){box.innerHTML=notes+`ביום ${DAYNAMES[new Date(dt+"T12:00:00").getDay()]} בשעה ${esc(t)} אין שיעור. האישור ייכתב למחנך הכיתה, <b>${esc(CLASSES_META[cls].rav)}</b>.`;return}
+  box.innerHTML=notes+(L.kind==="during"?`יוצאים באמצע <b>${esc(L.n)}</b> (${L.s}–${L.e})`:`יוצאים לפני <b>${esc(L.n)}</b> (${L.s}–${L.e})`)+(L.chg==="move"?" ⏰ השיעור הוזז":"")+`<br>האישור נכתב למורה: <b>${esc(L.w)}</b>${L.chg==="sub"?" 🔄 (מורה מחליף)":""}`;
 }
 function buildRequest(){
   const n=$("fName").value.trim(),cls=$("fCls").value,dt=$("fDate").value,t=$("fTime").value,r=$("fReason").value.trim(),x=$("fDetails").value.trim();
@@ -201,6 +216,14 @@ async function sendToParent(viaShare){
 }
 
 // ---- שלב 2: ההורה ----
+// מה שמגיע בקישור נבדק: טקסטים קצרים, תאריך ושעה בפורמט תקין. קישור משובש לא מפיל את הדף
+function cleanReq(q){
+  if(!q||typeof q!=="object"||q.v!==1)return null;
+  const s=(v,n)=>typeof v==="string"||typeof v==="number"?String(v).trim().slice(0,n):"";
+  const o={v:1,n:s(q.n,40),c:s(q.c,10),d:s(q.d,10),t:s(q.t,5),r:s(q.r,200),x:s(q.x,300),l:s(q.l,60),w:s(q.w,60),ts:+q.ts||0};
+  if(!o.n||!/^\d{4}-\d{2}-\d{2}$/.test(o.d)||isNaN(new Date(o.d+"T12:00:00"))||!/^\d{2}:\d{2}$/.test(o.t))return null;
+  return o;
+}
 let req=null,strokes=[],drawing=false,sigAR=2; // sigAR: רוחב/גובה של משטח החתימה בזמן החתימה
 function initParent(q){
   req=q;$("stParent").hidden=false;$("topSub").textContent=`בקשה של ${q.n}, כיתה ${q.c}`;
@@ -298,8 +321,8 @@ async function savePermit(p){
 document.fonts.ready.then(()=>{
   // קישור הורה שנפתח באותה לשונית: טוענים מחדש כדי להציג את מסך ההורה
   addEventListener("hashchange",()=>{if(/^#p=/.test(location.hash))location.reload()});
-  const m=location.hash.match(/^#p=(.+)$/);const q=m&&dec(m[1]);
-  if(q&&q.v===1&&q.n&&q.d&&q.t)initParent(q);else initStudent();
+  const m=location.hash.match(/^#p=(.+)$/);const q=m&&cleanReq(dec(m[1]));
+  if(q)initParent(q);else{initStudent();if(m)$("stErr").textContent="הקישור לבקשה לא תקין (אולי נחתך בהעתקה). בקשו מהתלמיד לשלוח אותו שוב."}
 });
 </script>
 <script>

@@ -298,7 +298,7 @@ if(!prog||typeof prog!=="object"||Array.isArray(prog))prog={};
 const MY_CLS=(load("profile",{})||{}).cls;
 let teacherSets=load("classSetsCache",[]);
 const forMe=s=>!s.audience||s.audience==="all"||!MY_CLS||s.audience===MY_CLS;
-const classSets=()=>[...teacherSets.filter(forMe).map(s=>({...s,id:"t:"+s.id,builtin:true,teacher:true})),...CLASS_SETS.map(s=>({...s,builtin:true}))];
+const classSets=()=>[...teacherSets.filter(s=>forMe(s)&&s.cards.length).map(s=>({...s,id:"t:"+s.id,builtin:true,teacher:true})),...CLASS_SETS.map(s=>({...s,builtin:true}))];
 const allSets=()=>[...mySets,...classSets()];
 async function loadTeacherSets(){
   try{
@@ -372,7 +372,10 @@ async function encSet(s){
 }
 async function decSet(str){
   try{const bytes=unb64(str.slice(1));
-    if(str[0]==="z"){const st=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));return JSON.parse(await new Response(st).text())}
+    // קישור דחוס: פותחים עד 2MB בלבד – קישור זדוני ("פצצת zip") לא יתקע את הטלפון
+    if(str[0]==="z"){const rd=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip")).getReader(),parts=[];let n=0;
+      for(;;){const {done,value}=await rd.read();if(done)break;n+=value.length;if(n>2e6){try{rd.cancel()}catch(e){}return null}parts.push(value)}
+      return JSON.parse(new TextDecoder().decode(await new Blob(parts).arrayBuffer()))}
     return JSON.parse(new TextDecoder().decode(bytes));
   }catch(e){return null}
 }

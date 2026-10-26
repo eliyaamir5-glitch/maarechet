@@ -38,10 +38,12 @@ const server = http.createServer((req, res) => {
 });
 await new Promise(r => server.listen(8899, r));
 process.env.MASHOV_BASE = "http://localhost:8899/api";
-const { default: handler } = await import("../netlify/functions/mashov.mjs");
+const mod = await import("../netlify/functions/mashov.mjs");
+const { default: handler } = mod;
+mod.__useMemoryStore();
 
-const call = (body, origin = "https://eliyaamir5-glitch.github.io", method = "POST") =>
-  handler(new Request("http://localhost/api/mashov", { method, headers: { "Content-Type": "application/json", origin }, body: method === "POST" ? JSON.stringify(body) : undefined }));
+const call = (body, origin = "https://eliyaamir5-glitch.github.io", method = "POST", ip = "1.1.1.1") =>
+  handler(new Request("http://localhost/api/mashov", { method, headers: { "Content-Type": "application/json", origin }, body: method === "POST" ? JSON.stringify(body) : undefined }), { ip });
 const ok = (name, cond, extra = "") => { console.log(cond ? "✅" : "❌", name, extra); if (!cond) process.exitCode = 1; };
 
 const r1 = await call({ username: "good", password: "pw", semel: 144758, year: 2027 });
@@ -66,6 +68,34 @@ const r5 = await call(null, "https://eliyaamir5-glitch.github.io", "OPTIONS");
 ok("preflight answered", r5.status === 204);
 const r6 = await call(null, "https://eliyaamir5-glitch.github.io", "GET");
 ok("GET rejected", r6.status === 405);
+
+// CORS: רק האתרים של הפרויקט (לא כל netlify.app)
+const acao = async o => (await call({ username: "x", password: "y", semel: 1, year: 2027 }, o)).headers.get("access-control-allow-origin");
+ok("CORS allowed for the project's Netlify site", await acao("https://lucent-crepe-6db22c.netlify.app") === "https://lucent-crepe-6db22c.netlify.app");
+ok("CORS allowed for its deploy previews", await acao("https://deploy-preview-12--lucent-crepe-6db22c.netlify.app") === "https://deploy-preview-12--lucent-crepe-6db22c.netlify.app");
+ok("CORS allowed for localhost", await acao("http://localhost:8787") === "http://localhost:8787");
+ok("CORS refused for any other *.netlify.app", !(await acao("https://evil-site.netlify.app")) && !(await acao("https://lucent-crepe-6db22c.netlify.app.evil.com")) && !(await acao("https://xlucent-crepe-6db22c.netlify.app")));
+
+// סיסמאות שגויות: אחרי 10 לאותו חשבון – חסימה ל-15 דקות (גם עם הסיסמה הנכונה); חשבון אחר מאותה כתובת לא נחסם
+for (let i = 0; i < 10; i++) await call({ username: "good", password: "wrong" + i, semel: 144758, year: 2027 }, undefined, "POST", "20.0.0.1");
+const r8 = await call({ username: "good", password: "pw", semel: 144758, year: 2027 }, undefined, "POST", "20.0.0.2");
+const j8 = await r8.json();
+ok("10 wrong passwords lock that account (even from another address)", r8.status === 429 && j8.error === "mashov_down" && j8.reason === "too_many");
+const r9 = await call({ username: "other", password: "pw", semel: 144758, year: 2027 }, undefined, "POST", "20.0.0.1");
+ok("…other accounts from the same address still work", r9.status === 401 && (await r9.json()).error === "bad_login");
+const r10 = await call({ username: "GOOD", password: "pw", semel: 144758, year: 2027 }, undefined, "POST", "20.0.0.3");
+ok("…the lock ignores upper/lower case of the username", r10.status === 429);
+for (let i = 0; i < 100; i++) await call({ username: "spray" + i, password: "x", semel: 144758, year: 2027 }, undefined, "POST", "30.0.0.1");
+const r11 = await call({ username: "spray-new", password: "x", semel: 144758, year: 2027 }, undefined, "POST", "30.0.0.1");
+ok("100 wrong logins from one address (many accounts) lock that address", r11.status === 429);
+// אחסון שלא עונה לא תוקע את ההתחברות
+mod.__useMemoryStore({ get: () => new Promise(() => {}), set: () => new Promise(() => {}) });
+const t0 = Date.now();
+const r12 = await call({ username: "good", password: "pw", semel: 999999, year: 2027 }, undefined, "POST", "40.0.0.1");
+ok("a stuck rate-limit store doesn't block sign-in (gives up after ~3s)", r12.status === 200 && (await r12.json()).ok && Date.now() - t0 < 5000, Date.now() - t0 + "ms");
+mod.__useMemoryStore({ get: async () => { throw new Error("down"); }, set: async () => { throw new Error("down"); } });
+const r13 = await call({ username: "good", password: "pw", semel: 999998, year: 2027 }, undefined, "POST", "40.0.0.2");
+ok("a broken rate-limit store doesn't block sign-in", r13.status === 200);
 
 process.env.MASHOV_BASE = "http://localhost:1/api"; // שרת שלא קיים
 const { default: handler2 } = await import("../netlify/functions/mashov.mjs?down");
