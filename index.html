@@ -14,7 +14,7 @@
 <script src="demo-shim.js"></script>
 <script src="theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet"></noscript>
 <style>
 /* תחושת אפליקציה: בלי זום, בלי גרירה מיותרת, בלי סימון טקסט בטעות */
 html{overscroll-behavior:none;-webkit-text-size-adjust:100%}
@@ -160,13 +160,13 @@ dialog::backdrop{background:rgba(5,6,20,.6)}
 .bdrow .wz-in{width:auto;margin:0;padding:10px 12px;font-size:17px}
 .xlink{background:none;border:none;color:var(--muted);font:inherit;font-size:12px;text-decoration:underline;cursor:pointer;padding:4px 0;margin-top:4px}
 /* ⛔ השעיה: מחסום על כל המסך */
-#suspWall{position:fixed;inset:0;z-index:100000;background:radial-gradient(circle at 50% 30%,#3a1020,#0b0612 70%);color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}
-#suspWall .sw{max-width:420px;animation:swin .5s cubic-bezier(.2,1.3,.4,1) both}
+#suspWall{position:fixed;inset:0;z-index:2147483000;overflow:auto;overscroll-behavior:contain;outline:none;background:radial-gradient(circle at 50% 30%,#3a1020,#0b0612 70%);color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}
+#suspWall .sw{max-width:420px;margin:auto;position:relative;z-index:1;animation:swin .5s cubic-bezier(.2,1.3,.4,1) both}
 #suspWall .ic{font-size:76px;line-height:1;animation:swshake 2.4s ease-in-out infinite}
 #suspWall h2{font-size:24px;font-weight:900;margin:14px 0 8px;line-height:1.35}
 #suspWall p{margin:6px 0;color:#f3c9d2;font-size:15px;line-height:1.55}
 #suspWall .why{background:rgba(255,255,255,.08);border-radius:14px;padding:10px 14px;margin-top:12px;color:#fff}
-#suspWall .tape{position:absolute;left:-10%;right:-10%;height:34px;background:repeating-linear-gradient(45deg,#ffc400 0 22px,#111 22px 44px);opacity:.85;transform:rotate(-6deg)}
+#suspWall .tape{position:absolute;pointer-events:none;left:-10%;right:-10%;height:34px;background:repeating-linear-gradient(45deg,#ffc400 0 22px,#111 22px 44px);opacity:.85;transform:rotate(-6deg)}
 #suspWall .tape.t1{top:8%}#suspWall .tape.t2{bottom:9%;transform:rotate(5deg)}
 html.susp-lock,html.susp-lock body{overflow:hidden!important}
 @keyframes swin{from{opacity:0;transform:scale(.8)}}
@@ -559,6 +559,8 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 <script src="timetable-image.js"></script>
 <script src="updates.js"></script>
 <script>
+// ⛔🚧 מצב מהשרת (השעיה / מצב עדכון) מהזיכרון בטלפון – לפני כל השאר, כדי שהמחסום יעלה מיד גם אם משהו אחר נכשל
+try{applyCtl()}catch(e){document.documentElement.classList.remove("susp-pre")}
 // ---- נתוני המערכת: ראה data.js ----
 const CLASSES={y1:{...CLASSES_META.y1,days:DAYS_Y1},y2:{...CLASSES_META.y2,days:DAYS_Y2}};
 let profile=null;
@@ -1339,7 +1341,10 @@ renderAbsAlert();
 // ---- מהפיד: סקרים, ימי הולדת, אירועים, שאלות ותשובות ----
 function deviceId(){let d=null;try{d=localStorage.getItem("deviceId")}catch(e){}if(!d){d=(crypto.randomUUID?crypto.randomUUID():"d"+Date.now().toString(36)+Math.random().toString(36).slice(2));try{localStorage.setItem("deviceId",d)}catch(e){}}return d}
 const FEED_API=()=>((typeof SERVER_BASE!=="undefined"&&SERVER_BASE)||"")+"/api/feed";
-async function feedPost(body){try{const r=await fetch(FEED_API(),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});return await r.json().catch(()=>({ok:false,error:"server"}))}catch(e){return{ok:false,error:"network"}}}
+async function feedPost(body){let j;try{const r=await fetch(FEED_API(),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});j=await r.json().catch(()=>({ok:false,error:"server"}))}catch(e){j={ok:false,error:"network"}}
+  if(!j||typeof j!=="object")j={ok:false,error:"server"};
+  if(j.error==="suspended"&&body&&body.action!=="hello"){helloAt=0;setTimeout(()=>hello().catch(()=>{}),0)} // הושעה בינתיים – מביאים את המצב מיד
+  return j}
 const myCls=()=>(profile&&profile.cls)||"y2";
 const forMe=a=>!a||a==="all"||a===myCls();
 const pollVotes=()=>{try{const v=JSON.parse(localStorage.getItem("pollVotes")||"{}");return v&&typeof v==="object"&&!Array.isArray(v)?v:{}}catch(e){return{}}};
@@ -1347,6 +1352,7 @@ const readQs=()=>{try{const a=JSON.parse(localStorage.getItem("readQs")||"[]");r
 const DAYH=["א'","ב'","ג'","ד'","ה'","ו'","שבת"];
 function fmtEventDate(e){const d=new Date(e.date+"T12:00"),t=new Date();t.setHours(12,0,0,0);const diff=Math.round((d-t)/864e5);return (diff===0?"היום":diff===1?"מחר":`יום ${DAYH[d.getDay()]} ${d.getDate()}.${d.getMonth()+1}`)+(e.time?` · ${escH(e.time)}`:"")}
 function renderExtras(){
+  try{renderOwn()}catch(e){}
   const box=document.getElementById("extras");if(!box||!window.Updates)return;
   const qa=document.getElementById("qaBox");
   if(!feedOk()){box.hidden=true;if(qa)qa.hidden=true;return} // השרת עוד לא עודכן
@@ -1378,9 +1384,6 @@ function renderExtras(){
   // ❓ שאלות ותשובות
   const ans=(f.answers||[]).filter(a=>!a.cls||a.cls===myCls());
   // 💬 הצוות ענה על שאלה ששלחתי – מופיע למעלה עד שלוחצים "קראתי"
-  // 📩 הודעות ממנהל המערכת – עד שלוחצים "קראתי"
-  const omr=ownRead(),om=ownMsgs().filter(m=>!omr.includes(m.id));
-  const omH=om.map(m=>`<div class="xcard ownmsg"><div class="xhead">📩 הודעה ממנהל המערכת <button type="button" class="xbtn" data-omread="${escH(m.id)}">קראתי ✓</button></div><div class="om">${escH(m.text)}</div></div>`).join("");
   const mq=myQs(),readQ=readQs();
   const mineAns=(f.answers||[]).filter(a=>mq.includes(a.id)&&!readQ.includes(a.id));
   if(mineAns.length)h=mineAns.map(a=>`<div class="xcard myans"><div class="xhead">💬 הצוות ענה על השאלה שלך <button type="button" class="xbtn" data-readq="${escH(a.id)}">קראתי ✓</button></div><div class="qa1"><div class="qq">${escH(a.q)}${a.to?` <span class="xsub">(${escH(a.to)})</span>`:""}</div><div class="qaa">💬 ${escH(a.a)} <span class="xsub">– ${escH(a.by||"")}</span></div></div></div>`).join("")+h;
@@ -1390,9 +1393,7 @@ function renderExtras(){
     qa.innerHTML=`<details class="xcard qa qa-fold"${open?" open":""}><summary>❓ שאלה לצוות, בלי שם${ans.length?`<span class="qbadge">${ans.length===1?"תשובה אחת":ans.length+" תשובות"}</span>`:""}</summary><div style="margin-top:10px">${qh}</div></details>`;qa.hidden=false}
   // שומרים מה שהתלמיד כבר בחר בתזכורת (הרשימה מתרעננת כל דקה)
   const keep={d:(document.getElementById("xBdD")||{}).value,m:(document.getElementById("xBdM")||{}).value};
-  const ob=document.getElementById("ownBox");if(ob){ob.innerHTML=omH;ob.hidden=!omH}
   box.innerHTML=h;box.hidden=!h;
-  (ob||box).querySelectorAll("[data-omread]").forEach(b=>b.onclick=()=>{const r=ownRead();r.push(b.dataset.omread);try{localStorage.setItem("ownerRead",JSON.stringify(r.slice(-100)))}catch(e){}renderExtras()});
   if(document.getElementById("xBdD")){if(keep.d)document.getElementById("xBdD").value=keep.d;if(keep.m)document.getElementById("xBdM").value=keep.m}
   const bok=document.getElementById("xBdOk");if(bok)bok.onclick=async()=>{
     const d=+document.getElementById("xBdD").value,m=+document.getElementById("xBdM").value,msg=document.getElementById("xBdMsg");
@@ -1440,47 +1441,76 @@ function platLabel(){
   const br=/SamsungBrowser/.test(u)?"Samsung":/EdgA?\//.test(u)?"Edge":/CriOS|Chrome\//.test(u)?"Chrome":/FxiOS|Firefox\//.test(u)?"Firefox":/Safari\//.test(u)?"Safari":"";
   return br?os+" · "+br:os;
 }
-let helloAt=0;
+var helloAt=0,toasted=new Set();
 async function hello(){
   if(!profile||!profile.cls||window.__DEMO||document.hidden||Date.now()-helloAt<150e3)return;
   helloAt=Date.now();
   const inst=!!((window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone);
   const r=await feedPost({action:"hello",device:deviceId(),name:`${profile.first||""} ${profile.last||""}`.trim(),cls:profile.cls,eng:profile.eng||"",math:profile.math||"",major:profile.major||"",
     mashov:!!(typeof Mashov!=="undefined"&&Mashov.connected&&Mashov.connected()),ver:typeof APP_VERSION!=="undefined"?APP_VERSION:"",plat:platLabel(),inst});
-  if(r&&r.ok){
-    try{localStorage.setItem("appCtl",JSON.stringify({maint:r.maint||null,susp:r.susp||null,at:Date.now()}))}catch(e){}
-    if(Array.isArray(r.msgs)){const old=ownMsgs(),seen=new Set(old.map(m=>m.id)),fresh=r.msgs.filter(m=>m&&m.id&&!seen.has(m.id)&&!ownRead().includes(m.id));
-      try{localStorage.setItem("ownerMsgs",JSON.stringify(r.msgs.filter(m=>m&&typeof m.text==="string").slice(0,30)))}catch(e){}
-      if(fresh.length&&typeof toast==="function")toast("📩 הודעה ממנהל המערכת",escH(fresh[0].text.slice(0,80)));}
-    applyCtl();if(typeof renderExtras==="function")renderExtras();
-  }else if(r&&r.error==="suspended"){applyCtl()}
+  if(!r||!r.ok)return;
+  const obj=x=>x&&typeof x==="object"&&!Array.isArray(x)?x:null;
+  try{localStorage.setItem("appCtl",JSON.stringify({maint:obj(r.maint),susp:obj(r.susp),at:Date.now()}))}catch(e){}
+  if(Array.isArray(r.msgs)){
+    const list=r.msgs.filter(m=>m&&typeof m==="object"&&m.id!=null&&typeof m.text==="string").map(m=>({id:String(m.id),text:m.text,at:+m.at||0,exp:+m.exp||0})).slice(0,30);
+    try{localStorage.setItem("ownerMsgs",JSON.stringify(list))}catch(e){}
+    // טוסט פעם אחת לכל הודעה (נזכר גם אחרי סגירה ופתיחה)
+    let tw=[];try{tw=JSON.parse(localStorage.getItem("ownerToast")||"[]");if(!Array.isArray(tw))tw=[]}catch(e){tw=[]}
+    const rd=ownRead(),fresh=list.filter(m=>m.exp>Date.now()&&!rd.includes(m.id)&&!tw.includes(m.id)&&!toasted.has(m.id));
+    fresh.forEach(m=>toasted.add(m.id));
+    if(fresh.length){try{localStorage.setItem("ownerToast",JSON.stringify([...tw,...fresh.map(m=>m.id)].slice(-100)))}catch(e){}
+      if(!document.getElementById("suspWall"))toast("📩 הודעה ממנהל המערכת",escH(fresh[0].text.slice(0,80)))}
+  }
+  applyCtl();renderOwn();
 }
 // ---- מצב מהשרת: השעיה (מחסום) ומצב עדכון (פס + "בעבודה") ----
-function appCtl(){try{const c=JSON.parse(localStorage.getItem("appCtl")||"{}");return c&&typeof c==="object"?c:{}}catch(e){return{}}}
-function ownMsgs(){try{const a=JSON.parse(localStorage.getItem("ownerMsgs")||"[]");return Array.isArray(a)?a.filter(m=>m&&typeof m==="object"&&m.exp>Date.now()):[]}catch(e){return[]}}
-function ownRead(){try{const a=JSON.parse(localStorage.getItem("ownerRead")||"[]");return Array.isArray(a)?a:[]}catch(e){return[]}}
-const live=x=>!!x&&typeof x==="object"&&(x.until==null||x.until>Date.now());
-function untilTxt(t){if(t==null)return"";const d=new Date(t),n=new Date(),m=Math.round((t-Date.now())/60e3);if(m<60)return`בעוד ${Math.max(1,m)} דק'`;const hm=d.toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"});return d.toDateString()===n.toDateString()?`היום ב-${hm}`:`ב${d.toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"numeric"})} ב-${hm}`}
-let ctlTimer=null;
+function appCtl(){try{const c=JSON.parse(localStorage.getItem("appCtl")||"{}");return c&&typeof c==="object"&&!Array.isArray(c)?c:{}}catch(e){return{}}}
+function ownMsgs(){try{const a=JSON.parse(localStorage.getItem("ownerMsgs")||"[]");return Array.isArray(a)?a.filter(m=>m&&typeof m==="object"&&m.id!=null&&typeof m.text==="string"&&+m.exp>Date.now()):[]}catch(e){return[]}}
+function ownRead(){try{const a=JSON.parse(localStorage.getItem("ownerRead")||"[]");return Array.isArray(a)?a.map(String):[]}catch(e){return[]}}
+// 📩 הודעות ממנהל המערכת – מוצגות עד שלוחצים "קראתי" (גם כשהפיד לא זמין, וגם במצב עדכון)
+function renderOwn(){
+  const ob=document.getElementById("ownBox");if(!ob)return;
+  const omr=ownRead(),om=ownMsgs().filter(m=>!omr.includes(String(m.id)));
+  const h=om.map(m=>`<div class="xcard ownmsg"><div class="xhead">📩 הודעה ממנהל המערכת <button type="button" class="xbtn" data-omread="${escH(m.id)}">קראתי ✓</button></div><div class="om">${escH(m.text)}</div></div>`).join("");
+  ob.innerHTML=h;ob.hidden=!h;
+  ob.querySelectorAll("[data-omread]").forEach(b=>b.onclick=()=>{const r=ownRead();if(!r.includes(b.dataset.omread))r.push(b.dataset.omread);try{localStorage.setItem("ownerRead",JSON.stringify(r.slice(-100)))}catch(e){}renderOwn()});
+}
+function ctlLive(x){if(!x||typeof x!=="object")return false;if(x.until==null)return true;const u=+x.until;return Number.isFinite(u)&&u>Date.now()}
+function untilTxt(t){t=+t;if(!Number.isFinite(t))return"";const d=new Date(t),n=new Date(),m=Math.round((t-Date.now())/60e3);if(m<60)return`בעוד ${Math.max(1,m)} דק'`;if(isNaN(d))return"";const hm=d.toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"});return d.toDateString()===n.toDateString()?`היום ב-${hm}`:`ב${d.toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"numeric"})} ב-${hm}`}
+var ctlTimer=null;
+// ⛔ בזמן השעיה שום חלון לא נפתח מעל המחסום (חלון מודאלי נפתח תמיד מעל כל השאר)
+(function(){const P=window.HTMLDialogElement&&HTMLDialogElement.prototype;if(!P||P.__suspGuard)return;P.__suspGuard=1;
+  for(const k of["showModal","show"]){const o=P[k];if(o)P[k]=function(){if(document.getElementById("suspWall"))return;return o.apply(this,arguments)}}})();
 function applyCtl(){
-  if(window.__DEMO)return;
-  const c=appCtl(),f=window.Updates?Updates.feed():{},fm=f.maint,cm=c.maint;
+  const H=document.documentElement;
+  if(window.__DEMO){H.classList.remove("susp-pre");return}
+  const c=appCtl(),f=window.Updates&&Updates.feed?Updates.feed():{},fm=f.maint,cm=c.maint;
   // מצב עדכון: מה שהגיע אחרון (הפיד מתעדכן כל דקה, ה"שלום" כל כמה דקות)
   const m=(+f.at||0)>=(+c.at||0)?fm:cm;
-  const maint=live(m)?m:null;
+  const maint=ctlLive(m)?m:null;
   document.body.classList.toggle("maint",!!maint);
+  // מה שמכוסה ב"בעבודה" – גם לא נגיש במקלדת
+  document.querySelectorAll(".actions,#updates,#extras,#board,#zmanim,#qaBox,#imgBtn,#streakPill,#absAlert").forEach(e=>{e.inert=!!maint});
   const mb=document.getElementById("maintBar");
-  if(mb)mb.innerHTML=maint?`<div class="mt"><span class="crane" aria-hidden="true">🏗️</span><div><b>🚧 האפליקציה בעדכון</b><small>${maint.msg?escH(maint.msg)+" · ":""}${maint.until?"נחזור "+untilTxt(maint.until):"נחזור בקרוב"} · המערכת שלך ממשיכה לעבוד כרגיל 👇</small></div></div><div class="bar"><i></i></div>`:"";
+  if(mb)mb.innerHTML=maint?`<div class="mt"><span class="crane" aria-hidden="true">🏗️</span><div><b>🚧 האפליקציה בעדכון</b><small>${maint.msg?escH(String(maint.msg).slice(0,300))+" · ":""}${maint.until!=null&&untilTxt(maint.until)?"נחזור "+untilTxt(maint.until):"נחזור בקרוב"} · המערכת שלך ממשיכה לעבוד כרגיל 👇</small></div></div><div class="bar"><i></i></div>`:"";
   // השעיה
-  const sp=live(c.susp)?c.susp:null;let w=document.getElementById("suspWall");
+  const sp=ctlLive(c.susp)?c.susp:null;let w=document.getElementById("suspWall");
   if(sp){
-    if(!w){w=document.createElement("div");w.id="suspWall";w.setAttribute("role","alertdialog");w.setAttribute("aria-modal","true");document.body.appendChild(w)}
-    w.innerHTML=`<div class="tape t1"></div><div class="tape t2"></div><div class="sw"><div class="ic">⛔</div><h2>מנהל המערכת הוריד לך את הזכות להשתמש באפליקציה</h2>
-      ${sp.reason?`<p class="why">${escH(sp.reason)}</p>`:""}<p>${sp.until?"הגישה תחזור "+untilTxt(sp.until)+".":"הגישה תחזור כשמנהל המערכת יחזיר אותך."}</p><p style="opacity:.7;font-size:13px">אם זו טעות – פנה למנהל המערכת.</p></div>`;
-    document.documentElement.classList.add("susp-lock");document.querySelectorAll("dialog[open]").forEach(d=>{try{d.close()}catch(e){}});
-  }else if(w){w.remove();document.documentElement.classList.remove("susp-lock")}
+    const fresh=!w;
+    if(fresh){w=document.createElement("div");w.id="suspWall";w.setAttribute("role","alertdialog");w.setAttribute("aria-modal","true");w.setAttribute("aria-labelledby","suspT");w.tabIndex=-1;document.body.appendChild(w)}
+    const ut=sp.until!=null?untilTxt(sp.until):"";
+    w.innerHTML=`<div class="tape t1"></div><div class="tape t2"></div><div class="sw"><div class="ic">⛔</div><h2 id="suspT">מנהל המערכת הוריד לך את הזכות להשתמש באפליקציה</h2>
+      ${sp.reason?`<p class="why">${escH(String(sp.reason).slice(0,300))}</p>`:""}<p>${ut?"הגישה תחזור "+ut+".":sp.until!=null?"הגישה תחזור בקרוב.":"הגישה תחזור כשמנהל המערכת יחזיר אותך."}</p><p style="opacity:.7;font-size:13px">אם זו טעות – פנה למנהל המערכת.</p></div>`;
+    H.classList.add("susp-lock");
+    document.querySelectorAll("dialog[open]").forEach(d=>{try{d.close()}catch(e){}});
+    document.querySelectorAll(".upd-pop,.upd-pick,.upd-vid,.toast").forEach(e=>e.remove());
+    // כל מה שמתחת למחסום – לא נגיש (גם לא במקלדת או בקורא מסך)
+    for(const el of document.body.children)if(el!==w&&!el.inert&&el.tagName!=="SCRIPT"){el.inert=true;el.dataset.suspInert="1"}
+    if(fresh)try{w.focus({preventScroll:true})}catch(e){}
+  }else if(w){w.remove();H.classList.remove("susp-lock");document.querySelectorAll("[data-susp-inert]").forEach(el=>{el.inert=false;delete el.dataset.suspInert})}
+  H.classList.remove("susp-pre");
   // כשהזמן נגמר – מתעדכן לבד
-  clearTimeout(ctlTimer);const ends=[maint&&maint.until,sp&&sp.until].filter(Boolean).map(t=>t-Date.now()).filter(t=>t>0);
+  clearTimeout(ctlTimer);const ends=[maint&&maint.until,sp&&sp.until].filter(t=>t!=null).map(t=>+t-Date.now()).filter(t=>t>0);
   if(ends.length)ctlTimer=setTimeout(applyCtl,Math.min(Math.min(...ends)+500,60e3));
 }
 async function dailyPing(){
@@ -1495,15 +1525,18 @@ async function dailyPing(){
 // עדכונים מהצוות, בראש המסך
 // עדכון חדש קופץ על המסך פעם אחת (לא באמצע הרשמה/היכרות/חלון פתוח), ואז עף למקום שלו
 if(window.Updates){
-  const canPop=()=>["wiz","intro","build"].every(id=>{const e=document.getElementById(id);return !e||e.hidden})&&!document.querySelector("dialog[open]");
+  const canPop=()=>["wiz","intro","build"].every(id=>{const e=document.getElementById(id);return !e||e.hidden})&&!document.querySelector("dialog[open]")&&!document.body.classList.contains("maint")&&!document.getElementById("suspWall");
   Updates.who=()=>({device:deviceId(),name:profile?`${profile.first||""} ${profile.last||""}`.trim():"",cls:(profile&&profile.cls)||""});
   Updates.reactOn=()=>feedOk()&&!!(profile&&profile.cls);
   Updates.init(document.getElementById("updates"),()=>(profile&&profile.cls)||"y2",canPop);
   // תקלה בכרטיס אחד מהפיד לא עוצרת את המערכת עצמה (ולא את שאר הקוד שנטען אחרי)
   const safe=f=>{try{f()}catch(e){console.warn(e)}};
-  Updates.onFeed=()=>{safe(renderExtras);safe(render);safe(applyCtl)};safe(renderExtras);setTimeout(dailyPing,5000);setTimeout(hello,1500);setInterval(hello,3*60e3);applyCtl();document.addEventListener("visibilitychange",()=>{if(!document.hidden)hello()});setTimeout(()=>{bdSync().catch(()=>{})},6000);
+  Updates.onFeed=()=>{safe(renderExtras);safe(render);safe(applyCtl)};safe(renderExtras);setTimeout(dailyPing,5000);setTimeout(()=>{bdSync().catch(()=>{})},6000);
   setInterval(()=>Updates.retryPop&&Updates.retryPop(),2500);
 }
+// "שלום" לשרת + מצב השעיה/עדכון: בפתיחה, כל 3 דקות, וכשחוזרים לאפליקציה (גם אם updates.js לא נטען)
+{const sf=f=>{try{f()}catch(e){console.warn(e)}};sf(applyCtl);sf(renderOwn);setTimeout(()=>hello().catch(()=>{}),1500);setInterval(()=>hello().catch(()=>{}),3*60e3);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden){sf(applyCtl);hello().catch(()=>{})}})}
 if(location.hash==="#profile"){history.replaceState(null,"",location.pathname);setTimeout(()=>openProfile(),300)}
 
 // ---- עבודה בלי אינטרנט ----
@@ -1598,11 +1631,6 @@ function loadJSZip(){
   });
 }
 </script>
-<script>
-// חסימת זום בצביטה ובלחיצה כפולה (ספארי מתעלם מ-user-scalable)
-document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
-document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
-let __lastTap=0;document.addEventListener("touchend",e=>{const n=Date.now();if(n-__lastTap<300&&!e.target.closest("input,textarea,select,button,a,.tile,.opt,.flip,.wz-opt,.tab"))e.preventDefault();__lastTap=n},{passive:false});
-</script>
+<!-- זום בצביטה ובהקשה כפולה נחסם ב-theme.js (בלי לחסום touchend, שבלע הקשה שנייה מהירה) -->
 </body>
 </html>

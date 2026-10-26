@@ -9,7 +9,8 @@
 <script src="demo-shim.js"></script>
 <script src="theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<!-- הגופן נטען בלי לעכב את העמוד: רשת שחוסמת את גוגל לא משאירה מסך ריק -->
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 :root{--bg:#f3f2fb;--card:#fff;--ink:#191b33;--muted:#6c7093;--line:#e3e2f2;--next:#e5e9ff;--break:#eceaf7;--accent:#5b6cff;--free:#1fb57a;--grad:linear-gradient(135deg,#5b6cff 0%,#a259ff 60%,#ff6bd6 100%)}
 @media (prefers-color-scheme: dark){:root{--bg:#0f1226;--card:#1d2247;--ink:#f4f5ff;--muted:#9aa0c7;--line:#2b3162;--next:#243a8a;--break:#2a2f5c;--accent:#7c8cff;--free:#3ddc97}}
@@ -126,7 +127,9 @@ function draw(){
 draw();setInterval(draw,60e3);
 // הודעות מהצוות לכיתה (לקריאה בלבד)
 // (השינויים במערכת מגיעים באותו פיד, אז מציירים שוב אחרי הרענון)
-if(p&&p.c&&window.Updates){Updates.render($("updates"),p.c);Updates.refresh().then(()=>{Updates.render($("updates"),p.c);draw()})}
+// "מתעדכן לבד": רענון כל 5 דקות וכשחוזרים לעמוד (לא יותר מפעם בדקה)
+if(p&&p.c&&window.Updates){let last=0;const up=()=>{if(Date.now()-last<60e3)return;last=Date.now();Updates.refresh().then(()=>{Updates.render($("updates"),p.c);draw()}).catch(()=>{})};
+  Updates.render($("updates"),p.c);up();setInterval(()=>{if(!document.hidden)up()},5*60e3);document.addEventListener("visibilitychange",()=>{if(!document.hidden){draw();up()}})}
 </script>
 </body>
 </html>

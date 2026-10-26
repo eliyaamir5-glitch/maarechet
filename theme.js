@@ -33,36 +33,64 @@
   document.addEventListener("DOMContentLoaded", () => { if (st.nextSibling) document.head.appendChild(st); });
 
   // ---- בלי זום: כמו אפליקציה אמיתית (מי שצריך – "טקסט גדול" בפרופיל) ----
-  // אייפון מתעלם מ-user-scalable=no, אז חוסמים גם את מחוות הצביטה והקשה כפולה
+  // touch-action:manipulation מבטל הגדלה בהקשה כפולה בלי לגעת בגלילה, בהחלקות ובלחיצות מהירות.
+  // אנדרואיד מכבד user-scalable=no; אייפון מתעלם ממנו, אז שם חוסמים גם את מחוות הצביטה
+  const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
   const ns = document.createElement("style");
-  ns.textContent = "html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}";
+  ns.textContent = "html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}" +
+    // ⛔ השעיה: עד שהמחסום נבנה (בעמוד הראשי) לא מציירים את האפליקציה מתחתיו
+    "html.susp-pre,html.susp-pre body{background:#0b0612!important}html.susp-pre body>:not(#suspWall){visibility:hidden!important}";
   (document.head || document.documentElement).appendChild(ns);
   for (const ev of ["gesturestart", "gesturechange", "gestureend"]) document.addEventListener(ev, e => e.preventDefault(), { passive: false });
-  document.addEventListener("touchmove", e => { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
-  // אייפון מגדיל את המסך כשנכנסים לשדה עם טקסט קטן מ-16px – מגדילים רק את השדה הזה
-  if (/iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1))
-    document.addEventListener("touchstart", e => { const t = e.target && e.target.closest && e.target.closest("input,select,textarea"); if (t && parseFloat(getComputedStyle(t).fontSize) < 16) t.style.fontSize = "16px"; }, { passive: true, capture: true });
+  // מאזין שחוסם גלילה רק באייפון (באנדרואיד/מחשב הוא היה מאט את הגלילה בכל העמוד בלי צורך)
+  if (IOS) document.addEventListener("touchmove", e => { if (e.cancelable && e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  // אייפון מגדיל את המסך כשנכנסים לשדה כתיבה עם טקסט קטן מ-16px – מגדילים רק את השדה הזה (לא צ'קבוקסים/כפתורים)
+  const TXT = 'input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=submit]):not([type=reset]):not([type=color]):not([type=file]):not([type=image]),select,textarea';
+  const bump = e => { const t = e.target && e.target.closest && e.target.closest(TXT); if (t && parseFloat(getComputedStyle(t).fontSize) < 16) t.style.fontSize = "16px"; };
+  if (IOS) { document.addEventListener("touchstart", bump, { passive: true, capture: true }); document.addEventListener("focusin", bump, true); }
+
+  // ---- ⛔ השעיה ממנהל המערכת: נבדק כבר כאן, לפני שהעמוד מצויר ----
+  // בעמוד הראשי – מסתירים עד שהמחסום עולה (index.html → applyCtl). בשאר העמודים של התלמיד – חוזרים לעמוד הראשי (למחסום)
+  function suspCheck(again) {
+    try {
+      let c = null; try { c = JSON.parse(get("appCtl", "") || "null"); } catch (e) {}
+      const s = c && typeof c === "object" ? c.susp : null, pg = (location.pathname.split("/").pop() || "index").replace(/\.html$/, "") || "index";
+      if (!window.__DEMO && s && typeof s === "object" && (s.until == null || +s.until > Date.now())) {
+        if (pg === "index") { if (!again) document.documentElement.classList.add("susp-pre"); }
+        // קישור של הורה (parent.html, או חתימה בשחרורון #p=) נפתח גם בטלפון של תלמיד מושעה – לא חוסמים
+        else if (/^(about|absences|calc|cards|phones|shichrur)$/.test(pg) && !(pg === "shichrur" && /^#p=/.test(location.hash))) location.replace("./");
+      }
+    } catch (e) {}
+  }
+  suspCheck();
+  // חזרה לעמוד מהזיכרון של הדפדפן (כפתור "חזור") – בודקים שוב
+  window.addEventListener("pageshow", e => { if (e && e.persisted) suspCheck(true); });
 
   // ---- תקלות: שגיאה בטלפון של תלמיד נשלחת לדף מנהל המערכת (בלי מידע אישי מעבר לשם וכיתה) ----
-  let sent = 0;
+  // לא נשלח: בדמו, יותר מ-5 בעמוד, אותה תקלה יותר מפעם ביום, ו"רעש" שאינו תקלה שלנו (רשת, תוספים, דפדפנים בתוך אפליקציות, הפעלת סרטון)
+  const NOISE = /ResizeObserver loop|extension:\/\/|webkit-masked-url|user-script:|AbortError|NotAllowedError|NetworkError|Failed to fetch|Load failed|network connection was lost|^(Uncaught )?(TypeError: )?cancelled$|The operation was aborted|play\(\) (request|failed)|user didn't interact|not allowed by the user agent|__gCrWeb|webkit\.messageHandlers|_AutofillCallbackHandler|instantSearchSDKJSBridge|Java object is gone|^\[object (Event|ProgressEvent)\]$/i;
+  let sent = 0, busy = false;
+  const errSeen = day => { let s = null; try { s = JSON.parse(get("errSent", "") || "null"); } catch (e) {} return s && typeof s === "object" && s.day === day && Array.isArray(s.s) ? s : { day, s: [] }; };
   function report(msg, src) {
+    if (busy) return; busy = true; // תקלה בתוך הדיווח עצמו לא מדווחת שוב
     try {
       msg = String(msg || "").slice(0, 300); src = String(src || "").slice(0, 200);
-      if (!msg || window.__DEMO || sent >= 5 || /^Script error\.?$/i.test(msg) || /ResizeObserver loop|extension:\/\/|^AbortError|NetworkError|Failed to fetch|Load failed/i.test(msg + " " + src)) return;
-      const day = new Date().toDateString(), key = "errSent", seen = JSON.parse(get(key, "{}") || "{}"), sig = msg + "|" + src;
-      if (seen.day !== day) { seen.day = day; seen.s = []; }
-      if (!Array.isArray(seen.s)) seen.s = [];
+      if (!msg || window.__DEMO || sent >= 5 || /^(Uncaught )?Script error\.?$/i.test(msg) || NOISE.test(msg) || NOISE.test(src)) return;
+      const day = new Date().toDateString(), seen = errSeen(day), sig = msg + "|" + src;
       if (seen.s.includes(sig)) return; // אותה תקלה נשלחת פעם אחת ביום
-      seen.s = [...seen.s, sig].slice(-30); set(key, JSON.stringify(seen)); sent++;
+      seen.s = [...seen.s, sig].slice(-30); set("errSent", JSON.stringify(seen)); sent++;
+      // לא הגיע לשרת (אין קליטה) – מותר לנסות שוב בפעם הבאה
+      const unmark = () => { const x = errSeen(day); x.s = x.s.filter(v => v !== sig); set("errSent", JSON.stringify(x)); };
       let p = {}; try { p = JSON.parse(get("profile", "{}")) || {}; } catch (e) {}
+      if (typeof p !== "object") p = {};
       const u = navigator.userAgent || "", plat = (/iPhone/.test(u) ? "iPhone" : /iPad/.test(u) ? "iPad" : /Android/.test(u) ? "Android" : /Windows/.test(u) ? "Windows" : /Mac OS X/.test(u) ? "Mac" : "אחר") + (/CriOS|Chrome\//.test(u) && !/EdgA?\//.test(u) ? " · Chrome" : /Safari\//.test(u) && !/Chrome|CriOS/.test(u) ? " · Safari" : "");
       const base = (typeof SERVER_BASE !== "undefined" ? SERVER_BASE : (location.port === "8790" ? "" : "https://lucent-crepe-6db22c.netlify.app")) || "";
       const body = JSON.stringify({ action: "err", msg, src: src.replace(location.origin, ""), page: (location.pathname.split("/").pop() || "index").replace(/\.html$/, "") || "index",
-        ver: typeof APP_VERSION !== "undefined" ? APP_VERSION : "", plat, device: get("deviceId", ""), name: `${p.first || ""} ${p.last || ""}`.trim(), cls: p.cls || "" });
-      fetch(base + "/api/feed", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
-    } catch (e) {}
+        ver: typeof APP_VERSION !== "undefined" ? String(APP_VERSION) : "", plat, device: get("deviceId", ""), name: `${p.first || ""} ${p.last || ""}`.trim(), cls: typeof p.cls === "string" ? p.cls : "" });
+      fetch(base + "/api/feed", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(unmark);
+    } catch (e) {} finally { busy = false; }
   }
-  window.addEventListener("error", e => { if (e && e.message) report(e.message, `${e.filename || ""}:${e.lineno || 0}:${e.colno || 0}`); });
-  window.addEventListener("unhandledrejection", e => { const r = e && e.reason; report(r && (r.message || String(r)), r && r.stack ? String(r.stack).split("\n")[1] || "" : "promise"); });
+  window.addEventListener("error", e => { try { if (e && e.message) report(e.message, `${e.filename || ""}:${e.lineno || 0}:${e.colno || 0}`); } catch (x) {} });
+  window.addEventListener("unhandledrejection", e => { try { const r = e && e.reason; report(r && (r.name === "AbortError" || r.name === "NotAllowedError" ? "" : r.message || String(r)), r && r.stack ? String(r.stack).split("\n")[1] || "" : "promise"); } catch (x) {} });
   window.reportError2 = report; // לבדיקות
 })();

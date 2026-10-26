@@ -40,6 +40,11 @@
     if (/\/api\/mashov/.test(url)) { const r = host.mashov(body); return reply(r.status, r.body); }
     if (/\/api\/updates/.test(url)) { const r = host.updates(init.method || "GET", body); return reply(r.status, r.body); }
     if (/\/api\/feedback/.test(url)) { const r = host.feedback(body); return reply(r.status, r.body); }
+    // "שלום" מהאפליקציה ודיווח תקלה: תשובה תמימה (השעיה/מצב עדכון/הודעות – רק אם הופעלו בלוח הבקרה)
+    if (/\/api\/feed/.test(url) && body && (body.action === "hello" || body.action === "err")) {
+      const sim = host.sim || {};
+      return reply(200, body.action === "err" ? { ok: true } : { ok: true, maint: sim.maint || null, susp: sim.susp || null, msgs: Array.isArray(host.ownMsgs) ? host.ownMsgs.slice() : [] });
+    }
     if (/\/api\/feed/.test(url)) { const r = host.feed ? host.feed(init.method || "GET", body) : { status: 404, body: { ok: false } }; return reply(r.status, r.body); }
     if (/\/api\/contacts/.test(url)) { const r = host.contacts ? host.contacts(init.method || "GET", body) : { status: 200, body: { ok: true, contacts: [] } }; return reply(r.status, r.body); }
     if (/\/api\/sets/.test(url)) { const r = host.sets ? host.sets() : { status: 200, body: { ok: true, sets: [] } }; return reply(r.status, r.body); }

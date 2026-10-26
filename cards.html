@@ -8,7 +8,8 @@
 <script src="demo-shim.js"></script>
 <script src="theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<!-- הגופן נטען בלי לעכב את העמוד: רשת שחוסמת את גוגל לא משאירה מסך ריק -->
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 /* תחושת אפליקציה: בלי זום, בלי גרירה מיותרת, בלי סימון טקסט בטעות */
 html{overscroll-behavior:none;-webkit-text-size-adjust:100%}
@@ -642,7 +643,7 @@ function dictHist(){const h=load("dictHist",[]);$("dHist").innerHTML=h.map(w=>`<
 function openDict(){show("vDict");dictHist();setTimeout(()=>$("dIn").focus(),100)}
 $("btnDict").onclick=openDict;
 async function getJSON(url,ms=7000){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{const r=await fetch(url,{signal:c.signal});return r.ok?await r.json():null}catch(e){return null}finally{clearTimeout(t)}}
-// \u05DE\u05E1\u05E4\u05E8 \u05D7\u05D9\u05E4\u05D5\u05E9: \u05EA\u05E9\u05D5\u05D1\u05D4 \u05D0\u05D9\u05D8\u05D9\u05EA \u05E9\u05DC \u05D7\u05D9\u05E4\u05D5\u05E9 \u05E7\u05D5\u05D3\u05DD \u05DC\u05D0 \u05D3\u05D5\u05E8\u05E1\u05EA \u05D0\u05EA \u05D4\u05D7\u05D9\u05E4\u05D5\u05E9 \u05D4\u05D0\u05D7\u05E8\u05D5\u05DF
+// מספר חיפוש: תשובה איטית של חיפוש קודם לא דורסת את החיפוש האחרון
 let dSeq=0;
 async function lookup(){
   const w=$("dIn").value.trim();if(!w)return;
@@ -710,12 +711,6 @@ addEventListener("hashchange",()=>{if(/^#s=/.test(location.hash))openShared().th
   if(!(await openShared()))home();
   loadTeacherSets();
 })();
-</script>
-<script>
-// חסימת זום בצביטה ובלחיצה כפולה (ספארי מתעלם מ-user-scalable)
-document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
-document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
-let __lastTap=0;document.addEventListener("touchend",e=>{const n=Date.now();if(n-__lastTap<300&&!e.target.closest("input,textarea,select,button,a,.tile,.opt,.flip,.wz-opt,.tab"))e.preventDefault();__lastTap=n},{passive:false});
 </script>
 </body>
 </html>

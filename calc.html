@@ -8,7 +8,8 @@
 <script src="demo-shim.js"></script>
 <script src="theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<!-- הגופן נטען בלי לעכב את העמוד: רשת שחוסמת את גוגל לא משאירה מסך ריק -->
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 html{overscroll-behavior:none;-webkit-text-size-adjust:100%}
 body{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior-y:none}
@@ -474,11 +475,6 @@ function pct(){
 document.querySelectorAll(".pq input,.pq select").forEach(el=>el.addEventListener("input",pct));
 
 drawHist();route();
-</script>
-<script>
-document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
-document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
-let __lastTap=0;document.addEventListener("touchend",e=>{const t=Date.now();if(t-__lastTap<300&&!e.target.closest("input,select,button,a"))e.preventDefault();__lastTap=t},{passive:false});
 </script>
 </body>
 </html>

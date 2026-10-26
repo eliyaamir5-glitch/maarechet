@@ -219,7 +219,7 @@ async function handle(req, context, headers) {
       // צפיות: מספר משוער (בלי זיהוי תלמיד). שמור בנפרד מהעדכונים, כדי שלא יתנגש עם כתיבת עדכון
       let b; try { b = await req.json(); } catch { b = null; }
       const ids = Array.isArray(b?.seen) ? b.seen.map(String).filter(x => /^[\w-]{4,20}$/.test(x)).slice(0, 10) : [];
-      if (ids.length) await rateLimit(S, "viewRate", ip, 2000);
+      if (ids.length) await rateLimit(S, "viewRate", ip, 8000); // כל בית הספר יכול לצאת מאותה כתובת
       if (ids.length) {
         const known = new Set((await S.get("updates") || []).map(u => u.id));
         await S.update("views", cur => {
@@ -696,18 +696,36 @@ const SAFE_KEY = k => !["__proto__", "constructor", "prototype", "toString", "va
 const publicUpdate = u => ({ id: u.id, text: u.text, ...(u.video ? { video: u.video } : {}), author: u.authorName, role: u.role, audience: u.audience, urgent: !!u.urgent, createdAt: u.startsAt || u.createdAt, expiresAt: u.expiresAt });
 const pollCounts = p => p.options.map((_, i) => (p.votes && p.votes[i]) || 0);
 const publicPoll = p => ({ id: p.id, q: p.q, options: p.options, audience: p.audience, endsAt: p.endsAt, author: p.authorName, counts: pollCounts(p), total: pollCounts(p).reduce((a, b) => a + b, 0) });
+// הגבלת כמות לפי כתובת: לכל כתובת רק מונה לשעה הנוכחית ולקודמת ({h, n, p}) – קטן, במקום רשימת זמנים שגדלה
+// לאלפים (כל בית הספר יוצא לפעמים מאותה כתובת). ההערכה: n + p × החלק שנשאר מהשעה הקודמת (חלון "מחליק").
 async function rateLimit(S, key, ip, perHour) {
-  const now = Date.now();
+  const now = Date.now(), h = Math.floor(now / 3600e3), rest = 1 - (now % 3600e3) / 3600e3;
   await S.update(key, cur => {
-    const rate = cur || {}, recent = (rate[ip] || []).filter(t => now - t < 3600e3);
-    if (recent.length >= perHour) throw new Fail(429, "too_many");
-    rate[ip] = [...recent, now];
-    for (const k of Object.keys(rate)) if (!rate[k].some(t => now - t < 3600e3)) delete rate[k];
+    const rate = cur && typeof cur === "object" && !Array.isArray(cur) ? cur : {};
+    let r = Object.hasOwn(rate, ip) ? rate[ip] : null;
+    if (Array.isArray(r)) r = { h, n: r.filter(t => now - t < 3600e3).length, p: 0 }; // מבנה ישן: רשימת זמנים
+    else if (!r || typeof r !== "object" || !(r.h >= h - 1)) r = { h, n: 0, p: 0 };
+    else if (r.h === h - 1) r = { h, n: 0, p: +r.n || 0 };
+    if ((+r.n || 0) + (+r.p || 0) * rest >= perHour) throw new Fail(429, "too_many");
+    rate[ip] = { h, n: (+r.n || 0) + 1, p: +r.p || 0 };
+    for (const k of Object.keys(rate)) { const x = rate[k]; if (Array.isArray(x) ? !x.some(t => now - t < 3600e3) : !(x && x.h >= h - 1)) delete rate[k]; }
     return rate;
   });
 }
+// הגבלה בזיכרון של השרת בלבד (בלי כתיבה לאחסון = בלי עלות). לא מדויקת (כל עותק של השרת סופר לבד),
+// אבל עוצרת הצפה מכתובת אחת. בשביל "שלום" ודיווחי תקלות, שמגיעים הרבה ולא שווים כתיבה בכל פעם.
+const memHits = new Map();
+function memRate(bucket, ip, perHour) {
+  const now = Date.now(), k = bucket + "|" + ip, r = memHits.get(k);
+  if (memHits.size > 5000) for (const [x, v] of memHits) if (now - v.t > 3600e3) memHits.delete(x);
+  if (!r || now - r.t > 3600e3) { memHits.set(k, { t: now, n: 1 }); return; }
+  if (++r.n > perHour) throw new Fail(429, "too_many");
+}
+export function __resetMemRate() { memHits.clear(); }
+// תאריך (YYYY-MM-DD) לפני/אחרי n ימים מתאריך נתון – לפי לוח השנה, בלי בעיות של מעבר שעון קיץ/חורף
+const dayAdd = (day, n) => new Date(Date.parse(day + "T12:00:00Z") + n * 864e5).toISOString().slice(0, 10);
 function upcomingBirthdays(bd, now = Date.now()) {
-  const out = [], days = Array.from({ length: 7 }, (_, d) => israelDay(now + d * 864e5).slice(5)); // MM-DD, פעם אחת לכל בקשה
+  const today = israelDay(now), out = [], days = Array.from({ length: 7 }, (_, d) => dayAdd(today, d).slice(5)); // MM-DD, פעם אחת לכל בקשה
   for (const x of Object.values(bd || {})) {
     const d = days.indexOf(x && x.md);
     if (d >= 0) out.push({ name: x.name, cls: x.cls, md: x.md, inDays: d });
@@ -717,7 +735,20 @@ function upcomingBirthdays(bd, now = Date.now()) {
 // ---- מנהל המערכת: כניסה בקוד סודי, ואז תמונת מצב מלאה ----
 // הסוד לחתימת הכניסות נשמר במפתח נפרד (לא ב-config, כדי לא לבלבל את הקמת המנהל של בית הספר)
 // control = { maint: {until|null, msg, at} | null, susp: { [deviceKey]: {until|null, reason, at, name, cls} }, suspN: { ["שם|כיתה"]: same } }
-const personKey = (name, cls) => String(name || "").replace(/\s+/g, " ").trim().toLowerCase() + "|" + (cls || "");
+// מפתח של תלמיד לפי שם+כיתה: רווחים אחידים, אותיות קטנות, ובלי תווים נסתרים (כיוון כתיבה / רוחב אפס),
+// כדי שאותו שם עם תו נסתר לא יעקוף השעיה. אותה פונקציה בהשעיה, ב"שלום" ובחסימת הפעולות
+const INVIS = /[­​-‏‪-‮⁠-⁩﻿]/g;
+const personKey = (name, cls) => clean(name, MAX_NAME).replace(INVIS, "").replace(/\s+/g, " ").trim().toLowerCase() + "|" + (cls || "");
+// תלמיד שנבחר בדף הניהול → מפתח, רק עם שם אמיתי (2 תווים לפחות) וכיתה אמיתית.
+// אחרת "שם ריק" היה תופס כל מי שלא כתב שם בפרופיל (וכל הכיתה הייתה מושעית / מקבלת הודעה "אישית")
+function personOf(p) {
+  const cls = p && (p.cls === "y1" || p.cls === "y2") ? p.cls : "", k = personKey(p && p.name, cls);
+  return cls && [...k.slice(0, k.lastIndexOf("|"))].length >= 2 ? k : null;
+}
+const isDevKey = k => /^[0-9a-f]{24}$/.test(k);
+const keysOf = (a, n) => [...new Set((Array.isArray(a) ? a : []).slice(0, n * 2).map(String).filter(isDevKey))].slice(0, n);
+// דקות מהדף: ריק = "עד שאעצור". מספר לא תקין = שגיאה (ולא "דקה אחת" בטעות)
+const badMinutes = v => v != null && v !== "" && !(Number(v) >= 1);
 const liveUntil = (x, now) => !!x && (x.until == null || x.until > now);
 function maintOf(ctl, now) { const m = ctl && ctl.maint; return liveUntil(m, now) ? { until: m.until ?? null, msg: m.msg || "" } : null; }
 function suspOf(ctl, k, pk, now) {
@@ -733,10 +764,19 @@ const msgsFor = (list, k, pk, cls, now) => (Array.isArray(list) ? list : []).fil
 
 // יומן פעולות של מנהל המערכת (300 אחרונות)
 async function olog(S, action, detail) {
-  const e = { at: Date.now(), action, detail: clean(detail, 300) };
-  await S.update("ownerLog", cur => [e, ...(Array.isArray(cur) ? cur : [])].slice(0, 300)).catch(() => {});
+  const now = Date.now(), e = { at: now, action, detail: clean(detail, 300) };
+  await S.update("ownerLog", cur => {
+    const l = Array.isArray(cur) ? cur : [], top = l[0];
+    // הרבה קודים שגויים ברצף = שורה אחת עם מונה, כדי שמי שמנחש לא ידחוק החוצה את כל היומן
+    if (action === "loginFail" && top && top.action === "loginFail" && now - top.at < 3600e3) {
+      const n = (+top.n || 1) + 1;
+      return [{ ...top, at: now, n, detail: `${n} ניסיונות כניסה עם קוד שגוי (בשעה האחרונה)` }, ...l.slice(1)];
+    }
+    return [e, ...l].slice(0, 300);
+  }).catch(() => {});
 }
-const ERR_MAX = 500;
+const ERR_MAX = 500, ERR_PER_SIG = 40; // תקלה אחת שקורית לכולם לא דוחקת החוצה את כל השאר
+const HELLO_TOUCH = 7 * 60e3; // "שלום" בלי שינוי נכתב לכל היותר פעם ב-7 דקות ("מחובר עכשיו" בדף הניהול = 10 דקות)
 async function ownerSecret(S) {
   let sec = null;
   await S.update("ownerConf", cur => { if (cur && cur.secret) { sec = cur.secret; return undefined; } sec = crypto.randomBytes(32).toString("hex"); return { secret: sec, createdAt: Date.now() }; });
@@ -758,6 +798,11 @@ async function owner(req, S, ip, headers) {
   }
   const p = verify((req.headers.get("authorization") || "").replace(/^Bearer\s+/i, ""), secret);
   if (!p || p.own !== 1 || p.ov !== ov) return reply(401, { ok: false, error: "auth" }, headers);
+  if (b.action === "logoutAll") { // ניתוק כל המכשירים (למשל אם נכנסת ממחשב של מישהו אחר): סוד חדש = כל הטוקנים הישנים נפסלים
+    await S.update("ownerConf", cur => ({ ...(cur && typeof cur === "object" ? cur : {}), secret: crypto.randomBytes(32).toString("hex"), rotatedAt: now }));
+    await olog(S, "logoutAll", "ניתוק כל המכשירים מדף הניהול");
+    return reply(200, { ok: true }, headers);
+  }
   if (b.action === "forget") { // מחיקת רשומה של מכשיר (למשל לבקשת תלמיד)
     const k = String(b.key || "");
     if (!/^[0-9a-f]{24}$/.test(k)) return reply(400, { ok: false, error: "bad_request" }, headers);
@@ -774,33 +819,50 @@ async function owner(req, S, ip, headers) {
     return reply(200, { ok: true }, headers);
   }
   if (b.action === "maint") { // מצב עדכון לכולם: לזמן קצוב (דקות) או עד שעוצרים
+    if (b.on && badMinutes(b.minutes)) return reply(400, { ok: false, error: "bad_request" }, headers);
     const on = !!b.on, min = minutesOrNull(b.minutes), msg = clean(b.msg, 200);
     await S.update("control", cur => { const c = cur && typeof cur === "object" ? cur : {}; c.maint = on ? { until: min ? now + min * 60e3 : null, msg, at: now } : null; return c; });
     await olog(S, on ? "maintOn" : "maintOff", on ? `הפעלת מצב עדכון ${min ? "ל-" + min + " דק'" : "עד עצירה"}${msg ? ": " + msg : ""}` : "עצירת מצב העדכון");
     return reply(200, { ok: true }, headers);
   }
   if (b.action === "suspend" || b.action === "unsuspend") { // השעיה לפי מכשירים + לפי שם וכיתה (כדי שהרשמה מחדש באותו שם לא תעקוף)
-    const keys = (Array.isArray(b.keys) ? b.keys : []).map(String).filter(k => /^[0-9a-f]{24}$/.test(k)).slice(0, 50);
-    const people = (Array.isArray(b.people) ? b.people : []).map(p => personKey(clean(p?.name, MAX_NAME), AUDIENCES.includes(p?.cls) ? p.cls : "")).filter(p => p.length > 2 && SAFE_KEY(p)).slice(0, 50);
-    if (!keys.length && !people.length) return reply(400, { ok: false, error: "bad_request" }, headers);
-    const min = minutesOrNull(b.minutes), rec = { until: min ? now + min * 60e3 : null, reason: clean(b.reason, 200), at: now };
+    // כל תלמיד = קבוצה אחת: השם+כיתה שלו והמכשירים שלו (people:[{name, cls, keys}]). החזרה של חלק מהקבוצה מחזירה את כולה,
+    // כך שלא נשאר מכשיר או שם "תקוע" בהשעיה (למשל מכשיר שנמחק מהרשימה, או תלמיד ששינה שם)
+    const ppl = (Array.isArray(b.people) ? b.people : []).slice(0, 50).map(p => ({ pk: personOf(p), keys: keysOf(p && p.keys, 20), name: clean(p && p.name, MAX_NAME) })).filter(p => p.pk || p.keys.length);
+    let loose = keysOf(b.keys, 50).filter(k => !ppl.some(p => p.keys.includes(k)));
+    if (ppl.length === 1 && loose.length) { ppl[0].keys = [...ppl[0].keys, ...loose].slice(0, 50); loose = []; } // מבנה ישן: keys בנפרד, תלמיד אחד
+    const groups = [...ppl, ...loose.map(k => ({ pk: null, keys: [k], name: "" }))];
+    // החזרה לפי המפתח השמור עצמו ("שם|כיתה" כמו שמופיע ברשימת המושעים) – גם לרשומות ישנות שלא עוברות את הבדיקה של היום
+    if (b.action === "unsuspend") for (const x of (Array.isArray(b.pkeys) ? b.pkeys : []).slice(0, 50)) if (typeof x === "string" && x.length <= 60 && x.includes("|")) groups.push({ pk: x, keys: [], name: x.slice(0, x.lastIndexOf("|")) });
+    if (!groups.length || (b.action === "suspend" && badMinutes(b.minutes))) return reply(400, { ok: false, error: "bad_request" }, headers);
+    const min = minutesOrNull(b.minutes), until = min ? now + min * 60e3 : null, reason = clean(b.reason, 200);
     await S.update("control", cur => {
       const c = cur && typeof cur === "object" ? cur : {};
       c.susp = c.susp && typeof c.susp === "object" ? c.susp : {}; c.suspN = c.suspN && typeof c.suspN === "object" ? c.suspN : {};
-      for (const k of keys) b.action === "suspend" ? (c.susp[k] = rec) : delete c.susp[k];
-      for (const p of people) b.action === "suspend" ? (c.suspN[p] = rec) : delete c.suspN[p];
+      if (b.action === "suspend") for (const g of groups) {
+        const rec = { until, reason, at: now, g: newId() };
+        for (const k of g.keys) c.susp[k] = rec;
+        if (g.pk) c.suspN[g.pk] = rec;
+      } else {
+        const gs = new Set(), own = (m, k) => Object.hasOwn(m, k) && m[k] && m[k].g;
+        for (const g of groups) { for (const k of g.keys) if (own(c.susp, k)) gs.add(c.susp[k].g); if (g.pk && own(c.suspN, g.pk)) gs.add(c.suspN[g.pk].g); }
+        for (const g of groups) { for (const k of g.keys) delete c.susp[k]; if (g.pk) delete c.suspN[g.pk]; }
+        for (const m of [c.susp, c.suspN]) for (const x of Object.keys(m)) if (m[x] && gs.has(m[x].g)) delete m[x];
+      }
       for (const m of [c.susp, c.suspN]) for (const x of Object.keys(m)) if (!liveUntil(m[x], now)) delete m[x]; // ניקוי השעיות שנגמרו
+      if (Object.keys(c.susp).length + Object.keys(c.suspN).length > 3000) throw new Fail(413, "too_many");
       return c;
     });
-    const who = (Array.isArray(b.people) ? b.people : []).map(p => clean(p?.name, MAX_NAME)).filter(Boolean).join(", ") || keys.length + " מכשירים";
-    await olog(S, b.action, b.action === "suspend" ? `השעיה: ${who} ${min ? "ל-" + (min >= 1440 ? Math.round(min / 1440) + " ימים" : min + " דק'") : "עד החזרה"}${rec.reason ? " · " + rec.reason : ""}` : `החזרה: ${who}`);
+    const who = groups.map(g => g.name).filter(Boolean).slice(0, 10).join(", ") || groups.reduce((a, g) => a + g.keys.length, 0) + " מכשירים";
+    await olog(S, b.action, b.action === "suspend" ? `השעיה: ${who} ${min ? "ל-" + (min >= 1440 ? Math.round(min / 1440) + " ימים" : min + " דק'") : "עד החזרה"}${reason ? " · " + reason : ""}` : `החזרה: ${who}`);
     return reply(200, { ok: true }, headers);
   }
   if (b.action === "msgSend") { // הודעה ממנהל המערכת: לכולם / לכיתה / לתלמידים שנבחרו
     const text = clean(b.text, MSG_TEXT), to = ["all", "y1", "y2", "some"].includes(b.to) ? b.to : "";
     const hours = Math.max(1, Math.min(24 * 14, Math.round(Number(b.hours)) || 24));
-    const keys = (Array.isArray(b.keys) ? b.keys : []).map(String).filter(k => /^[0-9a-f]{24}$/.test(k)).slice(0, 300);
-    const people = (Array.isArray(b.people) ? b.people : []).map(p => personKey(clean(p?.name, MAX_NAME), AUDIENCES.includes(p?.cls) ? p.cls : "")).filter(p => p.length > 2).slice(0, 300);
+    const pl = (Array.isArray(b.people) ? b.people : []).slice(0, 300);
+    const keys = [...new Set([...keysOf(b.keys, 300), ...pl.flatMap(p => keysOf(p && p.keys, 20))])].slice(0, 600);
+    const people = [...new Set(pl.map(personOf).filter(Boolean))];
     if (!text || !to || (to === "some" && !keys.length && !people.length)) return reply(400, { ok: false, error: "bad_request" }, headers);
     const m = { id: newId(), text, to, ...(to === "some" ? { keys, people, names: (Array.isArray(b.names) ? b.names : []).map(x => clean(x, MAX_NAME)).filter(Boolean).slice(0, 300) } : {}), createdAt: now, expiresAt: now + hours * 3600e3 };
     await S.update("ownerMsgs", cur => [m, ...(Array.isArray(cur) ? cur : []).filter(x => x.expiresAt > now - 7 * 864e5)].slice(0, MSG_MAX));
@@ -808,8 +870,11 @@ async function owner(req, S, ip, headers) {
     return reply(200, { ok: true, id: m.id }, headers);
   }
   if (b.action === "msgDelete") {
-    await S.update("ownerMsgs", cur => { const l = Array.isArray(cur) ? cur : []; return l.some(x => x.id === b.id) ? l.filter(x => x.id !== b.id) : undefined; });
-    await olog(S, "msgDelete", "מחיקת הודעה");
+    const id = String(b.id || "");
+    if (!/^[\w-]{4,40}$/.test(id)) return reply(400, { ok: false, error: "bad_request" }, headers);
+    let gone = null;
+    await S.update("ownerMsgs", cur => { const l = Array.isArray(cur) ? cur : []; gone = l.find(x => x && x.id === id) || null; return gone ? l.filter(x => x !== gone) : undefined; });
+    if (gone) await olog(S, "msgDelete", `מחיקת הודעה: ${String(gone.text || "").slice(0, 60)}`);
     return reply(200, { ok: true }, headers);
   }
   if (b.action !== "overview") return reply(400, { ok: false, error: "bad_action" }, headers);
@@ -821,15 +886,14 @@ async function owner(req, S, ip, headers) {
   for (const r of Object.values(obj(v.reactions))) for (const x of Object.values(obj(r))) if (x && x.name) rxBy[x.name] = (rxBy[x.name] || 0) + 1;
   const bdBy = Object.create(null);
   for (const x of Object.values(obj(v.birthdays))) if (x && x.name) bdBy[x.name + "|" + x.cls] = x.md;
-  const last30 = Array.from({ length: 30 }, (_, i) => israelDay(now - (29 - i) * 864e5));
-  const students = Object.entries(obj(v.presence)).filter(([, x]) => x && typeof x === "object").map(([key, x]) => {
+  const today = israelDay(now), last30 = Array.from({ length: 30 }, (_, i) => dayAdd(today, i - 29)); // לפי לוח השנה בישראל
+  const students = Object.entries(obj(v.presence)).filter(([k, x]) => isDevKey(k) && x && typeof x === "object").map(([key, x]) => {
     const days = arr(x.days);
     return { key, name: x.name || "", cls: x.cls || "", eng: x.eng || "", math: x.math || "", major: x.major || "", mashov: !!x.mashov, ver: x.ver || "", plat: x.plat || "", inst: !!x.inst,
       first: x.first || 0, last: x.last || 0, opens: x.opens || 0, d7: days.filter(d => d >= last30[23]).length, d30: days.filter(d => d >= last30[0]).length,
       days: days.filter(d => d >= last30[0]), reacts: rxBy[x.name] || 0, bday: bdBy[(x.name || "") + "|" + (x.cls || "")] || "", susp: suspOf(v.control, key, personKey(x.name, x.cls), now) };
   }).sort((a, b) => b.last - a.last);
   const daily = last30.map(d => ({ day: d, n: students.filter(s => s.days.includes(d)).length }));
-  const today = israelDay(now);
   const ctl = obj(v.control);
   // תקלות: מקובצות לפי "חתימה" (אותה שגיאה באותו מקום)
   const eg = new Map();
@@ -841,9 +905,10 @@ async function owner(req, S, ip, headers) {
     eg.set(e.sig, g);
   }
   const errors = [...eg.values()].sort((a, b) => b.last - a.last).slice(0, 60)
-    .map(g => ({ sig: g.sig, msg: g.msg, src: g.src, pages: [...g.pages], count: g.count, devices: g.devs.size, first: g.first, last: g.last, vers: [...g.vers].slice(0, 6), plats: [...g.plats].slice(0, 6), names: [...g.names].slice(0, 12) }));
+    .map(g => ({ sig: g.sig, msg: g.msg, src: g.src, pages: [...g.pages], count: g.count, many: g.count >= ERR_PER_SIG, devices: g.devs.size, first: g.first, last: g.last, vers: [...g.vers].slice(0, 6), plats: [...g.plats].slice(0, 6), names: [...g.names].slice(0, 12) }));
   return reply(200, { ok: true, now, today, students, daily, maint: maintOf(ctl, now), errors, log: arr(v.ownerLog).slice(0, 150),
-    suspended: [...Object.entries(obj(ctl.suspN)).map(([p, x]) => ({ person: p, ...x })), ...Object.entries(obj(ctl.susp)).map(([k, x]) => ({ key: k, ...x }))].filter(x => liveUntil(x, now)),
+    suspended: [...Object.entries(obj(ctl.suspN)).map(([p, x]) => ({ person: p, ...x })), ...Object.entries(obj(ctl.susp)).map(([k, x]) => ({ key: k, ...x }))].filter(x => liveUntil(x, now))
+      .map(x => ({ ...(x.person ? { person: x.person } : { key: x.key }), until: x.until ?? null, reason: x.reason || "", at: x.at || 0, g: x.g || "" })),
     msgs: arr(v.ownerMsgs).filter(m => m.expiresAt > now).map(m => ({ id: m.id, text: m.text, to: m.to, names: m.names || [], count: (m.keys || []).length, createdAt: m.createdAt, expiresAt: m.expiresAt })),
     staff: arr(v.users).map(u => ({ name: u.name, role: u.role, owner: !!u.owner, createdAt: u.createdAt || 0 })),
     content: {
@@ -887,7 +952,7 @@ async function feed(req, S, ip, headers) {
   }
   if (action === "vote") {
     if (!DEV_RE.test(device)) return reply(400, { ok: false, error: "bad_request" }, headers);
-    await rateLimit(S, "voteRate", ip, 400);
+    await rateLimit(S, "voteRate", ip, 1500); // מכסות לכתובת: כל בית הספר יכול לצאת מאותה כתובת (WiFi של בית הספר)
     const k = devKey(device), opt = Math.round(Number(b.option));
     let out = null;
     await S.update("polls", cur => {
@@ -905,7 +970,7 @@ async function feed(req, S, ip, headers) {
   if (action === "ask") {
     const text = clean(b.text, 500), to = clean(b.to, 60);
     if (!text) return reply(400, { ok: false, error: "bad_request" }, headers);
-    await rateLimit(S, "askRate", ip, 60);
+    await rateLimit(S, "askRate", ip, 200);
     const q = { id: newId(), text, to, cls, status: "new", createdAt: now };
     await S.update("questions", cur => [q, ...(cur || []).filter(x => x.createdAt > now - 90 * 864e5)].slice(0, 500));
     return reply(200, { ok: true, id: q.id }, headers);
@@ -913,7 +978,7 @@ async function feed(req, S, ip, headers) {
   if (action === "react") {
     const id = String(b.id || ""), emoji = String(b.emoji || "");
     if (!DEV_RE.test(device) || !id || id.length > 40 || (emoji && !isEmoji(emoji))) return reply(400, { ok: false, error: "bad_request" }, headers);
-    await rateLimit(S, "reactRate", ip, 3000);
+    await rateLimit(S, "reactRate", ip, 4000);
     const ups = await S.get("updates") || [];
     if (!ups.some(u => u.id === id && u.expiresAt > now && (u.startsAt || 0) <= now)) return reply(404, { ok: false, error: "not_found" }, headers);
     const k = devKey(device), name = clean(b.name, MAX_NAME);
@@ -933,27 +998,48 @@ async function feed(req, S, ip, headers) {
   if (action === "err") { // שגיאה שקרתה בטלפון של תלמיד – לדף מנהל המערכת
     const msg = clean(b.msg, 300), src = clean(b.src, 200), page = clean(b.page, 40);
     if (!msg) return reply(400, { ok: false, error: "bad_request" }, headers);
-    await rateLimit(S, "errRate", ip, 600);
+    memRate("err", ip, 3000);
     const e = { sig: sha(msg + "|" + src.replace(/[?#].*$/, "")).slice(0, 12), msg, src, page, ver: clean(b.ver, 20), plat: clean(b.plat, 40), name: clean(b.name, MAX_NAME), cls, k: DEV_RE.test(device) ? devKey(device) : "", at: now };
-    await S.update("errors", cur => [e, ...(Array.isArray(cur) ? cur : [])].slice(0, ERR_MAX));
+    // אותה תקלה מאותו מכשיר באותו יום כבר רשומה – לא כותבים שוב (חוסך כתיבה, ומונע ניפוח של המונה)
+    const dup = l => e.k && l.some(x => x && x.sig === e.sig && x.k === e.k && israelDay(x.at) === israelDay(now));
+    const known = await S.get("errors");
+    if (dup(Array.isArray(known) ? known : [])) return reply(200, { ok: true }, headers);
+    await rateLimit(S, "errRate", ip, 2000);
+    await S.update("errors", cur => {
+      const l = Array.isArray(cur) ? cur : [];
+      if (dup(l)) return undefined;
+      // תקלה שקורית לכולם: שומרים רק את 40 האחרונות שלה, כדי שלא תדחוק החוצה תקלות אחרות
+      const same = l.filter(x => x && x.sig === e.sig), drop = same.length >= ERR_PER_SIG ? same[same.length - 1] : null;
+      return [e, ...l.filter(x => x !== drop)].slice(0, ERR_MAX);
+    });
     return reply(200, { ok: true }, headers);
   }
   if (action === "hello") {
     if (!DEV_RE.test(device) || !cls) return reply(400, { ok: false, error: "bad_request" }, headers);
-    await rateLimit(S, "helloRate", ip, 6000);
+    // כל בית הספר יכול לצאת מאותה כתובת (400 תלמידים × "שלום" כל 3 דקות = 8,000 בשעה) – לכן הגבלה בזיכרון בלבד, נדיבה
+    memRate("hello", ip, 20000);
     const k = devKey(device), day = israelDay(now), key = x => /^[a-z]{2,12}$/.test(String(x || "")) ? String(x) : "";
     const rec = { name: clean(b.name, MAX_NAME), cls, eng: key(b.eng), math: key(b.math), major: key(b.major), mashov: !!b.mashov, ver: clean(b.ver, 20), plat: clean(b.plat, 40), inst: !!b.inst };
     const sig = x => JSON.stringify([x.name, x.cls, x.eng, x.math, x.major, x.mashov, x.ver, x.plat, x.inst]);
-    await S.update("presence", cur => {
-      const m = cur && typeof cur === "object" ? cur : {};
-      const old = Object.hasOwn(m, k) && m[k] && typeof m[k] === "object" ? m[k] : null;
-      if (old && old.days && old.days.includes(day) && now - old.last < 2 * 60e3 && sig(old) === sig(rec)) return undefined; // לא כותבים שוב כל רגע
-      for (const x of Object.keys(m)) if (!m[x] || now - m[x].last > PRESENCE_DAYS * 864e5) delete m[x];
-      if (!old && Object.keys(m).length >= PRESENCE_MAX) throw new Fail(413, "too_many");
-      const days = old && Array.isArray(old.days) ? old.days : [];
-      m[k] = { ...rec, first: old?.first || now, last: now, opens: (old?.opens || 0) + (!old || now - old.last > 30 * 60e3 ? 1 : 0), days: days.includes(day) ? days : [...days, day].slice(-60) };
-      return m;
-    });
+    const mine = m => m && typeof m === "object" && Object.hasOwn(m, k) && m[k] && typeof m[k] === "object" ? m[k] : null;
+    // כותבים רק כשצריך: מכשיר חדש, יום חדש, כל 7 דקות, או פרטים שהשתנו (לכל היותר פעם בדקה).
+    // אחרת כל "שלום" היה כותב מחדש את כל הרשימה – עלות, ועומס כשכולם פותחים בהפסקה
+    const due = old => !old || !Array.isArray(old.days) || !old.days.includes(day) || !(now - old.last < HELLO_TOUCH) || (sig(old) !== sig(rec) && !(now - old.last < 60e3));
+    try {
+      const old0 = mine(await S.get("presence"));
+      if (due(old0)) {
+        if (!old0) await rateLimit(S, "helloNew", ip, 1500); // מכשירים חדשים מכתובת אחת – שאי אפשר למלא את הרשימה במכשירים מזויפים
+        await S.update("presence", cur => {
+          const m = cur && typeof cur === "object" && !Array.isArray(cur) ? cur : {}, old = mine(m);
+          if (!due(old)) return undefined;
+          for (const x of Object.keys(m)) if (!isDevKey(x) || !m[x] || !(now - m[x].last <= PRESENCE_DAYS * 864e5)) delete m[x];
+          if (!old && Object.keys(m).length >= PRESENCE_MAX) throw new Fail(413, "too_many");
+          const since = dayAdd(day, -31), days = (old && Array.isArray(old.days) ? old.days : []).filter(d => typeof d === "string" && d >= since && d !== day);
+          m[k] = { ...rec, first: old?.first || now, last: now, opens: (old?.opens || 0) + (!old || now - old.last > 30 * 60e3 ? 1 : 0), days: [...days, day] };
+          return m;
+        });
+      }
+    } catch (e) { if (!(e instanceof Fail)) console.error("hello presence:", e && e.message); } // רשימה מלאה / עומס – עדיין עונים עם מצב עדכון/השעיה/הודעות
     const [ctl, om] = await Promise.all([S.get("control"), S.get("ownerMsgs")]), pk = personKey(rec.name, cls);
     return reply(200, { ok: true, maint: maintOf(ctl, now), susp: suspOf(ctl, k, pk, now), msgs: msgsFor(om, k, pk, cls, now) }, headers);
   }
@@ -963,14 +1049,14 @@ async function feed(req, S, ip, headers) {
     if (b.remove) { await S.update("birthdays", cur => { const m = cur || {}; if (!Object.hasOwn(m, k)) return undefined; delete m[k]; return m; }); return reply(200, { ok: true }, headers); }
     const name = clean(b.name, MAX_NAME), md = String(b.md || "");
     if (!name || !cls || !/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(md)) return reply(400, { ok: false, error: "bad_request" }, headers);
-    await rateLimit(S, "bdRate", ip, 100);
+    await rateLimit(S, "bdRate", ip, 1000);
     await S.update("birthdays", cur => { const m = cur || {}; if (!m[k] && Object.keys(m).length >= 2000) throw new Fail(413, "too_many"); m[k] = { name, cls, md, at: now }; return m; });
     return reply(200, { ok: true }, headers);
   }
   if (action === "ping") {
     // סטטיסטיקה אנונימית למנהל: כיתה + אילו מקצועות בסיכון. בלי שם ובלי מזהה אמיתי
     if (!DEV_RE.test(device) || !cls) return reply(400, { ok: false, error: "bad_request" }, headers);
-    await rateLimit(S, "pingRate", ip, 600);
+    await rateLimit(S, "pingRate", ip, 3000);
     const k = devKey(device), day = israelDay(now);
     const rec = { cls, day, risk: strList(b.risk, 15, 40).filter(SAFE_KEY), warn: strList(b.warn, 15, 40).filter(SAFE_KEY), mashov: !!b.mashov };
     await S.update("stats", cur => {
@@ -987,7 +1073,7 @@ async function feed(req, S, ip, headers) {
     // אישור יציאה שההורה חתם עליו – מופיע אצל הצוות ב"שחרורים"
     const name = clean(b.name, MAX_NAME), reason = clean(b.reason, 200);
     if (!name || !cls) return reply(400, { ok: false, error: "bad_request" }, headers);
-    await rateLimit(S, "relRate", ip, 60);
+    await rateLimit(S, "relRate", ip, 200);
     const date = clean(b.date, 10), from = clean(b.from, 5), until = clean(b.until, 5);
     if ((date && !validDate(date)) || (from && !validTime(from)) || (until && !validTime(until))) return reply(400, { ok: false, error: "bad_request" }, headers);
     const r = { id: newId(), name, cls, reason, date: date || israelDay(now), from, until, parent: clean(b.parent, MAX_NAME), lesson: clean(b.lesson, 60), teacher: clean(b.teacher, 60), at: now };

@@ -3,14 +3,14 @@
 import http from "node:http";
 
 const GUID = "11111111-2222-3333-4444-555555555555";
-let lastAuthHeaders = null, loginBody = null, logoutCalled = false;
+let lastAuthHeaders = null, loginBody = null, logoutCalled = false, loginCalls = 0;
 const server = http.createServer((req, res) => {
   let body = "";
   req.on("data", c => body += c);
   req.on("end", () => {
     const send = (code, obj, headers = {}) => { res.writeHead(code, { "Content-Type": "application/json", ...headers }); res.end(JSON.stringify(obj)); };
     if (req.url === "/api/login" && req.method === "POST") {
-      loginBody = JSON.parse(body);
+      loginBody = JSON.parse(body); loginCalls++;
       if (loginBody.username === "good" && loginBody.password === "pw") {
         res.setHeader("Set-Cookie", ["MashovAuthToken=abc123; Path=/; HttpOnly", "uniquId=u-1; Path=/"]);
         return send(200, { credential: { userId: GUID }, accessToken: { displayName: "ישראל ישראלי" } }, { "x-csrf-token": "tok-1" });
@@ -88,6 +88,24 @@ ok("…the lock ignores upper/lower case of the username", r10.status === 429);
 for (let i = 0; i < 100; i++) await call({ username: "spray" + i, password: "x", semel: 144758, year: 2027 }, undefined, "POST", "30.0.0.1");
 const r11 = await call({ username: "spray-new", password: "x", semel: 144758, year: 2027 }, undefined, "POST", "30.0.0.1");
 ok("100 wrong logins from one address (many accounts) lock that address", r11.status === 429);
+// ניחוש במקביל: 40 סיסמאות שגויות באותו רגע לאותו חשבון – רק 10 מגיעות למשוב, והחשבון ננעל
+{
+  const before = loginCalls;
+  const rs = await Promise.all(Array.from({ length: 40 }, (_, i) => call({ username: "victim", password: "guess" + i, semel: 144758, year: 2027 }, undefined, "POST", "50.0.0." + i)));
+  ok("40 parallel guesses: at most 10 reach Mashov, the rest are refused", loginCalls - before <= 10 && rs.filter(x => x.status === 429).length >= 30, `reached=${loginCalls - before}`);
+  const r = await call({ username: "victim", password: "pw", semel: 144758, year: 2027 }, undefined, "POST", "51.0.0.1");
+  ok("…and the account stays locked afterwards", r.status === 429);
+}
+// הצלחות לא נספרות ככישלון: 15 רענונים מוצלחים ברצף מאותה כתובת – כולם עוברים
+{
+  const codes = [];
+  for (let i = 0; i < 15; i++) codes.push((await call({ username: "good", password: "pw", semel: 555555, year: 2027 }, undefined, "POST", "52.0.0.1")).status);
+  ok("successful sign-ins never lock (15 in a row)", codes.every(c => c === 200), codes.join());
+  const rs = await Promise.all(Array.from({ length: 8 }, () => call({ username: "good", password: "pw", semel: 555556, year: 2027 }, undefined, "POST", "52.0.0.2")));
+  ok("…also 8 at once (a sign-in in progress counts until it finishes)", rs.every(x => x.status === 200), rs.map(x => x.status).join());
+  const r = await call({ username: "good", password: "pw", semel: 555556, year: 2027 }, undefined, "POST", "52.0.0.2");
+  ok("…and the account is not locked after them", r.status === 200);
+}
 // אחסון שלא עונה לא תוקע את ההתחברות
 mod.__useMemoryStore({ get: () => new Promise(() => {}), set: () => new Promise(() => {}) });
 const t0 = Date.now();

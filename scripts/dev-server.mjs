@@ -51,9 +51,10 @@ http.createServer(async (req, res) => {
     }
     let p = decodeURIComponent(u.pathname); if (p.endsWith("/")) p += "index.html";
     const file = path.join(ROOT, p);
-    if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); res.end("not found"); return; }
-    if (path.basename(file).endsWith(".txt")) { res.writeHead(404); res.end("not found"); return; } // לא מגישים את הקבצים הסודיים
+    // רק קבצים בתוך התיקייה, בלי קבצים/תיקיות נסתרים (.git), בלי ":" (זרם נסתר של NTFS: "x.txt::$DATA"),
+    // ובלי קובצי txt – הקבצים הסודיים (גם ".TXT": ב-Windows אותיות גדולות/קטנות זה אותו קובץ). השרת מאזין רק למחשב הזה (127.0.0.1)
+    if (!file.startsWith(ROOT + path.sep) || /[\\/]\.|:/.test(file.slice(ROOT.length)) || /\.txt$/i.test(file) ||!fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); res.end("not found"); return; }
     res.writeHead(200, { "Content-Type": TYPES[path.extname(file)] || "application/octet-stream", "Cache-Control": "no-store" });
     fs.createReadStream(file).pipe(res);
   } catch (e) { res.writeHead(500); res.end(String(e && e.message)); }
-}).listen(PORT, () => console.log(`dev server: http://localhost:${PORT}  (owner: /owner.html, code DEV0-DEV0-DEV0-DEV0)`));
+}).listen(PORT, "127.0.0.1", () => console.log(`dev server: http://localhost:${PORT}  (owner: /owner.html, code DEV0-DEV0-DEV0-DEV0)`));

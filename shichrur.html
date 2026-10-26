@@ -8,7 +8,8 @@
 <script src="demo-shim.js"></script>
 <script src="theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<!-- הגופן נטען בלי לעכב את העמוד: רשת שחוסמת את גוגל לא משאירה מסך ריק -->
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 /* תחושת אפליקציה: בלי זום, בלי גרירה מיותרת, בלי סימון טקסט בטעות */
 html{overscroll-behavior:none;-webkit-text-size-adjust:100%}
@@ -241,16 +242,23 @@ function initSig(){
   let pid=null;
   c.onpointerdown=e=>{if(!e.isPrimary||drawing)return;drawing=true;pid=e.pointerId;c.setPointerCapture(e.pointerId);strokes.push([pos(e)]);$("sigPh").hidden=true;redraw()};
   c.onpointermove=e=>{if(!drawing||e.pointerId!==pid)return;strokes[strokes.length-1].push(pos(e));redraw()};
-  c.onpointerup=c.onpointercancel=e=>{if(e.pointerId===pid){drawing=false;pid=null}};
+  // גם כשהמערכת "לוקחת" את האצבע (התראה, גלילה) – הקו נגמר, כדי שהנגיעה הבאה תצייר
+  c.onpointerup=c.onpointercancel=c.onlostpointercapture=e=>{if(e.pointerId===pid){drawing=false;pid=null}};
   $("sigClr").onclick=()=>{strokes=[];$("sigPh").hidden=false;redraw()};
   window.addEventListener("resize",fit);fit();
 }
-function sign(){
+let signing=false;
+async function sign(){
+  if(signing)return;
   const pn=$("pName").value.trim();
   if(!pn)return err("pErr","חסר שם ההורה.");if(!$("pOk").checked)return err("pErr","יש לסמן את האישור.");if(!strokes.length||strokes.every(s=>s.length<3))return err("pErr","חסרה חתימה.");
   err("pErr","");
   {const r=$("sigPad").getBoundingClientRect();if(r.width&&r.height)sigAR=r.width/r.height}
   const permit={...req,pn,pr:$("pRel").value,at:Date.now()};
+  // הגופן נטען לפני הציור, אבל רשת איטית/חסומה לא תוקעת את האישור: אחרי 2.5 שניות מציירים עם גופן רגיל
+  signing=true;$("btnSign").disabled=true;
+  await Promise.race([document.fonts?document.fonts.ready:null,new Promise(r=>setTimeout(r,2500))].filter(Boolean)).catch(()=>{});
+  signing=false;$("btnSign").disabled=false;
   drawPermit(permit);permitReady=null;permitBlob();
   $("stParent").hidden=true;$("stDone").hidden=false;window.scrollTo(0,0);
   $("btnToTeacher").onclick=()=>sharePermit(permit);$("btnSave").onclick=()=>savePermit(permit);
@@ -259,12 +267,15 @@ function sign(){
 // האישור החתום מופיע גם אצל הצוות (לשונית "שחרורים" בכניסת הצוות)
 async function reportRelease(p){
   if(window.__DEMO)return;
+  // אותה בקשה שנחתמה שוב (רענון הדף, לחיצה חוזרת על הקישור) נרשמת אצל הצוות פעם אחת
+  const key=`${p.ts}|${p.n}|${p.d}|${p.t}`;let sent=[];try{sent=JSON.parse(localStorage.getItem("relSent")||"[]");if(!Array.isArray(sent))sent=[]}catch(e){}
+  if(sent.includes(key))return;
   const cls=Object.keys(CLASSES_META).find(k=>CLASSES_META[k].label===p.c);if(!cls)return;
   try{
     const r=await fetch(((typeof SERVER_BASE!=="undefined"&&SERVER_BASE)||"")+"/api/feed",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({action:"release",name:p.n,cls,reason:p.r,date:p.d,from:p.t,parent:`${p.pn} (${p.pr})`,lesson:p.l,teacher:p.w})});
     const j=await r.json().catch(()=>null);
-    if(j&&j.ok){const n=document.createElement("p");n.className="hint";n.style.textAlign="center";n.textContent="✓ האישור נרשם גם אצל צוות הישיבה.";$("stDone").appendChild(n)}
+    if(j&&j.ok){try{localStorage.setItem("relSent",JSON.stringify([...sent,key].slice(-20)))}catch(e){}const n=document.createElement("p");n.className="hint";n.style.textAlign="center";n.textContent="✓ האישור נרשם גם אצל צוות הישיבה.";$("stDone").appendChild(n)}
   }catch(e){}
 }
 
@@ -317,19 +328,13 @@ async function savePermit(p){
   const blob=await permitBlob();const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download=`shichrur-${p.n}-${p.d}.png`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);
 }
 
-// ---- כניסה ----
-document.fonts.ready.then(()=>{
+// ---- כניסה ---- (מיד, בלי לחכות לגופן מהרשת: רשת חסומה לא משאירה מסך ריק)
+(()=>{
   // קישור הורה שנפתח באותה לשונית: טוענים מחדש כדי להציג את מסך ההורה
   addEventListener("hashchange",()=>{if(/^#p=/.test(location.hash))location.reload()});
   const m=location.hash.match(/^#p=(.+)$/);const q=m&&cleanReq(dec(m[1]));
   if(q)initParent(q);else{initStudent();if(m)$("stErr").textContent="הקישור לבקשה לא תקין (אולי נחתך בהעתקה). בקשו מהתלמיד לשלוח אותו שוב."}
-});
-</script>
-<script>
-// חסימת זום בצביטה ובלחיצה כפולה (ספארי מתעלם מ-user-scalable)
-document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
-document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
-let __lastTap=0;document.addEventListener("touchend",e=>{const n=Date.now();if(n-__lastTap<300&&!e.target.closest("input,textarea,select,button,a,.tile,.opt,.flip,.wz-opt,.tab"))e.preventDefault();__lastTap=n},{passive:false});
+})();
 </script>
 </body>
 </html>

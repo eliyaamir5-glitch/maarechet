@@ -709,3 +709,164 @@ r = await call("/api/staff", { body: { action: "backup" }, token: t3 });
   ok("errClear with a junk id → 400", r.status === 400);
   await call("/api/owner", { body: { action: "unsuspend", people: [{ name: "דני", cls: "y1" }] }, token: ot });
 }
+// ---- מעבר ביקורת 26.10 (ערב): דף מנהל המערכת + "שלום" ----
+{
+  const osalt = "00112233445566778899aabbccddeeff";
+  mod.__setOwner({ salt: osalt, hash: crypto.scryptSync("AUDT1234AUDT1234", osalt, 32).toString("hex") });
+  const own = async (b, tok, ip = "91.1.1.1") => call("/api/owner", { body: b, token: tok, ip });
+  let ot = (await own({ action: "login", code: "AUDT-1234-AUDT-1234" })).json.token;
+  const dk = d => crypto.createHash("sha256").update("dev:" + d).digest("hex").slice(0, 24);
+  const hello = (device, name, cls = "y1", ip = "92.0.0.1") => call("/api/feed", { body: { action: "hello", device, name, cls, ver: "v" }, ip });
+
+  // השעיה לפי שם: שם ריק / רווחים / תווים נסתרים / כיתה "all" לא מתקבלים (אחרת כל מי שלא כתב שם היה מושעה)
+  for (const p of [{ name: "", cls: "y1" }, { name: "   ", cls: "y1" }, { name: "‏​", cls: "y1" }, { name: "דני", cls: "all" }, { name: "x", cls: "y1" }]) {
+    r = await own({ action: "suspend", people: [p], minutes: 60 }, ot);
+    ok(`suspend by person ${JSON.stringify(p)} → 400`, r.status === 400);
+  }
+  r = await hello("device-nona-0001", "", "y1");
+  ok("a student without a name is not suspended by anything above", r.status === 200 && r.json.susp === null);
+  r = await own({ action: "msgSend", to: "some", people: [{ name: "", cls: "y1" }], text: "אישי?" }, ot);
+  ok("a 'personal' message to an empty name → 400", r.status === 400);
+  // מספר דקות לא תקין = שגיאה (לא "דקה אחת")
+  r = await own({ action: "suspend", keys: [dk("device-nona-0001")], minutes: "abc" }, ot);
+  ok("suspend with junk minutes → 400", r.status === 400);
+  r = await own({ action: "maint", on: true, minutes: 0 }, ot);
+  ok("update mode with 0 minutes → 400", r.status === 400);
+  r = await call("/api/feed", { method: "GET" });
+  ok("…and update mode stayed off", r.json.maint === null);
+
+  // תו נסתר בשם לא עוקף השעיה לפי שם
+  r = await own({ action: "suspend", people: [{ name: "עומר גל", cls: "y2", keys: [dk("device-omer-0001")] }], minutes: 60 }, ot);
+  ok("suspend a student (name + device in one group)", r.status === 200);
+  r = await hello("device-omer-0002", "עומר‏ גל​", "y2");
+  ok("same name with invisible characters is still suspended", !!r.json.susp);
+  r = await call("/api/feed", { body: { action: "react", id: "x", device: "device-omer-0003", emoji: "👍", name: "  עומר  גל ", cls: "y2" } });
+  ok("…and can't post from another device under that name", r.status === 403);
+  // החזרה מלאה: החזרה לפי מכשיר אחד מחזירה גם את השם ואת שאר המכשירים שהושעו יחד
+  r = await own({ action: "suspend", people: [{ name: "גיל רז", cls: "y1", keys: [dk("device-gilr-0001"), dk("device-gilr-0002")] }, { name: "שי טל", cls: "y1", keys: [dk("device-shit-0001")] }], minutes: null }, ot);
+  await own({ action: "unsuspend", keys: [dk("device-gilr-0001")] }, ot);
+  r = await hello("device-gilr-0002", "גיל רז");
+  ok("unsuspend by one device clears his other device too", r.json.susp === null);
+  r = await hello("device-gilr-0009", "גיל רז");
+  ok("…and his name", r.json.susp === null);
+  r = await hello("device-shit-0001", "שי טל");
+  ok("…but not another student suspended in the same action", !!r.json.susp);
+  r = await own({ action: "overview" }, ot);
+  ok("overview: suspensions carry a group id, no leftovers of the restored student", r.json.suspended.every(x => x.g) && !r.json.suspended.some(x => x.person === "גיל רז|y1" || x.key === dk("device-gilr-0002")) && r.json.suspended.some(x => x.person === "שי טל|y1"));
+  await own({ action: "unsuspend", people: [{ name: "שי טל", cls: "y1" }] }, ot);
+  r = await hello("device-shit-0001", "שי טל");
+  ok("unsuspend by name clears his device too", r.json.susp === null);
+  // "__proto__" כשם: נשמר כמפתח רגיל, בלי לגעת ב-prototype
+  await own({ action: "suspend", people: [{ name: "__proto__", cls: "y1" }], minutes: 60 }, ot);
+  r = await hello("device-prot-0001", "__proto__");
+  ok("a student literally named __proto__ can be suspended", !!r.json.susp && ({}).until === undefined && ({}).g === undefined);
+  await own({ action: "unsuspend", people: [{ name: "__proto__", cls: "y1" }] }, ot);
+  r = await hello("device-prot-0001", "__proto__");
+  ok("…and restored", r.json.susp === null);
+
+  // מחיקת הודעה: מזהה לא תקין → 400, ומחיקה של משהו שלא קיים לא נרשמת ביומן
+  r = await own({ action: "msgDelete", id: { $ne: 1 } }, ot);
+  ok("msgDelete with a junk id → 400", r.status === 400);
+  const logLen = JSON.parse(raw.get("ownerLog")).length;
+  await own({ action: "msgDelete", id: "nosuchmsg" }, ot);
+  ok("deleting a missing message is not logged", JSON.parse(raw.get("ownerLog")).length === logLen);
+
+  // ניסיונות כניסה שגויים: שורה אחת עם מונה (לא דוחקים את היומן)
+  for (let i = 0; i < 5; i++) await own({ action: "login", code: "WRONG-" + i }, null, "93.0.0." + i);
+  const L0 = JSON.parse(raw.get("ownerLog"));
+  ok("5 wrong owner codes = one log line with a counter", L0[0].action === "loginFail" && L0[0].n === 5 && L0[1].action !== "loginFail", L0[0].detail);
+
+  // ניתוק כל המכשירים
+  const ot2 = (await own({ action: "login", code: "AUDT1234AUDT1234" }, null, "91.1.1.2")).json.token;
+  r = await own({ action: "logoutAll" }, ot2);
+  ok("owner can sign out all devices", r.status === 200);
+  r = await own({ action: "overview" }, ot);
+  const r2 = await own({ action: "overview" }, ot2);
+  ok("…old owner tokens stop working (both)", r.status === 401 && r2.status === 401);
+  r = await own({ action: "logoutAll" }, ot);
+  ok("…and can't be used to sign out again", r.status === 401);
+  ot = (await own({ action: "login", code: "AUDT1234AUDT1234" }, null, "91.1.1.3")).json.token;
+  r = await own({ action: "overview" }, ot);
+  ok("…and a new sign-in works", r.status === 200);
+  ok("30-day chart: 30 different consecutive days ending today", new Set(r.json.daily.map(d => d.day)).size === 30 && r.json.daily[29].day === r.json.today);
+
+  // "שלום": לא כותבים את כל הרשימה בכל פעם
+  await hello("device-thro-0001", "רון כץ");
+  const p1 = raw.get("presence");
+  await hello("device-thro-0001", "רון כץ");
+  ok("a second hello within minutes doesn't rewrite the presence list", raw.get("presence") === p1);
+  await hello("device-thro-0001", "רון כץ השני");
+  ok("…a changed name within a minute waits for the next hello", raw.get("presence") === p1);
+  { const m = JSON.parse(raw.get("presence")); m[dk("device-thro-0001")].last -= 90e3; raw.set("presence", JSON.stringify(m)); }
+  await hello("device-thro-0001", "רון כץ השני");
+  ok("…and is saved after a minute", JSON.parse(raw.get("presence"))[dk("device-thro-0001")].name === "רון כץ השני");
+  { const m = JSON.parse(raw.get("presence")); m[dk("device-thro-0001")].last -= 8 * 60e3; raw.set("presence", JSON.stringify(m)); }
+  const before = JSON.parse(raw.get("presence"))[dk("device-thro-0001")].last;
+  await hello("device-thro-0001", "רון כץ השני");
+  ok("an unchanged hello still refreshes 'last seen' every 7 minutes", JSON.parse(raw.get("presence"))[dk("device-thro-0001")].last > before);
+  // רק החודש האחרון נשמר
+  { const m = JSON.parse(raw.get("presence")), x = m[dk("device-thro-0001")]; x.days = Array.from({ length: 60 }, (_, i) => new Date(Date.UTC(2026, 0, 1 + i)).toISOString().slice(0, 10)); raw.set("presence", JSON.stringify(m)); }
+  await hello("device-thro-0001", "רון כץ השני");
+  ok("old days are trimmed (only the last month is kept)", JSON.parse(raw.get("presence"))[dk("device-thro-0001")].days.length === 1);
+  // כל בית הספר מאחורי כתובת אחת: 450 תלמידים, כמה סבבים של "שלום"
+  {
+    const codes = [];
+    for (let round = 0; round < 3; round++) for (let i = 0; i < 450; i++) codes.push((await hello("device-nat-" + String(i).padStart(4, "0"), "תלמיד " + i, i % 2 ? "y1" : "y2", "94.0.0.1")).status);
+    ok("450 students × 3 hellos from one school address all pass", codes.every(c => c === 200), [...new Set(codes)].join());
+  }
+  // רשימה מלאה: תלמיד חדש עדיין מקבל מצב עדכון / השעיה / הודעות
+  {
+    const saved = raw.get("presence"), m = JSON.parse(saved), now = Date.now();
+    for (let i = 0; Object.keys(m).length < 3000; i++) m[dk("fill-" + i)] = { name: "x", cls: "y1", last: now, days: [] };
+    raw.set("presence", JSON.stringify(m));
+    await own({ action: "msgSend", to: "all", text: "הודעה בזמן שהרשימה מלאה" }, ot);
+    r = await hello("device-full-0001", "חדש", "y2", "95.0.0.1");
+    ok("presence list full → hello still answers (with messages), nothing stored", r.status === 200 && r.json.msgs.some(x => x.text === "הודעה בזמן שהרשימה מלאה") && !JSON.parse(raw.get("presence"))[dk("device-full-0001")]);
+    raw.set("presence", saved);
+  }
+  {
+    const m = JSON.parse(raw.get("presence")); m["notakey"] = { name: "זבל", cls: "y1", last: Date.now(), days: [] }; raw.set("presence", JSON.stringify(m));
+    r = await own({ action: "overview" }, ot);
+    ok("overview ignores junk presence keys", r.status === 200 && !r.json.students.some(s => s.key === "notakey"));
+  }
+
+  // תקלות: אותה תקלה מאותו מכשיר באותו יום = פעם אחת; תקלה שקורית לכולם לא דוחקת אחרות
+  const E = { action: "err", msg: "TypeError: audit", src: "index.html:1:1", page: "index", cls: "y1" };
+  await call("/api/feed", { body: { ...E, device: "device-errd-0001" }, ip: "96.0.0.1" });
+  await call("/api/feed", { body: { ...E, device: "device-errd-0001" }, ip: "96.0.0.1" });
+  ok("same error from the same phone on the same day is stored once", JSON.parse(raw.get("errors")).filter(x => x.msg === "TypeError: audit").length === 1);
+  await call("/api/feed", { body: { ...E, msg: "Other error", device: "device-errd-0002" }, ip: "96.0.0.1" });
+  for (let i = 0; i < 60; i++) await call("/api/feed", { body: { ...E, device: "device-errm-" + String(i).padStart(4, "0") }, ip: "96.0.0.1" });
+  const errs = JSON.parse(raw.get("errors"));
+  ok("an error that hits everyone keeps at most 40 records, the other error stays", errs.filter(x => x.msg === "TypeError: audit").length === 40 && errs.some(x => x.msg === "Other error"));
+  r = await own({ action: "overview" }, ot);
+  ok("overview marks it as 'many'", r.json.errors.find(e => e.msg === "TypeError: audit").many === true);
+
+  // הגבלת כמות: מבנה קטן (מונה לשעה), תואם לנתונים הישנים, ולא חונק בית ספר שלם
+  ok("rate-limit records are small counters", (() => { const x = JSON.parse(raw.get("errRate"))["96.0.0.1"]; return !!x && x.n >= 1 && typeof x.h === "number"; })());
+  raw.set("askRate", JSON.stringify({ "97.0.0.1": Array.from({ length: 200 }, () => Date.now()), "97.0.0.2": [Date.now() - 2 * 3600e3] }));
+  r = await call("/api/feed", { body: { action: "ask", text: "שאלה", cls: "y1" }, ip: "97.0.0.1" });
+  ok("old-style rate data still counts (200 asks this hour → 429)", r.status === 429);
+  r = await call("/api/feed", { body: { action: "ask", text: "שאלה", cls: "y1" }, ip: "97.0.0.3" });
+  ok("…another address is fine, and stale entries are cleaned", r.status === 200 && !("97.0.0.2" in JSON.parse(raw.get("askRate"))));
+  r = await call("/api/staff", { body: { action: "pollCreate", q: "סקר לכל בית הספר", options: ["כן", "לא"], hours: 2 }, token: t3 });
+  {
+    const pid2 = r.json.poll.id, codes = [];
+    for (let i = 0; i < 450; i++) codes.push((await call("/api/feed", { body: { action: "vote", poll: pid2, option: i % 2, device: "device-vote-" + String(i).padStart(4, "0") }, ip: "98.0.0.1" })).status);
+    ok("450 votes from one school address all pass (was capped at 400)", codes.every(c => c === 200), [...new Set(codes)].join());
+  }
+}
+// השעיה ישנה עם שם ריק ("|y1", מלפני התיקון) – אפשר להחזיר אותה מהרשימה לפי המפתח השמור
+{
+  const osalt = "00112233445566778899aabbccddeeff";
+  mod.__setOwner({ salt: osalt, hash: crypto.scryptSync("LEGA1234LEGA1234", osalt, 32).toString("hex") });
+  const ot = (await call("/api/owner", { body: { action: "login", code: "LEGA1234LEGA1234" }, ip: "99.1.1.1" })).json.token;
+  const c = JSON.parse(raw.get("control") || "{}"); c.suspN = { ...(c.suspN || {}), "|y1": { until: null, reason: "", at: Date.now() } }; raw.set("control", JSON.stringify(c));
+  r = await call("/api/feed", { body: { action: "hello", device: "device-lega-0001", name: "", cls: "y1" }, ip: "99.1.1.2" });
+  ok("(old data) an empty-name suspension blocks nameless students", !!r.json.susp);
+  r = await call("/api/owner", { body: { action: "unsuspend", pkeys: ["|y1"] }, token: ot, ip: "99.1.1.1" });
+  r = await call("/api/feed", { body: { action: "hello", device: "device-lega-0001", name: "", cls: "y1" }, ip: "99.1.1.2" });
+  ok("…and the owner can clear it by its stored key", r.json.susp === null && !("|y1" in JSON.parse(raw.get("control")).suspN));
+  r = await call("/api/owner", { body: { action: "suspend", pkeys: ["|y1"] }, token: ot, ip: "99.1.1.1" });
+  ok("…but raw keys can't be used to suspend", r.status === 400);
+}

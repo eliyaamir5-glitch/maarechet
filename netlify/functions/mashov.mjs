@@ -29,32 +29,62 @@ let memStore = null;
 export function __useMemoryStore(custom) {
   if (custom) { memStore = custom; return null; } // בבדיקות: אחסון מדומה (למשל אחד שלא עונה)
   const m = new Map();
-  memStore = { get: async k => m.has(k) ? JSON.parse(m.get(k)) : null, set: async (k, v) => { m.set(k, JSON.stringify(v)); } };
+  const get = async k => m.has(k) ? JSON.parse(m.get(k)) : null, set = async (k, v) => { m.set(k, JSON.stringify(v)); };
+  let chain = Promise.resolve(); // עדכונים לאותו מפתח בתור, כמו הכתיבה המותנית בשרת האמיתי
+  memStore = { get, set, update: (k, fn) => { const run = chain.then(async () => { const n = fn(await get(k)); if (n !== undefined) await set(k, n); }); chain = run.catch(() => {}); return run; } };
   return m;
 }
 async function store() {
   if (memStore) return memStore;
   const { getStore } = await import("@netlify/blobs");
   const s = getStore({ name: "maarechet-mashov", consistency: "strong" });
-  return { get: k => s.get(k, { type: "json" }), set: (k, v) => s.setJSON(k, v) };
+  return {
+    get: k => s.get(k, { type: "json" }), set: (k, v) => s.setJSON(k, v),
+    // כתיבה מותנית (etag): שתי בקשות במקביל לא מוחקות אחת לשנייה את הספירה
+    async update(k, fn) {
+      for (let i = 0; i < 6; i++) {
+        const r = await s.getWithMetadata(k, { type: "json" }), next = fn(r ? r.data : null);
+        if (next === undefined) return;
+        const w = r && r.etag ? await s.setJSON(k, next, { onlyIfMatch: r.etag }) : r ? await s.setJSON(k, next) : await s.setJSON(k, next, { onlyIfNew: true });
+        if (!w || w.modified !== false) return;
+        await new Promise(res => setTimeout(res, 30 + Math.random() * 120));
+      }
+      throw new Error("busy");
+    },
+  };
 }
+// אחסון בלי update (למשל מדומה בבדיקות) – קריאה וכתיבה רגילות
+const upd = (S, k, fn) => S.update ? S.update(k, fn) : (async () => { const n = fn(await S.get(k)); if (n !== undefined) await S.set(k, n); })();
 // אחסון איטי לא תוקע את ההתחברות: אחרי 3 שניות ממשיכים בלעדיו
 const within = (p, ms = 3000) => { let t; return Promise.race([p, new Promise((_, rej) => { t = setTimeout(() => rej(new Error("timeout")), ms); t.unref?.(); })]).finally(() => clearTimeout(t)); };
 const sha = s => crypto.createHash("sha256").update(String(s)).digest("hex").slice(0, 32);
 // המפתחות: כתובת, ו-hash של בית ספר+שם משתמש (לא שומרים שמות משתמש)
 const failKeys = (ip, semel, username) => [["ip:" + ip, IP_FAILS], ["u:" + sha(semel + ":" + username.toLowerCase()), USER_FAILS]];
-async function isBlocked(keys) {
+// כל ניסיון נרשם *לפני* שפונים למשוב, באותה כתיבה שבודקת את המכסה – כך גם 100 בקשות במקביל לא עוקפות אותה.
+// ניסיון שהצליח (או שמשוב לא ענה) נמחק אחר כך (release); סיסמה שגויה נשארת רשומה = כישלון.
+async function reserve(keys) {
+  const stamp = Date.now() + Math.random(); // חותמת ייחודית לניסיון הזה
+  let blocked = false;
   try {
-    const f = await within((async () => (await store()).get("fails"))()) || {}, now = Date.now();
-    return keys.some(([k, max]) => Object.hasOwn(f, k) && Array.isArray(f[k]) && f[k].filter(t => now - t < FAIL_WIN).length >= max);
-  } catch { return false; }
+    await within((async () => upd(await store(), "fails", cur => {
+      const f = cur && typeof cur === "object" && !Array.isArray(cur) ? cur : {}, now = Date.now();
+      for (const k of Object.keys(f)) if (!Array.isArray(f[k]) || !f[k].some(t => now - t < FAIL_WIN)) delete f[k];
+      if (keys.some(([k, max]) => Object.hasOwn(f, k) && f[k].filter(t => now - t < FAIL_WIN).length >= max)) { blocked = true; return undefined; }
+      for (const [k] of keys) f[k] = [...(Object.hasOwn(f, k) ? f[k] : []), stamp].slice(-200);
+      return f;
+    }))());
+  } catch { return { blocked: false, stamp: null }; } // אחסון תקוע/שבור לא חוסם אף אחד
+  return { blocked, stamp: blocked ? null : stamp };
 }
-async function addFail(keys) {
+async function release(keys, stamp) {
+  if (stamp == null) return;
   try {
-    const S = await store(), f = await within(S.get("fails")) || {}, now = Date.now();
-    for (const [k] of keys) f[k] = [...(Object.hasOwn(f, k) && Array.isArray(f[k]) ? f[k] : []).filter(t => now - t < FAIL_WIN), now].slice(-200);
-    for (const k of Object.keys(f)) if (!Array.isArray(f[k]) || !f[k].some(t => now - t < FAIL_WIN)) delete f[k];
-    await within(S.set("fails", f));
+    await within((async () => upd(await store(), "fails", cur => {
+      const f = cur && typeof cur === "object" && !Array.isArray(cur) ? cur : {};
+      let changed = false;
+      for (const [k] of keys) if (Object.hasOwn(f, k) && Array.isArray(f[k]) && f[k].includes(stamp)) { f[k] = f[k].filter(t => t !== stamp); if (!f[k].length) delete f[k]; changed = true; }
+      return changed ? f : undefined;
+    }))());
   } catch {}
 }
 
@@ -146,7 +176,14 @@ async function handle(req, context, headers) {
   const ip = String((context && context.ip) || req.headers.get("x-nf-client-connection-ip") || "unknown").replace(/[^0-9a-fA-F:.]/g, "").slice(0, 64) || "unknown";
   const keys = failKeys(ip, semel, username);
   // האפליקציה מכירה את "mashov_down" ("נסה שוב בעוד כמה דקות"); reason מפרט למה
-  if (await isBlocked(keys)) return reply(429, { ok: false, error: "mashov_down", reason: "too_many" }, headers);
+  const { blocked, stamp } = await reserve(keys);
+  if (blocked) return reply(429, { ok: false, error: "mashov_down", reason: "too_many" }, headers);
+  try { const out = await fetchMashov(username, password, semel, year, headers); if (out.status !== 401) await release(keys, stamp); return out; } // רק סיסמה שגויה נשארת ככישלון
+  catch (e) { await release(keys, stamp); throw e; }
+}
+
+// ההתחברות למשוב, משיכת הנתונים והתנתקות
+async function fetchMashov(username, password, semel, year, headers) {
 
   // 1. התחברות
   let loginRes, loginData;
@@ -161,7 +198,7 @@ async function handle(req, context, headers) {
   } catch {
     return reply(502, { ok: false, error: "mashov_down" }, headers);
   } finally { t1.done(); }
-  if (loginRes.status === 401 || loginRes.status === 403 || (loginRes.status === 400 && loginData)) { await addFail(keys); return reply(401, { ok: false, error: "bad_login" }, headers); }
+  if (loginRes.status === 401 || loginRes.status === 403 || (loginRes.status === 400 && loginData)) return reply(401, { ok: false, error: "bad_login" }, headers);
   if (!loginRes.ok || !loginData) return reply(502, { ok: false, error: "mashov_down" }, headers);
 
   const csrf = loginRes.headers.get("x-csrf-token") || "";

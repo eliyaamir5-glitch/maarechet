@@ -9,7 +9,8 @@
 <script src="demo-shim.js"></script>
 <script src="theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<!-- הגופן נטען בלי לעכב את העמוד: רשת שחוסמת את גוגל לא משאירה מסך ריק -->
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 html{overscroll-behavior:none;-webkit-text-size-adjust:100%}
 body{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior-y:none}
@@ -307,6 +308,8 @@ function wireEdit(){
     const r=await call({action:"set",name,phone:sent,note:old?old.note:"",extra:!!(old&&old.extra)});b.disabled=false;
     const inp=Q("data-ph"),m=Q("data-m");
     if(!r.ok){if(m){m.className="msg err";m.textContent=ERR[r.error]||"שגיאה."}return}
+    // תשובה בלי איש הקשר (שרת ישן/משובש) לא שוברת את הרשימה: משתמשים במה שנשלח
+    r.contact=cleanC([r.contact])[0]||{name,phone:sent,note:old?old.note:"",extra:!!(old&&old.extra)};
     const i=contacts.findIndex(c=>c.name===name);if(i>=0)contacts[i]=r.contact;else contacts.push(r.contact);save("contactsCache",contacts);
     // נשמר: זה כבר לא "הוקלד ולא נשמר" (אלא אם הקלידו עוד משהו בזמן השמירה)
     typed.delete(name);if(inp){if(inp.value.trim()===sent)inp.value=r.contact.phone||"";inp.defaultValue=r.contact.phone||""}
@@ -324,7 +327,8 @@ $("editBtn").onclick=async()=>{
   b.innerHTML=`<div class="card"><h2>🔑 עריכת מספרים</h2><p class="hint">מקלידים את קוד העריכה של הצוות.</p><div class="row"><input class="inp" id="eCode" type="password" dir="ltr" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX" style="text-align:center;letter-spacing:2px"><button class="btn" id="eGo">כניסה</button></div>
     <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-top:8px;cursor:pointer"><input type="checkbox" id="eRem" style="width:18px;height:18px"> לזכור את הקוד בטלפון הזה (רק בטלפון אישי שלך)</label><div class="msg err" id="eMsg"></div><button class="btn ghost" id="eCancel" style="width:100%;margin-top:8px">ביטול</button></div>`;
   window.scrollTo({top:0,behavior:"smooth"});$("eCode").focus();
-  const go=async()=>{const code=$("eCode").value.trim();if(!code)return;$("eGo").disabled=true;const r=await call({action:"check",code},null);$("eGo").disabled=false;
+  // Enter כפול / לחיצה כפולה לא שולחים את הקוד פעמיים
+  const go=async()=>{const code=$("eCode").value.trim();if(!code||$("eGo").disabled)return;$("eGo").disabled=true;const r=await call({action:"check",code},null);$("eGo").disabled=false;
     if(!r.ok){$("eMsg").textContent=ERR[r.error]||"שגיאה.";return}
     if($("eRem").checked)save("pbCode",code);else{memCode=code;try{localStorage.removeItem("pbCode")}catch(e){}}
     editing=true;editBar();draw()};
@@ -332,10 +336,6 @@ $("editBtn").onclick=async()=>{
 };
 
 draw();refresh();
-</script>
-<script>
-document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
-document.addEventListener("gesturechange",e=>e.preventDefault(),{passive:false});
 </script>
 </body>
 </html>

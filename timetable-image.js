@@ -22,8 +22,10 @@
 
   // opts: { weekLessons: [[{s,e,n,w}...] × 5], gearOf(name)->[...], title, subtitle }
   async function draw(canvas, opts) {
-    try { await Promise.all([document.fonts.load("900 40px Rubik"), document.fonts.load("700 20px Rubik"), document.fonts.load("400 16px Rubik")]); } catch (e) {}
-    const all = opts.weekLessons.flat();
+    // הגופן מהרשת – אבל רשת איטית/חסומה לא תוקעת את הכפתור: אחרי 3 שניות מציירים עם גופן רגיל
+    try { await Promise.race([Promise.all([document.fonts.load("900 40px Rubik"), document.fonts.load("700 20px Rubik"), document.fonts.load("400 16px Rubik")]), new Promise(r => setTimeout(r, 3000))]); } catch (e) {}
+    const week = Array.from({ length: 5 }, (_, i) => (Array.isArray(opts.weekLessons && opts.weekLessons[i]) ? opts.weekLessons[i] : []).filter(l => l && /^\d\d?:\d\d$/.test(l.s) && /^\d\d?:\d\d$/.test(l.e)));
+    const all = week.flat();
     // שבוע בלי שיעורים (למשל הכל בוטל) – ציר ברירת מחדל, ולא Infinity שמפיל את הציור
     const first = all.length ? Math.floor(Math.min(...all.map(l => toMin(l.s))) / 30) * 30 : 8 * 60;
     const last = all.length ? Math.ceil(Math.max(...all.map(l => toMin(l.e))) / 30) * 30 : 18 * 60;
@@ -60,9 +62,9 @@
     for (let i = 0; i <= 5; i++) { ctx.strokeStyle = "#e3e2f2"; ctx.lineWidth = 2; const x = W - PAD - AX - i * colW; ctx.beginPath(); ctx.moveTo(x, y0 - 10); ctx.lineTo(x, yOf(last)); ctx.stroke(); }
 
     // בלוקים של שיעורים
-    for (let i = 0; i < 5; i++) for (const l of opts.weekLessons[i]) {
+    for (let i = 0; i < 5; i++) for (const l of week[i]) {
       const x = colX(i) + 6, w = colW - 12, y = yOf(toMin(l.s)) + 2, h = Math.max(18, (toMin(l.e) - toMin(l.s)) * S - 4);
-      const hue = hueOf(l.n);
+      const hue = hueOf(String(l.n || ""));
       ctx.fillStyle = `hsl(${hue} 85% 94%)`; roundRect(ctx, x, y, w, h, 14); ctx.fill();
       ctx.fillStyle = `hsl(${hue} 65% 55%)`; roundRect(ctx, x + w - 8, y, 8, h, 4); ctx.fill();
       ctx.save(); roundRect(ctx, x, y, w, h, 14); ctx.clip();
@@ -77,7 +79,7 @@
         ctx.font = "400 18px Rubik, Arial"; ctx.fillStyle = "#6c7093";
         if (ty + 4 < y + h) { ctx.fillText(`${l.s}–${l.e}`, tx, ty); ty += 24; }
         if (l.w && ty + 4 < y + h) { ctx.fillText(wrap(ctx, l.w, maxW)[0], tx, ty); ty += 24; }
-        const gear = opts.gearOf(l.n);
+        const gear = (opts.gearOf && opts.gearOf(l.n)) || [];
         if (gear.length && ty + 8 < y + h) { ctx.fillStyle = `hsl(${hue} 50% 35%)`; ctx.fillText("🎒 " + wrap(ctx, gear.join(", "), maxW - 30)[0], tx, ty); }
       }
       ctx.restore();
@@ -95,7 +97,9 @@
   // מכינים מראש (מיד אחרי הציור): באייפון השיתוף חייב לקרות מיד אחרי הלחיצה, בלי המתנה ארוכה
   function prepare(canvas) { canvas.__png = blobOf(canvas); loadJsPDF().catch(() => {}); }
   async function share(canvas, name, text) {
-    const file = new File([await (canvas.__png || blobOf(canvas))], name, { type: "image/png" });
+    // toBlob שנכשל (זיכרון) מחזיר null – אז דרך dataURL, ולא קובץ ריק
+    const blob = (await canvas.__png) || (await blobOf(canvas)) || (await (await fetch(canvas.toDataURL("image/png"))).blob());
+    const file = new File([blob], name, { type: "image/png" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], text }); return "shared"; } catch (e) { if (e && e.name === "AbortError") return "cancel"; } }
     download(file, name); return "downloaded";
   }

@@ -102,7 +102,7 @@ dialog::backdrop{background:rgba(8,10,30,.6);backdrop-filter:blur(4px)}
 .selbar.on{display:flex}
 td.ck{width:30px}td.ck input{width:18px;height:18px;cursor:pointer}
 .pill.red{background:rgba(255,93,108,.18);color:var(--red)}
-.sus{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.sus{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}.sus>div{min-width:0;overflow-wrap:anywhere}
 .logl{max-height:440px;overflow:auto}.code{font-family:ui-monospace,Consolas,monospace;font-size:13px;direction:ltr;text-align:left}.b2.sm{flex:0 0 auto;padding:6px 12px;font-size:13px}
 .priv{font-size:13px;color:var(--muted);line-height:1.6}
 .priv b{color:var(--ink)}
@@ -126,16 +126,17 @@ async function api(body,auth=true){
     const j=await r.json().catch(()=>({ok:false,error:"server"}));if(r.status===401&&auth&&body.action!=="login"){T.set(null);showLogin("נגמר הזמן של הכניסה. צריך להיכנס שוב.");}return j}
   catch(e){return{ok:false,error:"network"}}finally{clearTimeout(tm)}
 }
-const ERR={bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד רבע שעה.",network:"אין חיבור לשרת.",server:"שגיאה בשרת.",bad_request:"הקוד לא תקין."};
+const ERR={bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד רבע שעה.",network:"אין חיבור לשרת.",server:"שגיאה בשרת.",bad_request:"הבקשה לא תקינה.",too_many:"יותר מדי. נסה שוב מאוחר יותר.",busy:"השרת עמוס. נסה שוב בעוד רגע."};
 
 // ---- כניסה ----
 function showLogin(msg){
+  clearInterval(timer);if($("dlg").open)$("dlg").close(); // לא מרעננים (ולא מוחקים את מה שמקלידים) כשאין כניסה
   $("app").innerHTML=`<div class="login"><div class="card"><h2>👑 ניהול המערכת</h2><p class="hint">הדף הזה רק בשבילך. מקלידים את הקוד הסודי של מנהל המערכת.</p>
     <input id="code" type="password" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX" aria-label="קוד סודי" maxlength="40">
     <button class="btn" id="go">כניסה</button><div class="err" id="err">${esc(msg||"")}</div></div></div>`;
   const go=async()=>{const c=$("code").value.trim();if(!c){$("code").focus();return}$("go").disabled=true;$("err").textContent="";
     const r=await api({action:"login",code:c},false);$("go").disabled=false;
-    if(!r.ok){$("err").textContent=ERR[r.error]||"לא הצלחנו להיכנס.";return}T.set(r.token);showDash()};
+    if(!r.ok){$("err").textContent=r.error==="bad_request"?"הקוד לא תקין.":ERR[r.error]||"לא הצלחנו להיכנס.";return}T.set(r.token);showDash()};
   $("go").onclick=go;$("code").onkeydown=e=>{if(e.key==="Enter")go()};setTimeout(()=>$("code").focus(),50);
 }
 
@@ -145,23 +146,35 @@ const engL=k=>(typeof ENG!=="undefined"&&ENG[k])||k||"–";
 const mathL=k=>(typeof MATH!=="undefined"&&MATH[k])||k||"–";
 const majL=k=>(typeof MAJORS!=="undefined"&&MAJORS[k]&&MAJORS[k].n)||k||"–";
 const CUR=typeof APP_VERSION!=="undefined"?APP_VERSION:"";
-function ago(t,now){if(!t)return"–";const m=Math.round((now-t)/60e3);if(m<2)return"עכשיו";if(m<60)return`לפני ${m} דק'`;const h=Math.round(m/60);if(h<24)return h===1?"לפני שעה":h===2?"לפני שעתיים":`לפני ${h} שעות`;const d=Math.round(h/24);if(d===1)return"אתמול";if(d<14)return`לפני ${d} ימים`;return new Date(t).toLocaleDateString("he-IL")}
-const fmtD=t=>t?new Date(t).toLocaleDateString("he-IL",{day:"numeric",month:"numeric",year:"2-digit"}):"–";
-const fmtDT=t=>t?new Date(t).toLocaleString("he-IL",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"–";
-function status(last,now){const m=(now-last)/60e3;return m<=10?"now":m<=60*18&&new Date(last).toDateString()===new Date(now).toDateString()?"today":m<=7*1440?"week":"old"}
+// כל השעות והתאריכים לפי שעון ישראל (גם אם המחשב של מי שצופה מכוון אחרת)
+const TZ="Asia/Jerusalem",IL=new Intl.DateTimeFormat("en-CA",{timeZone:TZ}),ilDay=t=>IL.format(new Date(t));
+// תאריך בלי שעה (YYYY-MM-DD): מציגים כמו שהוא, בלי המרת אזור זמן
+const dDay=s=>new Date(s+"T12:00:00Z"),fmtDay=(s,o)=>dDay(s).toLocaleDateString("he-IL",{timeZone:"UTC",...o});
+function ago(t,now){if(!t)return"–";const m=Math.round((now-t)/60e3);if(m<2)return"עכשיו";if(m<60)return`לפני ${m} דק'`;const h=Math.round(m/60);if(h<24)return h===1?"לפני שעה":h===2?"לפני שעתיים":`לפני ${h} שעות`;const d=Math.round(h/24);if(d===1)return"אתמול";if(d<14)return`לפני ${d} ימים`;return new Date(t).toLocaleDateString("he-IL",{timeZone:TZ})}
+const fmtD=t=>t?new Date(t).toLocaleDateString("he-IL",{timeZone:TZ,day:"numeric",month:"numeric",year:"2-digit"}):"–";
+const fmtDT=t=>t?new Date(t).toLocaleString("he-IL",{timeZone:TZ,day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"–";
+function status(last,now){const m=(now-last)/60e3;return m<=10?"now":ilDay(last)===ilDay(now)?"today":m<=7*1440?"week":"old"}
+// שם כמו שהשרת משווה אותו (רווחים, אותיות קטנות, בלי תווים נסתרים)
+const nk=n=>String(n||"").replace(/[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/g,"").replace(/\s+/g," ").trim().toLowerCase();
 const ST={now:["d-now","מחובר עכשיו"],today:["d-today","נכנס היום"],week:["d-week","נכנס השבוע"],old:["d-old","לא נכנס שבוע+"]};
 const devKind=p=>/iPhone|Android/.test(p)?"טלפון":/iPad/.test(p)?"טאבלט":p?"מחשב":"לא ידוע";
 
 let D=null,filt={q:"",cls:"",st:"",sort:"last"},timer=null;const sel=new Set();
-const LOGI={login:"🔓",loginFail:"⚠️",maintOn:"🚧",maintOff:"✅",suspend:"⛔",unsuspend:"✅",msgSend:"✉️",msgDelete:"🗑️",forget:"🗑️",errClear:"🐞"};
+const LOGI={logoutAll:"🚪",login:"🔓",loginFail:"⚠️",maintOn:"🚧",maintOff:"✅",suspend:"⛔",unsuspend:"✅",msgSend:"✉️",msgDelete:"🗑️",forget:"🗑️",errClear:"🐞"};
 const SUS_OPTS=[["60","שעה"],["1440","יום"],["4320","3 ימים"],["10080","שבוע"],["","עד שאחזיר"]];
-// רשימת המושעים: לפי שם+כיתה (וגם מכשירים שהושעו לבד)
+// רשימת המושעים: שורה לכל השעיה (שם+כיתה והמכשירים שהושעו איתו). "להחזיר" מחזיר את כל השורה
+function susGroups(){
+  const G=new Map();
+  for(const x of D.suspended||[]){const id=x.g||x.person||x.key;if(!G.has(id))G.set(id,{until:x.until,reason:x.reason,keys:[],person:null});const g=G.get(id);if(x.person)g.person=x.person;else if(x.key)g.keys.push(x.key)}
+  return [...G.values()].map(g=>{
+    if(g.person){const i=g.person.lastIndexOf("|"),cls=g.person.slice(i+1),nm=g.person.slice(0,i),same=D.students.filter(s=>nk(s.name)===nm&&s.cls===cls),st=same[0];
+      return{label:(st?st.name:nm||"(בלי שם)")+" · "+clsL(cls),until:g.until,reason:g.reason,payload:{pkeys:[g.person],keys:[...new Set([...g.keys,...same.map(s=>s.key)])].slice(0,50)}}}
+    const st=D.students.find(s=>g.keys.includes(s.key));
+    return{label:st?(st.name||"(בלי שם)")+" · "+clsL(st.cls)+(g.keys.length>1?` (${g.keys.length} מכשירים)`:""):g.keys.length>1?g.keys.length+" מכשירים":"מכשיר "+g.keys[0].slice(0,6),until:g.until,reason:g.reason,payload:{keys:g.keys.slice(0,50)}};
+  });
+}
 function susList(){
-  const byP=(D.suspended||[]).filter(x=>x.person),rows=byP.map(x=>{const i=x.person.lastIndexOf("|"),cls=x.person.slice(i+1),nm=x.person.slice(0,i);
-    const st=D.students.find(s=>(s.name||"").replace(/\s+/g," ").trim().toLowerCase()===nm&&s.cls===cls);
-    return{label:(st?st.name:nm)+" · "+clsL(cls),until:x.until,reason:x.reason,payload:{people:[{name:st?st.name:nm,cls}],keys:D.students.filter(s=>(s.name||"").replace(/\s+/g," ").trim().toLowerCase()===nm&&s.cls===cls).map(s=>s.key)}}});
-  const lone=(D.suspended||[]).filter(x=>x.key&&!rows.some(r=>r.payload.keys.includes(x.key))).map(x=>{const st=D.students.find(s=>s.key===x.key);return{label:st?st.name+" · "+clsL(st.cls):"מכשיר "+x.key.slice(0,6),until:x.until,reason:x.reason,payload:{keys:[x.key]}}});
-  return [...rows,...lone].map(r=>`<div class="sus"><div><b>${esc(r.label)}</b><div class="sub">${r.until?"עד "+esc(fmtDT(r.until)):"עד שתחזיר"}${r.reason?" · "+esc(r.reason):""}</div></div><button class="b2 ghost" data-unsus="${esc(JSON.stringify(r.payload))}">✅ להחזיר</button></div>`).join("");
+  return susGroups().map(r=>`<div class="sus"><div><b>${esc(r.label)}</b><div class="sub">${r.until?"עד "+esc(fmtDT(r.until)):"עד שתחזיר"}${r.reason?" · "+esc(r.reason):""}</div></div><button class="b2 ghost" data-unsus="${esc(JSON.stringify(r.payload))}">✅ להחזיר</button></div>`).join("");
 }
 function susDialog(list){
   if(!list.length)return;
@@ -172,34 +185,41 @@ function susDialog(list){
     <div class="row" style="margin-top:12px"><button class="b2 red" id="sGo">⛔ להשעות</button><button class="b2 ghost" id="sNo">ביטול</button></div>`;
   $("sNo").onclick=()=>$("dlg").close();
   $("sGo").onclick=async()=>{$("sGo").disabled=true;const v=$("sMin").value;
-    const r=await api({action:"suspend",keys:list.flatMap(p=>p.devs.map(d=>d.key)),people:list.map(p=>({name:p.name,cls:p.cls})),minutes:v?+v:null,reason:$("sWhy").value.trim()});
+    const r=await api({action:"suspend",people:list.map(who),minutes:v?+v:null,reason:$("sWhy").value.trim()});
     if(!r.ok){$("sGo").disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}sel.clear();$("dlg").close();load()};
   if(!$("dlg").open)$("dlg").showModal();
 }
-// תלמיד = שם + כיתה (אם נכנס מכמה מכשירים – שורה אחת עם כל המכשירים)
+// תלמיד = שם + כיתה (אם נכנס מכמה מכשירים – שורה אחת עם כל המכשירים). השם מושווה כמו בשרת.
+// בלי שם (או שם של תו אחד) – כל מכשיר לבד, כדי שלא יתאחדו כל ה"בלי שם" לתלמיד אחד (ויושעו יחד)
 function people(){
   const m=new Map();
-  for(const s of D.students){const k=(s.name||"(בלי שם)")+"|"+s.cls;if(!m.has(k))m.set(k,{name:s.name||"(בלי שם)",cls:s.cls,devs:[]});m.get(k).devs.push(s)}
+  for(const s of D.students){const n=nk(s.name),id=[...n].length>=2?n+"|"+s.cls:"#"+s.key;if(!m.has(id))m.set(id,{id,named:id[0]!=="#",cls:s.cls,devs:[]});m.get(id).devs.push(s)}
   return [...m.values()].map(p=>{const d=p.devs.slice().sort((a,b)=>b.last-a.last),top=d[0],days=new Set(d.flatMap(x=>x.days||[]));
-    return{...p,devs:d,top,last:top.last,first:Math.min(...d.map(x=>x.first||top.last)),d7:new Set([...days].filter(x=>x>=D.daily[23].day)).size,d30:days.size,opens:d.reduce((a,x)=>a+(x.opens||0),0),
+    return{...p,name:top.name||"(בלי שם)",devs:d,top,last:top.last,first:Math.min(...d.map(x=>x.first||top.last)),d7:new Set([...days].filter(x=>x>=D.daily[23].day)).size,d30:days.size,opens:d.reduce((a,x)=>a+(x.opens||0),0),
       reacts:Math.max(...d.map(x=>x.reacts||0)),bday:d.map(x=>x.bday).find(Boolean)||"",inst:d.some(x=>x.inst),mashov:d.some(x=>x.mashov),old:CUR&&top.ver&&top.ver<CUR}});
 }
 
+// מה נשלח לשרת על תלמיד: שם+כיתה (אם יש שם) והמכשירים שלו – קבוצה אחת להשעיה/החזרה/הודעה
+const who=p=>({...(p.named?{name:p.name}:{}),cls:p.cls,keys:p.devs.map(d=>d.key).slice(0,20)});
 async function showDash(){
   if(!$("kp"))$("app").innerHTML=`<header class="top"><div class="bar"><div><h1>👑 ניהול המערכת</h1><p id="upd">טוען…</p></div><div class="acts"><button id="ref">↻ רענון</button><button id="out">יציאה</button></div></div></header><main id="main"><div id="kp"></div></main>`;
   $("ref").onclick=()=>load(true);$("out").onclick=()=>{if(!confirm("לצאת מדף הניהול?"))return;T.set(null);clearInterval(timer);showLogin()};
-  await load();clearInterval(timer);timer=setInterval(()=>{const a=document.activeElement;if(!document.hidden&&!$("dlg").open&&!(a&&/TEXTAREA|INPUT|SELECT/.test(a.tagName)&&a.value))load()},60e3);
+  await load();clearInterval(timer);timer=setInterval(()=>{const a=document.activeElement;if(!document.hidden&&!$("dlg").open&&!(a&&/TEXTAREA|INPUT/.test(a.tagName)&&a.type!=="checkbox"&&a.value))load()},60e3);
 }
 async function load(manual){
   if(manual)$("upd").textContent="מרענן…";
   const r=await api({action:"overview"});if(!r.ok){if(T.get())$("upd").textContent=ERR[r.error]||"לא הצלחנו לטעון.";return}
   D=r;draw();
 }
+// טיוטות: רענון אוטומטי לא מוחק הודעה שהתחלת לכתוב (או בחירה ברשימות)
+const DRAFT=["oText","oTo","oHrs","mMsg","mMin"];
 function draw(){
+  const keep={},fid=document.activeElement&&document.activeElement.id;for(const id of DRAFT){const e=$(id);if(e)keep[id]=e.value}
   const now=D.now,P=people(),stOf=p=>status(p.last,now);
+  for(const id of [...sel])if(!P.some(p=>p.id===id))sel.delete(id);
   const cnt=k=>P.filter(p=>stOf(p)===k).length,now10=cnt("now"),today=P.filter(p=>["now","today"].includes(stOf(p))).length,week=P.filter(p=>p.d7>0).length;
   const pct=n=>P.length?Math.round(100*n/P.length)+"%":"–";
-  $("upd").textContent=`עודכן ${new Date(now).toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"})} · מתרענן לבד כל דקה`;
+  $("upd").textContent=`עודכן ${new Date(now).toLocaleTimeString("he-IL",{timeZone:TZ,hour:"2-digit",minute:"2-digit"})} · מתרענן לבד כל דקה`;
   const max=Math.max(1,...D.daily.map(d=>d.n));
   const byCls=Object.keys(typeof CLASSES_META!=="undefined"?CLASSES_META:{}).map(c=>[clsL(c),P.filter(p=>p.cls===c).length,P.filter(p=>p.cls===c&&p.d7>0).length]);
   const tally=(f)=>{const m={};for(const p of P){const k=f(p);m[k]=(m[k]||0)+1}return Object.entries(m).sort((a,b)=>b[1]-a[1])};
@@ -229,17 +249,18 @@ function draw(){
   <div class="grid2">
     <div class="card"><h2>🐞 תקלות אצל תלמידים ${(D.errors||[]).length?`<span class="pill red">${D.errors.length}</span>`:""}</h2><p class="hint">שגיאות שקרו באפליקציה בטלפונים של התלמידים, מקובצות לפי סוג. אחרי שתוקן – "טופל".</p>
       ${(D.errors||[]).length?D.errors.map(e=>`<div class="msg1"><div class="t code">${esc(e.msg)}<div class="sub">${esc(e.src||"")}</div></div>
-        <div class="sub" style="margin-top:6px">${e.count} פעמים · ${e.devices} מכשירים · אחרונה ${esc(ago(e.last,D.now))} · דף: ${esc((e.pages||[]).join(", ")||"?")}<br>${esc((e.plats||[]).join(" · "))}${(e.vers||[]).length?" · גרסה "+esc(e.vers.join(", ")):""}${(e.names||[]).length?"<br>אצל: "+esc(e.names.join(", ")):""}</div>
+        <div class="sub" style="margin-top:6px">${e.many?"40+":+e.count||0} פעמים · ${+e.devices||0}${e.many?"+":""} מכשירים · אחרונה ${esc(ago(e.last,D.now))} · דף: ${esc((e.pages||[]).join(", ")||"?")}<br>${esc((e.plats||[]).join(" · "))}${(e.vers||[]).length?" · גרסה "+esc(e.vers.join(", ")):""}${(e.names||[]).length?"<br>אצל: "+esc(e.names.join(", ")):""}</div>
         <div class="row" style="margin-top:6px"><button class="b2 ghost sm" data-errok="${esc(e.sig)}">✓ טופל</button></div></div>`).join("")+`<div class="row" style="margin-top:10px"><button class="b2 ghost sm" id="errAll">ניקוי כל התקלות</button></div>`:`<div class="empty">אין תקלות 🎉</div>`}
     </div>
     <div class="card"><h2>📜 יומן פעולות</h2><p class="hint">מה נעשה מהדף הזה ומתי – כולל ניסיונות כניסה עם קוד שגוי.</p>
       <div class="logl">${(D.log||[]).length?(D.log||[]).slice(0,80).map(l=>`<div class="sus"><div><b>${LOGI[l.action]||"•"}</b> ${esc(l.detail)}</div><span class="sub" style="white-space:nowrap">${esc(fmtDT(l.at))}</span></div>`).join(""):`<div class="empty">עוד אין פעולות</div>`}</div>
+      <div class="row" style="margin-top:10px"><button class="b2 ghost sm" id="outAll">🚪 לנתק את כל המכשירים</button><span class="sub">אם נכנסת ממחשב של מישהו אחר</span></div>
     </div>
   </div>
-  ${(D.suspended||[]).length?`<div class="card"><h2>⛔ מושעים כרגע (${D.suspended.filter(x=>x.person).length||D.suspended.length})</h2>${susList()}</div>`:""}
+  ${(D.suspended||[]).length?`<div class="card"><h2>⛔ מושעים כרגע (${susGroups().length})</h2>${susList()}</div>`:""}
   <div class="grid2">
     <div class="card"><h2>📈 כמה תלמידים נכנסו בכל יום</h2><p class="hint">30 הימים האחרונים. ירוק = היום, חלש = שישי ושבת.</p>
-      <div class="chart">${D.daily.map((d,i)=>{const dt=new Date(d.day+"T12:00"),we=dt.getDay()>=5;return`<div class="c${we?" we":""}${i===29?" today":""}" title="${esc(dt.toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"numeric"}))}: ${d.n}"><em>${d.n||""}</em><i style="height:${Math.round(100*d.n/max)}%"></i><small>${i%5===4||i===29?dt.getDate()+"."+(dt.getMonth()+1):""}</small></div>`}).join("")}</div></div>
+      <div class="chart">${D.daily.map((d,i)=>{const dt=dDay(d.day),we=dt.getUTCDay()>=5,n=+d.n||0;return`<div class="c${we?" we":""}${i===29?" today":""}" title="${esc(fmtDay(d.day,{weekday:"long",day:"numeric",month:"numeric"}))}: ${n}"><em>${n||""}</em><i style="height:${Math.round(100*n/max)}%"></i><small>${i%5===4||i===29?dt.getUTCDate()+"."+(dt.getUTCMonth()+1):""}</small></div>`}).join("")}</div></div>
     <div class="card"><h2>🏫 לפי כיתה</h2><p class="hint">רשומים / נכנסו השבוע</p>
       <div class="bars">${byCls.map(([l,n,a])=>`<div class="r"><span>${esc(l)}</span><div class="t"><i style="width:${n?Math.round(100*a/n):0}%"></i></div><span class="n">${a}/${n}</span></div>`).join("")}</div>
       <h2 style="margin-top:16px">📱 מכשירים</h2>${bars(tally(p=>devKind(p.top.plat)))}</div>
@@ -267,17 +288,17 @@ function draw(){
     <b>לא רואה:</b> ציונים וחיסורים, סיסמאות, כתובת IP או מיקום, מי שאל איזו שאלה, ומה הצביעו בסקרים.<br>
     <b>שימו לב:</b> השם הוא מה שהתלמיד הקליד – אין אימות. רשומה של מכשיר שלא נכנס 120 יום נמחקת לבד.</div>`;
   const drawRows=()=>{
-    let L=P.filter(p=>(!filt.cls||p.cls===filt.cls)&&(!filt.q||p.name.includes(filt.q.trim()))&&(!filt.st||(filt.st==="oldver"?p.old:filt.st==="today"?["now","today"].includes(stOf(p)):stOf(p)===filt.st)));
+    let L=P.filter(p=>(!filt.cls||p.cls===filt.cls)&&(!filt.q||nk(p.name).includes(nk(filt.q)))&&(!filt.st||(filt.st==="oldver"?p.old:filt.st==="today"?["now","today"].includes(stOf(p)):stOf(p)===filt.st)));
     L.sort(filt.sort==="name"?(a,b)=>a.name.localeCompare(b.name,"he"):filt.sort==="act"?(a,b)=>b.d30-a.d30||b.last-a.last:filt.sort==="first"?(a,b)=>b.first-a.first:(a,b)=>b.last-a.last);
-    $("tb").innerHTML=L.map(p=>{const s=ST[stOf(p)];const pk=p.name+"|"+p.cls;return`<tr data-k="${esc(pk)}"><td class="ck"><input type="checkbox" data-sel="${esc(pk)}" ${sel.has(pk)?"checked":""} aria-label="לבחור את ${esc(p.name)}"></td><td><span class="dot ${s[0]}" title="${s[1]}"></span><span class="nm">${esc(p.name)}</span>${p.devs.length>1?` <span class="pill">${p.devs.length} מכשירים</span>`:""}${p.old?` <span class="pill warn">גרסה ישנה</span>`:""}${p.devs.some(d=>d.susp)?` <span class="pill red">⛔ מושעה</span>`:""}</td>
+    $("tb").innerHTML=L.map(p=>{const s=ST[stOf(p)];const pk=p.id;return`<tr data-k="${esc(pk)}"><td class="ck"><input type="checkbox" data-sel="${esc(pk)}" ${sel.has(pk)?"checked":""} aria-label="לבחור את ${esc(p.name)}"></td><td><span class="dot ${s[0]}" title="${s[1]}"></span><span class="nm">${esc(p.name)}</span>${p.devs.length>1?` <span class="pill">${p.devs.length} מכשירים</span>`:""}${p.old?` <span class="pill warn">גרסה ישנה</span>`:""}${p.devs.some(d=>d.susp)?` <span class="pill red">⛔ מושעה</span>`:""}</td>
       <td>${esc(clsL(p.cls))}</td><td>${esc(ago(p.last,D.now))}</td><td class="hide-s">${p.d7} / ${p.d30}</td><td class="hide-s sub">${esc(p.top.plat||"–")}</td>
       <td class="ic">${p.inst?"📲":""}${p.mashov?"📊":""}${p.bday?"🎂":""}${p.reacts?"😀":""}</td></tr>`}).join("")||`<tr><td colspan="7" class="empty">אין תלמידים שמתאימים לחיפוש</td></tr>`;
-    $("tb").querySelectorAll("tr[data-k]").forEach(tr=>tr.onclick=e=>{if(e.target.closest("td.ck"))return;detail(P.find(p=>p.name+"|"+p.cls===tr.dataset.k))});
+    $("tb").querySelectorAll("tr[data-k]").forEach(tr=>tr.onclick=e=>{if(e.target.closest("td.ck"))return;detail(P.find(p=>p.id===tr.dataset.k))});
     $("tb").querySelectorAll("[data-sel]").forEach(c=>c.onchange=()=>{c.checked?sel.add(c.dataset.sel):sel.delete(c.dataset.sel);selUi()});
     selUi();
   };
   const selUi=()=>{$("selbar").classList.toggle("on",sel.size>0);$("selN").textContent=`נבחרו ${sel.size}`;const o=$("oTo")&&$("oTo").querySelector('option[value="some"]');if(o)o.textContent=`לתלמידים שסימנתי (${sel.size})`};
-  const chosen=()=>P.filter(p=>sel.has(p.name+"|"+p.cls));
+  const chosen=()=>P.filter(p=>sel.has(p.id));
   $("selClr").onclick=()=>{sel.clear();drawRows()};
   $("selMsg").onclick=()=>{$("oTo").value="some";$("oText").focus();$("oText").scrollIntoView({behavior:"smooth",block:"center"})};
   $("selSus").onclick=()=>susDialog(chosen());
@@ -289,13 +310,17 @@ function draw(){
   $("oGo").onclick=async()=>{const text=$("oText").value.trim(),to=$("oTo").value;if(!text){$("oText").focus();return}
     const list=to==="some"?chosen():[];if(to==="some"&&!list.length){alert("לא סימנת תלמידים בטבלה.");return}
     if(!confirm(to==="all"?"לשלוח את ההודעה לכל התלמידים?":to==="some"?`לשלוח ל-${list.length} תלמידים?`:`לשלוח ל${clsL(to)}?`))return;
-    $("oGo").disabled=true;const r=await api({action:"msgSend",text,to,hours:+$("oHrs").value,keys:list.flatMap(p=>p.devs.map(d=>d.key)),people:list.map(p=>({name:p.name,cls:p.cls})),names:list.map(p=>p.name)});
+    $("oGo").disabled=true;const r=await api({action:"msgSend",text,to,hours:+$("oHrs").value,people:list.map(who),names:list.map(p=>p.name)});
     if(!r.ok){$("oGo").disabled=false;alert(ERR[r.error]||"לא הצלחנו לשלוח.");return}$("oText").value="";load()};
-  document.querySelectorAll("[data-mdel]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את ההודעה? היא תיעלם אצל התלמידים."))return;b.disabled=true;await api({action:"msgDelete",id:b.dataset.mdel});load()});
-  document.querySelectorAll("[data-unsus]").forEach(b=>b.onclick=async()=>{b.disabled=true;const x=JSON.parse(b.dataset.unsus);const r=await api({action:"unsuspend",...x});if(!r.ok){b.disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}load()});
+  document.querySelectorAll("[data-mdel]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את ההודעה? היא תיעלם אצל התלמידים."))return;b.disabled=true;const r=await api({action:"msgDelete",id:b.dataset.mdel});if(!r.ok){b.disabled=false;alert(ERR[r.error]||"לא הצלחנו למחוק.");return}load()});
+  document.querySelectorAll("[data-unsus]").forEach(b=>b.onclick=async()=>{if(!confirm("להחזיר אותו לאפליקציה?"))return;b.disabled=true;const x=JSON.parse(b.dataset.unsus);const r=await api({action:"unsuspend",...x});if(!r.ok){b.disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}load()});
   document.querySelectorAll("[data-errok]").forEach(b=>b.onclick=async()=>{b.disabled=true;const r=await api({action:"errClear",sig:b.dataset.errok});if(!r.ok){b.disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}load()});
-  if($("errAll"))$("errAll").onclick=async()=>{if(!confirm("לנקות את כל התקלות?"))return;$("errAll").disabled=true;await api({action:"errClear"});load()};
+  if($("errAll"))$("errAll").onclick=async()=>{if(!confirm("לנקות את כל התקלות?"))return;$("errAll").disabled=true;const r=await api({action:"errClear"});if(!r.ok){$("errAll").disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}load()};
+  $("outAll").onclick=async()=>{if(!confirm("לנתק את דף הניהול בכל המכשירים (גם בזה)? צריך יהיה להיכנס שוב עם הקוד."))return;$("outAll").disabled=true;
+    const r=await api({action:"logoutAll"});if(!r.ok){if($("outAll"))$("outAll").disabled=false;if(r.error!=="auth")alert(ERR[r.error]||"לא הצלחנו.");return}T.set(null);showLogin("נותקת מכל המכשירים. אפשר להיכנס שוב עם הקוד.")};
+  for(const id in keep){const e=$(id);if(e&&(e.tagName!=="SELECT"||[...e.options].some(o=>o.value===keep[id])))e.value=keep[id]}
   drawRows();
+  if(fid&&/^(q|oText|mMsg)$/.test(fid)&&$(fid)){const e=$(fid);e.focus();try{e.setSelectionRange(e.value.length,e.value.length)}catch(_){}} // ממשיכים להקליד באותו מקום
   $("q").oninput=e=>{filt.q=e.target.value;drawRows()};
   $("fc").onchange=e=>{filt.cls=e.target.value;drawRows()};
   $("so").onchange=e=>{filt.sort=e.target.value;drawRows()};
@@ -310,7 +335,7 @@ function detail(p){
       <dt>הצטרף</dt><dd>${esc(fmtD(p.first))}</dd><dt>ימים פעיל</dt><dd>${p.d7} מתוך 7 · ${p.d30} מתוך 30</dd><dt>כניסות</dt><dd>${p.opens} <span class="sub">(הפרש של חצי שעה = כניסה חדשה)</span></dd>
       <dt>אנגלית</dt><dd>${esc(engL(p.top.eng))}</dd><dt>מתמטיקה</dt><dd>${esc(mathL(p.top.math))}</dd><dt>מגמה</dt><dd>${esc(majL(p.top.major))}</dd>
       <dt>משוב</dt><dd>${p.mashov?"מחובר":"לא מחובר"}</dd><dt>יום הולדת</dt><dd>${esc(bd)}</dd><dt>תגובות לעדכונים</dt><dd>${p.reacts}</dd></dl>
-    <div class="sub">30 הימים האחרונים (ירוק = נכנס)</div><div class="cal">${D.daily.map(d=>`<i class="${days.has(d.day)?"on":""}" title="${esc(new Date(d.day+"T12:00").toLocaleDateString("he-IL"))}"></i>`).join("")}</div>
+    <div class="sub">30 הימים האחרונים (ירוק = נכנס)</div><div class="cal">${D.daily.map(d=>`<i class="${days.has(d.day)?"on":""}" title="${esc(fmtDay(d.day))}"></i>`).join("")}</div>
     ${p.devs.map(d=>`<div class="dev"><b>📱 ${esc(d.plat||"מכשיר לא ידוע")}</b>${d.inst?` <span class="pill">מותקן</span>`:""}${CUR&&d.ver&&d.ver<CUR?` <span class="pill warn">גרסה ישנה</span>`:""}
       <div class="sub" style="margin-top:4px">גרסה ${esc(d.ver||"?")} · נכנס לאחרונה ${esc(fmtDT(d.last))} · הצטרף ${esc(fmtD(d.first))}</div>
       <div style="margin-top:8px"><button class="btn danger" data-del="${esc(d.key)}">מחק את הרשומה של המכשיר</button></div></div>`).join("")}
@@ -318,10 +343,10 @@ function detail(p){
     <div class="dev">${p.devs.some(d=>d.susp)?`<b>⛔ מושעה</b> <span class="sub">${(()=>{const x=p.devs.map(d=>d.susp).find(Boolean);return x.until?"עד "+esc(fmtDT(x.until)):"עד שתחזיר"})()}</span><div class="row"><button class="b2" id="pUn">✅ להחזיר למערכת</button></div>`:`<button class="b2 red" id="pSus">⛔ להשעות את ${esc(p.name)}</button>`}</div>
     <button class="close" id="cl">סגירה</button>`;
   $("pSend").onclick=async()=>{const text=$("pMsg").value.trim();if(!text){$("pMsg").focus();return}$("pSend").disabled=true;
-    const r=await api({action:"msgSend",to:"some",text,hours:+$("pHrs").value,keys:p.devs.map(d=>d.key),people:[{name:p.name,cls:p.cls}],names:[p.name]});
+    const r=await api({action:"msgSend",to:"some",text,hours:+$("pHrs").value,people:[who(p)],names:[p.name]});
     $("pSend").disabled=false;if(!r.ok){alert(ERR[r.error]||"לא הצלחנו לשלוח.");return}$("pMsg").value="";$("pSend").textContent="✓ נשלח";setTimeout(()=>{if($("pSend"))$("pSend").textContent="שליחה"},2000);load()};
   if($("pSus"))$("pSus").onclick=()=>susDialog([p]);
-  if($("pUn"))$("pUn").onclick=async()=>{$("pUn").disabled=true;const r=await api({action:"unsuspend",keys:p.devs.map(d=>d.key),people:[{name:p.name,cls:p.cls}]});if(!r.ok){$("pUn").disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}$("dlg").close();load()};
+  if($("pUn"))$("pUn").onclick=async()=>{$("pUn").disabled=true;const r=await api({action:"unsuspend",people:[who(p)]});if(!r.ok){$("pUn").disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}$("dlg").close();load()};
   $("cl").onclick=()=>$("dlg").close();
   $("dlgBody").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
     if(!confirm("למחוק את הרשומה של המכשיר הזה? אם התלמיד ייכנס שוב, הוא יופיע מחדש."))return;

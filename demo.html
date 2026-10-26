@@ -7,7 +7,8 @@
 <meta name="robots" content="noindex">
 <title>דמו · המערכת</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<!-- הגופן נטען בלי לעכב את העמוד: רשת שחוסמת את גוגל לא משאירה מסך ריק -->
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 :root{--bg:#0b0e22;--panel:#161a3a;--card:#1d2247;--ink:#f4f5ff;--muted:#9aa0c7;--line:#2b3162;--accent:#7c8cff;--accent-ink:#0b0e24;--grad:linear-gradient(135deg,#5b6cff 0%,#a259ff 60%,#ff6bd6 100%)}
 *{box-sizing:border-box}
@@ -86,6 +87,12 @@ input,select{width:100%;border:1.5px solid var(--line);border-radius:10px;paddin
         <button class="btn wide" id="goStaff">✍️ לכתוב עדכון כמנהל (כניסת צוות)</button>
         <button class="btn wide" id="rePop" style="margin-top:6px">🔔 להקפיץ שוב את העדכונים בפתיחה</button>
         <p class="note" style="margin:8px 0 0">בדמו כל קוד נכנס כמנהל. עדכון שנכתב יופיע מיד במסך הראשי.</p>
+      </div>
+
+      <div class="box"><h2>🛠️ מנהל המערכת (הדמיה)</h2>
+        <div class="seg" id="simBtns"><button type="button" id="simMaint">🚧 מצב עדכון</button><button type="button" id="simSusp">⛔ השעיה</button></div>
+        <button class="btn wide" id="simMsg" style="margin-top:6px">📩 הודעה ממנהל המערכת</button>
+        <p class="note" style="margin:8px 0 0">מופיע רק כשלוחצים כאן (לחיצה נוספת מבטלת). בהשעיה – לוחצים שוב על "השעיה" כדי לחזור.</p>
       </div>
 
       <div class="box"><h2>🧭 מעבר למסך</h2>
@@ -227,7 +234,7 @@ const pubPoll=p=>{const counts=p.options.map((_,i)=>p.votes[i]||0);return{id:p.i
 host.feed=(method,b)=>{const t=now(),ok=x=>({status:200,body:{ok:true,...x}});
   host.reacts=host.reacts||{};const rc=id=>{const c={};for(const x of Object.values(host.reacts[id]||{}))c[x.e]=(c[x.e]||0)+1;return c};
   if(method==="GET"){const up=host.updates("GET").body.updates.map(u=>({...u,reacts:rc(u.id)})),today=isoOf(new Date(t));
-    return ok({now:t,updates:up,polls:host.polls.filter(p=>p.endsAt>t).map(pubPoll),events:host.events.filter(e=>e.date>=today),
+    return ok({now:t,maint:host.sim.maint||null,updates:up,polls:host.polls.filter(p=>p.endsAt>t).map(pubPoll),events:host.events.filter(e=>e.date>=today),
       answers:host.questions.filter(q=>q.status==="answered").map(q=>({id:q.id,q:q.text,a:q.answer,to:q.to,cls:q.cls,by:q.answeredBy,at:q.answeredAt})),
       birthdays:[{name:"דניאל אברהם",cls:"y2",md:"",inDays:0},{name:"איתי כהן",cls:"y1",md:"",inDays:2}],
       changes:(host.changes||[]).filter(x=>x.date>=isoOf(new Date(t))).sort((a,b)=>(a.date+a.s).localeCompare(b.date+b.s)).map(({id,date,cls,s,n,w,kind,sub,to,note})=>({id,date,cls,s,n,w,kind,...(sub?{sub}:{}),...(to?{to}:{}),note:note||""}))})}
@@ -235,6 +242,9 @@ host.feed=(method,b)=>{const t=now(),ok=x=>({status:200,body:{ok:true,...x}});
   if(b.action==="vote"){const p=host.polls.find(x=>x.id===b.poll);if(!p)return{status:404,body:{ok:false,error:"not_found"}};if(p.voters[b.device]==null){p.voters[b.device]=b.option;p.votes[b.option]=(p.votes[b.option]||0)+1}return ok({poll:pubPoll(p),mine:p.voters[b.device]})}
   if(b.action==="ask"){const id="dq"+Math.random().toString(36).slice(2,7);host.questions.unshift({id,text:String(b.text||""),to:String(b.to||""),cls:b.cls||"",status:"new",createdAt:t});return ok({id})}
   if(b.action==="react"){const r=host.reacts[b.id]=host.reacts[b.id]||{};if(b.emoji)r[b.device]={e:b.emoji,name:b.name||"",cls:b.cls||"",at:t};else delete r[b.device];return ok({id:b.id,counts:rc(b.id),mine:b.emoji||""})}
+  // "שלום" מהאפליקציה ודיווח תקלה: בדמו לא נשמר כלום. השעיה/מצב עדכון רק אם הופעלו בלוח
+  if(b.action==="hello")return ok({maint:host.sim.maint||null,susp:host.sim.susp||null,msgs:host.ownMsgs.slice()});
+  if(b.action==="err")return ok({});
   if(b.action==="release"){host.releases.unshift({id:"dr"+Math.random().toString(36).slice(2,7),...b,at:t});return ok({})}
   return ok({});
 };
@@ -305,6 +315,27 @@ host.staff=(method,b,token)=>{
   return err(400,"bad_action");
 };
 
+// ---- 🛠️ הדמיה של מה שמנהל המערכת שולט בו: מצב עדכון, השעיה, הודעה. כבוי תמיד, עד שלוחצים בלוח ----
+host.sim={maint:null,susp:null};host.ownMsgs=[];
+function simStore(){
+  const S=host.store,on=!!(host.sim.maint||host.sim.susp);
+  if(on)S.appCtl=JSON.stringify({maint:host.sim.maint,susp:host.sim.susp,at:now()});else delete S.appCtl;
+  if(host.ownMsgs.length)S.ownerMsgs=JSON.stringify(host.ownMsgs);else delete S.ownerMsgs;
+  // הפיד השמור בטלפון הדמו מתיישר עם מה שנבחר (שלא יישאר "מצב עדכון" ישן)
+  try{const f=JSON.parse(S.feedCache||"null");if(f&&typeof f==="object"){f.maint=host.sim.maint||null;S.feedCache=JSON.stringify(f)}}catch(e){}
+}
+// בדמו האפליקציה לא מפעילה השעיה/מצב עדכון לבד – מפעילים אותם כאן, רק אחרי לחיצה בלוח
+function simApply(){
+  if(!host.sim.maint&&!host.sim.susp)return;
+  try{const w=$("frame").contentWindow;if(!w||typeof w.applyCtl!=="function")return;w.__DEMO=false;try{w.applyCtl()}finally{w.__DEMO=true}}catch(e){}
+}
+function simMark(){$("simMaint").className=host.sim.maint?"on":"";$("simSusp").className=host.sim.susp?"on":""}
+function simGo(){simStore();simMark();go("index.html")}
+$("simMaint").onclick=()=>{host.sim.maint=host.sim.maint?null:{msg:"מוסיפים משהו חדש 🎁",until:now()+45*60e3};simGo()};
+$("simSusp").onclick=()=>{host.sim.susp=host.sim.susp?null:{reason:"דמו: ככה נראית השעיה",until:now()+2*60*60e3};simGo()};
+$("simMsg").onclick=()=>{const t=now(),id="dm"+Math.random().toString(36).slice(2,8);
+  host.ownMsgs=[...host.ownMsgs,{id,text:"היי! זו הודעה לדוגמה ממנהל המערכת. היא נשארת למעלה עד שלוחצים \"קראתי\".",at:t,exp:t+3*864e5}].slice(-5);simGo()};
+
 // ---- בניית "הטלפון" של הדמו לפי ההגדרות ----
 function buildStore(keepExtras){
   const S=host.store,keep={};
@@ -320,6 +351,7 @@ function buildStore(keepExtras){
     S.mashovPw=JSON.stringify({p:"demo"});
     S.mashovData=JSON.stringify({at:p.fetchedAt,behave:p.behave,grades:[],groups:[],lessonsCount:[],partial:false});
   }
+  simStore();
 }
 function applyTime(){host.offset=targetDate().getTime()-Date.now()}
 
@@ -334,7 +366,7 @@ function panel(){
   seg("day",[...DAYN.map((n,i)=>[i,n])],cfg.real?-1:cfg.day,v=>{cfg.day=v;cfg.real=false;timeChanged()});
   seg("presets",[["07:20","תפילה 07:20"],["10:40","באמצע שיעור"],["13:05","הפסקה"],["20:50","ערב 20:50"]],null,v=>{cfg.time=v;cfg.real=false;$("time").value=v;timeChanged()});
   $("time").value=cfg.time;$("samples").checked=cfg.samples;
-  const NAV=[["index.html","🏠 מסך ראשי"],["absences.html","📊 נוכחות"],["index.html#profile","👤 פרופיל"],["cards.html","🃏 כרטיסיות"],["shichrur.html","🏃 שחרורון"],["staff.html","📢 כניסת צוות"],["about.html","ℹ️ על האפליקציה"],["intro","🎬 ההיכרות"]];
+  const NAV=[["index.html","🏠 מסך ראשי"],["absences.html","📊 נוכחות"],["index.html#profile","👤 פרופיל"],["cards.html","🃏 כרטיסיות"],["shichrur.html","🏃 שחרורון"],["calc.html","🧮 מחשבון"],["phones.html","📞 טלפונים"],["staff.html","📢 כניסת צוות"],["about.html","ℹ️ על האפליקציה"],["intro","🎬 ההיכרות"]];
   $("nav").innerHTML="";for(const [p,t] of NAV){const b=document.createElement("button");b.type="button";b.textContent=t;b.dataset.p=p;b.onclick=()=>go(p);$("nav").append(b)}
   markNav();clockInfo();
 }
@@ -355,7 +387,7 @@ function changed(page){saveCfg();buildStore(true);if(page){cfg.page=page;saveCfg
 function timeChanged(){saveCfg();applyTime();clockInfo();
   seg("day",[...DAYN.map((n,i)=>[i,n])],cfg.real?-1:cfg.day,v=>{cfg.day=v;cfg.real=false;timeChanged()});
   delete host.store.updatesCache;reloadFrame()}
-host.onFrameLoad=file=>{cfg.page=pageName(file);saveCfg();markNav()};
+host.onFrameLoad=file=>{cfg.page=pageName(file);saveCfg();markNav();if(cfg.page==="index.html")simApply()};
 
 $("first").oninput=$("last").oninput=()=>{cfg.first=$("first").value.trim()||"יוסי";cfg.last=$("last").value.trim();clearTimeout(window.__nt);window.__nt=setTimeout(()=>changed(),600)};
 $("eng").onchange=e=>{cfg.eng=e.target.value;changed()};
@@ -366,8 +398,8 @@ $("realNow").onclick=()=>{cfg.real=true;timeChanged()};
 $("samples").onchange=e=>{cfg.samples=e.target.checked;saveCfg();delete host.store.updatesCache;reloadFrame()};
 $("goStaff").onclick=()=>go("staff.html");
 $("rePop").onclick=()=>{delete host.store.updatesSeen;go("index.html")};
-$("newStudent").onclick=()=>{for(const k of Object.keys(host.store))delete host.store[k];cfg.page="index.html";saveCfg();markNav();$("frame").src="index.html"};
-$("reset").onclick=()=>{if(!confirm("לאפס את הדמו להגדרות ההתחלה?"))return;cfg=Object.assign({},DEF,{day:cfg.day});host.staffUpdates=[];host.codes={};Object.assign(host,JSON.parse(INITIAL));saveCfg();applyTime();panel();buildStore(false);$("frame").src="index.html"};
+$("newStudent").onclick=()=>{for(const k of Object.keys(host.store))delete host.store[k];simStore();cfg.page="index.html";saveCfg();markNav();$("frame").src="index.html"};
+$("reset").onclick=()=>{if(!confirm("לאפס את הדמו להגדרות ההתחלה?"))return;cfg=Object.assign({},DEF,{day:cfg.day});host.staffUpdates=[];host.codes={};host.sim={maint:null,susp:null};host.ownMsgs=[];simMark();Object.assign(host,JSON.parse(INITIAL));saveCfg();applyTime();panel();buildStore(false);$("frame").src="index.html"};
 $("tglPanel").onclick=()=>{const c=$("panel").classList.toggle("closed");$("tglPanel").textContent=c?"הצג":"הסתר"};
 $("selfUrl").textContent=location.href.split("#")[0];
 
