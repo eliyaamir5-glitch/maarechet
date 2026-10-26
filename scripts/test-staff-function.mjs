@@ -677,3 +677,35 @@ r = await call("/api/staff", { body: { action: "backup" }, token: t3 });
   r = await call("/api/owner", { body: { action: "maint", on: true }, token: t3 });
   ok("staff token can't control the app", r.status === 401);
 }
+// ---- תקלות מהאפליקציה + יומן פעולות ----
+{
+  const osalt = "00112233445566778899aabbccddeeff";
+  mod.__setOwner({ salt: osalt, hash: crypto.scryptSync("LOGSCODE12345678", osalt, 32).toString("hex") });
+  await call("/api/owner", { body: { action: "login", code: "nope-nope" }, ip: "90.1.1.1" });
+  r = await call("/api/owner", { body: { action: "login", code: "LOGS-CODE-1234-5678" }, ip: "90.1.1.1" });
+  const ot = r.json.token;
+  const E = { action: "err", device: "device-err-0001", name: "דני", cls: "y1", msg: "TypeError: x is undefined", src: "index.html:120:5", page: "index", ver: "v1", plat: "iPhone · Safari" };
+  r = await call("/api/feed", { body: E });
+  ok("app reports an error", r.status === 200);
+  await call("/api/feed", { body: { ...E, device: "device-err-0002", name: "רוני", plat: "Android · Chrome" } });
+  await call("/api/feed", { body: { ...E, msg: "ReferenceError: y", src: "cards.html:5:1", page: "cards" } });
+  r = await call("/api/feed", { body: { action: "err", msg: "" } });
+  ok("empty error report refused", r.status === 400);
+  r = await call("/api/owner", { body: { action: "overview" }, token: ot });
+  const g = r.json.errors.find(e => e.msg === "TypeError: x is undefined");
+  ok("owner sees errors grouped (count, devices, names, phones)", g && g.count === 2 && g.devices === 2 && g.names.includes("רוני") && g.plats.length === 2 && r.json.errors.length === 2);
+  const logs = r.json.log.map(l => l.action);
+  ok("log has the failed and the good login", logs.includes("loginFail") && logs.includes("login"));
+  await call("/api/owner", { body: { action: "errClear", sig: g.sig }, token: ot });
+  await call("/api/owner", { body: { action: "maint", on: true, minutes: 15, msg: "בדיקה" }, token: ot });
+  await call("/api/owner", { body: { action: "maint", on: false }, token: ot });
+  await call("/api/owner", { body: { action: "suspend", people: [{ name: "דני", cls: "y1" }], minutes: 1440, reason: "סיבה" }, token: ot });
+  await call("/api/owner", { body: { action: "msgSend", to: "all", text: "שלום לכולם" }, token: ot });
+  r = await call("/api/owner", { body: { action: "overview" }, token: ot });
+  ok("marked error disappears, the other stays", !r.json.errors.some(e => e.sig === g.sig) && r.json.errors.length === 1);
+  const L = r.json.log.map(l => l.detail).join(" | ");
+  ok("log records maintenance, suspension (who/how long/why), message", L.includes("הפעלת מצב עדכון ל-15") && L.includes("עצירת מצב העדכון") && L.includes("השעיה: דני ל-1 ימים · סיבה") && L.includes("הודעה לכולם: שלום לכולם"));
+  r = await call("/api/owner", { body: { action: "errClear", sig: "zz" }, token: ot });
+  ok("errClear with a junk id → 400", r.status === 400);
+  await call("/api/owner", { body: { action: "unsuspend", people: [{ name: "דני", cls: "y1" }] }, token: ot });
+}

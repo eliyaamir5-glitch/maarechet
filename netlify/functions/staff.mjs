@@ -731,6 +731,12 @@ const minutesOrNull = v => v == null || v === "" ? null : Math.max(1, Math.min(6
 const msgsFor = (list, k, pk, cls, now) => (Array.isArray(list) ? list : []).filter(m => m.expiresAt > now && (m.to === "all" || m.to === cls || (m.to === "some" && ((m.keys || []).includes(k) || (m.people || []).includes(pk)))))
   .map(m => ({ id: m.id, text: m.text, at: m.createdAt, exp: m.expiresAt }));
 
+// יומן פעולות של מנהל המערכת (300 אחרונות)
+async function olog(S, action, detail) {
+  const e = { at: Date.now(), action, detail: clean(detail, 300) };
+  await S.update("ownerLog", cur => [e, ...(Array.isArray(cur) ? cur : [])].slice(0, 300)).catch(() => {});
+}
+const ERR_MAX = 500;
 async function ownerSecret(S) {
   let sec = null;
   await S.update("ownerConf", cur => { if (cur && cur.secret) { sec = cur.secret; return undefined; } sec = crypto.randomBytes(32).toString("hex"); return { secret: sec, createdAt: Date.now() }; });
@@ -745,8 +751,9 @@ async function owner(req, S, ip, headers) {
     const code = norm(b.code);
     if (!code || code.length > 64) return reply(400, { ok: false, error: "bad_request" }, headers);
     await attempt(S, ip);
-    if (!OWNER.hash || !safeEq(await hashCodeAsync(code, OWNER.salt), OWNER.hash)) return reply(401, { ok: false, error: "bad_code" }, headers);
+    if (!OWNER.hash || !safeEq(await hashCodeAsync(code, OWNER.salt), OWNER.hash)) { await olog(S, "loginFail", "ניסיון כניסה עם קוד שגוי"); return reply(401, { ok: false, error: "bad_code" }, headers); }
     await forgive(S, ip);
+    await olog(S, "login", "כניסה לדף הניהול");
     return reply(200, { ok: true, token: sign({ own: 1, ov, exp: now + OWNER_DAYS * 864e5 }, secret) }, headers);
   }
   const p = verify((req.headers.get("authorization") || "").replace(/^Bearer\s+/i, ""), secret);
@@ -754,12 +761,22 @@ async function owner(req, S, ip, headers) {
   if (b.action === "forget") { // מחיקת רשומה של מכשיר (למשל לבקשת תלמיד)
     const k = String(b.key || "");
     if (!/^[0-9a-f]{24}$/.test(k)) return reply(400, { ok: false, error: "bad_request" }, headers);
-    await S.update("presence", cur => { const m = cur || {}; if (!Object.hasOwn(m, k)) return undefined; delete m[k]; return m; });
+    let nm = "";
+    await S.update("presence", cur => { const m = cur || {}; if (!Object.hasOwn(m, k)) return undefined; nm = m[k] && m[k].name || ""; delete m[k]; return m; });
+    await olog(S, "forget", `מחיקת רשומת מכשיר${nm ? " של " + nm : ""}`);
+    return reply(200, { ok: true }, headers);
+  }
+  if (b.action === "errClear") { // תקלה טופלה (או: ניקוי כל התקלות)
+    const sig = String(b.sig || "");
+    if (sig && !/^[0-9a-f]{12}$/.test(sig)) return reply(400, { ok: false, error: "bad_request" }, headers);
+    await S.update("errors", cur => { const l = Array.isArray(cur) ? cur : []; const n = sig ? l.filter(e => e.sig !== sig) : []; return n.length === l.length ? undefined : n; });
+    await olog(S, "errClear", sig ? "תקלה סומנה כטופלה" : "ניקוי כל התקלות");
     return reply(200, { ok: true }, headers);
   }
   if (b.action === "maint") { // מצב עדכון לכולם: לזמן קצוב (דקות) או עד שעוצרים
     const on = !!b.on, min = minutesOrNull(b.minutes), msg = clean(b.msg, 200);
     await S.update("control", cur => { const c = cur && typeof cur === "object" ? cur : {}; c.maint = on ? { until: min ? now + min * 60e3 : null, msg, at: now } : null; return c; });
+    await olog(S, on ? "maintOn" : "maintOff", on ? `הפעלת מצב עדכון ${min ? "ל-" + min + " דק'" : "עד עצירה"}${msg ? ": " + msg : ""}` : "עצירת מצב העדכון");
     return reply(200, { ok: true }, headers);
   }
   if (b.action === "suspend" || b.action === "unsuspend") { // השעיה לפי מכשירים + לפי שם וכיתה (כדי שהרשמה מחדש באותו שם לא תעקוף)
@@ -775,6 +792,8 @@ async function owner(req, S, ip, headers) {
       for (const m of [c.susp, c.suspN]) for (const x of Object.keys(m)) if (!liveUntil(m[x], now)) delete m[x]; // ניקוי השעיות שנגמרו
       return c;
     });
+    const who = (Array.isArray(b.people) ? b.people : []).map(p => clean(p?.name, MAX_NAME)).filter(Boolean).join(", ") || keys.length + " מכשירים";
+    await olog(S, b.action, b.action === "suspend" ? `השעיה: ${who} ${min ? "ל-" + (min >= 1440 ? Math.round(min / 1440) + " ימים" : min + " דק'") : "עד החזרה"}${rec.reason ? " · " + rec.reason : ""}` : `החזרה: ${who}`);
     return reply(200, { ok: true }, headers);
   }
   if (b.action === "msgSend") { // הודעה ממנהל המערכת: לכולם / לכיתה / לתלמידים שנבחרו
@@ -785,14 +804,16 @@ async function owner(req, S, ip, headers) {
     if (!text || !to || (to === "some" && !keys.length && !people.length)) return reply(400, { ok: false, error: "bad_request" }, headers);
     const m = { id: newId(), text, to, ...(to === "some" ? { keys, people, names: (Array.isArray(b.names) ? b.names : []).map(x => clean(x, MAX_NAME)).filter(Boolean).slice(0, 300) } : {}), createdAt: now, expiresAt: now + hours * 3600e3 };
     await S.update("ownerMsgs", cur => [m, ...(Array.isArray(cur) ? cur : []).filter(x => x.expiresAt > now - 7 * 864e5)].slice(0, MSG_MAX));
+    await olog(S, "msgSend", `הודעה ${to === "all" ? "לכולם" : to === "some" ? "ל-" + ((m.names || []).slice(0, 5).join(", ") || keys.length + " מכשירים") : "ל" + to}: ${text.slice(0, 80)}`);
     return reply(200, { ok: true, id: m.id }, headers);
   }
   if (b.action === "msgDelete") {
     await S.update("ownerMsgs", cur => { const l = Array.isArray(cur) ? cur : []; return l.some(x => x.id === b.id) ? l.filter(x => x.id !== b.id) : undefined; });
+    await olog(S, "msgDelete", "מחיקת הודעה");
     return reply(200, { ok: true }, headers);
   }
   if (b.action !== "overview") return reply(400, { ok: false, error: "bad_action" }, headers);
-  const keys = ["presence", "users", "updates", "polls", "events", "questions", "feedback", "contacts", "releases", "changes", "reactions", "birthdays", "sets", "views", "control", "ownerMsgs"];
+  const keys = ["presence", "users", "updates", "polls", "events", "questions", "feedback", "contacts", "releases", "changes", "reactions", "birthdays", "sets", "views", "control", "ownerMsgs", "errors", "ownerLog"];
   const v = Object.fromEntries(await Promise.all(keys.map(async k => [k, await S.get(k)])));
   const arr = x => Array.isArray(x) ? x : [], obj = x => x && typeof x === "object" && !Array.isArray(x) ? x : {};
   // תגובות לפי שם (השם שהתלמיד כתב בפרופיל), ימי הולדת לפי שם+כיתה
@@ -810,7 +831,18 @@ async function owner(req, S, ip, headers) {
   const daily = last30.map(d => ({ day: d, n: students.filter(s => s.days.includes(d)).length }));
   const today = israelDay(now);
   const ctl = obj(v.control);
-  return reply(200, { ok: true, now, today, students, daily, maint: maintOf(ctl, now),
+  // תקלות: מקובצות לפי "חתימה" (אותה שגיאה באותו מקום)
+  const eg = new Map();
+  for (const e of arr(v.errors)) {
+    if (!e || !e.sig) continue;
+    const g = eg.get(e.sig) || { sig: e.sig, msg: e.msg, src: e.src, pages: new Set(), count: 0, first: e.at, last: e.at, vers: new Set(), plats: new Set(), names: new Set(), devs: new Set() };
+    g.count++; g.first = Math.min(g.first, e.at); g.last = Math.max(g.last, e.at);
+    if (e.page) g.pages.add(e.page); if (e.ver) g.vers.add(e.ver); if (e.plat) g.plats.add(e.plat); if (e.name) g.names.add(e.name); if (e.k) g.devs.add(e.k);
+    eg.set(e.sig, g);
+  }
+  const errors = [...eg.values()].sort((a, b) => b.last - a.last).slice(0, 60)
+    .map(g => ({ sig: g.sig, msg: g.msg, src: g.src, pages: [...g.pages], count: g.count, devices: g.devs.size, first: g.first, last: g.last, vers: [...g.vers].slice(0, 6), plats: [...g.plats].slice(0, 6), names: [...g.names].slice(0, 12) }));
+  return reply(200, { ok: true, now, today, students, daily, maint: maintOf(ctl, now), errors, log: arr(v.ownerLog).slice(0, 150),
     suspended: [...Object.entries(obj(ctl.suspN)).map(([p, x]) => ({ person: p, ...x })), ...Object.entries(obj(ctl.susp)).map(([k, x]) => ({ key: k, ...x }))].filter(x => liveUntil(x, now)),
     msgs: arr(v.ownerMsgs).filter(m => m.expiresAt > now).map(m => ({ id: m.id, text: m.text, to: m.to, names: m.names || [], count: (m.keys || []).length, createdAt: m.createdAt, expiresAt: m.expiresAt })),
     staff: arr(v.users).map(u => ({ name: u.name, role: u.role, owner: !!u.owner, createdAt: u.createdAt || 0 })),
@@ -897,6 +929,14 @@ async function feed(req, S, ip, headers) {
       return m;
     });
     return reply(200, { ok: true, id, counts, mine: emoji }, headers);
+  }
+  if (action === "err") { // שגיאה שקרתה בטלפון של תלמיד – לדף מנהל המערכת
+    const msg = clean(b.msg, 300), src = clean(b.src, 200), page = clean(b.page, 40);
+    if (!msg) return reply(400, { ok: false, error: "bad_request" }, headers);
+    await rateLimit(S, "errRate", ip, 600);
+    const e = { sig: sha(msg + "|" + src.replace(/[?#].*$/, "")).slice(0, 12), msg, src, page, ver: clean(b.ver, 20), plat: clean(b.plat, 40), name: clean(b.name, MAX_NAME), cls, k: DEV_RE.test(device) ? devKey(device) : "", at: now };
+    await S.update("errors", cur => [e, ...(Array.isArray(cur) ? cur : [])].slice(0, ERR_MAX));
+    return reply(200, { ok: true }, headers);
   }
   if (action === "hello") {
     if (!DEV_RE.test(device) || !cls) return reply(400, { ok: false, error: "bad_request" }, headers);

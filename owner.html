@@ -103,6 +103,7 @@ dialog::backdrop{background:rgba(8,10,30,.6);backdrop-filter:blur(4px)}
 td.ck{width:30px}td.ck input{width:18px;height:18px;cursor:pointer}
 .pill.red{background:rgba(255,93,108,.18);color:var(--red)}
 .sus{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.logl{max-height:440px;overflow:auto}.code{font-family:ui-monospace,Consolas,monospace;font-size:13px;direction:ltr;text-align:left}.b2.sm{flex:0 0 auto;padding:6px 12px;font-size:13px}
 .priv{font-size:13px;color:var(--muted);line-height:1.6}
 .priv b{color:var(--ink)}
 .empty{color:var(--muted);text-align:center;padding:24px;font-size:14px}
@@ -152,6 +153,7 @@ const ST={now:["d-now","מחובר עכשיו"],today:["d-today","נכנס הי�
 const devKind=p=>/iPhone|Android/.test(p)?"טלפון":/iPad/.test(p)?"טאבלט":p?"מחשב":"לא ידוע";
 
 let D=null,filt={q:"",cls:"",st:"",sort:"last"},timer=null;const sel=new Set();
+const LOGI={login:"🔓",loginFail:"⚠️",maintOn:"🚧",maintOff:"✅",suspend:"⛔",unsuspend:"✅",msgSend:"✉️",msgDelete:"🗑️",forget:"🗑️",errClear:"🐞"};
 const SUS_OPTS=[["60","שעה"],["1440","יום"],["4320","3 ימים"],["10080","שבוע"],["","עד שאחזיר"]];
 // רשימת המושעים: לפי שם+כיתה (וגם מכשירים שהושעו לבד)
 function susList(){
@@ -224,6 +226,16 @@ function draw(){
       ${(D.msgs||[]).length?`<div class="sub" style="margin-top:12px">הודעות פעילות:</div>`+(D.msgs||[]).map(m=>`<div class="msg1"><div class="t">${esc(m.text)}</div><div class="row" style="justify-content:space-between"><span class="sub">${m.to==="all"?"לכולם":m.to==="some"?"ל: "+esc((m.names||[]).slice(0,6).join(", "))+((m.names||[]).length>6?" ועוד":""):"ל"+esc(clsL(m.to))} · עד ${esc(fmtDT(m.expiresAt))}</span><button class="b2 ghost" style="flex:0 0 auto;padding:6px 12px;font-size:13px" data-mdel="${esc(m.id)}">מחיקה</button></div></div>`).join(""):""}
     </div>
   </div>
+  <div class="grid2">
+    <div class="card"><h2>🐞 תקלות אצל תלמידים ${(D.errors||[]).length?`<span class="pill red">${D.errors.length}</span>`:""}</h2><p class="hint">שגיאות שקרו באפליקציה בטלפונים של התלמידים, מקובצות לפי סוג. אחרי שתוקן – "טופל".</p>
+      ${(D.errors||[]).length?D.errors.map(e=>`<div class="msg1"><div class="t code">${esc(e.msg)}<div class="sub">${esc(e.src||"")}</div></div>
+        <div class="sub" style="margin-top:6px">${e.count} פעמים · ${e.devices} מכשירים · אחרונה ${esc(ago(e.last,D.now))} · דף: ${esc((e.pages||[]).join(", ")||"?")}<br>${esc((e.plats||[]).join(" · "))}${(e.vers||[]).length?" · גרסה "+esc(e.vers.join(", ")):""}${(e.names||[]).length?"<br>אצל: "+esc(e.names.join(", ")):""}</div>
+        <div class="row" style="margin-top:6px"><button class="b2 ghost sm" data-errok="${esc(e.sig)}">✓ טופל</button></div></div>`).join("")+`<div class="row" style="margin-top:10px"><button class="b2 ghost sm" id="errAll">ניקוי כל התקלות</button></div>`:`<div class="empty">אין תקלות 🎉</div>`}
+    </div>
+    <div class="card"><h2>📜 יומן פעולות</h2><p class="hint">מה נעשה מהדף הזה ומתי – כולל ניסיונות כניסה עם קוד שגוי.</p>
+      <div class="logl">${(D.log||[]).length?(D.log||[]).slice(0,80).map(l=>`<div class="sus"><div><b>${LOGI[l.action]||"•"}</b> ${esc(l.detail)}</div><span class="sub" style="white-space:nowrap">${esc(fmtDT(l.at))}</span></div>`).join(""):`<div class="empty">עוד אין פעולות</div>`}</div>
+    </div>
+  </div>
   ${(D.suspended||[]).length?`<div class="card"><h2>⛔ מושעים כרגע (${D.suspended.filter(x=>x.person).length||D.suspended.length})</h2>${susList()}</div>`:""}
   <div class="grid2">
     <div class="card"><h2>📈 כמה תלמידים נכנסו בכל יום</h2><p class="hint">30 הימים האחרונים. ירוק = היום, חלש = שישי ושבת.</p>
@@ -281,6 +293,8 @@ function draw(){
     if(!r.ok){$("oGo").disabled=false;alert(ERR[r.error]||"לא הצלחנו לשלוח.");return}$("oText").value="";load()};
   document.querySelectorAll("[data-mdel]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את ההודעה? היא תיעלם אצל התלמידים."))return;b.disabled=true;await api({action:"msgDelete",id:b.dataset.mdel});load()});
   document.querySelectorAll("[data-unsus]").forEach(b=>b.onclick=async()=>{b.disabled=true;const x=JSON.parse(b.dataset.unsus);const r=await api({action:"unsuspend",...x});if(!r.ok){b.disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}load()});
+  document.querySelectorAll("[data-errok]").forEach(b=>b.onclick=async()=>{b.disabled=true;const r=await api({action:"errClear",sig:b.dataset.errok});if(!r.ok){b.disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}load()});
+  if($("errAll"))$("errAll").onclick=async()=>{if(!confirm("לנקות את כל התקלות?"))return;$("errAll").disabled=true;await api({action:"errClear"});load()};
   drawRows();
   $("q").oninput=e=>{filt.q=e.target.value;drawRows()};
   $("fc").onchange=e=>{filt.cls=e.target.value;drawRows()};
