@@ -11,3 +11,4 @@ _site/
 tests/browser/*.png
 tests/browser/e2e/
 tests/browser/e2e-profile-*/
+tests/browser/*-result.json
