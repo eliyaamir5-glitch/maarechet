@@ -1,0 +1,66 @@
+import { ROOT, CHROME, CHROME_ARGS } from "./_env.mjs";
+import puppeteer from "puppeteer-core";
+import crypto from "node:crypto";
+import { pathToFileURL } from "node:url";
+const mod = await import(pathToFileURL(ROOT + "/netlify/functions/staff.mjs").href + "?v=" + Date.now());
+mod.__useMemoryStore(); mod.__setOwner({ salt: "ab", hash: crypto.scryptSync("OWNERTEST1234567", "ab", 32).toString("hex") }); mod.__setInviteHash(crypto.createHash("sha256").update("TESTCODE1234").digest("hex"));
+const H = mod.default;
+const res = []; const log = (ok, n, x = "") => { res.push(ok); console.log(ok ? "✅" : "❌", n, ok ? "" : x); };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: CHROME_ARGS });
+const errs = [];
+async function page(setup, w = 390) {
+  const ctx = await browser.createBrowserContext(); const p = await ctx.newPage();
+  await p.setViewport({ width: w, height: 844, deviceScaleFactor: 2, isMobile: w < 700, hasTouch: w < 700 });
+  p.on("pageerror", e => errs.push(e.message)); p.on("dialog", d => d.accept());
+  if (setup) await p.evaluateOnNewDocument(setup);
+  await p.setRequestInterception(true);
+  p.on("request", async q => {
+    const u = q.url();
+    if (/netlify\.app\/api\//.test(u)) {
+      if (q.method() === "OPTIONS") return q.respond({ status: 204, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type, Authorization" } });
+      const h = q.headers();
+      const rr = await H(new Request(u.replace(/^https:\/\/[^/]+/, "http://localhost"), { method: q.method(), headers: { "Content-Type": "application/json", ...(h.authorization ? { authorization: h.authorization } : {}) }, body: q.postData() || undefined }), { ip: "5.5.5." + Math.floor(Math.random() * 250) });
+      return q.respond({ status: rr.status, contentType: "application/json", headers: { "Access-Control-Allow-Origin": "*" }, body: await rr.text() });
+    }
+    if (/web3forms|hebcal|jsdelivr/.test(u) && /web3forms/.test(u)) return q.respond({ status: 200, contentType: "application/json", body: "{}" });
+    q.continue();
+  });
+  return p;
+}
+const feed = async (b, ip = "5.5.5.5") => (await H(new Request("http://localhost/api/feed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) }), { ip })).json();
+await feed({ action: "hello", device: "device-aaaa-0001", name: "נועה כהן", cls: "y1", eng: "hadad", math: "adir", major: "cs", mashov: true, ver: "2026-10-25.5", plat: "iPhone · Safari", inst: true });
+await feed({ action: "hello", device: "device-aaaa-0002", name: "נועה כהן", cls: "y1", eng: "hadad", math: "adir", major: "cs", ver: "2026-10-25.5", plat: "Windows · Chrome" });
+await feed({ action: "hello", device: "device-aaaa-0003", name: `<img src=x onerror="window.__xss=1">`, cls: "y2", eng: "toni", ver: "2026-01-01", plat: "Android · Chrome" });
+const O = await page(null, 1300);
+await O.goto("http://localhost:8787/owner.html", { waitUntil: "networkidle2" }); await sleep(500);
+await O.type("#code", "wrong-code"); await O.click("#go"); await sleep(700);
+log((await O.$eval("#err", e => e.textContent)).includes("לא נכון"), "wrong code is refused");
+await O.$eval("#code", e => e.value = ""); await O.type("#code", "ownr-test-1234-567"); await O.click("#go"); await sleep(400);
+log(!!(await O.$("#code")), "a similar but wrong code is refused");
+await O.$eval("#code", e => e.value = ""); await O.type("#code", "OWNE-RTES-T123-4567"); await O.click("#go"); await sleep(1500);
+const kp = await O.$$eval(".kpi b", l => l.map(x => x.textContent));
+log(kp[0] === "2" && kp[1].includes("3") === false && +kp[1] >= 2, "KPIs: 2 students (2 devices of one student merged), online now", kp.join(","));
+const rows = await O.$$eval("#tb tr", l => l.map(x => x.innerText.replace(/\s+/g, " ")));
+log(rows.some(r => r.includes("נועה כהן") && r.includes("2 מכשירים")), "same student on 2 devices = one row", rows.join(" | "));
+log(rows.some(r => r.includes("גרסה ישנה")), "old version flagged");
+log(!(await O.evaluate(() => window.__xss)) && rows.some(r => r.includes("<img")), "names are shown as text (no code runs)");
+await O.type("#q", "נועה"); await sleep(200);
+log((await O.$$eval("#tb tr", l => l.length)) === 1, "search filters the list");
+await O.click("#tb tr"); await sleep(400);
+const dt = await O.$eval("#dlgBody", e => e.innerText.replace(/\s+/g, " "));
+log(dt.includes("אתי חדד") && dt.includes("מדעי המחשב") && dt.includes("מחובר") && dt.includes("iPhone") && dt.includes("Windows"), "detail shows groups, major, Mashov and both devices", dt.slice(0, 300));
+await O.click("[data-del]"); await sleep(900);
+await O.$eval("#q", e => { e.value = ""; e.dispatchEvent(new Event("input")); }); await sleep(300);
+const rows2 = await O.$$eval("#tb tr", l => l.map(x => x.innerText.replace(/\s+/g, " ")));
+log(rows2.some(r => r.includes("נועה כהן") && !r.includes("2 מכשירים")), "delete one device record", rows2.join(" | "));
+await O.screenshot({ path: "owner-desk.png", fullPage: true });
+const M = await page(t => localStorage.setItem("ownerToken", t), 360);
+await M.evaluateOnNewDocument(t => localStorage.setItem("ownerToken", t), await O.evaluate(() => localStorage.getItem("ownerToken")));
+await M.goto("http://localhost:8787/owner.html", { waitUntil: "networkidle2" }); await sleep(1200);
+log(await M.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "fits a 360px phone (no sideways scroll)");
+await M.screenshot({ path: "owner-phone.png", fullPage: true });
+await O.click("#out"); await sleep(400);
+log(!!(await O.$("#code")) && !(await O.evaluate(() => localStorage.getItem("ownerToken"))), "logout clears the session");
+console.log("errors:", errs.slice(0, 5)); console.log(`${res.filter(Boolean).length}/${res.length} passed`);
+await browser.close();

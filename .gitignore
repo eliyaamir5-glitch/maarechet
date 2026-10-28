@@ -8,3 +8,6 @@ _site/
 סיכום-להצגה.txt
 קוד-ספר-טלפונים.txt
 קוד-מנהל-מערכת.txt
+tests/browser/*.png
+tests/browser/e2e/
+tests/browser/e2e-profile-*/
