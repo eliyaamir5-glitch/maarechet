@@ -40,7 +40,7 @@ const typeCard = async (p, words) => { for (const w of words) { await p.keyboard
 const T = await page();
 await T.goto("http://localhost:8787/staff.html", { waitUntil: "networkidle2" }); await sleep(500);
 await T.type("#lCode", tCode); await tap(T, "#lGo"); await sleep(800);
-await T.evaluate(() => [...document.querySelectorAll("#tabs button")].find(b => b.textContent.includes("כרטיסיות")).click()); await sleep(600);
+await T.evaluate(() => goTab("sets")); await sleep(600);
 log(await T.$eval("#setList", e => e.textContent.includes("עוד לא פורסמו")), "teacher sees the flashcards tab (empty)");
 await tap(T, "#sNew"); await sleep(300);
 await T.type("#sTitle", "אנגלית – יחידה 4"); await T.type("#sSubj", "אנגלית");

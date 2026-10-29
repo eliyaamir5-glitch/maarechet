@@ -38,21 +38,23 @@ const S1 = s => new Function(`(${s().toString().replace("__CLS__", "y1")})()`);
 const T = await page(null, 1100);
 await T.goto("http://localhost:8787/staff.html", { waitUntil: "networkidle2" }); await sleep(400);
 await T.type("#lCode", "TEST-CODE-1234"); await T.click("#lGo"); await sleep(900);
-const tabs = await T.$$eval("#tabs button", l => l.map(b => b.textContent));
-log(["❓ שאלות", "📊 סקרים", "📅 אירועים", "🏃 שחרורים", "📈 נתונים"].every(t => tabs.includes(t)), "staff: 5 new tabs", tabs.join(","));
+// כל המסכים קיימים (בלשוניות לפי נושא: תקשורת / מערכת / נתונים)
+const tabs = [];
+for (const t of ["qs", "rel", "stats"]) { await T.evaluate(t => goTab(t), t); await sleep(200); tabs.push(...await T.$$eval("#tabs button, #subtabs button", l => l.map(b => b.textContent))); }
+log(["❓ שאלות", "📊 סקרים", "📅 אירועים", "🏃 שחרורים", "📈 נתונים"].every(t => tabs.some(x => x.includes(t.slice(3)))), "staff: all screens reachable", [...new Set(tabs)].join(","));
 // סקר
-await T.evaluate(() => [...document.querySelectorAll("#tabs button")].find(b => b.textContent.includes("סקרים")).click()); await sleep(500);
+await T.evaluate(() => goTab("polls")); await sleep(500);
 await T.type("#pQ", "לאן הטיול השנתי?");
 const pin = await T.$$("#pOpts input"); await pin[0].type("צפון"); await pin[1].type("דרום"); await pin[2].type("ירושלים");
 await T.click("#pGo"); await sleep(600);
 log((await T.$eval("#pList", e => e.innerText)).includes("לאן הטיול השנתי?"), "staff creates a poll");
 // אירוע
-await T.evaluate(() => [...document.querySelectorAll("#tabs button")].find(b => b.textContent.includes("אירועים")).click()); await sleep(500);
+await T.evaluate(() => goTab("events")); await sleep(500);
 const ed = new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10);
 await T.type("#eT", "שבת אחים"); await T.$eval("#eD", (e, v) => e.value = v, ed); await T.type("#eP", "בית המדרש"); await T.click("#eGo"); await sleep(600);
 log((await T.$eval("#eList", e => e.innerText)).includes("שבת אחים"), "staff adds an event");
 // עדכון מתוזמן
-await T.evaluate(() => [...document.querySelectorAll("#tabs button")].find(b => b.textContent.includes("עדכון חדש")).click()); await sleep(500);
+await T.evaluate(() => goTab("write")); await sleep(500);
 await T.type("#text", "תזכורת מתוזמנת לבוקר");
 await T.click('#when [data-v="later"]'); await sleep(100);
 log(!(await T.$eval("#whenAt", e => e.hidden)) && (await T.$eval("#whenAt", e => e.value)).endsWith("T07:00"), "schedule: 'בזמן אחר' suggests tomorrow 07:00");
@@ -84,7 +86,7 @@ await P.evaluate(() => document.getElementById("profDlg").close());
 await P.screenshot({ path: "p2-student.png", fullPage: true });
 
 // ---- הצוות עונה ----
-await T.evaluate(() => [...document.querySelectorAll("#tabs button")].find(b => b.textContent.includes("שאלות")).click()); await sleep(600);
+await T.evaluate(() => goTab("qs")); await sleep(600);
 log((await T.$eval("#qList", e => e.innerText)).includes("מה החומר למבחן באנגלית?"), "staff sees the anonymous question");
 await T.type("#qList textarea", "יחידות 3–4. בהצלחה!"); await T.click("[data-qans]"); await sleep(600);
 await T.screenshot({ path: "p2-staff-q.png", fullPage: true });
@@ -116,11 +118,11 @@ if (link) {
   await R.click("#btnSign"); await sleep(1200);
   log((await R.$eval("#stDone", e => e.innerText)).includes("נרשם גם אצל צוות"), "parent signs → 'נרשם גם אצל צוות הישיבה'");
 } else log(false, "could not build parent link");
-await T.evaluate(() => [...document.querySelectorAll("#tabs button")].find(b => b.textContent.includes("שחרורים")).click()); await sleep(600);
+await T.evaluate(() => goTab("rel")); await sleep(600);
 log((await T.$eval("#rList", e => e.innerText)).includes("תור לרופא"), "staff sees the signed release");
 // ---- נתונים (פינג יומי אחרי 5 שניות) ----
 await sleep(4000);
-await T.evaluate(() => [...document.querySelectorAll("#tabs button")].find(b => b.textContent.includes("נתונים")).click()); await sleep(600);
+await T.evaluate(() => goTab("stats")); await sleep(600);
 const st = await T.$eval("#stBody", e => e.innerText.replace(/\s+/g, " "));
 log(/י'2 \d+ תלמידים השתמשו/.test(st) && !/יוסי/.test(st), "principal stats: usage per class, no names", st.slice(0, 160));
 await T.screenshot({ path: "p2-stats.png", fullPage: true });

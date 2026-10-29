@@ -34,11 +34,10 @@ await p.goto("http://localhost:8787/staff.html", { waitUntil: "networkidle2" });
 const res = []; const ok = (n, c) => { res.push([n, !!c]); console.log(c ? "✅" : "❌", n); };
 let dlg = []; p.on("dialog", d => { dlg.push(d.message()); d.accept(); });
 await api({ action: "birthday", device: "device-zzzz-9999", name: "יוסי בדיקה", cls: "y1", md: "03-05" }, null, "/api/feed");
-const tabs = await p.$$eval("#tabs button", b => b.map(x => x.dataset.t)); console.log("tabs", tabs.join(","));
+const tabs = ["qs", "stats", "list", "rel"]; console.log("tabs", tabs.join(","));
 ok("schedule field visible (server caps)", await p.evaluate(() => !document.getElementById("when").hidden));
 // questions: hide → hidden filter → restore
-await p.click('#tabs button[data-t="q"]').catch(() => {}); await sleep(700);
-const qt = tabs.find(t => /q/.test(t)); if (qt) { await p.click(`#tabs button[data-t="${qt}"]`); await sleep(700); }
+const qt = tabs.find(t => /q/.test(t)); if (qt) { await p.evaluate(t => goTab(t), qt); await sleep(700); }
 dlg = []; await p.click("[data-qhide]"); await sleep(700);
 ok("hide asks first", dlg.some(m => m.includes("להסתיר")));
 await p.click('#qF button[data-v="hidden"]'); await sleep(700);
@@ -47,16 +46,16 @@ await p.click("[data-qrest]"); await sleep(700);
 await p.click('#qF button[data-v="new"]'); await sleep(700);
 ok("restored back to new", await p.$("[data-qhide]"));
 // stats → birthdays
-const st = tabs.find(t => /stat/.test(t)); await p.click(`#tabs button[data-t="${st}"]`); await sleep(900);
+const st = tabs.find(t => /stat/.test(t)); await p.evaluate(t => goTab(t), st); await sleep(900);
 ok("birthday listed", await p.$eval("#bdBox", e => e.innerText.includes("יוסי בדיקה")));
 dlg = []; await p.click("[data-bdel]"); await sleep(800);
 ok("birthday removed after confirm", dlg.length && await p.$eval("#bdBox", e => !e.innerText.includes("יוסי בדיקה")));
 // updates list: delete asks; failure keeps button usable
-const lt = tabs.find(t => /list|upd/.test(t)); await p.click(`#tabs button[data-t="${lt}"]`); await sleep(800);
+const lt = tabs.find(t => /list|upd/.test(t)); await p.evaluate(t => goTab(t), lt); await sleep(800);
 p.removeAllListeners("dialog"); p.on("dialog", d => { dlg.push(d.message()); d.dismiss(); });
 dlg = []; await p.click("[data-del]"); await sleep(500);
 ok("delete cancel keeps update", dlg.length && await p.$("[data-del]"));
-const rt = tabs.find(t => /rel/.test(t)); await p.click(`#tabs button[data-t="${rt}"]`); await sleep(800);
+const rt = tabs.find(t => /rel/.test(t)); await p.evaluate(t => goTab(t), rt); await sleep(800);
 ok("releases show verify note", await p.evaluate(() => document.querySelector("main").innerText.includes("לוודא מול ההורה")));
 console.log("errors:", errs.slice(0, 5)); console.log(`${res.filter(x => x[1]).length}/${res.length}`);
 await browser.close();

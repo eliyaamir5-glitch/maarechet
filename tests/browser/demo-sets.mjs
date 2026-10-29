@@ -9,6 +9,6 @@ await btn.click(); await new Promise(r => setTimeout(r, 3000)); console.log(p.fr
 const fr = p.frames().find(f => f !== p.mainFrame() && /staff/.test(f.url()));
 if (!fr) { console.log("no staff frame"); process.exit(1); }
 if (await fr.$("#lCode")) { await fr.type("#lCode", "ANY"); await fr.click("#lGo"); await new Promise(r => setTimeout(r, 1000)); }
-await fr.evaluate(() => [...document.querySelectorAll("#tabs button")].find(x => x.textContent.includes("כרטיסיות")).click()); await new Promise(r => setTimeout(r, 1000));
+await fr.evaluate(() => goTab("sets")); await new Promise(r => setTimeout(r, 1000));
 console.log("demo staff sets tab:", (await fr.$eval("main", e => e.innerText)).replace(/\s+/g, " ").slice(0, 200));
 await b.close(); console.log("errors:", errs.length ? errs : "none");

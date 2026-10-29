@@ -46,7 +46,7 @@ async function page(token, w = 390) {
 // ---- 1. מנהל: לשונית צוות → קוד חדש לספר הטלפונים ----
 const A = await page(admin);
 await A.goto("http://localhost:8787/staff.html", { waitUntil: "networkidle2" }); await sleep(500);
-await A.click('#tabs button[data-t="team"]'); await sleep(700);
+await A.evaluate(() => goTab("team")); await sleep(700);
 ok("principal sees the phone-code card", await A.$("#pcNew") !== null);
 ok("…which says the old code is still in use", (await A.$eval("#pcInfo", e => e.textContent)).includes("הקוד הישן"));
 ok("…button text", (await A.$eval("#pcNew", e => e.textContent)) === "צור קוד עריכה חדש לספר הטלפונים");
@@ -90,9 +90,9 @@ const day = ilDay(dAhead);
 const B = await page(null);
 await B.goto("http://localhost:8787/staff.html", { waitUntil: "networkidle2" }); await sleep(400);
 await B.type("#lCode", codeB); await B.click("#lGo"); await sleep(800);
-ok("teacher has no team tab", !(await B.$('#tabs button[data-t="team"]')));
+await B.evaluate(() => goTab("me")); ok("teacher has no team tab", !(await B.$('#subtabs button[data-t="team"]')) && (await B.$$('#subtabs button[data-t="me"]')).length === 1);
 ok("teacher: backup action refused by server", (await call("/api/staff", { action: "backup" }, tA)).error === "forbidden");
-await B.click('#tabs button[data-t="chg"]'); await sleep(500);
+await B.evaluate(() => goTab("chg")); await sleep(500);
 await B.$eval("#cD", (e, d) => { e.value = d; e.dispatchEvent(new Event("change")); }, day); await sleep(200);
 const opt = await B.evaluate(() => { const x = chgOpts[+document.getElementById("cL").value]; return x ? { s: x.s, n: x.n, w: x.w || "", cls: x.shared ? "all" : chgCls } : null; });
 ok("teacher sees lessons for the chosen day", !!opt, day);

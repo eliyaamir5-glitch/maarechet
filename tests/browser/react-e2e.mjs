@@ -61,7 +61,7 @@ await Q.evaluate(() => [...document.querySelectorAll(".upd-pgrid button")].find(
 const T = await page(t => localStorage.setItem("staffToken", t), 1100);
 await T.evaluateOnNewDocument(t => localStorage.setItem("staffToken", t), tok);
 await T.goto("http://localhost:8787/staff.html", { waitUntil: "networkidle2" }); await sleep(900);
-await T.click('#tabs button[data-t="list"]'); await sleep(900);
+await T.evaluate(() => goTab("list")); await sleep(900);
 await T.evaluate(() => document.querySelector(".rx").open = true);
 await T.screenshot({ path: "rx-staff.png", clip: { x: 0, y: 0, width: 1100, height: 700 } });
 const rx = await T.$eval(".rx", e => e.innerText.replace(/\s+/g, " "));
