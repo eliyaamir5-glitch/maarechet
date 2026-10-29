@@ -44,6 +44,33 @@ main{padding:16px 14px 40px;max-width:560px;margin:0 auto}
 .tile .i{font-size:26px}
 .tile b{display:block;font-size:16px;margin-top:4px}
 .tile small{display:block;font-size:13px;opacity:.8;margin-top:2px;line-height:1.35}
+/* 🔍 חיפוש נושא */
+.srch{background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:12px;margin-bottom:14px;box-shadow:0 8px 24px rgba(91,108,255,.18)}
+.srch label{display:block;font-weight:900;font-size:17px;margin:0 4px 8px}
+.srch input{width:100%;border:2px solid var(--line);border-radius:14px;padding:13px 14px;font:inherit;font-size:18px;background:var(--bg);color:var(--ink)}
+.srch input:focus{outline:none;border-color:var(--accent)}
+.sug{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.sug button{display:flex;align-items:center;gap:10px;width:100%;text-align:start;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:14px;padding:10px 12px;font:inherit;font-size:16px;cursor:pointer}
+.sug button.on,.sug button:hover{border-color:var(--accent);background:var(--next)}
+.sug button .ic{font-size:20px}.sug button small{display:block;color:var(--muted);font-size:12px}
+.sug .ex{border-style:dashed;border-color:var(--free)}
+.hl{color:var(--accent);font-weight:900}
+.chips.tp .chip{direction:rtl}
+/* 📚 נושאים */
+.cat{margin-top:10px}.cat summary{cursor:pointer;font-weight:900;font-size:17px;padding:8px 2px}
+.cat .tl{display:grid;grid-template-columns:1fr;gap:6px;margin-top:4px}
+.tlb{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:10px 12px;font:inherit;font-size:15px;cursor:pointer;text-align:start}
+.tlb small{color:var(--muted);font-size:12px;white-space:nowrap}
+.tsec{margin-top:14px}.tsec h3{margin:0 0 6px;font-size:16px;font-weight:900}
+.tsec p,.tsec li{font-size:16px;line-height:1.8}
+.tsec ol,.tsec ul{margin:0;padding-inline-start:22px}
+.fbox{background:var(--bg);border:1.5px solid var(--line);border-radius:14px;padding:6px 12px}
+.fbox div{padding:6px 0;border-bottom:1px dashed var(--line);font-size:16px;line-height:1.9;overflow-x:auto}.fbox div:last-child{border-bottom:none}
+.tag{display:inline-block;background:var(--next);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;margin-inline-end:6px}
+.warn{background:rgba(255,107,107,.1);border:1.5px solid var(--bad);border-radius:14px;padding:8px 12px}
+.fr.bn>i:first-child{border-bottom:none}
+.reveal{margin-top:8px}
+.tsec .m{line-height:1.5;vertical-align:middle}.tsec .steps .m{display:inline-block;font-size:17px;text-align:inherit}.tsec .steps .h{font-size:16px;color:var(--ink);line-height:1.9}
 /* שדה תרגיל */
 .disp{position:relative}
 .mi{width:100%;border:2px solid var(--line);border-radius:14px;padding:13px 46px 13px 14px;font:inherit;font-size:22px;background:var(--bg);color:var(--ink);direction:ltr;text-align:left;caret-color:var(--accent)}
@@ -133,6 +160,12 @@ svg text{font-family:Rubik,Arial,sans-serif}
 
 <!-- בית -->
 <section id="vHome">
+  <div class="srch">
+    <label for="tq">🔍 במה צריך עזרה?</label>
+    <input id="tq" type="search" autocomplete="off" enterkeyhint="search" placeholder="למשל: נגזרת, פיתגורס, משוואה ריבועית…">
+    <div class="sug" id="tSug"></div>
+    <div class="chips tp" id="tPop"></div>
+  </div>
   <div class="tiles">
     <button class="tile big" data-go="solve"><div class="i">🟰</div><b>פתרון תרגיל</b><small>משוואה, אי-שוויון, פתיחת סוגריים, שברים ושורשים – עם כל השלבים</small></button>
     <button class="tile" data-go="sys"><div class="i">✖️</div><b>מערכת משוואות</b><small>שתי משוואות עם x ו-y</small></button>
@@ -140,9 +173,15 @@ svg text{font-family:Rubik,Arial,sans-serif}
     <button class="tile" data-go="line"><div class="i">📍</div><b>ישר דרך 2 נקודות</b><small>שיפוע, משוואה, מרחק, אמצע</small></button>
     <button class="tile" data-go="tri"><div class="i">📐</div><b>משולש ישר-זווית</b><small>פיתגורס, sin, cos, tan</small></button>
     <button class="tile" data-go="pct"><div class="i">💯</div><b>אחוזים</b><small>אחוז מתוך, הנחה, שינוי</small></button>
+    <button class="tile big" data-go="topics" style="background:var(--card);color:var(--ink);border:1.5px solid var(--accent)"><div class="i">📚</div><b>כל הנושאים – הסברים ודוגמאות</b><small>ט' עד י"ב: נוסחאות, איך פותרים שלב-שלב, דוגמה פתורה וטעויות נפוצות</small></button>
   </div>
   <p class="hint" style="margin-top:14px;text-align:center">💡 המחשבון עוזר להבין. במבחן צריך לדעת לעשות את השלבים לבד.</p>
 </section>
+
+<!-- 📚 כל הנושאים -->
+<section id="vTopics" hidden><div class="card" id="tAll"></div></section>
+<!-- 📖 נושא אחד -->
+<section id="vTopic" hidden><div class="card" id="tOne"></div></section>
 
 <!-- פתרון תרגיל -->
 <section id="vSolve" hidden>
@@ -234,6 +273,7 @@ svg text{font-family:Rubik,Arial,sans-serif}
 </main>
 
 <script src="calc-engine.js"></script>
+<script src="calc-topics.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -244,14 +284,19 @@ const M=h=>{const f=String(h).replace(/<[^>]+>|&[a-z]+;/g,"").match(/[A-Za-zא-�
 const D=x=>Calc.dec(x);
 
 // ---- ניווט (עם כפתור "אחורה" של הטלפון) ----
-const VIEWS={home:"vHome",solve:"vSolve",sys:"vSys",func:"vFunc",line:"vLine",tri:"vTri",pct:"vPct"};
-const TITLES={home:["🧮 מחשבון חכם","פותר תרגילים של כיתה י' – ומראה איך"],solve:["🟰 פתרון תרגיל","משוואות, אי-שוויונים, סוגריים ושברים"],sys:["✖️ מערכת משוואות","שתי משוואות, שני נעלמים"],func:["📈 גרף של פונקציה","ישר או פרבולה"],line:["📍 ישר דרך 2 נקודות","שיפוע, משוואה, מרחק, אמצע"],tri:["📐 משולש ישר-זווית","פיתגורס וטריגונומטריה"],pct:["💯 אחוזים","אחוז מתוך, הנחה, שינוי"]};
+const VIEWS={home:"vHome",solve:"vSolve",sys:"vSys",func:"vFunc",line:"vLine",tri:"vTri",pct:"vPct",topics:"vTopics",topic:"vTopic"};
+const TITLES={home:["🧮 מחשבון חכם","פותר תרגילים ומסביר כל נושא – ט' עד י\"ב"],topics:["📚 כל הנושאים","הסברים, נוסחאות ודוגמאות פתורות"],topic:["📖 נושא",""],solve:["🟰 פתרון תרגיל","משוואות, אי-שוויונים, סוגריים ושברים"],sys:["✖️ מערכת משוואות","שתי משוואות, שני נעלמים"],func:["📈 גרף של פונקציה","ישר או פרבולה"],line:["📍 ישר דרך 2 נקודות","שיפוע, משוואה, מרחק, אמצע"],tri:["📐 משולש ישר-זווית","פיתגורס וטריגונומטריה"],pct:["💯 אחוזים","אחוז מתוך, הנחה, שינוי"]};
 const FIRST={solve:"sIn",sys:"q1",func:"fIn",line:"lx1",tri:"ta"};
 let cur="home",target=null;
 function route(){
-  cur=(location.hash.slice(1)||"home");if(!VIEWS[cur])cur="home";
+  cur=(location.hash.slice(1)||"home");
+  const tid=cur.startsWith("t-")?cur.slice(2):null;if(tid)cur="topic";
+  if(!VIEWS[cur]||(cur==="topic"&&!Topics.byId(tid)))cur="home";
   for(const [k,id] of Object.entries(VIEWS))$(id).hidden=k!==cur;
   $("hT").textContent=TITLES[cur][0];$("hS").textContent=TITLES[cur][1];
+  if(cur==="topic"){const t=Topics.byId(tid);$("hT").textContent="📖 "+t.t.replace(/\$/g,"");$("hS").textContent=Topics.CATS[t.cat][1]+" · כיתה "+t.g;showTopic(t)}
+  if(cur==="topics")showAll();
+  if(cur==="home")setTimeout(()=>{$("tq").value="";sugg()},0);
   $("back").textContent=cur==="home"?"🏠 חזרה למערכת":"→ כל הנושאים";
   const slot=document.querySelector(`#${VIEWS[cur]} .kslot`);
   $("kp").hidden=!slot;if(slot)slot.appendChild($("kp"));
@@ -260,9 +305,66 @@ function route(){
   window.scrollTo(0,0);
   save("calcView",cur);
 }
-$("back").onclick=()=>{if(cur==="home")location.href="./";else location.hash=""};
+$("back").onclick=()=>{if(cur==="home")location.href="./";else if(cur==="topic"&&history.length>1)history.back();else location.hash=""};
 document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>location.hash=b.dataset.go);
 window.addEventListener("hashchange",route);
+
+// ---- 🔍 חיפוש נושא + הסבר מלא ----
+const R=Topics.rich;
+const escT=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let sugSel=0,sugList=[];
+function sugg(){
+  const q=$("tq").value.trim(),box=$("tSug");
+  sugList=[];
+  if(q&&Topics.looksLikeExercise(q))sugList.push({ex:q});
+  if(q)Topics.search(q,6).forEach(t=>sugList.push({t}));
+  sugSel=0;
+  box.innerHTML=!q?"":sugList.length?sugList.map((x,i)=>x.ex
+    ?`<button type="button" class="ex${i===sugSel?" on":""}" data-i="${i}"><span class="ic">🟰</span><span>לפתור את התרגיל <b dir="ltr">${escT(x.ex)}</b><small>עם כל השלבים</small></span></button>`
+    :`<button type="button" class="${i===sugSel?"on":""}" data-i="${i}"><span class="ic">${Topics.CATS[x.t.cat][0]}</span><span>${R(x.t.t)}<small>${Topics.CATS[x.t.cat][1]} · כיתה ${escT(x.t.g)}</small></span></button>`).join("")
+    :`<div class="hint" style="margin:6px 4px 0">לא מצאתי נושא כזה 🤔 נסה מילה אחרת, או פתח את <a href="#topics">כל הנושאים</a>.</div>`;
+  box.querySelectorAll("button").forEach(b=>b.onclick=()=>openSug(+b.dataset.i));
+  $("tPop").innerHTML=q?"":["נגזרת","משוואה ריבועית","פיתגורס","סינוס","סדרה חשבונית","הסתברות","לוגריתם","שטחים"].map(w=>`<button type="button" class="chip">${w}</button>`).join("");
+  $("tPop").querySelectorAll(".chip").forEach(c=>c.onclick=()=>{$("tq").value=c.textContent;sugg();$("tq").focus()});
+}
+function openSug(i){const x=sugList[i];if(!x)return;if(x.ex)useTool({go:"solve",x:x.ex});else location.hash="t-"+x.t.id}
+$("tq").addEventListener("input",sugg);
+$("tq").addEventListener("keydown",e=>{
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();if(!sugList.length)return;sugSel=(sugSel+(e.key==="ArrowDown"?1:-1)+sugList.length)%sugList.length;$("tSug").querySelectorAll("button").forEach((b,i)=>b.classList.toggle("on",i===sugSel))}
+  else if(e.key==="Enter"){e.preventDefault();openSug(sugSel)}
+});
+// פותח כלי במחשבון עם הדוגמה של הנושא
+function useTool(tl){
+  location.hash=tl.go;
+  setTimeout(()=>{
+    if(tl.go==="solve"&&tl.x){$("sIn").value=tl.x;$("sIn").dispatchEvent(new Event("input"));$("sGo").click()}
+    if(tl.go==="sys"&&tl.a){$("q1").value=tl.a;$("q2").value=tl.b;$("qGo").click()}
+    if(tl.go==="func"&&tl.x){$("fIn").value=tl.x;$("fIn").dispatchEvent(new Event("input"));$("fGo").click()}
+  },60);
+}
+const TOOLN={solve:"🟰 פתור במחשבון עם כל השלבים",sys:"✖️ פתור במחשבון",func:"📈 צייר את הגרף במחשבון",line:"📍 פתח את מחשבון הישר",tri:"📐 פתח את מחשבון המשולש",pct:"💯 פתח את מחשבון האחוזים"};
+function showTopic(t){
+  const sec=(h,body)=>body?`<div class="tsec"><h3>${h}</h3>${body}</div>`:"";
+  const related=Topics.TOPICS.filter(x=>x.cat===t.cat&&x.id!==t.id).slice(0,4);
+  $("tOne").innerHTML=`<div><span class="tag">${Topics.CATS[t.cat][0]} ${Topics.CATS[t.cat][1]}</span><span class="tag">כיתה ${escT(t.g)}</span></div>
+    ${sec("💡 מה זה?",`<p>${R(t.what)}</p>`)}
+    ${t.f?sec("📌 נוסחאות וכללים",`<div class="fbox">${t.f.map(f=>`<div>${R(f)}</div>`).join("")}</div>`):""}
+    ${t.how?sec("🪜 איך פותרים – שלב אחרי שלב",`<ol>${t.how.map(h=>`<li>${R(h)}</li>`).join("")}</ol>`):""}
+    ${t.ex?sec("✏️ דוגמה פתורה",`<div class="fbox"><div><b>התרגיל:</b> ${R(t.ex.q)}</div></div>
+      <button type="button" class="btn ghost reveal" id="tRev">👀 נסה לבד – ואז לחץ כאן לראות את הפתרון</button>
+      <div id="tSol" hidden><ol class="steps">${t.ex.s.map(x=>`<li><span class="h">${R(x)}</span></li>`).join("")}</ol><div class="ans"><small>התשובה</small>${R(t.ex.a)}</div></div>`):""}
+    ${t.err?sec("⚠️ טעויות נפוצות",`<div class="warn"><ul>${t.err.map(e=>`<li>${R(e)}</li>`).join("")}</ul></div>`):""}
+    ${t.tool?`<button type="button" class="btn primary" id="tTool">${TOOLN[t.tool.go]}</button>`:""}
+    ${related.length?sec("🔗 נושאים קרובים",`<div class="chips tp">${related.map(x=>`<a class="chip" href="#t-${x.id}" style="text-decoration:none">${R(x.t)}</a>`).join("")}</div>`):""}`;
+  const rv=$("tRev");if(rv)rv.onclick=()=>{$("tSol").hidden=false;rv.hidden=true};
+  const tb=$("tTool");if(tb)tb.onclick=()=>useTool(t.tool);
+}
+function showAll(){
+  $("tAll").innerHTML=`<p class="hint">${Topics.TOPICS.length} נושאים. אפשר גם לחפש בדף הראשי 🔍</p>`+Object.entries(Topics.CATS).map(([c,[ic,n]])=>{
+    const ts=Topics.TOPICS.filter(t=>t.cat===c);if(!ts.length)return "";
+    return `<details class="cat" open><summary>${ic} ${n} <small class="hint">(${ts.length})</small></summary><div class="tl">${ts.map(t=>`<a class="tlb" href="#t-${t.id}" style="text-decoration:none"><span>${R(t.t)}</span><small>${escT(t.g)}</small></a>`).join("")}</div></details>`}).join("");
+}
+sugg();
 
 // ---- מקלדת מתמטית ----
 // [תווית, מה נכנס, סוג]

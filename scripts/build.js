@@ -8,7 +8,7 @@ const OUT = path.join(ROOT, "_site");
 
 const FILES = [
   "index.html", "about.html", "parent.html", "theme.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png","absences.html", "cards.html", "calc.html", "phones.html", "shichrur.html", "staff.html", "owner.html", "demo.html",
-  "data.js", "board.js", "sets.js", "card-editor.js", "calc-engine.js", "mashov.js", "absences.js", "timetable-image.js", "updates.js", "demo-shim.js", "sw.js",
+  "data.js", "board.js", "sets.js", "card-editor.js", "calc-engine.js", "calc-topics.js", "mashov.js", "absences.js", "timetable-image.js", "updates.js", "demo-shim.js", "sw.js",
   "mashov-schools.json",
 ];
 const OPTIONAL = ["logo.png"]; // אם קיים, מועתק. אם לא, האתר פשוט בלי לוגו
