@@ -142,9 +142,10 @@ function showLogin(msg){
 
 // ---- עזרים ----
 const clsL=c=>(typeof CLASSES_META!=="undefined"&&CLASSES_META[c]&&CLASSES_META[c].label)||c||"–";
-const engL=k=>(typeof ENG!=="undefined"&&ENG[k])||k||"–";
-const mathL=k=>(typeof MATH!=="undefined"&&MATH[k])||k||"–";
-const majL=k=>(typeof MAJORS!=="undefined"&&MAJORS[k]&&MAJORS[k].n)||k||"–";
+const G_=c=>typeof groupsOf==="function"?groupsOf(c):{ENG:{},MATH:{},MAJORS:{}};
+const engL=(k,c)=>G_(c).ENG[k]||k||"–";
+const mathL=(k,c)=>G_(c).MATH[k]||k||"–";
+const majL=(k,c)=>(G_(c).MAJORS[k]&&G_(c).MAJORS[k].n)||k||"–";
 const CUR=typeof APP_VERSION!=="undefined"?APP_VERSION:"";
 // כל השעות והתאריכים לפי שעון ישראל (גם אם המחשב של מי שצופה מכוון אחרת)
 const TZ="Asia/Jerusalem",IL=new Intl.DateTimeFormat("en-CA",{timeZone:TZ}),ilDay=t=>IL.format(new Date(t));
@@ -266,8 +267,8 @@ function draw(){
       <h2 style="margin-top:16px">📱 מכשירים</h2>${bars(tally(p=>devKind(p.top.plat)))}</div>
   </div>
   <div class="grid3">
-    <div class="card"><h2>🇬🇧 הקבצות אנגלית</h2>${bars(tally(p=>engL(p.top.eng)))}</div>
-    <div class="card"><h2>📐 הקבצות מתמטיקה</h2>${bars(tally(p=>mathL(p.top.math)))}</div>
+    <div class="card"><h2>🇬🇧 הקבצות אנגלית</h2>${bars(tally(p=>engL(p.top.eng,p.top.cls)))}</div>
+    <div class="card"><h2>📐 הקבצות מתמטיקה</h2>${bars(tally(p=>mathL(p.top.math,p.top.cls)))}</div>
     <div class="card"><h2>🎓 מגמות</h2>${bars(tally(p=>majL(p.top.major)))}</div>
   </div>
   <div class="card"><h2>👥 התלמידים</h2><p class="hint">לחיצה על שורה = כל הפרטים. 📲 התקין למסך הבית · 📊 חיבר משוב · 🎂 שיתף יום הולדת · 😀 תגובות לעדכונים</p>
@@ -333,7 +334,7 @@ function detail(p){
   $("dlgBody").innerHTML=`<h3>${esc(p.name)}</h3><div class="sub"><span class="dot ${s[0]}"></span>${s[1]} · ${esc(clsL(p.cls))}</div>
     <dl class="kv"><dt>נכנס לאחרונה</dt><dd>${esc(ago(p.last,D.now))} <span class="sub">(${esc(fmtDT(p.last))})</span></dd>
       <dt>הצטרף</dt><dd>${esc(fmtD(p.first))}</dd><dt>ימים פעיל</dt><dd>${p.d7} מתוך 7 · ${p.d30} מתוך 30</dd><dt>כניסות</dt><dd>${p.opens} <span class="sub">(הפרש של חצי שעה = כניסה חדשה)</span></dd>
-      <dt>אנגלית</dt><dd>${esc(engL(p.top.eng))}</dd><dt>מתמטיקה</dt><dd>${esc(mathL(p.top.math))}</dd><dt>מגמה</dt><dd>${esc(majL(p.top.major))}</dd>
+      <dt>אנגלית</dt><dd>${esc(engL(p.top.eng,p.top.cls))}</dd><dt>מתמטיקה</dt><dd>${esc(mathL(p.top.math,p.top.cls))}</dd><dt>מגמה</dt><dd>${esc(majL(p.top.major,p.top.cls))}</dd>
       <dt>משוב</dt><dd>${p.mashov?"מחובר":"לא מחובר"}</dd><dt>יום הולדת</dt><dd>${esc(bd)}</dd><dt>תגובות לעדכונים</dt><dd>${p.reacts}</dd></dl>
     <div class="sub">30 הימים האחרונים (ירוק = נכנס)</div><div class="cal">${D.daily.map(d=>`<i class="${days.has(d.day)?"on":""}" title="${esc(fmtDay(d.day))}"></i>`).join("")}</div>
     ${p.devs.map(d=>`<div class="dev"><b>📱 ${esc(d.plat||"מכשיר לא ידוע")}</b>${d.inst?` <span class="pill">מותקן</span>`:""}${CUR&&d.ver&&d.ver<CUR?` <span class="pill warn">גרסה ישנה</span>`:""}

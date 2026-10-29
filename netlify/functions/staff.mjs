@@ -31,7 +31,7 @@ const ALLOWED = [/^https:\/\/eliyaamir5-glitch\.github\.io$/, /^https:\/\/([a-z0
 const MAX_FEEDBACK = 1000, FEEDBACK_KINDS = ["idea", "bug", "other"], FEEDBACK_PER_HOUR = 30;
 const MAX_TEXT = 600, MAX_NAME = 40, TOKEN_DAYS = 7, MAX_DURATION_MIN = 60 * 24 * 30;
 const LOCK_FAILS = 20, LOCK_MIN = 15; // 20 קודים שגויים ב-15 דקות מאותה כתובת → נעילה ל-15 דקות
-const AUDIENCES = ["all", "y1", "y2"];
+const AUDIENCES = ["all", "y1", "y2", "ya1", "ya2"]; // כל התלמידים / כיתה (י'1, י'2, י"א1, י"א2)
 const MAX_SETS = 200, MAX_CARDS = 300, MAX_SIDE = 300, MAX_SETS_BYTES = 3e6; // סטי כרטיסיות של הצוות
 // sha256 של מפתח ההזמנה למנהל. נוצר ע"י: node scripts/make-invite.mjs
 let INVITE_HASH = "568b920bf334e23fd0f8d6b9b11446dd7d9de4c716b47a18d95a95e5c381ab14";
@@ -742,7 +742,7 @@ const personKey = (name, cls) => clean(name, MAX_NAME).replace(INVIS, "").replac
 // תלמיד שנבחר בדף הניהול → מפתח, רק עם שם אמיתי (2 תווים לפחות) וכיתה אמיתית.
 // אחרת "שם ריק" היה תופס כל מי שלא כתב שם בפרופיל (וכל הכיתה הייתה מושעית / מקבלת הודעה "אישית")
 function personOf(p) {
-  const cls = p && (p.cls === "y1" || p.cls === "y2") ? p.cls : "", k = personKey(p && p.name, cls);
+  const cls = p && AUDIENCES.includes(p.cls) && p.cls !== "all" ? p.cls : "", k = personKey(p && p.name, cls);
   return cls && [...k.slice(0, k.lastIndexOf("|"))].length >= 2 ? k : null;
 }
 const isDevKey = k => /^[0-9a-f]{24}$/.test(k);
@@ -858,7 +858,7 @@ async function owner(req, S, ip, headers) {
     return reply(200, { ok: true }, headers);
   }
   if (b.action === "msgSend") { // הודעה ממנהל המערכת: לכולם / לכיתה / לתלמידים שנבחרו
-    const text = clean(b.text, MSG_TEXT), to = ["all", "y1", "y2", "some"].includes(b.to) ? b.to : "";
+    const text = clean(b.text, MSG_TEXT), to = [...AUDIENCES, "some"].includes(b.to) ? b.to : "";
     const hours = Math.max(1, Math.min(24 * 14, Math.round(Number(b.hours)) || 24));
     const pl = (Array.isArray(b.people) ? b.people : []).slice(0, 300);
     const keys = [...new Set([...keysOf(b.keys, 300), ...pl.flatMap(p => keysOf(p && p.keys, 20))])].slice(0, 600);

@@ -148,12 +148,12 @@ const SCEN={
   rescue:{t:"מצב חילוץ 🚨",d:"מקצוע מעל 25%",base:.09,pray:.2,focus:.29,second:.21},
   none:{t:"בלי משוב",d:"כמו תלמיד שלא חיבר"},
 };
-function profileNow(){return{first:cfg.first||"יוסי",last:cfg.last||"",email:"",cls:cfg.cls,dorm:"yes",eng:cfg.eng,math:cfg.math,major:cfg.major,since:"2026-09-01T08:00:00.000Z"}}
+function profileNow(){return{first:cfg.first||"יוסי",last:cfg.last||"",email:"",cls:cfg.cls,dorm:"yes",...(GRADES[gradeOf(cfg.cls)].extra.includes("nitz")&&{nitz:"no"}),eng:cfg.eng,math:cfg.math,major:cfg.major,since:"2026-09-01T08:00:00.000Z"}}
 function genBehave(p,scKey,at){
   const sc=SCEN[scKey];if(!sc||sc.base==null)return[];
   const r=rng(7+scKey.length*31+(p.cls==="y1"?3:0));
-  const days=p.cls==="y1"?DAYS_Y1:DAYS_Y2;
-  const {blocks}=Absences.timeline({days,profile:p,data:{ENG,MATH,MAJORS},year:SCHOOL_YEAR,behave:[],until:isoOf(at),untilMin:at.getHours()*60+at.getMinutes()});
+  const days=DAYS_OF[p.cls]||DAYS_Y2;
+  const {blocks}=Absences.timeline({days,profile:p,data:{...groupsOf(p.cls)},year:SCHOOL_YEAR,behave:[],until:isoOf(at),untilMin:at.getHours()*60+at.getMinutes()});
   const by={},hour={},dayN={};
   blocks.forEach(b=>{(by[b.n]=by[b.n]||[]).push(b);dayN[b.date]=(dayN[b.date]||0)+b.periods;hour[b.date+b.s]=dayN[b.date]-b.periods+1}); // מספר שעה ביום, כמו במשוב
   const names=Object.keys(by),bag=names.filter(n=>!NON_BAGRUT.includes(n));
@@ -259,7 +259,7 @@ host.staffExtra=(b,me,admin)=>{const t=now(),ok=x=>({status:200,body:{ok:true,..
     case"eventDelete":host.events=host.events.filter(e=>e.id!==b.id);return ok({});
     case"qList":return ok({questions:host.questions});
     case"qAnswer":case"qHide":case"qDelete":{const q=host.questions.find(x=>x.id===b.id);if(!q)return err(404,"not_found");if(b.action==="qDelete")host.questions=host.questions.filter(x=>x!==q);else if(b.action==="qHide")q.status="hidden";else Object.assign(q,{status:"answered",answer:b.answer,answeredBy:me.name,answeredAt:t});return ok({})}
-    case"changeCreate":{const tm=/^([01]\d|2[0-3]):[0-5]\d$/,txt=(v,n)=>String(v||"").trim().slice(0,n),c={date:String(b.date||""),cls:["all","y1","y2"].includes(b.cls)?b.cls:"",s:String(b.s||""),n:txt(b.n,60),w:txt(b.w,60),kind:["cancel","sub","move","note"].includes(b.kind)?b.kind:"",note:txt(b.note,120)};
+    case"changeCreate":{const tm=/^([01]\d|2[0-3]):[0-5]\d$/,txt=(v,n)=>String(v||"").trim().slice(0,n),c={date:String(b.date||""),cls:["all",...Object.keys(CLASSES_META)].includes(b.cls)?b.cls:"",s:String(b.s||""),n:txt(b.n,60),w:txt(b.w,60),kind:["cancel","sub","move","note"].includes(b.kind)?b.kind:"",note:txt(b.note,120)};
       if(!/^\d{4}-\d{2}-\d{2}$/.test(c.date)||!tm.test(c.s)||!c.cls||!c.n||!c.kind)return err(400,"bad_request");
       if(c.kind==="sub"){c.sub=txt(b.sub,60);if(!c.sub)return err(400,"bad_request")}
       if(c.kind==="move"){const[a,e]=String(b.to||"").split("-");if(!tm.test(a||"")||!tm.test(e||"")||a>=e)return err(400,"bad_request");c.to=a+"-"+e}
@@ -289,7 +289,7 @@ host.staff=(method,b,token)=>{
       let au={authorId:me.id,authorName:me.name,role:me.role};
       if(admin&&b.asUser){const x=host.staffUsers.find(y=>y.id===b.asUser);if(x)au={authorId:x.id,authorName:x.name,role:x.role}}
       else if(admin&&String(b.asName||"").trim())au={authorId:me.id,authorName:String(b.asName).trim().slice(0,40),role:"staff"};
-      const u={id:"d"+Math.random().toString(36).slice(2,9),text,...(/^https:\/\//.test(String(b.video||""))?{video:String(b.video).slice(0,400)}:{}),...au,postedBy:me.id,postedByName:me.name,audience:["all","y1","y2"].includes(b.audience)?b.audience:"all",urgent:!!b.urgent,createdAt:t,expiresAt:t+mins*60e3};host.staffUpdates.push(u);return ok({update:u})}
+      const u={id:"d"+Math.random().toString(36).slice(2,9),text,...(/^https:\/\//.test(String(b.video||""))?{video:String(b.video).slice(0,400)}:{}),...au,postedBy:me.id,postedByName:me.name,audience:["all",...Object.keys(CLASSES_META)].includes(b.audience)?b.audience:"all",urgent:!!b.urgent,createdAt:t,expiresAt:t+mins*60e3};host.staffUpdates.push(u);return ok({update:u})}
     case"end":case"delete":{const u=host.staffUpdates.find(x=>x.id===b.id);if(!u)return err(404,"not_found");if(!admin&&u.authorId!==me.id)return err(403,"forbidden");
       if(b.action==="delete")host.staffUpdates=host.staffUpdates.filter(x=>x.id!==b.id);else u.expiresAt=Math.min(u.expiresAt,t-1);return ok({})}
     case"list":return ok({now:t,updates:host.staffUpdates.filter(u=>admin||u.authorId===me.id).slice().sort((a,b)=>b.createdAt-a.createdAt).map(u=>({...u,active:u.expiresAt>t,views:host.views[u.id]||0,reactions:Object.values((host.reacts||{})[u.id]||{}).map(x=>({e:x.e,name:x.name,cls:x.cls}))}))});
@@ -297,7 +297,7 @@ host.staff=(method,b,token)=>{
     // סטי כרטיסיות לכיתה
     case"setsList":return ok({sets:host.staffSets.slice().sort((a,b)=>b.updatedAt-a.updatedAt).map(x=>({...pubSet(x),mine:x.authorId===me.id,canEdit:admin||x.authorId===me.id}))});
     case"setSave":{const cards=(b.cards||[]).map(c=>({t:String(c.t||"").trim().slice(0,300),d:String(c.d||"").trim().slice(0,300)})).filter(c=>c.t&&c.d),title=String(b.title||"").trim().slice(0,80);
-      if(!title||cards.length<2)return err(400,"bad_request");const data={title,subject:String(b.subject||"").trim().slice(0,40),audience:["all","y1","y2"].includes(b.audience)?b.audience:"all",cards};
+      if(!title||cards.length<2)return err(400,"bad_request");const data={title,subject:String(b.subject||"").trim().slice(0,40),audience:["all",...Object.keys(CLASSES_META)].includes(b.audience)?b.audience:"all",cards};
       if(b.id){const x=host.staffSets.find(y=>y.id===b.id);if(!x)return err(404,"not_found");if(!admin&&x.authorId!==me.id)return err(403,"forbidden");Object.assign(x,data,{updatedAt:t});return ok({set:pubSet(x)})}
       const x={id:"ds"+Math.random().toString(36).slice(2,8),...data,authorId:me.id,authorName:me.name,updatedAt:t};host.staffSets.push(x);return ok({set:pubSet(x)})}
     case"setDelete":{const x=host.staffSets.find(y=>y.id===b.id);if(!x)return err(404,"not_found");if(!admin&&x.authorId!==me.id)return err(403,"forbidden");host.staffSets=host.staffSets.filter(y=>y!==x);return ok({})}
@@ -360,8 +360,8 @@ function seg(id,items,val,cb){const el=$(id);el.innerHTML="";for(const [v,html] 
 function fill(id,obj,val,label){const el=$(id);el.innerHTML="";for(const [k,v] of Object.entries(obj)){const o=document.createElement("option");o.value=k;o.textContent=label?label(v):v;el.append(o)}el.value=val}
 function panel(){
   $("first").value=cfg.first;$("last").value=cfg.last;
-  seg("cls",Object.entries(CLASSES_META).map(([k,v])=>[k,v.label]),cfg.cls,v=>{cfg.cls=v;changed()});
-  fill("eng",ENG,cfg.eng);fill("math",MATH,cfg.math);fill("major",MAJORS,cfg.major,v=>v.n);
+  seg("cls",Object.entries(CLASSES_META).map(([k,v])=>[k,v.label]),cfg.cls,v=>{cfg.cls=v;const G=groupsOf(v);for(const [f,o] of [["eng",G.ENG],["math",G.MATH],["major",G.MAJORS]])if(!Object.prototype.hasOwnProperty.call(o,cfg[f]))cfg[f]=Object.keys(o)[0];panel();changed()});
+  {const G=groupsOf(cfg.cls);fill("eng",G.ENG,cfg.eng);fill("math",G.MATH,cfg.math);fill("major",G.MAJORS,cfg.major,v=>v.n)}
   seg("scenario",Object.entries(SCEN).map(([k,v])=>[k,`${v.t}<small>${v.d}</small>`]),cfg.scenario,v=>{cfg.scenario=v;changed("absences.html")});
   seg("day",[...DAYN.map((n,i)=>[i,n])],cfg.real?-1:cfg.day,v=>{cfg.day=v;cfg.real=false;timeChanged()});
   seg("presets",[["07:20","תפילה 07:20"],["10:40","באמצע שיעור"],["13:05","הפסקה"],["20:50","ערב 20:50"]],null,v=>{cfg.time=v;cfg.real=false;$("time").value=v;timeChanged()});

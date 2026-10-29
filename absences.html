@@ -197,7 +197,7 @@ function render(){
   const behave=demo?demoBehave():(md?.behave||[]);
   let until,untilMin;
   if(demo){until="2026-10-15";untilMin=24*60}else{const at=new Date(md?.at||Date.now());until=`${at.getFullYear()}-${String(at.getMonth()+1).padStart(2,"0")}-${String(at.getDate()).padStart(2,"0")}`;untilMin=at.getHours()*60+at.getMinutes()}
-  const days=profile.cls==="y1"?DAYS_Y1:DAYS_Y2, D={ENG,MATH,MAJORS,forProfile};
+  const days=DAYS_OF[profile.cls]||DAYS_Y2, D={...groupsOf(profile.cls),forProfile};
   // "השבוע" לפי התאריך האמיתי של היום, גם אם הסנכרון האחרון ממשוב ישן
   const realToday=(()=>{const n=new Date();return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`})();
   const r=Absences.analyze({days,profile,data:D,year:SCHOOL_YEAR,behave,today:demo?"2026-10-15":until,weekFrom:demo?"2026-10-15":(realToday>until?realToday:until),countJustified,nonBagrut:NON_BAGRUT});

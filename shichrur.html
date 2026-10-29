@@ -78,7 +78,7 @@ textarea{min-height:80px;resize:vertical}
   <p class="hint">ממלאים סיבה ושעה, ושולחים להורה לאישור. ההורה חותם ושולח למורה.</p>
   <div class="row2">
     <div><label>שם התלמיד</label><input class="inp" id="fName" placeholder="שם מלא" maxlength="40"></div>
-    <div><label>כיתה</label><select id="fCls"><option value="y1">י'1</option><option value="y2">י'2</option></select></div>
+    <div><label>כיתה</label><select id="fCls"></select></div>
   </div>
   <div class="row2">
     <div><label>תאריך</label><input class="inp" id="fDate" type="date"></div>
@@ -151,14 +151,14 @@ const noSchool=dateIso=>{const wd=new Date(dateIso+"T12:00:00").getDay(),Y=typeo
 // מי מלמד את הכיתה בשעה נתונה
 function lessonAt(cls,dateIso,time){
   if(noSchool(dateIso))return null; // חופשה/חג/שישי/שבת: אין שיעור
-  const days=cls==="y1"?DAYS_Y1:DAYS_Y2;
+  const days=DAYS_OF[cls]||DAYS_Y2,G=groupsOf(cls);
   const d=days[new Date(dateIso+"T12:00:00").getDay()];
   if(!d||!d.lessons)return null;
   const m=toMin(time);
   const p=profile||{},major=p.major||(p.phys==="yes"?"phys":"");
-  const mj=MAJORS[major],rav=CLASSES_META[cls].rav;
+  const mj=G.MAJORS[major],rav=CLASSES_META[cls].rav;
   // בלי מורה (תפילה, "יציאה למגמה") – האישור נכתב למורה של המגמה או למחנך, ולא לשורה ריקה
-  const teacher=l=>l.key==="eng"?(ENG[p.eng]||"המורה לאנגלית"):l.key==="math"?(MATH[p.math]||"המורה למתמטיקה"):l.key==="major"?((mj&&mj.w)||"המורה במגמה"):l.w||(l.stats===false&&mj&&mj.w)||rav;
+  const teacher=l=>l.key==="eng"?(G.ENG[p.eng]||"המורה לאנגלית"):l.key==="math"?(G.MATH[p.math]||"המורה למתמטיקה"):l.key==="major"?((mj&&mj.w)||"המורה במגמה"):l.w||(l.stats===false&&mj&&mj.w)||rav;
   const name=l=>l.key==="major"&&mj?mj.n:l.n;
   const ls=withChanges(d.lessons.map(l=>forProfile(l,{...p,major})).filter(Boolean).map(l=>({n:name(l),w:teacher(l),s:l.s,e:l.e})),cls,dateIso);
   const cur=ls.find(l=>m>=toMin(l.s)&&m<toMin(l.e));
@@ -185,6 +185,7 @@ function withChanges(ls,cls,dateIso){
 // ---- שלב 1: התלמיד ----
 function initStudent(){
   $("stStudent").hidden=false;
+  $("fCls").innerHTML=Object.entries(CLASSES_META).map(([k,c])=>`<option value="${k}">${c.label}</option>`).join("");
   if(profile){$("fName").value=`${profile.first||""} ${profile.last||""}`.trim();if(profile.cls)$("fCls").value=profile.cls}
   const now=new Date();$("fDate").value=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
   $("fTime").value=`${pad(now.getHours())}:${pad(now.getMinutes())}`;

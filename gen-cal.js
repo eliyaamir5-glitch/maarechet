@@ -5,7 +5,7 @@
 //   node gen-cal.js --check    – רק בדיקה שהקבצים בתיקייה מעודכנים (יוצא עם שגיאה אם לא)
 const fs = require("fs");
 const path = require("path");
-const { ENG, MATH, DAYS_Y1, DAYS_Y2, CLASSES_META, DEFAULT_GEAR, MAJORS, SCHOOL_YEAR, forProfile } = require("./data.js");
+const { DAYS_OF, CLASSES_META, DEFAULT_GEAR, SCHOOL_YEAR, forProfile, groupsOf, GRADES, gradeOf } = require("./data.js");
 const { BOARD } = require("./board.js");
 
 const OUT_DIR = path.join(__dirname, "cal");
@@ -37,14 +37,15 @@ const gearOf = n => (DEFAULT_GEAR[n] || "").split(/[,\n]/).map(x => x.trim()).fi
 function resolve(l, p) {
   l = forProfile(l, p);
   if (!l) return null;
-  if (l.key === "eng") return { ...l, w: ENG[p.eng] };
-  if (l.key === "math") return { ...l, w: MATH[p.math] };
-  if (l.key === "major") { const m = MAJORS[p.major]; return m ? { ...l, n: m.n, w: m.w } : null; } // בלי מגמה ידועה – אין אירוע
+  const G = groupsOf(p.cls);
+  if (l.key === "eng") return { ...l, w: G.ENG[p.eng] };
+  if (l.key === "math") return { ...l, w: G.MATH[p.math] };
+  if (l.key === "major") { const m = G.MAJORS[p.major]; return m ? { ...l, n: m.n, w: m.w } : null; } // בלי מגמה ידועה – אין אירוע
   return l;
 }
 
 function buildICS(p) {
-  const days = p.cls === "y1" ? DAYS_Y1 : DAYS_Y2;
+  const days = DAYS_OF[p.cls];
   const combo = `${p.cls}-${p.eng}-${p.math}-${p.tag}`;
   const out = [
     "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//maarechet//HE", "CALSCALE:GREGORIAN",
@@ -108,18 +109,24 @@ function buildICS(p) {
 const check = process.argv.includes("--check");
 fs.mkdirSync(OUT_DIR, { recursive: true });
 let written = 0, stale = 0;
-for (const cls of Object.keys(CLASSES_META))
-  for (const eng of Object.keys(ENG))
-    for (const math of Object.keys(MATH))
-      for (const [tag, major] of [...Object.keys(MAJORS).map(k => [k, k]), ["yes", "phys"], ["no", null]])
-       for (const [dorm, sfx] of [["yes", ""], ["no", "-home"]]) { // בלי סיומת = פנימייה (הקישורים הישנים), -home = גר בבית
-        const file = path.join(OUT_DIR, `${cls}-${eng}-${math}-${tag}${sfx}.ics`);
-        const text = buildICS({ cls, eng, math, major, tag: tag + sfx, dorm });
+for (const cls of Object.keys(CLASSES_META)) {
+  const G = groupsOf(cls), g10 = gradeOf(cls) === "10";
+  // ניצנים רק בשכבות שבהן שואלים עליו: בלי סיומת = לא בניצנים, -nz = בניצנים
+  const NZ = GRADES[gradeOf(cls)].extra.includes("nitz") ? [["no", ""], ["yes", "-nz"]] : [[undefined, ""]];
+  for (const eng of Object.keys(G.ENG))
+    for (const math of Object.keys(G.MATH))
+      // yes/no = קישורים ישנים של י' (לפני המעבר למגמות)
+      for (const [tag, major] of [...Object.keys(G.MAJORS).map(k => [k, k]), ...(g10 ? [["yes", "phys"], ["no", null]] : [])])
+       for (const [dorm, sfx] of [["yes", ""], ["no", "-home"]]) // בלי סיומת = פנימייה (הקישורים הישנים), -home = גר בבית
+        for (const [nitz, nz] of NZ) {
+        const file = path.join(OUT_DIR, `${cls}-${eng}-${math}-${tag}${sfx}${nz}.ics`);
+        const text = buildICS({ cls, eng, math, major, tag: tag + sfx + nz, dorm, nitz });
         if (check) {
           const cur = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
           const strip = t => t.replace(/^DTSTAMP:.*$/gm, "");
           if (strip(cur) !== strip(text)) { stale++; console.error("stale:", path.basename(file)); }
         } else { fs.writeFileSync(file, text); written++; }
       }
+}
 if (check) { console.log(stale ? `${stale} files out of date` : "all calendar files up to date"); process.exit(stale ? 1 : 0); }
 console.log(`wrote ${written} calendar files to cal/`);

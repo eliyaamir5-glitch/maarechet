@@ -167,14 +167,17 @@ const T=new Map();
 const addT=(name,subj,mine)=>{name=clean(name);if(!name)return;const t=T.get(name)||{name,subj:new Set(),mine:false};if(subj)t.subj.add(subj);if(mine)t.mine=true;T.set(name,t)};
 const myCls=profile&&profile.cls;
 const myP=profile&&typeof profile==="object"?{...profile,major:profile.major||(profile.phys==="yes"?"phys":"")}:null;
-for(const [cls,days] of [["y1",DAYS_Y1],["y2",DAYS_Y2]])for(const d of days)for(const l of d.lessons||[]){
+for(const [cls,days] of Object.entries(DAYS_OF))for(const d of days)for(const l of d.lessons||[]){
   const me=cls===myCls&&myP?forProfile(l,myP):null;
   if(!l.key&&l.w)addT(l.w,l.n,!!(me&&me.w===l.w));
   for(const f in l.alt||{})for(const a of Object.values(l.alt[f]))if(a.w)addT(a.w,a.n||l.n,!!(me&&me.w===a.w));
 }
-for(const [k,v] of Object.entries(ENG))addT(v,"אנגלית",profile&&profile.eng===k);
-for(const [k,v] of Object.entries(MATH))addT(v,"מתמטיקה",profile&&profile.math===k);
-for(const [k,m] of Object.entries(MAJORS))if(m.w)addT(m.w,"מגמת "+m.n,profile&&profile.major===k);
+for(const [gr,G] of Object.entries(GRADES)){
+  const mine=k=>f=>!!profile&&gradeOf(profile.cls)===gr&&profile[f]===k;
+  for(const [k,v] of Object.entries(G.ENG))addT(v,"אנגלית",mine(k)("eng"));
+  for(const [k,v] of Object.entries(G.MATH))addT(v,"מתמטיקה",mine(k)("math"));
+  for(const [k,m] of Object.entries(G.MAJORS))if(m.w)addT(m.w,"מגמת "+m.n,mine(k)("major"));
+}
 
 // ---- המספרים מהשרת (נשמרים גם בטלפון, כדי שיעבוד בלי אינטרנט) ----
 const S=v=>typeof v==="string"||typeof v==="number"?String(v):"";

@@ -196,7 +196,7 @@ async function showWrite(){
     <input id="video" dir="ltr" inputmode="url" autocomplete="off" placeholder="https://youtu.be/...">
     <div class="hint" id="videoHint" style="margin:6px 0 0;font-size:13px">מעלים את הסרטון ליוטיוב (כ"לא רשום") או לגוגל דרייב (שיתוף: "כל מי שיש לו את הקישור"), ומדביקים כאן את הקישור. התלמידים יראו כפתור ▶️ ויצפו רק אם ירצו.</div>
     ${admin?`<label>בשם מי</label><select id="as"><option value="">אני (${esc(me.name)})</option></select><input id="asName" maxlength="40" placeholder="השם שיופיע, למשל: המזכירות" hidden style="margin-top:8px">`:""}
-    <label>למי</label><div class="seg" id="aud"><button data-v="all" class="on">כל התלמידים</button><button data-v="y1">י'1</button><button data-v="y2">י'2</button></div>
+    <label>למי</label><div class="seg" id="aud"><button data-v="all" class="on">כל התלמידים</button>${Object.entries(CLASSES_META).map(([k,c])=>`<button data-v="${k}">${c.label}</button>`).join("")}</div>
     <label>לכמה זמן</label><div class="seg" id="dur">${DUR.map(([l,v])=>`<button data-v="${v}" class="${v===60?"on":""}">${l}</button>`).join("")}<button data-v="custom">אחר…</button></div>
     <div class="row" id="custom" hidden style="margin-top:8px"><input id="cNum" type="number" min="1" max="999" value="30" style="width:100px;flex:0 0 auto"><select id="cUnit" style="width:auto;flex:0 0 auto"><option value="1">דקות</option><option value="60">שעות</option><option value="1440">ימים</option></select></div>
     <label>מתי לשלוח</label><div class="seg" id="when"><button data-v="now" class="on">עכשיו</button><button data-v="later">⏰ בזמן אחר…</button></div>
@@ -278,7 +278,8 @@ async function showList(){
 }
 
 // ---- כרטיסיות לכיתה: סטים שמופיעים אצל כל התלמידים ----
-const AUDN={all:"כל התלמידים",y1:"י'1",y2:"י'2"};
+const CLSN=Object.fromEntries(Object.entries(CLASSES_META).map(([k,c])=>[k,c.label]));
+const AUDN={all:"כל התלמידים",...CLSN};
 const loadL=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
 async function showSets(){
   $("main").innerHTML=`<div class="card"><h2>🃏 כרטיסיות לכיתה</h2><p class="hint">סט שתפרסמו מופיע אצל התלמידים במסך הכרטיסיות, תחת "סטים של הכיתה". הם לומדים ממנו בכרטיסיות, בכתיבת תשובה, במבחן אמריקאי ובחזרה חכמה.</p>
@@ -297,7 +298,7 @@ async function showSets(){
 function editSet(set){
   // טיוטה של סט חדש נשמרת במחשב/בטלפון, כדי שלא יאבד כלום אם יוצאים באמצע
   const dr=!set&&loadL("staffSetDraft",null);
-  const subjects=[...new Set([...DAYS_Y1,...DAYS_Y2].flatMap(d=>(d.lessons||[]).map(l=>l.key==="eng"?"אנגלית":l.key==="math"?"מתמטיקה":l.key==="major"?"":l.n)).filter(n=>n&&!PRAY.test(n)))];
+  const subjects=[...new Set(Object.values(DAYS_OF).flat().flatMap(d=>(d.lessons||[]).map(l=>l.key==="eng"?"אנגלית":l.key==="math"?"מתמטיקה":l.key==="major"?"":l.n)).filter(n=>n&&!PRAY.test(n)))];
   let aud=set?set.audience:dr&&dr.audience||"all";
   $("main").innerHTML=`<div class="card"><h2>${set?"✏️ עריכת סט":"＋ סט חדש לכיתה"}</h2>
     ${dr?`<div class="msg ok" style="margin:0 0 6px">📝 המשכנו מהטיוטה. <a href="#" id="drX" style="color:inherit;font-weight:700">להתחיל מחדש</a></div>`:""}
@@ -342,7 +343,7 @@ function editSet(set){
 
 
 // ---- 📊 סקרים ----
-const AUDN2={all:"כולם",y1:"י'1",y2:"י'2"};
+const AUDN2={all:"כולם",...CLSN};
 const audSeg=(id,v="all")=>`<div class="seg" id="${id}">${Object.entries(AUDN2).map(([k,l])=>`<button type="button" data-v="${k}" class="${k===v?"on":""}">${l}</button>`).join("")}</div>`;
 const segVal=id=>($(id).querySelector("button.on")||{}).dataset?.v;
 const wireSeg=id=>$(id).querySelectorAll("button").forEach(b=>b.onclick=()=>$(id).querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)));
@@ -499,7 +500,7 @@ async function showStats(){
 }
 
 // ---- מערכת: לפי כיתה או לפי מורה ----
-const CLS={y1:DAYS_Y1,y2:DAYS_Y2};
+const CLS=DAYS_OF;
 const DAYN=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
 const nameOf=t=>String(t||"").replace(/\s*\(.*\)\s*$/,"").trim();
 const groupOf=t=>(String(t||"").match(/\((.*)\)/)||[])[1]||"";
@@ -508,12 +509,16 @@ function slots(){
   const out=[];
   for(const [c,days] of Object.entries(CLS))days.forEach((d,di)=>(d.lessons||[]).forEach(l=>{
     // shared = הקבצה/מגמה שמשותפת לשתי הכיתות (שינוי בה מגיע לתלמידים של ההקבצה בשתיהן)
-    if(l.key==="eng")Object.entries(ENG).filter(([k])=>!(l.only&&l.only.eng)||l.only.eng.includes(k)).forEach(([,t])=>out.push({c,d:di,s:l.s,e:l.e,n:"אנגלית",w:nameOf(t),g:groupOf(t),group:true,shared:true}));
-    else if(l.key==="math")Object.values(MATH).forEach(t=>out.push({c,d:di,s:l.s,e:l.e,n:"מתמטיקה",w:nameOf(t),g:groupOf(t)||"הקבצה",group:true,shared:true}));
-    else if(l.key==="major")Object.values(MAJORS).forEach(m=>out.push({c,d:di,s:l.s,e:l.e,n:"מגמת "+m.n,w:m.w,group:true,shared:true}));
+    const G=groupsOf(c),pick=(o,f)=>Object.entries(o).filter(([k])=>!(l.only&&l.only[f])||l.only[f].includes(k));
+    if(l.key==="eng")pick(G.ENG,"eng").forEach(([,t])=>out.push({c,d:di,s:l.s,e:l.e,n:"אנגלית",w:nameOf(t),g:groupOf(t),group:true,shared:true}));
+    else if(l.key==="math")pick(G.MATH,"math").forEach(([,t])=>out.push({c,d:di,s:l.s,e:l.e,n:"מתמטיקה",w:nameOf(t),g:groupOf(t)||"הקבצה",group:true,shared:true}));
+    else if(l.key==="major")pick(G.MAJORS,"major").forEach(([,m])=>out.push({c,d:di,s:l.s,e:l.e,n:"מגמת "+m.n,w:m.w,group:true,shared:true}));
     else out.push({c,d:di,s:l.s,e:l.e,n:l.n,w:l.w});
     // שיעור אחר למגמה מסוימת (למשל מדעי המחשב במקום חנ"ג) – גם המורה שלו רואה אותו
-    for(const f in l.alt||{})for(const a of Object.values(l.alt[f]))if(a.w)out.push({c,d:di,s:l.s,e:l.e,n:a.n||l.n,w:a.w,group:true});
+    for(const f in l.alt||{})for(const [k,a] of Object.entries(l.alt[f])){
+      const mj=a.key==="major"&&f==="major"&&G.MAJORS[k]; // למשל פיזיקה בשעת מנחה – המורה של המגמה
+      const w=mj?mj.w:a.w;if(w)out.push({c,d:di,s:l.s,e:l.e,n:mj?"מגמת "+mj.n:a.n||l.n,w,group:true});
+    }
   }));
   return out;
 }
@@ -540,7 +545,7 @@ function showTT(){
     <div id="ttPick" style="margin-top:10px"></div><div id="ttBody"></div></div>`;
   $("ttMode").querySelectorAll("button").forEach(b=>b.onclick=()=>{ttMode=b.dataset.v;showTT()});
   if(ttMode==="cls"){
-    $("ttPick").innerHTML=`<div class="seg" id="ttC">${[...Object.keys(CLS).map(c=>[c,CLASSES_META[c].label]),["both","שתי הכיתות"]].map(([v,l])=>`<button data-v="${v}" class="${v===ttCls?"on":""}">${l}</button>`).join("")}</div>`;
+    $("ttPick").innerHTML=`<div class="seg" id="ttC">${[...Object.keys(CLS).map(c=>[c,CLASSES_META[c].label]),["both","כל הכיתות"]].map(([v,l])=>`<button data-v="${v}" class="${v===ttCls?"on":""}">${l}</button>`).join("")}</div>`;
     $("ttC").querySelectorAll("button").forEach(b=>b.onclick=()=>{ttCls=b.dataset.v;showTT()});
   }else{
     $("ttPick").innerHTML=`<select id="ttT">${TEACHERS.map(t=>`<option ${t===ttT?"selected":""}>${esc(t)}</option>`).join("")}</select>`;

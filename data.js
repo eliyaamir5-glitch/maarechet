@@ -147,7 +147,162 @@ const DAYS_Y1=[
  {name:"שישי",short:"ו'",free:true},
  {name:"שבת",short:"ש'",shabbat:true}
 ];
-const CLASSES_META={y1:{label:"י'1",rav:SH},y2:{label:"י'2",rav:"הרב אלישיב יהב יפרח"}};
+// ===== שכבה י"א (י"א1, י"א2) – לפי מערכת שחף של בית הספר, 10.2026 =====
+// הקבצות ומגמות משותפות לשתי הכיתות. הרב אסף ברזילי כבר לא בישיבה – השיעורים שלו לא מופיעים.
+const ENG_11={bokobza:"מיקי בוקובזה (4 יח')",minervi:"יהודית מינרבי (5 יח')",anijar:"רחלי אניג'ר (5 יח')"};
+const MATH_11={adir:"אדיר חניה (5 יח')",toni:"טוני כהן (4 יח')",sitton:"הרב גלעד סיטון (3 יח')"};
+const MAJORS_11={
+ econ:{n:"מנהל וכלכלה",w:"אורי זרביב"},
+ cs:{n:"מדעי המחשב",w:"עמי בוקריס"},
+ phys:{n:"פיזיקה",w:"אפי פיזיקה"}
+};
+// ניצנים (שני בערב): nitz "yes"/"no" – נשאל רק בי"א
+const NITZ={yes:"בניצנים",no:"לא בניצנים"};
+const M11=(s,e,math)=>({s,e,n:"מתמטיקה",w:"",key:"math",...(math&&{only:{math}})});
+const MJ=(s,e,major)=>({s,e,n:"מגמה",w:"",key:"major",...(major&&{only:{major}})});
+const PE11=(s,e,math)=>({...P(s,e,"חינוך גופני","נדב חורי"),only:{math}}); // חנ"ג למי שאין לו מתמטיקה באותה שעה
+// מנחה בראשון ורביעי: מגמת פיזיקה לומדת פיזיקה במקום
+const MINCHA_PHYS={...MINCHA,alt:{major:{phys:{n:"מגמה",w:"",key:"major"}}}};
+const NITZANIM=(s,e)=>({...P(s,e,"ניצנים",""),only:{nitz:["yes"]}});
+const SHK="הרב שי כהן",GS="הרב גלעד סיטון",AZR="הרב הראל עובדיה",MOYAL="נוף מויאל",DAMRI="פרץ דמרי",ATAR="הרב מסעוד עטר",HORI="נדב חורי",ARIEL="הרב אייל אריאל";
+const DAYS_YA1=[
+ {name:"ראשון",short:"א'",lessons:[
+  M11("08:55","10:15",["toni","adir"]),
+  P("10:30","11:15","גמרא",SHK),
+  P("11:15","11:55","נביא",SHK),
+  E("12:00","12:45"),
+  MINCHA_PHYS,
+  MEGAMA("13:45","15:15"),
+  MEGAMA("15:30","16:15"),
+  MJ("16:15","17:00",["econ","cs"]),
+  M11("17:15","18:40",["adir"]),
+  PE11("18:00","18:40",["toni","sitton"]),
+  ARVIT]},
+ {name:"שני",short:"ב'",lessons:[
+  SHACHARIT,
+  P("08:55","10:15","גמרא",SHK),
+  M11("10:30","11:55"),
+  P("12:00","12:45","אזרחות",AZR),
+  MINCHA,
+  P("13:45","14:30","תקשורת זוגיות / חינוך",ARIEL+" / "+SHK),
+  P("14:30","15:15","מחשבת",ATAR),
+  P("15:30","16:15","מחשבת",ATAR),
+  P("16:15","17:00","חינוך גופני",HORI),
+  NITZANIM("17:15","20:15"),
+  ARVIT]},
+ {name:"שלישי",short:"ג'",lessons:[
+  SHACHARIT,
+  P("08:55","10:15","גמרא",SHK),
+  P("10:30","11:15","גמרא",SHK),
+  P("11:15","12:45","תורה",SHK),
+  MINCHA,
+  E("13:45","15:15"),
+  P("15:30","17:00","היסטוריה",MOYAL),
+  P("17:15","18:40","לשון",DAMRI),
+  ARVIT]},
+ {name:"רביעי",short:"ד'",lessons:[
+  SHACHARIT,
+  P("08:55","09:30","גמרא",SHK),
+  P("09:30","10:15","נביא",SHK),
+  P("10:30","11:55","לאורו נלך – התנדבות",SHK),
+  P("12:00","12:45","נביא",SHK),
+  MINCHA_PHYS,
+  MJ("13:45","14:30",["cs","phys"]),
+  MEGAMA("14:30","15:15"),
+  MEGAMA("15:30","16:15"),
+  MJ("16:15","17:00",["econ","cs"]),
+  P("17:15","18:00","היסטוריה",MOYAL),
+  P("18:00","18:40","לשון",DAMRI),
+  P("18:40","20:15","סדר ערב",SHK),
+  ARVIT]},
+ {name:"חמישי",short:"ה'",lessons:[
+  SHACHARIT,
+  P("08:55","09:30","גמרא",SHK),
+  P("09:30","10:15","תורה",SHK),
+  P("10:30","11:15","שבת אחים",SHK),
+  E("11:15","12:45"),
+  MINCHA,
+  P("13:45","14:30","אזרחות",AZR),
+  M11("14:30","15:15"),
+  M11("15:30","16:15",["toni"])]},
+ {name:"שישי",short:"ו'",free:true},
+ {name:"שבת",short:"ש'",shabbat:true}
+];
+const DAYS_YA2=[
+ {name:"ראשון",short:"א'",lessons:[
+  M11("08:55","10:15",["toni","adir"]),
+  P("10:30","11:15","גמרא",GS),
+  P("11:15","11:55","תורה",GS),
+  E("12:00","12:45"),
+  MINCHA_PHYS,
+  MEGAMA("13:45","15:15"),
+  MEGAMA("15:30","16:15"),
+  MJ("16:15","17:00",["econ","cs"]),
+  M11("17:15","18:40",["adir"]),
+  PE11("17:15","18:00",["toni","sitton"]),
+  ARVIT]},
+ {name:"שני",short:"ב'",lessons:[
+  SHACHARIT,
+  P("08:55","10:15","גמרא",GS),
+  M11("10:30","11:55"),
+  P("12:00","12:45","תורה",GS),
+  MINCHA,
+  P("13:45","14:30","נביא",GS),
+  P("14:30","15:15","חינוך גופני",HORI),
+  P("15:30","16:15","תקשורת זוגיות",ARIEL),
+  P("16:15","17:00","מחשבת",ATAR),
+  {...P("17:15","18:00","מחשבת",ATAR),only:{nitz:["no"]}},
+  NITZANIM("17:15","20:15"),
+  ARVIT]},
+ {name:"שלישי",short:"ג'",lessons:[
+  SHACHARIT,
+  P("08:55","10:15","גמרא",GS),
+  P("10:30","11:15","נביא",GS),
+  P("11:15","12:45","אזרחות",AZR),
+  MINCHA,
+  E("13:45","15:15"),
+  P("15:30","17:00","לשון",DAMRI),
+  P("17:15","18:40","היסטוריה",MOYAL),
+  P("19:30","20:15","סדר ערב",GS),
+  ARVIT]},
+ {name:"רביעי",short:"ד'",lessons:[
+  SHACHARIT,
+  P("08:55","09:30","גמרא",GS),
+  P("09:30","10:15","תורה",GS),
+  P("10:30","11:55","לאורו נלך – התנדבות",GS),
+  P("12:00","12:45","נביא",GS),
+  MINCHA_PHYS,
+  MJ("13:45","14:30",["cs","phys"]),
+  MEGAMA("14:30","15:15"),
+  MEGAMA("15:30","16:15"),
+  MJ("16:15","17:00",["econ","cs"]),
+  P("17:15","18:00","לשון",DAMRI),
+  P("18:00","18:40","היסטוריה",MOYAL),
+  ARVIT]},
+ {name:"חמישי",short:"ה'",lessons:[
+  SHACHARIT,
+  P("08:55","10:15","גמרא",GS),
+  P("10:30","11:15","שבת אחים",GS),
+  E("11:15","12:45"),
+  MINCHA,
+  P("13:45","14:30","חינוך",GS),
+  M11("14:30","15:15"),
+  M11("15:30","16:15",["toni"])]},
+ {name:"שישי",short:"ו'",free:true},
+ {name:"שבת",short:"ש'",shabbat:true}
+];
+// שכבות: לכל שכבה הקבצות ומגמות משלה. extra = שאלות נוספות בהרשמה שרק לשכבה הזאת
+const GRADES={
+ "10":{label:"י'",ENG,MATH,MAJORS,extra:[]},
+ "11":{label:"י\"א",ENG:ENG_11,MATH:MATH_11,MAJORS:MAJORS_11,extra:["nitz"]}
+};
+const CLASSES_META={
+ y1:{label:"י'1",rav:SH,grade:"10"},y2:{label:"י'2",rav:"הרב אלישיב יהב יפרח",grade:"10"},
+ ya1:{label:"י\"א1",rav:SHK,grade:"11"},ya2:{label:"י\"א2",rav:GS,grade:"11"}
+};
+const DAYS_OF={y1:DAYS_Y1,y2:DAYS_Y2,ya1:DAYS_YA1,ya2:DAYS_YA2};
+const gradeOf=cls=>(CLASSES_META[cls]&&CLASSES_META[cls].grade)||"10";
+const groupsOf=cls=>GRADES[gradeOf(cls)]; // {ENG, MATH, MAJORS} של השכבה של הכיתה
 // לוח שנת הלימודים תשפ"ז, לחישוב כמה שיעורים יש בשנה בכל מקצוע (כלל ה-30%).
 // החופשות חושבו לפי הלוח העברי. כדאי להשוות ללוח החופשות של בית הספר ולתקן כאן.
 const SCHOOL_YEAR={start:"2026-09-01",end:"2027-06-20",off:[
@@ -162,7 +317,7 @@ const SCHOOL_YEAR={start:"2026-09-01",end:"2027-06-20",off:[
  {from:"2027-06-10",to:"2027-06-12",label:"שבועות"}
 ]};
 // מקצועות שאין בהם בגרות: מוצגים במעקב, אבל בלי אזהרת 30%
-const NON_BAGRUT=["תפילת שחרית",SHACHARIT_DORM,"תפילת מנחה","ערבית","סדר ערב","חינוך","שבת אחים","לאורו נלך – התנדבות","חינוך תעבורתי (זהב)"];
+const NON_BAGRUT=["תפילת שחרית",SHACHARIT_DORM,"ניצנים","תקשורת זוגיות","תקשורת זוגיות / חינוך","תפילת מנחה","ערבית","סדר ערב","חינוך","שבת אחים","לאורו נלך – התנדבות","חינוך תעבורתי (זהב)"];
 // כתובת השרת בנטליפיי (פונקציות: משוב ועדכוני צוות). ריק = אותו אתר
 const SERVER_BASE=(typeof location!=="undefined"&&location.port==="8790")?"":"https://lucent-crepe-6db22c.netlify.app"; // 8790 = שרת בדיקה מקומי (scripts/dev-server.mjs)
 // שם בית הספר, מוצג בעדינות בראש האפליקציה. ריק = לא מוצג
@@ -221,4 +376,4 @@ const DEFAULT_GEAR={
  "השכלה כללית – חברה":"","השכלה כללית – מורשת":"","חינוך תעבורתי (זהב)":"","לאורו נלך – התנדבות":""
 };
 
-if(typeof module!=="undefined"&&module.exports){module.exports={P,DORM,SHACHARIT_DORM,SHACHARIT,MINCHA,ARVIT,ENG,MATH,forProfile,DAYS_Y1,DAYS_Y2,CLASSES_META,DEFAULT_GEAR,NOTIFY_KEY,MAJORS,MASHOV_API,MASHOV_SCHOOL,SCHOOL_YEAR,NON_BAGRUT,SERVER_BASE,SCHOOL_NAME,SCHOOL_LOGO,CONTACT,APP_VERSION,WHATS_NEW};}
+if(typeof module!=="undefined"&&module.exports){module.exports={P,DORM,NITZ,GRADES,DAYS_OF,DAYS_YA1,DAYS_YA2,gradeOf,groupsOf,SHACHARIT_DORM,SHACHARIT,MINCHA,ARVIT,ENG,MATH,forProfile,DAYS_Y1,DAYS_Y2,CLASSES_META,DEFAULT_GEAR,NOTIFY_KEY,MAJORS,MASHOV_API,MASHOV_SCHOOL,SCHOOL_YEAR,NON_BAGRUT,SERVER_BASE,SCHOOL_NAME,SCHOOL_LOGO,CONTACT,APP_VERSION,WHATS_NEW};}

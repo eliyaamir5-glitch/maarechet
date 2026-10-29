@@ -562,14 +562,16 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 // ⛔🚧 מצב מהשרת (השעיה / מצב עדכון) מהזיכרון בטלפון – לפני כל השאר, כדי שהמחסום יעלה מיד גם אם משהו אחר נכשל
 try{applyCtl()}catch(e){document.documentElement.classList.remove("susp-pre")}
 // ---- נתוני המערכת: ראה data.js ----
-const CLASSES={y1:{...CLASSES_META.y1,days:DAYS_Y1},y2:{...CLASSES_META.y2,days:DAYS_Y2}};
+const CLASSES=Object.fromEntries(Object.keys(CLASSES_META).map(c=>[c,{...CLASSES_META[c],days:DAYS_OF[c]}]));
+const grp=()=>groupsOf(profile&&profile.cls); // הקבצות ומגמות של השכבה של התלמיד
+const needsNitz=cls=>GRADES[gradeOf(cls)].extra.includes("nitz");
 let profile=null;
 try{profile=JSON.parse(localStorage.getItem("profile")||"null")}catch(e){profile=null}
 if(!profile||typeof profile!=="object"||Array.isArray(profile))profile=null; // נתון פגום בטלפון = כמו משתמש חדש
 // מעבר מהשאלה הישנה (פיזיקה כן/לא) לבחירת מגמה
 if(profile&&!profile.major&&profile.phys==="yes"){profile.major="phys";try{localStorage.setItem("profile",JSON.stringify(profile))}catch(e){}}
 // כיתה/הקבצה/מגמה שלא קיימות (נתון ישן או פגום) נמחקות, והאשף ישאל עליהן שוב
-if(profile)for(const [k,o] of [["cls",CLASSES_META],["dorm",DORM],["eng",ENG],["math",MATH],["major",MAJORS]])if(profile[k]!=null&&!Object.prototype.hasOwnProperty.call(o,String(profile[k])))delete profile[k];
+if(profile)for(const [k,o] of [["cls",CLASSES_META],["dorm",DORM],["nitz",NITZ],["eng",()=>grp().ENG],["major",()=>grp().MAJORS],["math",()=>grp().MATH]].map(([k,o])=>[k,typeof o==="function"?o():o]))if(profile[k]!=null&&!Object.prototype.hasOwnProperty.call(o,String(profile[k])))delete profile[k];
 let DAYS=CLASSES[(profile&&CLASSES[profile.cls]&&profile.cls)||"y2"].days;
 let gear={};
 try{gear=Object.assign({},DEFAULT_GEAR,JSON.parse(localStorage.getItem("gear")||"{}"))}catch(e){gear=Object.assign({},DEFAULT_GEAR)}
@@ -584,12 +586,13 @@ function resolve(l){
   const p=profile||{};
   l=forProfile(l,p);
   if(!l)return null;
-  if(l.key==="eng")return {...l,w:ENG[p.eng]||(l.only&&l.only.eng?l.only.eng.map(k=>ENG[k].replace(/\s*\(.*\)$/,"")).join(" / "):"מיקי בוקובזה / יהודית מינרבי / אתי חדד")};
-  if(l.key==="math")return {...l,w:MATH[p.math]||"טוני כהן / הראל פרלמן / אדיר חניה"};
+  const g=groupsOf(p.cls),names=(o,keys)=>(keys||Object.keys(o)).map(k=>o[k].replace(/\s*\(.*\)$/,"")).join(" / ");
+  if(l.key==="eng")return {...l,w:g.ENG[p.eng]||names(g.ENG,l.only&&l.only.eng)};
+  if(l.key==="math")return {...l,w:g.MATH[p.math]||names(g.MATH,l.only&&l.only.math)};
   if(l.key==="major"){
-    const m=MAJORS[p.major];
+    const m=g.MAJORS[p.major];
     if(m)return {...l,n:m.n,w:m.w};
-    return {...l,w:Object.values(MAJORS).map(x=>x.n).join(" / ")};
+    return {...l,w:(l.only&&l.only.major||Object.keys(g.MAJORS)).map(k=>g.MAJORS[k].n).join(" / ")};
   }
   return l;
 }
@@ -638,7 +641,7 @@ function dur(m){
   return !r?hs:r===15?hs+" ורבע":r===30?hs+" וחצי":hs+" ו-"+r+" דק'";
 }
 // שעות הצלצול: כל השיעורים הבודדים (35–50 דק') בשתי הכיתות
-const BELLS=(()=>{const m=new Map();for(const days of [DAYS_Y1,DAYS_Y2])for(const d of days)for(const l of (d.lessons||[])){const a=toMin(l.s),b=toMin(l.e);if(b-a>=35&&b-a<=50)m.set(a+"-"+b,[a,b])}return [...m.values()].sort((x,y)=>x[0]-y[0]||x[1]-y[1])})();
+const BELLS=(()=>{const m=new Map();for(const days of Object.values(DAYS_OF))for(const d of days)for(const l of (d.lessons||[])){const a=toMin(l.s),b=toMin(l.e);if(b-a>=35&&b-a<=50)m.set(a+"-"+b,[a,b])}return [...m.values()].sort((x,y)=>x[0]-y[0]||x[1]-y[1])})();
 // שיעור כפול/משולש נפרס לשיעורים לפי הצלצולים (תפילות נשארות שורה אחת)
 function splitLesson(l){
   if(l.joke||/תפילת|ערבית/.test(l.n)||l.em-l.sm<=55)return [l];
@@ -925,23 +928,32 @@ const STEPS=[
  {k:"bday",e:"🎂",q:"מתי יום ההולדת שלך?",sub:"ביום ההולדת כל השכבה תראה מזל טוב 🎉 רק יום וחודש, בלי שנה",type:"bday"},
  {k:"email",e:"📬",q:"רוצה לחבר אימייל?",sub:"לא חובה. אפשר גם לדלג ולהוסיף מתי שתרצה מתוך הפרופיל",type:"email"},
  {k:"mashov",e:"📊",q:"לחבר את משוב?",sub:"לא חובה. כך תראה כאן את החיסורים והציונים שלך. אפשר לחבר מתי שתרצה מהפרופיל",type:"mashov"},
- {k:"cls",e:"🏫",q:"באיזו כיתה אתה?",sub:"",opts:[["y1","י'1","הרב שחר שאלתיאל","📘"],["y2","י'2","הרב אלישיב יהב יפרח","📗"]]},
- {k:"eng",e:"🇬🇧",q:"כמה יחידות אנגלית?",sub:"בוחרים לפי המורה",opts:[["bokobza","3–4 יחידות","מיקי בוקובזה","🥉"],["minervi","4 יחידות","יהודית מינרבי","🥈"],["hadad","5 יחידות","אתי חדד","🥇"]]},
- {k:"math",e:"📐",q:"וכמה יחידות מתמטיקה?",sub:"",opts:[["toni","4 יחידות","טוני כהן","🧮"],["adir","5 יחידות","אדיר חניה","🚀"],["harel","ההקבצה של הראל פרלמן","","📏"]]},
- {k:"major",e:"🎓",q:"באיזו מגמה אתה?",sub:"ביום חמישי 13:45–16:15 תראה רק את המגמה שלך",opts:[["econ",MAJORS.econ.n,MAJORS.econ.w,"📊"],["cs",MAJORS.cs.n,MAJORS.cs.w,"💻"],["phys",MAJORS.phys.n,MAJORS.phys.w,"⚡"]]},
+ {k:"cls",e:"🏫",q:"באיזו כיתה אתה?",sub:"",opts:Object.entries(CLASSES_META).map(([k,c],i)=>[k,c.label,c.rav,["📘","📗","📙","📕","📓","📒"][i%6]])},
+ {k:"eng",e:"🇬🇧",q:"כמה יחידות אנגלית?",sub:"בוחרים לפי המורה",opts:d=>grpOpts(groupsOf(d.cls).ENG,["🥉","🥈","🥇"])},
+ {k:"math",e:"📐",q:"וכמה יחידות מתמטיקה?",sub:"",opts:d=>grpOpts(groupsOf(d.cls).MATH,["🧮","🚀","📏"])},
+ {k:"major",e:"🎓",q:"באיזו מגמה אתה?",sub:"בשעות המגמה תראה רק את המגמה שלך",opts:d=>Object.entries(groupsOf(d.cls).MAJORS).map(([k,m])=>[k,m.n,m.w,{econ:"📊",cs:"💻",phys:"⚡"}[k]||"🎓"])},
+ {k:"nitz",e:"🌱",q:"אתה בניצנים?",sub:"ביום שני בערב: מי שבניצנים רואה ניצנים, ומי שלא – את מה שיש לו באותה שעה",when:d=>needsNitz(d.cls),opts:[["yes","כן, אני בניצנים","","🌱"],["no","לא","","📖"]]},
  {k:"dorm",e:"🛏️",q:"אתה בפנימייה?",sub:"מי שבפנימייה רואה גם ארוחת בוקר וערבית",opts:[["yes","כן, אני בפנימייה","ארוחת בוקר אחרי שחרית, וערבית בערב","🛏️"],["no","לא, אני גר בבית","בלי ארוחת בוקר ובלי ערבית","🏠"]]},
 ];
-let wzStep=0,wzData={},wzEditing=false,wzMashovSubmit=null,wzBusy=false;
+let wzStep=0,wzData={},wzEditing=false,wzMashovSubmit=null,wzBusy=false,wzOnlyMissing=false;
+// "טוני כהן (4 יח')" → ["toni","4 יחידות","טוני כהן"]; בלי יחידות → "ההקבצה של ..."
+const grpOpts=(o,ics)=>Object.entries(o).map(([k,t],i)=>{const u=(t.match(/\(([^)]*)\)/)||[])[1],nm=t.replace(/\s*\(.*\)$/,"");return [k,u?u.replace("יח'","יחידות"):"ההקבצה של "+nm,u?nm:"",ics[i%ics.length]]});
+const stepOn=i=>!STEPS[i].when||STEPS[i].when(wzData);
+const optsOf=st=>typeof st.opts==="function"?st.opts(wzData):st.opts;
+const nextStep=i=>{let j=i+1;while(j<STEPS.length&&!stepOn(j))j++;return j};
+const missingFrom=i=>{let j=i;while(j<STEPS.length&&!(STEPS[j].opts&&stepOn(j)&&!optsOf(STEPS[j]).some(o=>o[0]===wzData[STEPS[j].k])))j++;return j};
+const prevStep=i=>{let j=i-1;while(j>0&&!stepOn(j))j--;return j};
 function openOnb(editing){
   wzEditing=editing;wzData=Object.assign({},profile||{});
   // משתמש קיים שחסר לו רק פרט אחד (למשל מגמה) מתחיל ישר מהשאלה החסרה
-  const miss=STEPS.findIndex(s=>s.opts&&!s.opts.some(o=>o[0]===wzData[s.k]));
-  wzStep=editing&&wzData.first&&miss>0?miss:0;
+  const miss=missingFrom(0);
+  wzStep=editing&&wzData.first&&miss>0&&miss<STEPS.length?miss:0;
+  wzOnlyMissing=wzStep>0; // משתמש קיים: עונה רק על מה שחסר, ואז האשף נסגר
   document.getElementById("wiz").hidden=false;drawStep();
 }
 function drawStep(){
   const st=STEPS[wzStep];
-  document.getElementById("wzDots").innerHTML=STEPS.map((_,i)=>`<i class="${i===wzStep?"on":""}"></i>`).join("");
+  document.getElementById("wzDots").innerHTML=STEPS.map((_,i)=>stepOn(i)?`<i class="${i===wzStep?"on":""}"></i>`:"").join("");
   document.getElementById("wzEmoji").textContent=st.e;
   document.getElementById("wzQ").textContent=st.k==="email"&&wzData.first?`${wzData.first}, ואיזה אימייל?`:st.k==="bday"&&wzData.first?`${wzData.first}, מתי יום ההולדת שלך?`:st.q;
   document.getElementById("wzSub").textContent=st.sub;
@@ -978,12 +990,12 @@ function drawStep(){
       document.getElementById("wzMsSkip").onclick=()=>{wzStep++;drawStep()};
     }
   }else{
-    body.innerHTML=`<div class="wz-opts">${st.opts.map(o=>`<button type="button" class="wz-opt ${wzData[st.k]===o[0]?"sel":""}" data-v="${o[0]}"><span class="ic">${o[3]}</span><span>${o[1]}${o[2]?`<small>${o[2]}</small>`:""}</span></button>`).join("")}</div>`;
+    body.innerHTML=`<div class="wz-opts">${optsOf(st).map(o=>`<button type="button" class="wz-opt ${wzData[st.k]===o[0]?"sel":""}" data-v="${o[0]}"><span class="ic">${o[3]}</span><span>${o[1]}${o[2]?`<small>${o[2]}</small>`:""}</span></button>`).join("")}</div>`;
     body.querySelectorAll(".wz-opt").forEach(b=>b.onclick=()=>{wzData[st.k]=b.dataset.v;body.querySelectorAll(".wz-opt").forEach(x=>x.classList.toggle("sel",x===b));const s0=wzStep;clearTimeout(window.__wzT);window.__wzT=setTimeout(()=>{if(wzStep===s0)next()},180)});
   }
   document.getElementById("wzBack").style.visibility=(wzStep===0&&!wzEditing)?"hidden":"visible";
   document.getElementById("wzBack").textContent=wzStep===0?"ביטול":"חזרה";
-  document.getElementById("wzNext").textContent=wzStep===STEPS.length-1?"סיימנו 🎉":(st.type==="email"?"חבר אימייל":st.type==="mashov"&&!Mashov.connected()?"חבר משוב":"הבא");
+  document.getElementById("wzNext").textContent=nextStep(wzStep)>=STEPS.length?"סיימנו 🎉":(st.type==="email"?"חבר אימייל":st.type==="mashov"&&!Mashov.connected()?"חבר משוב":"הבא");
   document.getElementById("wzNext").style.display=st.opts?"none":"";
 }
 function next(){
@@ -1007,17 +1019,18 @@ function next(){
     const u=document.getElementById("msUser").value.trim(),pw=document.getElementById("msPass").value;
     if(u||pw){ // מילא פרטים: מנסים להתחבר, ומתקדמים רק בהצלחה
       if(wzBusy)return; wzBusy=true; const btn=document.getElementById("wzNext"); btn.disabled=true;
-      wzMashovSubmit().then(ok=>{wzBusy=false;btn.disabled=false;if(ok){wzStep<STEPS.length-1?(wzStep++,drawStep()):finishWiz()}});
+      wzMashovSubmit().then(ok=>{wzBusy=false;btn.disabled=false;if(ok){nextStep(wzStep)<STEPS.length?(wzStep=nextStep(wzStep),drawStep()):finishWiz()}});
       return;
     }
   }
   if(st.opts&&!wzData[st.k])return;
-  if(wzStep<STEPS.length-1){wzStep++;drawStep();return}
+  if(wzOnlyMissing){const m=missingFrom(wzStep+1);if(m<STEPS.length){wzStep=m;drawStep()}else finishWiz();return}
+  if(nextStep(wzStep)<STEPS.length){wzStep=nextStep(wzStep);drawStep();return}
   finishWiz();
 }
 function finishWiz(){
   const isNew=!profile||!profile.since;
-  profile={first:wzData.first,last:wzData.last,email:wzData.email||"",cls:wzData.cls,dorm:wzData.dorm,eng:wzData.eng,math:wzData.math,major:wzData.major,since:profile&&profile.since?profile.since:new Date().toISOString()};
+  profile={first:wzData.first,last:wzData.last,email:wzData.email||"",cls:wzData.cls,dorm:wzData.dorm,...(needsNitz(wzData.cls)&&{nitz:wzData.nitz}),eng:wzData.eng,math:wzData.math,major:wzData.major,since:profile&&profile.since?profile.since:new Date().toISOString()};
   try{localStorage.setItem("profile",JSON.stringify(profile))}catch(e){}
   if(wzData.bd){const o=bdLocal();bdSet(wzData.bd.optOut?{optOut:true,synced:o.synced}:{d:wzData.bd.d,m:wzData.bd.m,share:true,synced:o.synced})}
   setTimeout(()=>{bdSync().then(()=>{if(typeof renderExtras==="function")renderExtras()})},1500); // גם אם השם או הכיתה השתנו
@@ -1037,9 +1050,9 @@ function runBuild(){
   const lines=[
     `יוצר משתמש ל${profile.first} ${profile.last}…`,
     `מושך את המערכת של כיתה ${c.label} מ${c.rav}…`,
-    `מסדר אנגלית עם ${ENG[profile.eng]}…`,
-    `מכוון מתמטיקה ל${MATH[profile.math]}…`,
-    `מוסיף את מגמת ${MAJORS[profile.major].n}${MAJORS[profile.major].w?" עם "+MAJORS[profile.major].w:""} 🎓`,
+    `מסדר אנגלית עם ${grp().ENG[profile.eng]}…`,
+    `מכוון מתמטיקה ל${grp().MATH[profile.math]}…`,
+    `מוסיף את מגמת ${grp().MAJORS[profile.major].n}${grp().MAJORS[profile.major].w?" עם "+grp().MAJORS[profile.major].w:""} 🎓`,
     profile.dorm==="yes"?"מוסיף ארוחת בוקר וערבית של הפנימייה 🛏️":"מחשב הפסקות ומנחה…",
     "מצחצח את העיצוב ✨"
   ];
@@ -1065,16 +1078,16 @@ function runBuild(){
   document.getElementById("bdGo").onclick=()=>{b.hidden=true;document.getElementById("bdLines").style.display="";applyProfile();render(true);if(typeof renderAbsAlert==="function")renderAbsAlert();setTimeout(()=>openIntro(()=>{if(!isStandalone())openInstall()}),400)};
 }
 document.getElementById("wzNext").onclick=next;
-document.getElementById("wzBack").onclick=()=>{if(wzStep===0){if(wzEditing)document.getElementById("wiz").hidden=true;return}wzStep--;drawStep()};
+document.getElementById("wzBack").onclick=()=>{if(wzStep===0){if(wzEditing)document.getElementById("wiz").hidden=true;return}wzStep=prevStep(wzStep);drawStep()};
 document.getElementById("wiz").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.target.closest("button")){e.preventDefault();next()}});
 document.getElementById("hSub").onclick=()=>openProfile();
 
 // ---- פרופיל: עריכת פרטים, אימייל ומשוב (חיבור וניתוק בכל רגע) ----
 function escH(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 function saveProfile(){try{localStorage.setItem("profile",JSON.stringify(profile))}catch(e){}}
-function openProfile(){if(!profile||!profile.major||!profile.dorm||!CLASSES[profile.cls])return openOnb(!!profile);renderProfile();document.getElementById("profDlg").showModal()}
+function openProfile(){if(!profile||!profile.major||!profile.dorm||(needsNitz(profile.cls)&&!profile.nitz)||!CLASSES[profile.cls])return openOnb(!!profile);renderProfile();document.getElementById("profDlg").showModal()}
 function renderProfile(){
-  const b=document.getElementById("profBody"),c=CLASSES[profile.cls],mj=MAJORS[profile.major],mc=Mashov.conn();
+  const b=document.getElementById("profBody"),c=CLASSES[profile.cls],mj=grp().MAJORS[profile.major],mc=Mashov.conn();
   b.innerHTML=`
   <div class="pf-row pf-top">
     <button type="button" class="avatar big" id="pfAv" title="החלף תמונה"></button>
@@ -1082,10 +1095,11 @@ function renderProfile(){
     <div class="pf-sub">כיתה ${c.label} · ${escH(c.rav)}</div>
     <div class="pf-acts" style="justify-content:center"><label class="ghost" style="border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;background:var(--break)">📷 ${avatarData()?"החלף תמונה":"הוסף תמונה"}<input type="file" accept="image/*" id="pfPh" hidden></label>${avatarData()?`<button type="button" class="ghost" id="pfPhDel" style="padding:8px 12px;font-size:14px">הסר תמונה</button>`:""}</div>
     <div class="pf-grid">
-      <span>אנגלית</span><span>${ENG[profile.eng]||"—"}</span>
-      <span>מתמטיקה</span><span>${MATH[profile.math]||"—"}</span>
+      <span>אנגלית</span><span>${grp().ENG[profile.eng]||"—"}</span>
+      <span>מתמטיקה</span><span>${grp().MATH[profile.math]||"—"}</span>
       <span>מגמה</span><span>${mj?mj.n+(mj.w?" · "+mj.w:""):"—"}</span>
-      <span>פנימייה</span><span>${profile.dorm==="yes"?"🛏️ בפנימייה":profile.dorm==="no"?"🏠 גר בבית":"—"}</span>
+      <span>פנימייה</span><span>${profile.dorm==="yes"?"🛏️ בפנימייה":profile.dorm==="no"?"🏠 גר בבית":"—"}</span>${needsNitz(profile.cls)?`
+      <span>ניצנים</span><span>${profile.nitz==="yes"?"🌱 כן":profile.nitz==="no"?"לא":"—"}</span>`:""}
       <span>במערכת מאז</span><span>${profile.since?new Date(profile.since).toLocaleDateString("he-IL"):"—"}</span>
     </div>
     ${(()=>{const a=absState();if(!a)return `<div class="pf-stats"><a href="absences.html">📊 הנוכחות שלי ←</a></div><div class="pf-sub" style="margin-top:6px">חבר את משוב כדי לראות כאן את הרצף בכל מקצוע ואת מצב ה-30%.</div>`;
@@ -1182,7 +1196,7 @@ function maybeWhatsNew(){
 
 // ---- 👨‍👩‍👦 שיתוף המערכת עם ההורים: קישור לצפייה בלבד ----
 function parentLink(){
-  const data={f:profile.first||"",l:profile.last||"",c:profile.cls,e:profile.eng,m:profile.math,j:profile.major,d:profile.dorm};
+  const data={f:profile.first||"",l:profile.last||"",c:profile.cls,e:profile.eng,m:profile.math,j:profile.major,d:profile.dorm,n:profile.nitz};
   const b64=btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
   return location.href.split("#")[0].split("?")[0].replace(/[^/]*$/,"")+"parent.html#p="+b64;
 }
@@ -1221,7 +1235,7 @@ async function loadZmanim(){
 loadZmanim();setInterval(loadZmanim,10*60e3);
 
 applyProfile();
-const incomplete=!profile||!CLASSES[profile.cls]||!profile.dorm||!profile.eng||!profile.math||!profile.major;
+const incomplete=!profile||!CLASSES[profile.cls]||!profile.dorm||(needsNitz(profile.cls)&&!profile.nitz)||!profile.eng||!profile.math||!profile.major;
 if(incomplete)setTimeout(()=>openOnb(!!profile),150);
 else{let seen=null;try{seen=localStorage.getItem("introSeen")}catch(e){}if(!seen)setTimeout(()=>openIntro(),500);else setTimeout(maybeWhatsNew,2500)}
 // Enter/רווח על אזור עם role=button = לחיצה
@@ -1239,13 +1253,13 @@ document.addEventListener("mashov-updated",()=>{render();renderAbsAlert()});
 // ---- המערכת שלי כתמונה / PDF ----
 async function openImage(){
   if(!profile)return openOnb(false);
-  const c=CLASSES[profile.cls],mj=MAJORS[profile.major];
+  const c=CLASSES[profile.cls],mj=grp().MAJORS[profile.major];
   const weekLessons=[0,1,2,3,4].map(i=>lessonsOf(DAYS[i]));
   const canvas=document.getElementById("imgPrev"),msg=document.getElementById("imgMsg");msg.textContent="";
   document.getElementById("imgDlg").showModal();
   await TimetableImage.draw(canvas,{weekLessons,gearOf:gearList,
     title:`המערכת של ${profile.first} ${profile.last}`,
-    subtitle:`כיתה ${c.label} · ${c.rav} · אנגלית: ${ENG[profile.eng]} · מתמטיקה: ${MATH[profile.math]}${mj?" · מגמה: "+mj.n:""}`,
+    subtitle:`כיתה ${c.label} · ${c.rav} · אנגלית: ${grp().ENG[profile.eng]} · מתמטיקה: ${grp().MATH[profile.math]}${mj?" · מגמה: "+mj.n:""}`,
     footer:"נוצר באפליקציית המערכת · "+new Date().toLocaleDateString("he-IL")});
   TimetableImage.prepare(canvas);
   const name=`המערכת-${profile.first}`;
@@ -1258,10 +1272,10 @@ document.getElementById("imgBtn").onclick=openImage;
 function absState(){
   const md=Mashov.data();if(!md||!profile||!profile.major)return null;
   let countJ=true;try{countJ=localStorage.getItem("absCountJustified")!=="0"}catch(e){}
-  const key=md.at+"|"+countJ+"|"+profile.cls+profile.eng+profile.math+profile.major+profile.dorm+"|"+new Date().toDateString();
+  const key=md.at+"|"+countJ+"|"+profile.cls+profile.eng+profile.math+profile.major+profile.dorm+profile.nitz+"|"+new Date().toDateString();
   const C=absState.cache||(absState.cache={key:null,val:null}); // שמור על הפונקציה עצמה: render() רץ לפני שהקוד הזה נטען
   if(C.key===key)return C.val;
-  const days=CLASSES[profile.cls].days,D={ENG,MATH,MAJORS,forProfile};
+  const days=CLASSES[profile.cls].days,D={...grp(),forProfile};
   const at=new Date(md.at),until=`${at.getFullYear()}-${pad(at.getMonth()+1)}-${pad(at.getDate())}`;
   const r=Absences.analyze({days,profile,data:D,year:SCHOOL_YEAR,behave:md.behave||[],today:until,countJustified:countJ,nonBagrut:NON_BAGRUT});
   const tl=Absences.timeline({days,profile,data:D,year:SCHOOL_YEAR,behave:md.behave||[],until,untilMin:at.getHours()*60+at.getMinutes()});
@@ -1368,8 +1382,8 @@ function renderExtras(){
     <div class="bdrow"><select class="inp" id="xBdD" style="width:auto" aria-label="יום">${bdDayOpts()}</select><select class="inp" id="xBdM" style="width:auto" aria-label="חודש">${bdMonOpts()}</select><button type="button" class="xbtn" id="xBdOk">שמירה</button></div>
     <div class="xsub" id="xBdMsg" style="color:#ff5d6c"></div><button type="button" class="xlink" id="xBdNo">לא רוצה שיראו את יום ההולדת שלי</button></div>`;
   if(myToday)h+=`<div class="xcard bday mine">🎉 <b>מזל טוב ${escH(profile.first||"")}!</b> 🎂<div class="xsub">יום הולדת שמח! היום כל השכבה רואה שזה יום ההולדת שלך</div></div>`;
-  const lbl=c=>c==="y1"||c==="y2"?` (${CLASSES[c].label})`:"";
-  const bd=(f.birthdays||[]).filter(x=>Number.isInteger(x.inDays)&&x.inDays>=0&&!(myToday&&x.inDays===0&&x.name===meName));
+  const lbl=c=>CLASSES[c]?` (${CLASSES[c].label})`:"";
+  const bd=(f.birthdays||[]).filter(x=>gradeOf(x.cls)===gradeOf(myCls())&&Number.isInteger(x.inDays)&&x.inDays>=0&&!(myToday&&x.inDays===0&&x.name===meName));
   const today=bd.filter(x=>x.inDays===0),soon=bd.filter(x=>x.inDays>0);
   if(today.length||soon.length)h+=`<div class="xcard bday">${today.length?`🎂 <b>היום יום ההולדת של ${today.map(x=>escH(x.name)+lbl(x.cls)).join(" ו")}!</b> מזל טוב 🎉`:""}${soon.length?`<div class="xsub">🎈 בקרוב: ${soon.map(x=>`${escH(x.name)}${lbl(x.cls)} – ${x.inDays===1?"מחר":"בעוד "+x.inDays+" ימים"}`).join(" · ")}</div>`:""}</div>`;
   // 📊 סקרים
@@ -1547,7 +1561,7 @@ if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostnam
 // ---- הוספה ליומן (קובץ ICS) ----
 const BYDAY=["SU","MO","TU","WE","TH","FR","SA"];
 const HOSTED=/^https?:$/.test(location.protocol)&&!/claude\.ai$/.test(location.hostname);
-function webcalUrl(){const p=profile||{};if(!p.cls||!p.eng||!p.math||!p.major)return null;return `webcal://${location.host}${location.pathname.replace(/[^/]*$/,"")}cal/${p.cls}-${p.eng}-${p.math}-${p.major}${p.dorm==="no"?"-home":""}.ics`}
+function webcalUrl(){const p=profile||{};if(!p.cls||!p.eng||!p.math||!p.major)return null;return `webcal://${location.host}${location.pathname.replace(/[^/]*$/,"")}cal/${p.cls}-${p.eng}-${p.math}-${p.major}${p.dorm==="no"?"-home":""}${p.nitz==="yes"&&needsNitz(p.cls)?"-nz":""}.ics`}
 document.getElementById("calBtn").onclick=()=>{
   if(HOSTED){
     const u=webcalUrl(); if(!u)return openOnb(true);

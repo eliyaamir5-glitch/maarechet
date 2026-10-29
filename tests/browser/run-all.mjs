@@ -10,7 +10,7 @@ import { ROOT } from "./_env.mjs";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ALL = ["e2e", "part1-e2e", "part2-e2e", "calc-e2e", "phones-e2e", "cards-edit", "sets-e2e", "updates-e2e", "contact-check", "demo-check", "demo-sets",
   "staff-fix", "cards-fix-check", "bday-e2e", "react-e2e", "secondary-check", "phonecode-e2e", "combos-e2e", "owner-e2e", "ctl-e2e", "ctl2-e2e",
-  "owner-audit-e2e", "audit-e-secondary", "dorm-e2e", "monkey"];
+  "owner-audit-e2e", "audit-e-secondary", "dorm-e2e", "grade11-e2e", "monkey"];
 const pick = process.argv.slice(2), list = pick.length ? pick : ALL;
 
 const up = () => new Promise(res => { const r = http.get("http://127.0.0.1:8787/", x => { x.resume(); res(true); }); r.on("error", () => res(false)); r.setTimeout(1500, () => { r.destroy(); res(false); }); });

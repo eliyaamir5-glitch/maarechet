@@ -8,7 +8,7 @@
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
   const DAYN = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
   const pad = n => String(n).padStart(2, "0");
-  const AUD = { all: "", y1: "י'1", y2: "י'2" };
+  const AUD = { all: "", ...(typeof CLASSES_META !== "undefined" ? Object.fromEntries(Object.entries(CLASSES_META).map(([k, c]) => [k, c.label])) : { y1: "י'1", y2: "י'2" }) };
   const ROLE = { admin: ["מנהל", "admin"], teacher: ["מורה", "teacher"], staff: ["צוות", "staff"] };
   const own = (o, k) => typeof k === "string" && Object.prototype.hasOwnProperty.call(o, k);
   const roleOf = r => own(ROLE, r) ? ROLE[r] : ROLE.teacher;
