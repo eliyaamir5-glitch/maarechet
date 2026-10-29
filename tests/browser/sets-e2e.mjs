@@ -56,7 +56,7 @@ log(okMsg.includes("פורסם") && okMsg.includes("אנגלית – יחידה 
 await T.screenshot({ path: "staff-sets-list.png" });
 
 // ---- 2. תלמיד י'1 ----
-const prof = cls => ({ fn: (c) => { localStorage.setItem("profile", JSON.stringify({ first: "תלמיד", last: "", cls: c, eng: "minervi", math: "toni", major: "phys", since: "2026-09-01" })); }, args: [cls] });
+const prof = cls => ({ fn: (c) => { localStorage.setItem("profile", JSON.stringify({ first: "תלמיד", last: "", cls: c, eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); }, args: [cls] });
 const S1 = await page(prof("y1"));
 await S1.goto("http://localhost:8787/cards.html", { waitUntil: "networkidle2" }); await sleep(800);
 const cls1 = await S1.$eval("#classSets", e => e.innerText);

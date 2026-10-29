@@ -18,6 +18,13 @@ const gm0 = r0.subjects.find(s => s.name === "גמרא");
 ok("Gemara year total ≈ weekly periods × 33–38 school weeks", gm0.yearTotal >= gm0.weekly * 33 && gm0.yearTotal <= gm0.weekly * 38, `total=${gm0.yearTotal} weekly=${gm0.weekly}`);
 ok("held so far < year total", gm0.held > 0 && gm0.held < gm0.yearTotal, `held=${gm0.held}`);
 ok("major shows as פיזיקה, not 'מגמה'", r0.subjects.some(s => s.name === "פיזיקה") && !r0.subjects.some(s => s.name === "מגמה"));
+// פנימייה: מי שגר בבית – בלי ערבית ובלי ארוחת בוקר; בפנימייה – שחרית + ארוחת בוקר וערבית (לא בחמישי)
+const rHome = A.analyze({ ...base, profile: { ...profile, dorm: "no" }, behave: [], today: "2026-11-15" });
+const rDorm = A.analyze({ ...base, profile: { ...profile, dorm: "yes" }, behave: [], today: "2026-11-15" });
+ok("home student: no ערבית, plain שחרית", !rHome.subjects.some(s => s.name === "ערבית") && rHome.subjects.some(s => s.name === "תפילת שחרית"));
+ok("dorm student: ערבית + שחרית with breakfast", rDorm.subjects.some(s => s.name === "ערבית") && rDorm.subjects.some(s => s.name === D.SHACHARIT_DORM));
+ok("no ערבית on Thursday for anyone", [D.DAYS_Y1, D.DAYS_Y2].every(days => !days[4].lessons.some(l => l.n === "ערבית")));
+ok("'תפילה' from Mashov maps to the dorm שחרית name", A.matchSubject("תפילה", [D.SHACHARIT_DORM, "גמרא"]) === D.SHACHARIT_DORM);
 ok("no absences → green", gm0.status === "green" && gm0.allowedLeft === Math.floor(0.3 * gm0.yearTotal));
 
 // 3. הרבה חיסורים בגמרא → אדום + חילוץ

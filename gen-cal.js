@@ -111,9 +111,10 @@ let written = 0, stale = 0;
 for (const cls of Object.keys(CLASSES_META))
   for (const eng of Object.keys(ENG))
     for (const math of Object.keys(MATH))
-      for (const [tag, major] of [...Object.keys(MAJORS).map(k => [k, k]), ["yes", "phys"], ["no", null]]) {
-        const file = path.join(OUT_DIR, `${cls}-${eng}-${math}-${tag}.ics`);
-        const text = buildICS({ cls, eng, math, major, tag });
+      for (const [tag, major] of [...Object.keys(MAJORS).map(k => [k, k]), ["yes", "phys"], ["no", null]])
+       for (const [dorm, sfx] of [["yes", ""], ["no", "-home"]]) { // בלי סיומת = פנימייה (הקישורים הישנים), -home = גר בבית
+        const file = path.join(OUT_DIR, `${cls}-${eng}-${math}-${tag}${sfx}.ics`);
+        const text = buildICS({ cls, eng, math, major, tag: tag + sfx, dorm });
         if (check) {
           const cur = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
           const strip = t => t.replace(/^DTSTAMP:.*$/gm, "");

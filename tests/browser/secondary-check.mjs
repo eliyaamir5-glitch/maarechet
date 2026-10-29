@@ -24,7 +24,7 @@ async function page({ w = 390, profile = null, store = {}, api = {} } = {}) {
   });
   return p;
 }
-const Y1 = { first: "יוסי", last: "כהן", cls: "y1", eng: "minervi", math: "toni", major: "phys", since: "2026-09-01" };
+const Y1 = { first: "יוסי", last: "כהן", cls: "y1", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" };
 
 // ---------- 1. שחרורון ----------
 {

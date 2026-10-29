@@ -102,7 +102,7 @@ const changes = [
 ];
 const feed = { ok: true, updates: [{ id: "u1", text: "שלום", author: "<b>מנהל</b>", role: "constructor", audience: "toString", urgent: false, createdAt: Date.now(), expiresAt: Date.now() + 9e12, reacts: {} }], polls: [null, { id: "p1", q: "?", options: "x" }, { id: "p2", q: "שאלה", options: ["א", "ב"], counts: null, total: "<b>3</b>", endsAt: "garbage", audience: "all" }], events: [null, { title: "אירוע", date: TODAY, time: "<i>10:00</i>", audience: "all" }, { title: 5 }], answers: [null, { id: "a1", q: "q", a: "a" }], birthdays: [null, { name: "<b>x</b>", cls: "__proto__", inDays: "<img>" }, { name: "דני", cls: "y1", inDays: 0 }], changes };
 {
-  const prof = { first: "שינוי", last: "", cls: "y2", eng: "hadad", math: "toni", major: "phys", since: "2026-09-01" };
+  const prof = { first: "שינוי", last: "", cls: "y2", eng: "hadad", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" };
   const { p, errs } = await open(prof, { feed, t0: TUE.getTime() + 9 * 3600e3 }); // שלישי 09:00 – באמצע הגמרא שבוטלה
   await sleep(1500);
   const r = await p.evaluate(() => {
@@ -142,7 +142,7 @@ const feed = { ok: true, updates: [{ id: "u1", text: "שלום", author: "<b>מ�
 // ===== 3. מטמון פגום בטלפון =====
 {
   const bads = { feedCache: "{bad json", updatesCache: '{"list":[null,5,{"id":"z","text":"t","expiresAt":"9999999999999","role":"__proto__","audience":"constructor"}]}', updatesSeen: '{"a":1}', myReacts: "[1,2]", pollVotes: "null", readQs: '"x"', myQs: "{}", bday: "[]", gear: "5" };
-  const { p, errs } = await open({ first: "פגום", last: "", cls: "y1", eng: "bokobza", math: "harel", major: "cs", since: "2026-09-01" }, { extra: bads });
+  const { p, errs } = await open({ first: "פגום", last: "", cls: "y1", eng: "bokobza", math: "harel", major: "cs", dorm: "yes", since: "2026-09-01" }, { extra: bads });
   await sleep(1500);
   const ok = await p.evaluate(() => document.querySelectorAll("#content .row").length > 3);
   log(ok && !errs.length, "corrupted localStorage → app still works", errs.join(" | "));
@@ -159,7 +159,7 @@ const feed = { ok: true, updates: [{ id: "u1", text: "שלום", author: "<b>מ�
 }
 // ===== 4. הגבה: אימוג'י אחד בלבד =====
 {
-  const { p } = await open({ first: "א", last: "", cls: "y2", eng: "hadad", math: "toni", major: "phys", since: "2026-09-01" });
+  const { p } = await open({ first: "א", last: "", cls: "y2", eng: "hadad", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" });
   const r = await p.evaluate(() => { const out = {}; for (const v of ["👍", "😀😀", "1😀", "abc", "👍🏽", "🇮🇱", "👨‍👩‍👦", "1", "1️⃣"]) { Updates.picker("x", ""); const inp = document.querySelector(".upd-prow input"); inp.value = v; let sent = null; const orig = Updates.react; Updates.react = (id, e) => { sent = e; }; document.querySelector(".upd-pgo").click(); Updates.react = orig; out[v] = sent; document.querySelector(".upd-pick")?.remove(); } return out; });
   log(r["👍"] === "👍" && r["👍🏽"] && r["🇮🇱"] && r["👨‍👩‍👦"] && r["1️⃣"], "single emoji (incl. skin tone, flag, family, keycap) accepted", JSON.stringify(r));
   log(!r["😀😀"] && !r["1😀"] && !r["abc"] && !r["1"], "two emojis / digits / letters refused", JSON.stringify(r));

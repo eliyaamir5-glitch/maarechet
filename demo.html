@@ -148,7 +148,7 @@ const SCEN={
   rescue:{t:"מצב חילוץ 🚨",d:"מקצוע מעל 25%",base:.09,pray:.2,focus:.29,second:.21},
   none:{t:"בלי משוב",d:"כמו תלמיד שלא חיבר"},
 };
-function profileNow(){return{first:cfg.first||"יוסי",last:cfg.last||"",email:"",cls:cfg.cls,eng:cfg.eng,math:cfg.math,major:cfg.major,since:"2026-09-01T08:00:00.000Z"}}
+function profileNow(){return{first:cfg.first||"יוסי",last:cfg.last||"",email:"",cls:cfg.cls,dorm:"yes",eng:cfg.eng,math:cfg.math,major:cfg.major,since:"2026-09-01T08:00:00.000Z"}}
 function genBehave(p,scKey,at){
   const sc=SCEN[scKey];if(!sc||sc.base==null)return[];
   const r=rng(7+scKey.length*31+(p.cls==="y1"?3:0));

@@ -18,7 +18,7 @@ async function page(w = 390) {
   const ctx = await browser.createBrowserContext(); const p = await ctx.newPage();
   await p.setViewport({ width: w, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   p.on("pageerror", e => errs.push(e.message)); p.on("dialog", d => d.accept());
-  await p.evaluateOnNewDocument(() => { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "y1", eng: "minervi", math: "toni", major: "phys", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); });
+  await p.evaluateOnNewDocument(() => { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "y1", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); });
   await p.setRequestInterception(true);
   p.on("request", async q => {
     const u = q.url();

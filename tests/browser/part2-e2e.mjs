@@ -30,7 +30,7 @@ async function page(setup, w = 390) {
   });
   return p;
 }
-const stud = cls => () => { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "__CLS__", eng: "minervi", math: "toni", major: "phys", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); };
+const stud = cls => () => { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "__CLS__", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); };
 const S2 = s => new Function(`(${s().toString().replace("__CLS__", "y2")})()`);
 const S1 = s => new Function(`(${s().toString().replace("__CLS__", "y1")})()`);
 

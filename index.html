@@ -569,7 +569,7 @@ if(!profile||typeof profile!=="object"||Array.isArray(profile))profile=null; // 
 // מעבר מהשאלה הישנה (פיזיקה כן/לא) לבחירת מגמה
 if(profile&&!profile.major&&profile.phys==="yes"){profile.major="phys";try{localStorage.setItem("profile",JSON.stringify(profile))}catch(e){}}
 // כיתה/הקבצה/מגמה שלא קיימות (נתון ישן או פגום) נמחקות, והאשף ישאל עליהן שוב
-if(profile)for(const [k,o] of [["cls",CLASSES_META],["eng",ENG],["math",MATH],["major",MAJORS]])if(profile[k]!=null&&!Object.prototype.hasOwnProperty.call(o,String(profile[k])))delete profile[k];
+if(profile)for(const [k,o] of [["cls",CLASSES_META],["dorm",DORM],["eng",ENG],["math",MATH],["major",MAJORS]])if(profile[k]!=null&&!Object.prototype.hasOwnProperty.call(o,String(profile[k])))delete profile[k];
 let DAYS=CLASSES[(profile&&CLASSES[profile.cls]&&profile.cls)||"y2"].days;
 let gear={};
 try{gear=Object.assign({},DEFAULT_GEAR,JSON.parse(localStorage.getItem("gear")||"{}"))}catch(e){gear=Object.assign({},DEFAULT_GEAR)}
@@ -929,6 +929,7 @@ const STEPS=[
  {k:"eng",e:"🇬🇧",q:"כמה יחידות אנגלית?",sub:"בוחרים לפי המורה",opts:[["bokobza","3–4 יחידות","מיקי בוקובזה","🥉"],["minervi","4 יחידות","יהודית מינרבי","🥈"],["hadad","5 יחידות","אתי חדד","🥇"]]},
  {k:"math",e:"📐",q:"וכמה יחידות מתמטיקה?",sub:"",opts:[["toni","4 יחידות","טוני כהן","🧮"],["adir","5 יחידות","אדיר חניה","🚀"],["harel","ההקבצה של הראל פרלמן","","📏"]]},
  {k:"major",e:"🎓",q:"באיזו מגמה אתה?",sub:"ביום חמישי 13:45–16:15 תראה רק את המגמה שלך",opts:[["econ",MAJORS.econ.n,MAJORS.econ.w,"📊"],["cs",MAJORS.cs.n,MAJORS.cs.w,"💻"],["phys",MAJORS.phys.n,MAJORS.phys.w,"⚡"]]},
+ {k:"dorm",e:"🛏️",q:"אתה בפנימייה?",sub:"מי שבפנימייה רואה גם ארוחת בוקר וערבית",opts:[["yes","כן, אני בפנימייה","ארוחת בוקר אחרי שחרית, וערבית בערב","🛏️"],["no","לא, אני גר בבית","בלי ארוחת בוקר ובלי ערבית","🏠"]]},
 ];
 let wzStep=0,wzData={},wzEditing=false,wzMashovSubmit=null,wzBusy=false;
 function openOnb(editing){
@@ -1016,7 +1017,7 @@ function next(){
 }
 function finishWiz(){
   const isNew=!profile||!profile.since;
-  profile={first:wzData.first,last:wzData.last,email:wzData.email||"",cls:wzData.cls,eng:wzData.eng,math:wzData.math,major:wzData.major,since:profile&&profile.since?profile.since:new Date().toISOString()};
+  profile={first:wzData.first,last:wzData.last,email:wzData.email||"",cls:wzData.cls,dorm:wzData.dorm,eng:wzData.eng,math:wzData.math,major:wzData.major,since:profile&&profile.since?profile.since:new Date().toISOString()};
   try{localStorage.setItem("profile",JSON.stringify(profile))}catch(e){}
   if(wzData.bd){const o=bdLocal();bdSet(wzData.bd.optOut?{optOut:true,synced:o.synced}:{d:wzData.bd.d,m:wzData.bd.m,share:true,synced:o.synced})}
   setTimeout(()=>{bdSync().then(()=>{if(typeof renderExtras==="function")renderExtras()})},1500); // גם אם השם או הכיתה השתנו
@@ -1039,7 +1040,7 @@ function runBuild(){
     `מסדר אנגלית עם ${ENG[profile.eng]}…`,
     `מכוון מתמטיקה ל${MATH[profile.math]}…`,
     `מוסיף את מגמת ${MAJORS[profile.major].n}${MAJORS[profile.major].w?" עם "+MAJORS[profile.major].w:""} 🎓`,
-    "מחשב הפסקות, מנחה וערבית…",
+    profile.dorm==="yes"?"מוסיף ארוחת בוקר וערבית של הפנימייה 🛏️":"מחשב הפסקות ומנחה…",
     "מצחצח את העיצוב ✨"
   ];
   const b=document.getElementById("build");b.hidden=false;
@@ -1071,7 +1072,7 @@ document.getElementById("hSub").onclick=()=>openProfile();
 // ---- פרופיל: עריכת פרטים, אימייל ומשוב (חיבור וניתוק בכל רגע) ----
 function escH(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 function saveProfile(){try{localStorage.setItem("profile",JSON.stringify(profile))}catch(e){}}
-function openProfile(){if(!profile||!profile.major||!CLASSES[profile.cls])return openOnb(!!profile);renderProfile();document.getElementById("profDlg").showModal()}
+function openProfile(){if(!profile||!profile.major||!profile.dorm||!CLASSES[profile.cls])return openOnb(!!profile);renderProfile();document.getElementById("profDlg").showModal()}
 function renderProfile(){
   const b=document.getElementById("profBody"),c=CLASSES[profile.cls],mj=MAJORS[profile.major],mc=Mashov.conn();
   b.innerHTML=`
@@ -1084,6 +1085,7 @@ function renderProfile(){
       <span>אנגלית</span><span>${ENG[profile.eng]||"—"}</span>
       <span>מתמטיקה</span><span>${MATH[profile.math]||"—"}</span>
       <span>מגמה</span><span>${mj?mj.n+(mj.w?" · "+mj.w:""):"—"}</span>
+      <span>פנימייה</span><span>${profile.dorm==="yes"?"🛏️ בפנימייה":profile.dorm==="no"?"🏠 גר בבית":"—"}</span>
       <span>במערכת מאז</span><span>${profile.since?new Date(profile.since).toLocaleDateString("he-IL"):"—"}</span>
     </div>
     ${(()=>{const a=absState();if(!a)return `<div class="pf-stats"><a href="absences.html">📊 הנוכחות שלי ←</a></div><div class="pf-sub" style="margin-top:6px">חבר את משוב כדי לראות כאן את הרצף בכל מקצוע ואת מצב ה-30%.</div>`;
@@ -1180,7 +1182,7 @@ function maybeWhatsNew(){
 
 // ---- 👨‍👩‍👦 שיתוף המערכת עם ההורים: קישור לצפייה בלבד ----
 function parentLink(){
-  const data={f:profile.first||"",l:profile.last||"",c:profile.cls,e:profile.eng,m:profile.math,j:profile.major};
+  const data={f:profile.first||"",l:profile.last||"",c:profile.cls,e:profile.eng,m:profile.math,j:profile.major,d:profile.dorm};
   const b64=btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
   return location.href.split("#")[0].split("?")[0].replace(/[^/]*$/,"")+"parent.html#p="+b64;
 }
@@ -1219,7 +1221,7 @@ async function loadZmanim(){
 loadZmanim();setInterval(loadZmanim,10*60e3);
 
 applyProfile();
-const incomplete=!profile||!CLASSES[profile.cls]||!profile.eng||!profile.math||!profile.major;
+const incomplete=!profile||!CLASSES[profile.cls]||!profile.dorm||!profile.eng||!profile.math||!profile.major;
 if(incomplete)setTimeout(()=>openOnb(!!profile),150);
 else{let seen=null;try{seen=localStorage.getItem("introSeen")}catch(e){}if(!seen)setTimeout(()=>openIntro(),500);else setTimeout(maybeWhatsNew,2500)}
 // Enter/רווח על אזור עם role=button = לחיצה
@@ -1256,7 +1258,7 @@ document.getElementById("imgBtn").onclick=openImage;
 function absState(){
   const md=Mashov.data();if(!md||!profile||!profile.major)return null;
   let countJ=true;try{countJ=localStorage.getItem("absCountJustified")!=="0"}catch(e){}
-  const key=md.at+"|"+countJ+"|"+profile.cls+profile.eng+profile.math+profile.major+"|"+new Date().toDateString();
+  const key=md.at+"|"+countJ+"|"+profile.cls+profile.eng+profile.math+profile.major+profile.dorm+"|"+new Date().toDateString();
   const C=absState.cache||(absState.cache={key:null,val:null}); // שמור על הפונקציה עצמה: render() רץ לפני שהקוד הזה נטען
   if(C.key===key)return C.val;
   const days=CLASSES[profile.cls].days,D={ENG,MATH,MAJORS,forProfile};
@@ -1545,7 +1547,7 @@ if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostnam
 // ---- הוספה ליומן (קובץ ICS) ----
 const BYDAY=["SU","MO","TU","WE","TH","FR","SA"];
 const HOSTED=/^https?:$/.test(location.protocol)&&!/claude\.ai$/.test(location.hostname);
-function webcalUrl(){const p=profile||{};if(!p.cls||!p.eng||!p.math||!p.major)return null;return `webcal://${location.host}${location.pathname.replace(/[^/]*$/,"")}cal/${p.cls}-${p.eng}-${p.math}-${p.major}.ics`}
+function webcalUrl(){const p=profile||{};if(!p.cls||!p.eng||!p.math||!p.major)return null;return `webcal://${location.host}${location.pathname.replace(/[^/]*$/,"")}cal/${p.cls}-${p.eng}-${p.math}-${p.major}${p.dorm==="no"?"-home":""}.ics`}
 document.getElementById("calBtn").onclick=()=>{
   if(HOSTED){
     const u=webcalUrl(); if(!u)return openOnb(true);

@@ -7,7 +7,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const b64 = s => Buffer.from(s).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: CHROME_ARGS });
 const errs = [];
-const Y1 = { first: "יוסי", last: "כהן", cls: "y1", eng: "minervi", math: "toni", major: "phys", since: "2026-09-01" };
+const Y1 = { first: "יוסי", last: "כהן", cls: "y1", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" };
 // handler(url, method, body) → {status, body} | null (ממשיך לרשת). גופן מגוגל: "hang" = לא עונה בכלל
 async function page({ w = 390, profile = null, store = {}, handler = null, fonts = "block" } = {}) {
   const ctx = await browser.createBrowserContext(); const p = await ctx.newPage();

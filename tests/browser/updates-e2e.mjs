@@ -24,7 +24,7 @@ const browser = await puppeteer.launch({ executablePath: CHROME, headless: true,
 async function student(cls, name) {
   const ctx = await browser.createBrowserContext(); const p = await ctx.newPage();
   await p.setViewport({ width: 375, height: 760, isMobile: true, hasTouch: true });
-  await p.evaluateOnNewDocument((cls, name) => { localStorage.setItem("profile", JSON.stringify({ first: name, last: "", email: "", cls, eng: "minervi", math: "toni", major: "phys", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); }, cls, name);
+  await p.evaluateOnNewDocument((cls, name) => { localStorage.setItem("profile", JSON.stringify({ first: name, last: "", email: "", cls, eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); }, cls, name);
   await p.setRequestInterception(true);
   p.on("request", async q => {
     const u = q.url();

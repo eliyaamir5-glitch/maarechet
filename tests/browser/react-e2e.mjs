@@ -31,7 +31,7 @@ async function page(setup, w = 390) {
   });
   return p;
 }
-const stud = (first, cls) => new Function(`localStorage.setItem("profile", JSON.stringify({ first: "${first}", last: "כהן", cls: "${cls}", eng: "minervi", math: "toni", major: "phys", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); localStorage.setItem("bday", JSON.stringify({optOut:true})); localStorage.setItem("updSeen", "[]");`);
+const stud = (first, cls) => new Function(`localStorage.setItem("profile", JSON.stringify({ first: "${first}", last: "כהן", cls: "${cls}", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); localStorage.setItem("bday", JSON.stringify({optOut:true})); localStorage.setItem("updSeen", "[]");`);
 const P = await page(stud("יוסי", "y2"));
 await P.goto("http://localhost:8787/index.html", { waitUntil: "networkidle2" }); await sleep(2500);
 // סוגרים חלון "עדכון חדש" אם קפץ

@@ -10,7 +10,7 @@ const key = async k => { await p.evaluate(k => [...document.querySelectorAll("#k
 const keys = async seq => { for (const k of seq) await key(k); };
 
 // מהמסך הראשי
-await p.evaluateOnNewDocument(() => { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "y1", eng: "minervi", math: "toni", major: "phys", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); });
+await p.evaluateOnNewDocument(() => { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "y1", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); });
 await p.setRequestInterception(true); p.on("request", r => /netlify\.app|web3forms/.test(r.url()) ? r.respond({ status: 200, contentType: "application/json", body: '{"ok":true,"updates":[]}', headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type, Authorization" } }) : r.continue());
 await p.goto("http://localhost:8787/index.html", { waitUntil: "networkidle2" }); await sleep(600);
 log(await p.$eval("#calcBtn", e => e.getBoundingClientRect().width > 120), "home: calculator button visible");

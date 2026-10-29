@@ -9,7 +9,7 @@ const BASE = "http://localhost:8787/";
 const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
 let state = {}; let posts = []; let feedStatus = 200; let failErr = 0;
 const reset = () => { state = { maint: null, susp: null, msgs: [], feedMaint: null, reactSusp: false }; posts = []; feedStatus = 200; failErr = 0; };
-const PROF = { first: "רון", last: "בדיקה", cls: "y1", eng: "hadad", math: "adir", major: "cs", since: "2026-09-01" };
+const PROF = { first: "רון", last: "בדיקה", cls: "y1", eng: "hadad", math: "adir", major: "cs", dorm: "yes", since: "2026-09-01" };
 async function page({ w = 390, h = 844, scheme = "dark", ua, ls = {} } = {}) {
   const ctx = await b.createBrowserContext(); const p = await ctx.newPage();
   if (ua) await p.setUserAgent(ua);
