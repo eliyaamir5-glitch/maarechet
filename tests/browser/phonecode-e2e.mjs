@@ -83,7 +83,10 @@ if (file) {
 ok("success message shown", (await A.$eval("#bkMsg", e => e.textContent)).includes("הקובץ ירד"));
 
 // ---- 3. מורה: אין כרטיסים של מנהל; שינוי של מורה אחר → הודעה ברורה ----
-const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(Date.now() + 864e5 * 2);
+// היום+2, ואם זה נופל על שישי/שבת – יום הלימודים הקרוב (א'–ה')
+let day, plus = 2;
+do day = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(Date.now() + 864e5 * plus++);
+while (new Date(day + "T12:00:00Z").getUTCDay() >= 5);
 const B = await page(null);
 await B.goto("http://localhost:8787/staff.html", { waitUntil: "networkidle2" }); await sleep(400);
 await B.type("#lCode", codeB); await B.click("#lGo"); await sleep(800);
