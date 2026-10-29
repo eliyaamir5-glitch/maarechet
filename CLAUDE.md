@@ -32,6 +32,12 @@ If Chrome isn't available (e.g. cloud), say so explicitly in the summary – don
 - `node scripts/build.js` regenerates `cal/` – afterwards run `git checkout -- cal/` unless data.js changed.
 - What's-new popup: `APP_VERSION` + `WHATS_NEW` in `data.js`.
 
+## Pending: clean staff/admin entry for the principal
+Since 29.10.2026 the owner (אליה) uses the staff admin login (staff.html) himself, for testing, until the real principal joins.
+When he asks to "reset" / give the principal a clean entry: remove only what he created there (admin account, users, his test updates/sets/polls/events/changes)
+and issue a new invite (scripts/make-invite.mjs → new INVITE_HASH; the old link stops working). Do NOT wipe push subscriptions, presence,
+birthdays or the owner dashboard data. Explain the plan and get a yes first.
+
 ## Secrets – never in git, never in chat
 Gitignored local files (exist only on his main computer): `קוד-מנהל-מערכת.txt` (owner page code), `קוד-ספר-טלפונים.txt`, `קישור-למנהל.txt`, `סיכום-להצגה.txt`. Don't open, print or commit them unless he explicitly asks.
 In source only hashes: `OWNER` (salt+scrypt) and legacy `PHONE_HASH`/`INVITE_HASH` in `netlify/functions/staff.mjs`. New owner code: `node scripts/make-owner-code.mjs` (writes the txt locally + prints salt/hash to paste into `OWNER`).
