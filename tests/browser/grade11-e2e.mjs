@@ -26,7 +26,11 @@ const week = p => p.evaluate(() => DAYS.slice(0, 5).map(d => lessonsOf(d).map(l 
 let p = await open("index.html", null);
 await p.type("#wzFirst", "נועם"); await p.type("#wzLast", "כץ"); await p.click("#wzNext"); await sleep(350);
 for (const id of ["#wzPhSkip", "#wzBdSkip", "#wzSkip", "#wzMsSkip"]) { await p.waitForSelector(id, { visible: true }); await p.click(id); await sleep(350); }
+const grOpts = await opts(p);
+log(grOpts.length === 2 && grOpts[0].startsWith("10:") && grOpts[1].startsWith("11:") && grOpts[1].includes('י"א'), "first the grade question (י' / י\"א)", grOpts.join(" / "));
+await pick(p, "11");
 const clsOpts = await opts(p);
+log(clsOpts.length === 2, "then only the classes of that grade", clsOpts.join(" / "));
 log(clsOpts.some(o => o.startsWith("ya1:") && o.includes("הרב שי כהן")) && clsOpts.some(o => o.startsWith("ya2:") && o.includes("הרב גלעד סיטון")), "class list has י\"א1 and י\"א2 with their rav", clsOpts.join(" / "));
 await pick(p, "ya1");
 const eng = await opts(p);

@@ -63,7 +63,7 @@ main{padding:16px 14px 40px;max-width:560px;margin:0 auto;display:flex;flex-dire
 /* בטלפון: עמודה אחת, באותו סדר כמו תמיד */
 .col-main,.col-side{display:contents}
 #maintBar{order:0}#ownBox{order:1}#updates{order:1}
-body.maint #hero{order:2}body.maint #content{order:3}body.maint :is(#updates,#extras,#board,#zmanim,#qaBox){order:20}#extras{order:2}#streakPill{order:3}#absAlert{order:4}#board{order:5}#hero{order:6}#content{order:7}#zmanim{order:8}#qaBox{order:9}#imgBtn{order:10}main>.foot{order:11}
+body.maint #hero{order:2}body.maint #content{order:3}body.maint :is(#updates,#extras,#board,#zmanim,#qaBox){order:20}#extras{order:2}#streakPill{order:3}#absAlert{order:4}#board{order:5}#hero{order:6}#content{order:7}#zmanim{order:8}#qaBox{order:9}#imgBtn{order:10}#tefLine{order:11}main>.foot{order:12}
 /* 💻 מחשב: הכל נפרס – המערכת מימין, עדכונים וזמנים משמאל */
 @media (min-width:1000px){
   .top{padding-left:32px;padding-right:32px}
@@ -302,6 +302,11 @@ dialog textarea{width:100%;min-height:90px;border:1.5px solid var(--line);border
 .pf-acts .inp{flex:1;min-width:140px;padding:9px 10px}
 .pf-msg{font-size:13px;font-weight:700;margin-top:6px;min-height:16px}
 dialog .btns{display:flex;gap:8px;margin-top:14px;justify-content:flex-start;flex-wrap:wrap}
+#tefLine{margin-top:14px;background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:15px}
+#tefLine .tl-t{flex:1;min-width:180px}#tefLine b{font-size:17px}#tefLine small{display:block;color:var(--muted);font-size:12px}
+#tefLine.urgent{border-color:#ff9f43;background:rgba(255,159,67,.12)}#tefLine.done{border-color:#2ecc71;background:rgba(46,204,113,.1)}
+#tefLine button{border:none;border-radius:12px;padding:8px 12px;font:inherit;font-size:14px;font-weight:800;cursor:pointer;background:var(--accent);color:#fff}
+.tef-big{font-size:46px;text-align:center;margin-bottom:4px}#tefDlg h3,#tefDlg p{text-align:center}#tefDlg .btns{justify-content:center}
 dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font-size:15px;font-weight:700;cursor:pointer}
 .primary{background:var(--accent);color:var(--accent-ink)}
 .ghost{background:var(--break);color:var(--ink)}
@@ -323,7 +328,11 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 .wz-opt.sel{border-color:var(--accent);background:var(--next)}
 .wz-opt .ic{font-size:26px}
 .wz-opt small{display:block;font-weight:400;color:var(--muted);font-size:13px}
-.wz-nav{display:flex;justify-content:space-between;gap:8px;margin-top:18px}
+.wz-nav{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+#wzNext{width:100%;font-size:19px;padding:15px;border-radius:16px;box-shadow:0 6px 18px rgba(91,108,255,.35)}
+.wz-subnav{display:flex;justify-content:space-between;align-items:center}
+.wz-subnav #wzBack{font-size:14px;padding:8px 14px}
+.wz-skip{font-size:14px;margin:0;padding:8px 4px}
 .wz-nav button{border:none;border-radius:12px;padding:12px 18px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
 .wz-in{width:100%;border:2px solid var(--line);border-radius:14px;padding:14px;font:inherit;font-size:18px;background:var(--bg);color:var(--ink);text-align:center}
 .wz-in+.wz-in{margin-top:10px}
@@ -414,6 +423,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
   <div id="qaBox" hidden></div>
   </div>
   <button type="button" class="img-btn" id="imgBtn">🖼️ המערכת שלי כתמונה <small>לשיתוף בוואטסאפ ולהדפסה</small></button>
+  <div id="tefLine" hidden></div>
   <div class="foot">כיתה י'2 · לחיצה על "ציוד" בכל שיעור פותחת עריכה, והרשימה נשמרת בטלפון</div>
 
 <div id="build" hidden>
@@ -446,8 +456,8 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
     <p id="wzSub"></p>
     <div id="wzBody"></div>
     <div class="wz-nav">
-      <button type="button" class="ghost" id="wzBack">חזרה</button>
       <button type="button" class="primary" id="wzNext">הבא</button>
+      <div class="wz-subnav"><button type="button" class="ghost" id="wzBack">חזרה</button><span id="wzSkipBox"></span></div>
     </div>
   </div>
 </div>
@@ -524,6 +534,14 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
     <p>הוספנו כמה דברים מאז הפעם הקודמת:</p>
     <div id="newList"></div>
     <div class="btns"><button class="primary" value="ok">מעולה, תודה!</button></div>
+  </form>
+</dialog>
+<dialog id="tefDlg">
+  <form method="dialog">
+    <div class="tef-big" id="tefEmoji">⏰</div>
+    <h3 id="tefQ">הנחת תפילין היום?</h3>
+    <p id="tefSub"></p>
+    <div class="btns" id="tefBtns"></div>
   </form>
 </dialog>
 <dialog id="fbDlg">
@@ -928,7 +946,8 @@ const STEPS=[
  {k:"bday",e:"🎂",q:"מתי יום ההולדת שלך?",sub:"ביום ההולדת כל השכבה תראה מזל טוב 🎉 רק יום וחודש, בלי שנה",type:"bday"},
  {k:"email",e:"📬",q:"רוצה לחבר אימייל?",sub:"לא חובה. אפשר גם לדלג ולהוסיף מתי שתרצה מתוך הפרופיל",type:"email"},
  {k:"mashov",e:"📊",q:"לחבר את משוב?",sub:"לא חובה. כך תראה כאן את החיסורים והציונים שלך. אפשר לחבר מתי שתרצה מהפרופיל",type:"mashov"},
- {k:"cls",e:"🏫",q:"באיזו כיתה אתה?",sub:"",opts:Object.entries(CLASSES_META).map(([k,c],i)=>[k,c.label,c.rav,["📘","📗","📙","📕","📓","📒"][i%6]])},
+ {k:"grade",e:"📚",q:"באיזו שכבה אתה?",sub:"",opts:Object.entries(GRADES).map(([g,G],i)=>[g,"שכבה "+G.label,"",["🌱","🌿","🌳","🏔️"][i%4]])},
+ {k:"cls",e:"🏫",q:"ובאיזו כיתה?",sub:"",opts:d=>Object.entries(CLASSES_META).filter(([,c])=>!d.grade||c.grade===d.grade).map(([k,c],i)=>[k,c.label,c.rav,["📘","📗","📙","📕"][i%4]])},
  {k:"eng",e:"🇬🇧",q:"כמה יחידות אנגלית?",sub:"בוחרים לפי המורה",opts:d=>grpOpts(groupsOf(d.cls).ENG,["🥉","🥈","🥇"])},
  {k:"math",e:"📐",q:"וכמה יחידות מתמטיקה?",sub:"",opts:d=>grpOpts(groupsOf(d.cls).MATH,["🧮","🚀","📏"])},
  {k:"major",e:"🎓",q:"באיזו מגמה אתה?",sub:"בשעות המגמה תראה רק את המגמה שלך",opts:d=>Object.entries(groupsOf(d.cls).MAJORS).map(([k,m])=>[k,m.n,m.w,{econ:"📊",cs:"💻",phys:"⚡"}[k]||"🎓"])},
@@ -945,6 +964,7 @@ const missingFrom=i=>{let j=i;while(j<STEPS.length&&!(STEPS[j].opts&&stepOn(j)&&
 const prevStep=i=>{let j=i-1;while(j>0&&!stepOn(j))j--;return j};
 function openOnb(editing){
   wzEditing=editing;wzData=Object.assign({},profile||{});
+  if(CLASSES_META[wzData.cls])wzData.grade=gradeOf(wzData.cls); // השכבה לא נשמרת – היא נגזרת מהכיתה
   // משתמש קיים שחסר לו רק פרט אחד (למשל מגמה) מתחיל ישר מהשאלה החסרה
   const miss=missingFrom(0);
   wzStep=editing&&wzData.first&&miss>0&&miss<STEPS.length?miss:0;
@@ -957,37 +977,37 @@ function drawStep(){
   document.getElementById("wzEmoji").textContent=st.e;
   document.getElementById("wzQ").textContent=st.k==="email"&&wzData.first?`${wzData.first}, ואיזה אימייל?`:st.k==="bday"&&wzData.first?`${wzData.first}, מתי יום ההולדת שלך?`:st.q;
   document.getElementById("wzSub").textContent=st.sub;
-  const body=document.getElementById("wzBody");
+  const body=document.getElementById("wzBody"),skipBox=document.getElementById("wzSkipBox");skipBox.innerHTML="";
+  // דילוג = קישור קטן מתחת לכפתור "הבא" (ולא כפתור גדול שמתבלבלים בינו לבין "הבא")
+  const skip=(id,text,fn)=>{skipBox.innerHTML=`<button type="button" class="xlink wz-skip" id="${id}">${text} ⏭️</button>`;document.getElementById(id).onclick=fn};
   if(st.type==="name"){
     body.innerHTML=`<input class="wz-in" id="wzFirst" placeholder="שם פרטי" autocomplete="given-name" value="${escH(wzData.first||"")}"><input class="wz-in" id="wzLast" placeholder="שם משפחה" autocomplete="family-name" value="${escH(wzData.last||"")}">`;
     setTimeout(()=>{const f=document.getElementById("wzFirst");if(f)f.focus()},50);
   }else if(st.type==="email"){
-    body.innerHTML=`<input class="wz-in" id="wzEmail" type="email" dir="ltr" placeholder="you@gmail.com" autocomplete="email" value="${escH(wzData.email||"")}"><button type="button" class="wz-opt" id="wzSkip" style="margin-top:10px;justify-content:center"><span class="ic">⏭️</span><span>לא עכשיו, אולי בהמשך</span></button>`;
-    document.getElementById("wzSkip").onclick=()=>{wzData.email="";wzStep++;drawStep()};
+    body.innerHTML=`<input class="wz-in" id="wzEmail" type="email" dir="ltr" placeholder="you@gmail.com" autocomplete="email" value="${escH(wzData.email||"")}">`;
+    skip("wzSkip","דלג, בלי אימייל",()=>{wzData.email="";wzStep++;drawStep()});
   }else if(st.type==="bday"){
     const b=wzData.bd||bdLocal(),pre=b.share||wzData.bd;
     body.innerHTML=`<div class="bdrow" style="justify-content:center"><select class="wz-in" id="wzBdD" aria-label="יום">${bdDayOpts(pre&&b.d)}</select><select class="wz-in" id="wzBdM" aria-label="חודש">${bdMonOpts(pre&&b.m)}</select></div>
-      <button type="button" class="wz-opt" id="wzBdSkip" style="margin-top:12px;justify-content:center;width:100%"><span class="ic">⏭️</span><span>אחר כך</span></button>
       <button type="button" class="xlink" id="wzBdNo" style="display:block;margin:8px auto 0">לא רוצה שיראו את יום ההולדת שלי</button>`;
-    document.getElementById("wzBdSkip").onclick=()=>{wzData.bd=null;wzStep++;drawStep()};
+    skip("wzBdSkip","דלג, אכניס אחר כך",()=>{wzData.bd=null;wzStep++;drawStep()});
     document.getElementById("wzBdNo").onclick=()=>{wzData.bd={optOut:true};wzStep++;drawStep()};
   }else if(st.type==="photo"){
     body.innerHTML=`<div class="ph-pick"><button type="button" class="avatar big" id="wzAv"></button>
-      <label class="wz-opt" style="justify-content:center;width:100%"><span class="ic">🖼️</span><span>בחר תמונה</span><input type="file" accept="image/*" id="wzPh" hidden></label>
-      <button type="button" class="wz-opt" id="wzPhSkip" style="justify-content:center;width:100%"><span class="ic">⏭️</span><span>בלי תמונה, תודה</span></button></div>`;
+      <label class="wz-opt" style="justify-content:center;width:100%"><span class="ic">🖼️</span><span>בחר תמונה</span><input type="file" accept="image/*" id="wzPh" hidden></label></div>`;
     const av=document.getElementById("wzAv");renderAvatar(av,`${wzData.first||""} ${wzData.last||""}`);
     av.onclick=()=>document.getElementById("wzPh").click();
     document.getElementById("wzPh").onchange=async e=>{if(await pickAvatar(e.target.files[0]))renderAvatar(av,`${wzData.first||""} ${wzData.last||""}`)};
-    document.getElementById("wzPhSkip").onclick=()=>{wzStep++;drawStep()};
+    skip("wzPhSkip","דלג, בלי תמונה",()=>{wzStep++;drawStep()});
   }else if(st.type==="mashov"){
     if(Mashov.connected()){
       const c=Mashov.conn();
       body.innerHTML=`<div class="wz-opt sel" style="justify-content:center;cursor:default"><span class="ic">✅</span><span>מחובר ל${escH(c.schoolName)}<small>אפשר לנתק מתוך הפרופיל</small></span></div>`;
       wzMashovSubmit=null;
     }else{
-      body.innerHTML=Mashov.formHTML()+`<button type="button" class="wz-opt" id="wzMsSkip" style="margin-top:10px;justify-content:center"><span class="ic">⏭️</span><span>לא עכשיו, אולי בהמשך</span></button>`;
+      body.innerHTML=Mashov.formHTML();
       wzMashovSubmit=Mashov.wireForm(body);
-      document.getElementById("wzMsSkip").onclick=()=>{wzStep++;drawStep()};
+      skip("wzMsSkip","דלג, אחבר אחר כך",()=>{wzStep++;drawStep()});
     }
   }else{
     body.innerHTML=`<div class="wz-opts">${optsOf(st).map(o=>`<button type="button" class="wz-opt ${wzData[st.k]===o[0]?"sel":""}" data-v="${o[0]}"><span class="ic">${o[3]}</span><span>${o[1]}${o[2]?`<small>${o[2]}</small>`:""}</span></button>`).join("")}</div>`;
@@ -995,7 +1015,7 @@ function drawStep(){
   }
   document.getElementById("wzBack").style.visibility=(wzStep===0&&!wzEditing)?"hidden":"visible";
   document.getElementById("wzBack").textContent=wzStep===0?"ביטול":"חזרה";
-  document.getElementById("wzNext").textContent=nextStep(wzStep)>=STEPS.length?"סיימנו 🎉":(st.type==="email"?"חבר אימייל":st.type==="mashov"&&!Mashov.connected()?"חבר משוב":"הבא");
+  document.getElementById("wzNext").textContent=nextStep(wzStep)>=STEPS.length?"סיימנו 🎉":"הבא ←";
   document.getElementById("wzNext").style.display=st.opts?"none":"";
 }
 function next(){
@@ -1205,6 +1225,57 @@ async function shareParent(){
   if(navigator.share){try{await navigator.share({title:"המערכת של "+profile.first,text});return}catch(e){if(e&&e.name==="AbortError")return}}
   window.open("https://wa.me/?text="+encodeURIComponent(text),"_blank","noopener");
 }
+
+// ---- 🙏 תפילין: עד השקיעה. כל יום שורה בתחתית, ובשעה האחרונה – שאלה "הנחת תפילין?" ----
+// השקיעה מחושבת בטלפון (בגובה פני הים – קצת מוקדם יותר מהשקיעה הנראית, כדי להיות בצד הבטוח), בלי אינטרנט.
+// לא מניחים תפילין בשבת, ביום טוב ובחול המועד (מנהג ארץ ישראל).
+const TEF_OFF=[["2027-04-22","2027-04-28","פסח"],["2027-06-11","2027-06-11","שבועות"]];
+function sunsetAt(date){ // אלגוריתם NOAA, מחזיר Date של השקיעה ביום הזה בכפר מימון
+  const R=Math.PI/180,lat=ZM_LOC.lat,lon=ZM_LOC.lon;
+  const d0=Date.UTC(date.getFullYear(),date.getMonth(),date.getDate(),12),n=d0/864e5+2440587.5-2451545;
+  const J=n-lon/360,M=(357.5291+0.98560028*J)%360,C=1.9148*Math.sin(M*R)+0.02*Math.sin(2*M*R)+0.0003*Math.sin(3*M*R);
+  const L=(M+C+180+102.9372)%360,Jt=2451545+J+0.0053*Math.sin(M*R)-0.0069*Math.sin(2*L*R);
+  const dec=Math.asin(Math.sin(L*R)*Math.sin(23.4397*R));
+  const w=Math.acos((Math.sin(-0.833*R)-Math.sin(lat*R)*Math.sin(dec))/(Math.cos(lat*R)*Math.cos(dec)));
+  return new Date((Jt+w/(2*Math.PI)-2440587.5)*864e5-60e3); // דקה אחת לפני, ליתר ביטחון (החישוב מדויק בערך לחצי דקה)
+}
+const tefOffDay=(d,iso)=>d.getDay()===6||TEF_OFF.some(([a,b])=>iso>=a&&iso<=b);
+const tefGet=()=>{try{const t=JSON.parse(localStorage.getItem("tef")||"null");return t&&t.d===isoToday()?t.a:null}catch(e){return null}};
+const tefSet=a=>{try{localStorage.setItem("tef",JSON.stringify({d:isoToday(),a}))}catch(e){}};
+const hmIL=d=>d.toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit",hour12:false,timeZone:"Asia/Jerusalem"});
+const leftTxt=m=>m>=60?`${Math.floor(m/60)} שעות ו-${m%60} דקות`.replace(/^1 שעות/,"שעה"):`${m} דקות`;
+const TEF_YES=["כל הכבוד! 💪 מצווה שמלווה אותך כל היום","אלוף! 🏆 תפילין כל יום – זה כוח","יפה מאוד! ✨ ככה מתחילים יום נכון","כל הכבוד! 🙌 זה בדיוק מה שעושה את ההבדל"];
+const TEF_NO=["עוד לא מאוחר! 🙏 כמה דקות של תפילין – ויש לך את המצווה של היום","זה לוקח רק כמה דקות, וזו מצווה שאי אפשר להשלים מחר. לך על זה! 💪","\"והיו לאות על ידך\" – יש עוד זמן היום, אל תוותר 🙏"];
+const pickOf=a=>a[Math.floor(Math.random()*a.length)];
+let tefAsked=false;
+function renderTef(){
+  const box=document.getElementById("tefLine");if(!box)return;
+  const now=new Date(),iso=isoToday();
+  if(tefOffDay(now,iso)){box.hidden=true;return}
+  const ss=sunsetAt(now),left=Math.floor((ss-now)/6e4),ans=tefGet();
+  box.hidden=false;box.className=ans==="yes"?"done":left>0&&left<=60?"urgent":"";
+  if(left<=0){box.innerHTML=`<div class="tl-t">🙏 תפילין: הזמן להיום נגמר (שקיעה ${hmIL(ss)})${ans==="yes"?" · ✅ הנחת היום, כל הכבוד":""}</div>`;return}
+  box.innerHTML=ans==="yes"
+    ?`<div class="tl-t">✅ <b>הנחת תפילין היום</b> – כל הכבוד!<small>אפשר להניח עד השקיעה, ${hmIL(ss)}</small></div>`
+    :`<div class="tl-t">🙏 תפילין היום: אפשר להניח עד <b>${hmIL(ss)}</b><small>עד השקיעה · נשארו ${leftTxt(left)}</small></div><button type="button" id="tefDone">הנחתי ✅</button>`;
+  const b=document.getElementById("tefDone");if(b)b.onclick=()=>{tefSet("yes");renderTef();tefShow("yes",left)};
+  // בשעה האחרונה: שואלים פעם אחת בכל פתיחה, עד שעונים "כן"
+  if(!tefAsked&&ans!=="yes"&&left<=60&&profile&&!document.querySelector("dialog[open]")&&document.getElementById("wiz").hidden){tefAsked=true;tefShow(null,left)}
+}
+function tefShow(state,left){
+  const d=document.getElementById("tefDlg");if(!d)return;
+  const $=id=>document.getElementById(id),btns=$("tefBtns");
+  const set=(e,q,sub,html)=>{$("tefEmoji").textContent=e;$("tefQ").textContent=q;$("tefSub").textContent=sub;btns.innerHTML=html};
+  if(state==="yes")set("🏆",pickOf(TEF_YES),"נתראה מחר 😊",`<button class="primary" value="ok">תודה!</button>`);
+  else if(state==="no"){set("🙏","עוד יש זמן!",`${pickOf(TEF_NO)} נשארו לך ${leftTxt(left)} (עד ${hmIL(sunsetAt(new Date()))}).`,`<button type="button" class="primary" id="tefY2">הנחתי ✅</button><button class="ghost" value="later">אני הולך להניח</button>`);
+    $("tefY2").onclick=()=>{tefSet("yes");renderTef();tefShow("yes",left)}}
+  else{set("⏰",`${profile&&profile.first?profile.first+", ":""}הנחת תפילין היום?`,`עוד ${leftTxt(left)} נגמר הזמן (השקיעה ב-${hmIL(sunsetAt(new Date()))})`,`<button type="button" class="primary" id="tefY">כן, הנחתי ✅</button><button type="button" class="ghost" id="tefN">עוד לא</button>`);
+    $("tefY").onclick=()=>{tefSet("yes");renderTef();tefShow("yes",left)};
+    $("tefN").onclick=()=>{tefSet("no");renderTef();tefShow("no",left)}}
+  if(!d.open)d.showModal();
+}
+setInterval(renderTef,60e3);document.addEventListener("visibilitychange",()=>{if(!document.hidden){tefAsked=false;renderTef()}});
+setTimeout(renderTef,2500);
 
 // ---- 🕰️ זמני היום (כפר מימון) והדלקת נרות ----
 const ZM_LOC={lat:31.433,lon:34.537,elev:90,name:"כפר מימון"};

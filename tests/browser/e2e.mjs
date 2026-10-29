@@ -66,7 +66,7 @@ await click(p, "#wzSkip", "skip email");
 log(await visible(p, "#msUser"), "Mashov step shows the form");
 log((await p.$eval("#msSchool", e => e.value)).includes("בית יהודה"), "Mashov school is prefilled");
 await click(p, "#wzMsSkip", "skip Mashov");
-for (const [i, n] of [[0, "class y1"], [2, "eng hadad"], [1, "math adir"], [0, "major econ"], [0, "dorm yes"]]) {
+for (const [i, n] of [[0, "grade 10"], [0, "class y1"], [2, "eng hadad"], [1, "math adir"], [0, "major econ"], [0, "dorm yes"]]) {
   await p.waitForSelector("#wzBody .wz-opt[data-v]", { visible: true }); await sleep(250);
   const opts = await p.$$("#wzBody .wz-opt[data-v]"); await opts[i].click(); await sleep(500);
 }
