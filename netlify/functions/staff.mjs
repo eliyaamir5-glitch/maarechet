@@ -23,9 +23,12 @@
 // החלפת קוד או איפוס מבטלים מיד את כל הכניסות הקודמות. כל כתיבה היא מותנית (etag) עם ניסיון חוזר,
 // כך ששני אנשים שכותבים באותו רגע לא מוחקים אחד לשני. הגבלת ניסיונות כניסה לפי כתובת.
 // תוכן העדכונים הוא טקסט בלבד, והאפליקציה מציגה אותו כטקסט (לא HTML).
+// POST /api/push {action, ...}      → key | sub | unsub   התראות לטלפון (Web Push). ציבורי, לפי מכשיר.
+//                                     שומרים רק: כתובת ההתראות של המכשיר, הכיתה וההעדפות. בלי שם.
 import crypto from "node:crypto";
+import webpush from "web-push";
 
-export const config = { path: ["/api/updates", "/api/staff", "/api/feedback", "/api/sets", "/api/contacts", "/api/feed", "/api/owner"] };
+export const config = { path: ["/api/updates", "/api/staff", "/api/feedback", "/api/sets", "/api/contacts", "/api/feed", "/api/owner", "/api/push"] };
 
 const ALLOWED = [/^https:\/\/eliyaamir5-glitch\.github\.io$/, /^https:\/\/([a-z0-9-]+--)?lucent-crepe-6db22c\.netlify\.app$/, /^http:\/\/localhost(:\d+)?$/];
 const MAX_FEEDBACK = 1000, FEEDBACK_KINDS = ["idea", "bug", "other"], FEEDBACK_PER_HOUR = 30;
@@ -246,6 +249,7 @@ async function handle(req, context, headers) {
 
   // ---- פיד לתלמידים ----
   if (url.pathname.endsWith("/feed")) return feed(req, S, ip, headers);
+  if (url.pathname.endsWith("/push")) return push(req, S, ip, headers);
 
   // ---- דף מנהל המערכת ----
   if (url.pathname.endsWith("/owner")) return owner(req, S, ip, headers);
@@ -386,6 +390,8 @@ async function handle(req, context, headers) {
       if (list.length >= MAX_UPDATES) throw new Fail(413, "too_many");
       return [...list, upd];
     });
+    // עדכון דחוף שמתפרסם עכשיו → גם התראה לטלפון (מי שהפעיל התראות; לא בלילה ולא בשבת)
+    if (upd.urgent && from <= now) await sendPush(S, x => audienceMatch(audience, x), { title: "🚨 עדכון דחוף", body: text.slice(0, 160), tag: "upd-" + upd.id }, { pref: "urgent", ttl: 6 * 3600 }).catch(() => {});
     return reply(200, { ok: true, update: upd }, headers);
   }
 
@@ -867,7 +873,8 @@ async function owner(req, S, ip, headers) {
     const m = { id: newId(), text, to, ...(to === "some" ? { keys, people, names: (Array.isArray(b.names) ? b.names : []).map(x => clean(x, MAX_NAME)).filter(Boolean).slice(0, 300) } : {}), createdAt: now, expiresAt: now + hours * 3600e3 };
     await S.update("ownerMsgs", cur => [m, ...(Array.isArray(cur) ? cur : []).filter(x => x.expiresAt > now - 7 * 864e5)].slice(0, MSG_MAX));
     await olog(S, "msgSend", `הודעה ${to === "all" ? "לכולם" : to === "some" ? "ל-" + ((m.names || []).slice(0, 5).join(", ") || keys.length + " מכשירים") : "ל" + to}: ${text.slice(0, 80)}`);
-    return reply(200, { ok: true, id: m.id }, headers);
+    const pushed = await sendPush(S, (x, k) => to === "some" ? keys.includes(k) : audienceMatch(to, x), { title: "📩 הודעה ממנהל המערכת", body: text.slice(0, 160), tag: "own-" + m.id }, { pref: "urgent", ttl: 6 * 3600 }).catch(() => 0);
+    return reply(200, { ok: true, id: m.id, pushed }, headers);
   }
   if (b.action === "msgDelete") {
     const id = String(b.id || "");
@@ -1144,4 +1151,96 @@ async function contacts(req, S, ip, headers) {
     return reply(200, { ok: true }, headers);
   }
   return reply(400, { ok: false, error: "bad_action" }, headers);
+}
+
+// ===== 🔔 התראות לטלפון (Web Push) =====
+// המפתחות (VAPID) נוצרים לבד בפעם הראשונה ונשמרים באחסון – אין מה להגדיר בנטליפיי.
+// "push" = { [devKey]: { sub:{endpoint,keys}, cls, prefs:{tef,urgent}, at, last } }. בלי שם ובלי מזהה המכשיר עצמו.
+const PUSH_MAX = 4000, PUSH_PREFS = ["tef", "urgent"];
+const PUSH_HOSTS = /^https:\/\/([a-z0-9-]+\.)*(googleapis\.com|mozilla\.com|mozaws\.net|push\.apple\.com|windows\.com|microsoft\.com|notify\.windows\.com)\//i;
+let pushSender = (sub, payload, opts) => webpush.sendNotification(sub, payload, opts);
+export function __setPushSender(f) { pushSender = f; }
+async function vapid(S) {
+  let v = await S.get("vapid");
+  if (!v || !v.publicKey) { const k = webpush.generateVAPIDKeys(); await S.update("vapid", cur => cur && cur.publicKey ? undefined : k); v = await S.get("vapid"); }
+  return v;
+}
+const audienceMatch = (aud, x) => aud === "all" || aud === x.cls;
+function cleanSub(sub) {
+  const e = String(sub && sub.endpoint || ""), p = String(sub && sub.keys && sub.keys.p256dh || ""), a = String(sub && sub.keys && sub.keys.auth || "");
+  if (e.length > 600 || !PUSH_HOSTS.test(e) || !/^[A-Za-z0-9_-]{40,200}$/.test(p) || !/^[A-Za-z0-9_-]{10,60}$/.test(a)) return null;
+  return { endpoint: e, keys: { p256dh: p, auth: a } };
+}
+async function push(req, S, ip, headers) {
+  if (req.method === "GET") return reply(200, { ok: true, key: (await vapid(S)).publicKey }, headers);
+  if (req.method !== "POST") return reply(405, { ok: false, error: "method" }, headers);
+  let b; try { b = await req.json(); } catch (e) { return reply(400, { ok: false, error: "bad_json" }, headers); }
+  const device = String(b?.device || "");
+  if (b?.action === "key") return reply(200, { ok: true, key: (await vapid(S)).publicKey }, headers);
+  if (!DEV_RE.test(device)) return reply(400, { ok: false, error: "bad_request" }, headers);
+  await rateLimit(S, "pushRate", ip, 120); // יותר מדי → 429
+  const k = devKey(device), now = Date.now();
+  if (b.action === "unsub") { await S.update("push", cur => { if (!cur || !Object.hasOwn(cur, k)) return undefined; const o = { ...cur }; delete o[k]; return o; }); return reply(200, { ok: true }, headers); }
+  if (b.action === "sub") {
+    const sub = cleanSub(b.sub), cls = AUDIENCES.includes(b.cls) && b.cls !== "all" ? b.cls : "";
+    if (!sub || !cls) return reply(400, { ok: false, error: "bad_request" }, headers);
+    const prefs = Object.fromEntries(PUSH_PREFS.map(p => [p, b.prefs ? b.prefs[p] !== false : true]));
+    await S.update("push", cur => {
+      const o = cur && typeof cur === "object" ? { ...cur } : {};
+      // אותה כתובת התראות ממכשיר אחר (למשל אחרי איפוס) – נשאר רק החדש
+      for (const [kk, x] of Object.entries(o)) if (kk !== k && x && x.sub && x.sub.endpoint === sub.endpoint) delete o[kk];
+      if (!Object.hasOwn(o, k) && Object.keys(o).length >= PUSH_MAX) { const old = Object.entries(o).sort((a, c) => (a[1].at || 0) - (c[1].at || 0))[0]; if (old) delete o[old[0]]; }
+      o[k] = { sub, cls, prefs, at: now, last: o[k] && o[k].last || 0 };
+      return o;
+    });
+    return reply(200, { ok: true, prefs }, headers);
+  }
+  return reply(400, { ok: false, error: "bad_request" }, headers);
+}
+// שעון ישראל: יום בשבוע ושעה
+const IL_PARTS = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Jerusalem", weekday: "short", hour: "numeric", hourCycle: "h23" });
+function ilClock(t) { const p = Object.fromEntries(IL_PARTS.formatToParts(new Date(t)).map(x => [x.type, x.value])); return { dow: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(p.weekday), hour: +p.hour }; }
+// שקיעה בכפר מימון (כמו באפליקציה – אלגוריתם NOAA, דקה ליתר ביטחון)
+function sunsetIL(day) {
+  const R = Math.PI / 180, lat = 31.433, lon = 34.537, [y, m, d] = day.split("-").map(Number);
+  const n = Date.UTC(y, m - 1, d, 12) / 864e5 + 2440587.5 - 2451545, J = n - lon / 360, M = (357.5291 + 0.98560028 * J) % 360;
+  const C = 1.9148 * Math.sin(M * R) + 0.02 * Math.sin(2 * M * R) + 0.0003 * Math.sin(3 * M * R), L = (M + C + 180 + 102.9372) % 360;
+  const Jt = 2451545 + J + 0.0053 * Math.sin(M * R) - 0.0069 * Math.sin(2 * L * R), dec = Math.asin(Math.sin(L * R) * Math.sin(23.4397 * R));
+  const w = Math.acos((Math.sin(-0.833 * R) - Math.sin(lat * R) * Math.sin(dec)) / (Math.cos(lat * R) * Math.cos(dec)));
+  return (Jt + w / (2 * Math.PI) - 2440587.5) * 864e5 - 60e3;
+}
+// בלי תפילין: שבת, יום טוב וחול המועד (כמו TEF_OFF באפליקציה)
+const TEF_OFF = [["2027-04-22", "2027-04-28"], ["2027-06-11", "2027-06-11"]];
+// שקט: לילה (22:00–07:00), שבת, וערב שבת אחרי השקיעה
+function quietNow(t) { const { dow, hour } = ilClock(t); return hour >= 22 || hour < 7 || dow === 6 || (dow === 5 && t >= sunsetIL(israelDay(t))); }
+// שולח לכל המנויים שמתאימים (match) ושההעדפה שלהם (pref) פתוחה. מנוי שהכתובת שלו פגה (404/410) נמחק.
+async function sendPush(S, match, msg, { pref, ttl = 3600, force = false } = {}) {
+  const now = Date.now();
+  if (!force && quietNow(now)) return 0;
+  const all = (await S.get("push")) || {}, v = await vapid(S);
+  const list = Object.entries(all).filter(([k, x]) => x && x.sub && (!pref || !x.prefs || x.prefs[pref] !== false) && match(x, k));
+  if (!list.length) return 0;
+  const payload = JSON.stringify({ title: msg.title, body: msg.body, tag: msg.tag || "", url: msg.url || "./" });
+  const opts = { TTL: ttl, urgency: "normal", vapidDetails: { subject: "https://eliyaamir5-glitch.github.io/maarechet/", publicKey: v.publicKey, privateKey: v.privateKey } };
+  const dead = [];
+  let sent = 0;
+  for (let i = 0; i < list.length; i += 40) {
+    const r = await Promise.allSettled(list.slice(i, i + 40).map(([k, x]) => pushSender(x.sub, payload, opts).then(() => k)));
+    r.forEach((x, j) => { if (x.status === "fulfilled") sent++; else if ([404, 410].includes(x.reason && x.reason.statusCode)) dead.push(list[i + j][0]); });
+  }
+  if (dead.length) await S.update("push", cur => { if (!cur) return undefined; const o = { ...cur }; for (const k of dead) delete o[k]; return o; });
+  return sent;
+}
+// רץ כל רבע שעה אחר הצהריים (push-tick.mjs): שעה לפני השקיעה – תזכורת תפילין, פעם אחת ביום
+export async function pushTick(now = Date.now()) {
+  const S = await store(), day = israelDay(now), { dow } = ilClock(now);
+  if (dow === 6 || TEF_OFF.some(([a, b]) => day >= a && day <= b)) return { skipped: "off" };
+  const ss = sunsetIL(day), left = ss - now;
+  if (!(left <= 75 * 60e3 && left > 40 * 60e3)) return { skipped: "time" };
+  let first = false;
+  await S.update("pushTef", cur => { if (cur && cur.day === day) return undefined; first = true; return { day, at: now }; });
+  if (!first) return { skipped: "done" };
+  const hm = new Date(ss).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Jerusalem" });
+  const sent = await sendPush(S, () => true, { title: "🙏 תפילין", body: `נשארה בערך שעה להנחת תפילין – אפשר עד ${hm}. כבר הנחת? כל הכבוד! 💪`, tag: "tef-" + day }, { pref: "tef", ttl: 3000, force: true });
+  return { sent };
 }

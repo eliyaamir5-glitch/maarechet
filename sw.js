@@ -1,7 +1,7 @@
 // Service Worker: מאפשר לאפליקציה להיפתח גם בלי אינטרנט.
 // אסטרטגיה: קודם רשת ואם אין – מהמטמון (כך עדכונים מגיעים מיד כשיש קליטה).
 // לפונטים של גוגל: קודם מטמון, כי הם לא משתנים.
-const CACHE = "maarechet-v40";
+const CACHE = "maarechet-v41";
 const PRECACHE = ["./", "./index.html", "./data.js", "./shichrur.html", "./cards.html", "./sets.js", "./card-editor.js", "./calc.html", "./calc-topics.js", "./parent.html", "./theme.js", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./phones.html", "./calc-engine.js", "./board.js", "./mashov.js", "./absences.js", "./absences.html", "./timetable-image.js", "./about.html", "./updates.js", "./demo-shim.js", "./staff.html", "./mashov-schools.json"];
 
 // בנטליפיי (ובשרת המקומי) x.html מופנה ל-x. תשובה שעברה הפניה אסור להחזיר לניווט,
@@ -56,4 +56,21 @@ self.addEventListener("fetch", e => {
       }).catch(() => caches.match(req, nav ? { ignoreSearch: true } : undefined).then(hit => hit || (nav ? caches.match("./index.html") : undefined)))
     );
   }
+});
+
+// 🔔 התראה מהשרת (Web Push): מציגים אותה, ולחיצה פותחת את האפליקציה
+self.addEventListener("push", e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data ? e.data.text() : "" }; }
+  e.waitUntil(self.registration.showNotification(d.title || "המערכת", {
+    body: d.body || "", tag: d.tag || undefined, icon: "./icon-192.png", badge: "./icon-192.png", lang: "he", dir: "rtl", data: { url: d.url || "./" },
+  }));
+});
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || "./", self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
+    const w = list.find(c => c.url.startsWith(self.registration.scope));
+    return w ? w.focus() : self.clients.openWindow(url);
+  }));
 });

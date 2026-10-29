@@ -312,7 +312,7 @@ function draw(){
     const list=to==="some"?chosen():[];if(to==="some"&&!list.length){alert("לא סימנת תלמידים בטבלה.");return}
     if(!confirm(to==="all"?"לשלוח את ההודעה לכל התלמידים?":to==="some"?`לשלוח ל-${list.length} תלמידים?`:`לשלוח ל${clsL(to)}?`))return;
     $("oGo").disabled=true;const r=await api({action:"msgSend",text,to,hours:+$("oHrs").value,people:list.map(who),names:list.map(p=>p.name)});
-    if(!r.ok){$("oGo").disabled=false;alert(ERR[r.error]||"לא הצלחנו לשלוח.");return}$("oText").value="";load()};
+    if(!r.ok){$("oGo").disabled=false;alert(ERR[r.error]||"לא הצלחנו לשלוח.");return}$("oText").value="";load();if(r.pushed)setTimeout(()=>alert(`✉️ נשלח. גם התראה לטלפון ל-${r.pushed} מכשירים 🔔`),60)};
   document.querySelectorAll("[data-mdel]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את ההודעה? היא תיעלם אצל התלמידים."))return;b.disabled=true;const r=await api({action:"msgDelete",id:b.dataset.mdel});if(!r.ok){b.disabled=false;alert(ERR[r.error]||"לא הצלחנו למחוק.");return}load()});
   document.querySelectorAll("[data-unsus]").forEach(b=>b.onclick=async()=>{if(!confirm("להחזיר אותו לאפליקציה?"))return;b.disabled=true;const x=JSON.parse(b.dataset.unsus);const r=await api({action:"unsuspend",...x});if(!r.ok){b.disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}load()});
   document.querySelectorAll("[data-errok]").forEach(b=>b.onclick=async()=>{b.disabled=true;const r=await api({action:"errClear",sig:b.dataset.errok});if(!r.ok){b.disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}load()});

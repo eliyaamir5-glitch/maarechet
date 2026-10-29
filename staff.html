@@ -201,7 +201,7 @@ async function showWrite(){
     <div class="row" id="custom" hidden style="margin-top:8px"><input id="cNum" type="number" min="1" max="999" value="30" style="width:100px;flex:0 0 auto"><select id="cUnit" style="width:auto;flex:0 0 auto"><option value="1">דקות</option><option value="60">שעות</option><option value="1440">ימים</option></select></div>
     <label>מתי לשלוח</label><div class="seg" id="when"><button data-v="now" class="on">עכשיו</button><button data-v="later">⏰ בזמן אחר…</button></div>
     <input type="datetime-local" id="whenAt" hidden style="margin-top:8px">
-    <label class="tgl"><input type="checkbox" id="urg"> דחוף (באדום, מופיע ראשון)</label>
+    <label class="tgl"><input type="checkbox" id="urg"> דחוף (באדום, מופיע ראשון, ונשלח גם כהתראה לטלפון למי שהפעיל התראות)</label>
     <div class="preview"><div class="ph">כך זה ייראה אצל התלמידים:</div><div id="prev"></div></div>
     <div class="row" style="margin-top:14px"><button class="btn" id="post" style="flex:1">פרסם עדכון</button></div><div id="pMsg" hidden></div></div>`;
   dur=60;aud="all";urgent=false;

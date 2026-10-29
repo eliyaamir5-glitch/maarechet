@@ -4,13 +4,14 @@
   "description": "המערכת – אפליקציית מערכת שעות לתלמידים. אתר סטטי + פונקציות נטליפיי (משוב, עדכוני צוות).",
   "scripts": {
     "build": "node scripts/build.js",
-    "test": "node scripts/test-absences.js && node scripts/test-mashov-function.mjs && node scripts/test-staff-function.mjs",
+    "test": "node scripts/test-absences.js && node scripts/test-mashov-function.mjs && node scripts/test-staff-function.mjs && node scripts/test-push.mjs",
     "test:browser": "node tests/browser/run-all.mjs",
     "dev": "node scripts/dev-server.mjs",
     "check": "node gen-cal.js --check"
   },
   "dependencies": {
-    "@netlify/blobs": "^11.1.4"
+    "@netlify/blobs": "^11.1.4",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "puppeteer-core": "23.11.1"

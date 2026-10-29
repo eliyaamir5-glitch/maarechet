@@ -63,7 +63,7 @@ main{padding:16px 14px 40px;max-width:560px;margin:0 auto;display:flex;flex-dire
 /* בטלפון: עמודה אחת, באותו סדר כמו תמיד */
 .col-main,.col-side{display:contents}
 #maintBar{order:0}#ownBox{order:1}#updates{order:1}
-body.maint #hero{order:2}body.maint #content{order:3}body.maint :is(#updates,#extras,#board,#zmanim,#qaBox){order:20}#extras{order:2}#streakPill{order:3}#absAlert{order:4}#board{order:5}#hero{order:6}#content{order:7}#zmanim{order:8}#qaBox{order:9}#imgBtn{order:10}#tefLine{order:11}main>.foot{order:12}
+body.maint #hero{order:2}body.maint #content{order:3}body.maint :is(#updates,#extras,#board,#zmanim,#qaBox){order:20}#pushBox{order:2}#extras{order:2}#streakPill{order:3}#absAlert{order:4}#board{order:5}#hero{order:6}#content{order:7}#zmanim{order:8}#qaBox{order:9}#imgBtn{order:10}#tefLine{order:11}main>.foot{order:12}
 /* 💻 מחשב: הכל נפרס – המערכת מימין, עדכונים וזמנים משמאל */
 @media (min-width:1000px){
   .top{padding-left:32px;padding-right:32px}
@@ -196,6 +196,12 @@ body.maint :is(#streakPill,#absAlert){display:none!important}
 .bd-conf i{position:absolute;top:-40px;font-style:normal;font-size:26px;animation:bdfall 3.4s ease-in forwards}
 @keyframes bdfall{to{transform:translateY(110vh) rotate(540deg);opacity:.5}}
 @media (prefers-reduced-motion:reduce){.bd-conf{display:none}}
+.pushc{background:linear-gradient(135deg,rgba(91,108,255,.16),rgba(255,107,214,.12));border:1.5px solid var(--accent);border-radius:16px;padding:12px 14px;margin-bottom:8px}
+.pushc .xhead{font-weight:900;font-size:16px}.pushc .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.pushc .go{border:none;background:var(--accent);color:#fff;border-radius:12px;padding:9px 14px;font:inherit;font-weight:800;cursor:pointer}
+.pf-push{margin-top:14px;border-top:1px dashed var(--line);padding-top:12px;text-align:start}
+.pf-push label{display:flex;align-items:center;gap:8px;font-size:15px;margin-top:8px;cursor:pointer}
+.pf-push input{width:20px;height:20px;accent-color:var(--accent)}
 .xbtn{border:none;background:var(--break);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .pq{font-size:16px;font-weight:700;margin:6px 0 8px}
 .popt{display:block;width:100%;text-align:start;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:10px 12px;font:inherit;font-size:15px;margin-top:6px;cursor:pointer}
@@ -417,6 +423,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
   <div class="col-side">
   <div id="ownBox" hidden></div>
   <div id="updates" hidden></div>
+  <div id="pushBox" hidden></div>
   <div id="extras" hidden></div>
   <div id="board" hidden role="button" tabindex="0"></div>
   <div id="zmanim" hidden></div>
@@ -1122,6 +1129,7 @@ function renderProfile(){
       <span>ניצנים</span><span>${profile.nitz==="yes"?"🌱 כן":profile.nitz==="no"?"לא":"—"}</span>`:""}
       <span>במערכת מאז</span><span>${profile.since?new Date(profile.since).toLocaleDateString("he-IL"):"—"}</span>
     </div>
+    <div class="pf-push" id="pfPush"></div>
     ${(()=>{const a=absState();if(!a)return `<div class="pf-stats"><a href="absences.html">📊 הנוכחות שלי ←</a></div><div class="pf-sub" style="margin-top:6px">חבר את משוב כדי לראות כאן את הרצף בכל מקצוע ואת מצב ה-30%.</div>`;
       const bag=a.r.subjects.filter(x=>!x.nonBagrut&&x.held>0),worst=bag[0],cnt=k=>bag.filter(x=>x.status===k).length;
       return `<div class="pf-stats">${a.lead&&a.lead[1].current?`<span>🔥 ${a.lead[1].current} ברצף ב${escH(a.lead[0])}</span>`:""}${a.pr.total?`<span>⭐ ${a.pr.total} צל"שים</span>`:""}</div>
@@ -1143,6 +1151,7 @@ function renderProfile(){
       <div class="pf-acts">${Mashov.remembers()?"":`<input class="inp" id="pfMsPw" type="password" dir="ltr" placeholder="סיסמה של משוב">`}<button type="button" class="primary" id="pfMsRefresh">רענן עכשיו</button><button type="button" class="ghost" id="pfMsOff">נתק משוב</button></div><div class="pf-msg" id="pfMsMsg"></div>`
     :`<div class="pf-sub">לא מחובר. חיבור מאפשר לראות כאן חיסורים וציונים.</div><div id="pfMsForm" style="margin-top:8px"></div><div class="pf-acts"><button type="button" class="primary" id="pfMsOn">חבר משוב</button></div>`}</div>`;
   const $=id=>document.getElementById(id);
+  renderPushPrefs();
   $("pfEdit").onclick=()=>{$("profDlg").close();openOnb(true)};
   renderAvatar($("pfAv"));$("pfAv").onclick=()=>$("pfPh").click();
   $("pfPh").onchange=async e=>{if(await pickAvatar(e.target.files[0])){renderAvatar(document.getElementById("hAvatar"));renderProfile()}};
@@ -1424,6 +1433,79 @@ renderAbsAlert();
 (function(){const b=document.getElementById("brand");if(!b||typeof SCHOOL_NAME==="undefined"||!SCHOOL_NAME)return;
   if(SCHOOL_LOGO){const i=document.createElement("img");i.src=SCHOOL_LOGO;i.alt="";i.onerror=()=>i.remove();b.append(i)}
   const t=document.createElement("span");t.textContent=SCHOOL_NAME;b.append(t);b.hidden=false})();
+
+// ---- 🔔 התראות לטלפון (Web Push) ----
+// התלמיד מאשר → הטלפון נותן "כתובת התראות" → נשמרת בשרת עם הכיתה וההעדפות (בלי שם).
+// באייפון זה עובד רק כשהאפליקציה מותקנת במסך הבית (iOS 16.4+).
+const PUSH_API=()=>((typeof SERVER_BASE!=="undefined"&&SERVER_BASE)||"")+"/api/push";
+const pushSupported=()=>"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+const isIOSDev=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const pushLS=()=>{try{const p=JSON.parse(localStorage.getItem("push")||"null");return p&&typeof p==="object"?p:{}}catch(e){return{}}};
+const pushSave=o=>{try{localStorage.setItem("push",JSON.stringify(o))}catch(e){}};
+const pushPrefs=()=>({tef:pushLS().prefs?.tef!==false,urgent:pushLS().prefs?.urgent!==false});
+const b64u=s=>{const p="=".repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(b,c=>c.charCodeAt(0))};
+async function pushPost(body){try{const r=await fetch(PUSH_API(),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});return await r.json()}catch(e){return{ok:false,error:"network"}}}
+async function pushSubscribe(){
+  const reg=await navigator.serviceWorker.ready;
+  let sub=await reg.pushManager.getSubscription();
+  if(!sub){const k=await pushPost({action:"key"});if(!k.ok||!k.key)throw new Error("key");sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(k.key)})}
+  const r=await pushPost({action:"sub",device:deviceId(),sub:sub.toJSON(),cls:myCls(),prefs:pushPrefs()});
+  if(!r.ok)throw new Error(r.error||"server");
+  pushSave({...pushLS(),on:true,synced:Date.now(),cls:myCls()});
+}
+async function pushEnable(){
+  if(!pushSupported())return "unsupported";
+  const perm=await Notification.requestPermission();
+  if(perm!=="granted"){pushSave({...pushLS(),denied:true});return perm}
+  try{await pushSubscribe();return "on"}catch(e){return "error"}
+}
+async function pushDisable(){
+  try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(sub)await sub.unsubscribe()}catch(e){}
+  await pushPost({action:"unsub",device:deviceId()});
+  pushSave({...pushLS(),on:false});
+}
+// פעם ביום (וכשהכיתה משתנה) – מרעננים את הרישום בשרת
+async function pushSync(){
+  const p=pushLS();if(!p.on||!pushSupported()||Notification.permission!=="granted"||!profile)return;
+  if(p.synced&&Date.now()-p.synced<864e5&&p.cls===myCls())return;
+  try{await pushSubscribe()}catch(e){}
+}
+function renderPushCard(){
+  const box=document.getElementById("pushBox");if(!box)return;
+  const p=pushLS(),until=+p.askLater||0;
+  const show=profile&&profile.cls&&!p.on&&!p.denied&&Date.now()>until&&(pushSupported()||isIOSDev())&&!(pushSupported()&&Notification.permission==="denied");
+  if(!show){box.hidden=true;box.innerHTML="";return}
+  const ios=isIOSDev()&&!isStandalone();
+  box.hidden=false;
+  box.innerHTML=`<div class="pushc"><div class="xhead">🔔 רוצה התראות לטלפון?</div>
+    <div class="xsub">תזכורת להנחת תפילין, והודעות דחופות מהצוות – גם כשהאפליקציה סגורה. בלי התראות בלילה ובשבת.</div>
+    ${ios?`<div class="xsub" style="margin-top:6px">📱 באייפון: קודם מוסיפים את האפליקציה למסך הבית, ופותחים אותה משם.</div>`:""}
+    <div class="row">${ios?`<button type="button" class="go" id="pushHow">איך מוסיפים למסך הבית?</button>`:`<button type="button" class="go" id="pushOn">🔔 הפעל התראות</button>`}<button type="button" class="xbtn" id="pushLater">לא עכשיו</button></div>
+    <div class="xsub" id="pushMsg" style="margin-top:6px"></div></div>`;
+  const $=id=>document.getElementById(id);
+  if($("pushHow"))$("pushHow").onclick=()=>openInstall();
+  if($("pushOn"))$("pushOn").onclick=async()=>{$("pushOn").disabled=true;$("pushMsg").textContent="רגע…";const r=await pushEnable();
+    if(r==="on"){$("pushMsg").textContent="";box.innerHTML=`<div class="pushc"><div class="xhead">✅ ההתראות פועלות!</div><div class="xsub">אפשר לשנות בכל רגע בפרופיל.</div></div>`;setTimeout(renderPushCard,4000)}
+    else if(r==="denied"){$("pushMsg").textContent="לא אישרת התראות. אפשר לשנות בהגדרות של הטלפון/הדפדפן.";setTimeout(renderPushCard,4000)}
+    else{$("pushOn").disabled=false;$("pushMsg").textContent="לא הצלחתי להפעיל עכשיו 😕 נסה שוב בעוד רגע."}};
+  $("pushLater").onclick=()=>{pushSave({...pushLS(),askLater:Date.now()+7*864e5});renderPushCard()};
+}
+function renderPushPrefs(){
+  const box=document.getElementById("pfPush");if(!box)return;
+  const p=pushLS(),pr=pushPrefs(),on=!!p.on&&pushSupported()&&Notification.permission==="granted";
+  if(!pushSupported()){box.innerHTML=`<b>🔔 התראות</b><div class="pf-sub">${isIOSDev()&&!isStandalone()?"באייפון אפשר לקבל התראות אחרי שמוסיפים את האפליקציה למסך הבית.":"הדפדפן הזה לא תומך בהתראות."}</div>`;return}
+  box.innerHTML=`<b>🔔 התראות לטלפון</b>
+    <label><input type="checkbox" id="ppOn" ${on?"checked":""}> התראות פועלות</label>
+    <div id="ppMore" ${on?"":"hidden"} style="padding-inline-start:20px">
+      <label><input type="checkbox" id="ppTef" ${pr.tef?"checked":""}> 🙏 תזכורת תפילין (שעה לפני השקיעה)</label>
+      <label><input type="checkbox" id="ppUrg" ${pr.urgent?"checked":""}> 🚨 הודעות דחופות מהצוות</label>
+    </div><div class="pf-sub" id="ppMsg">${Notification.permission==="denied"?"ההתראות חסומות בהגדרות של הטלפון/הדפדפן.":"בלי התראות בלילה (22:00–07:00) ובשבת."}</div>`;
+  const $=id=>document.getElementById(id);
+  $("ppOn").onchange=async e=>{$("ppMsg").textContent="רגע…";if(e.target.checked){const r=await pushEnable();if(r!=="on")e.target.checked=false}else await pushDisable();renderPushPrefs();renderPushCard()};
+  const prefs=async()=>{pushSave({...pushLS(),prefs:{tef:$("ppTef").checked,urgent:$("ppUrg").checked},synced:0});$("ppMsg").textContent="נשמר ✓";try{await pushSubscribe()}catch(e){$("ppMsg").textContent="לא הצלחתי לשמור עכשיו"}};
+  $("ppTef").onchange=prefs;$("ppUrg").onchange=prefs;
+}
+setTimeout(()=>{renderPushCard();pushSync()},3000);
 
 // ---- מהפיד: סקרים, ימי הולדת, אירועים, שאלות ותשובות ----
 function deviceId(){let d=null;try{d=localStorage.getItem("deviceId")}catch(e){}if(!d){d=(crypto.randomUUID?crypto.randomUUID():"d"+Date.now().toString(36)+Math.random().toString(36).slice(2));try{localStorage.setItem("deviceId",d)}catch(e){}}return d}
