@@ -20,8 +20,9 @@ He works from several computers and from the cloud – this file is the shared m
 npm test                 # server + Mashov + absences unit tests – must be 0 ❌
 node gen-cal.js --check  # calendar files in sync with data.js
 node scripts/test-calc.js
-npm run test:browser     # 24 browser robots (needs Chrome; see tests/browser/_env.mjs)
+npm run test:browser     # 25 browser robots – ONLY when he asks (his rule since 29.10; they take ~20 min)
 ```
+Run only the robots directly related to the change (e.g. `node tests/browser/run-all.mjs dorm-e2e e2e`), and say in the summary that the full set was not run.
 If Chrome isn't available (e.g. cloud), say so explicitly in the summary – don't claim the robots passed.
 
 ## Deploy
