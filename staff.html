@@ -119,7 +119,7 @@ const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>
 const T={get:()=>{try{return localStorage.getItem("staffToken")}catch(e){return null}},set:v=>{try{v?localStorage.setItem("staffToken",v):localStorage.removeItem("staffToken")}catch(e){}}};
 const ERR={change_taken:"כבר יש שינוי לשיעור הזה שמורה אחר פרסם. רק מי שפרסם אותו או מנהל יכולים להחליף אותו.",bad_date:"אפשר לסמן שינוי רק מאתמול ועד חודשיים קדימה.",bad_action:"התכונה הזאת עוד לא פעילה בשרת. היא תעבוד לבד אחרי שהשרת (נטליפיי) יתעדכן.",bad_time:"הזמן לא תקין.",too_many:"יותר מדי.",bad_video:"הקישור לסרטון לא תקין.",bad_phone:"מספר הטלפון לא תקין.",too_many_sets:"הגעתם למספר הסטים המקסימלי. מחקו סטים ישנים.",too_big:"הסטים תופסים יותר מדי מקום. מחקו סטים ישנים או קצרו.",code_taken:"הקוד הזה כבר בשימוש. בחר קוד אחר.",busy:"השרת עמוס לרגע. נסה שוב.",server:"תקלה בשרת. נסה שוב בעוד רגע.",bad_code:"הקוד לא נכון.",locked:"יותר מדי ניסיונות. נסה שוב בעוד 15 דקות.",auth:"צריך להיכנס מחדש.",forbidden:"אין הרשאה לפעולה הזאת.",bad_request:"חסרים פרטים או שהם לא תקינים.",bad_invite:"הקישור לא תקין.",invite_used:"הקישור הזה כבר שומש.",not_found:"לא נמצא.",network:"אין חיבור לשרת. בדוק אינטרנט ונסה שוב."};
 const ROLE={admin:"מנהל",teacher:"מורה",staff:"צוות"};
-let me=null,tab="write",welcome=false,caps={};
+let me=null,tab="",welcome=false,caps={}; // tab ריק = מסך הפתיחה (מנהל: מבט על, מורה: עדכון חדש)
 
 async function api(body){
   // שרת שלא עונה לא משאיר כפתור "תקוע" לנצח: אחרי 25 שניות מוותרים ומראים שגיאת חיבור
@@ -663,14 +663,33 @@ async function loadBirthdays(){
   box.querySelectorAll("[data-bdel]").forEach(b=>b.onclick=()=>act(b,{action:"bdDelete",key:b.dataset.bdel},loadBirthdays,"להסיר את יום ההולדת הזה מהתצוגה לתלמידים?"));
 }
 async function showStats(){
-  $("main").innerHTML=`<div class="card"><h2>📈 נתונים</h2><p class="hint">7 הימים האחרונים. רק מספרים – בלי שמות. "בסיכון" = מעל 25% חיסורים במקצוע (אצל מי שחיבר משוב).</p><div id="stBody"><p class="hint">טוען…</p></div></div>
+  const admin=me.role==="admin";
+  $("main").innerHTML=`<div class="card"><h2>📈 גרפים ונתונים</h2><p class="crumb">7 הימים האחרונים. <b>רק מספרים – בלי שמות.</b> 🔴 עבר 30% חיסורים · 🟠 קרוב (מעל 25%). נספר רק אצל מי שחיבר את משוב.</p>
+    <div class="seg" id="stC"><button data-v="" class="on">כל הכיתות</button>${Object.keys(CLASSES_META).map(k=>`<button data-v="${k}">${esc(clsL(k))}</button>`).join("")}</div><div id="stBody"><p class="hint">טוען…</p></div></div>
+    ${admin?`<div class="card"><h2>📈 כניסות ב-30 הימים האחרונים</h2><div id="stLine"><p class="hint">טוען…</p></div></div>`:""}
     <div class="card"><h2>🎂 ימי הולדת שמוצגים</h2><p class="hint">התלמידים מכניסים את השם בעצמם. אם משהו לא מתאים – אפשר להסיר.</p><div id="bdBox"><p class="hint">טוען…</p></div></div>`;
   if(caps.feed)loadBirthdays();else $("bdBox").closest(".card").remove();
   const r=await api({action:"stats"}),box=$("stBody");if(!box)return;
   if(!r.ok){box.innerHTML=`<p class="hint">${esc(ERR[r.error]||"שגיאה.")}</p>`;return}
-  const cls=Object.keys(CLASSES_META);
-  box.innerHTML=cls.map(c=>{const x=r.classes[c]||{active:0,mashov:0,risk:{},warn:{}};const rows=[...new Set([...Object.keys(x.risk),...Object.keys(x.warn)])].sort((a,b)=>((x.risk[b]||0)-(x.risk[a]||0))||((x.warn[b]||0)-(x.warn[a]||0)));
-    return `<div class="day"><h3>${CLASSES_META[c].label} <small>${x.active} תלמידים השתמשו · ${x.mashov} מחוברים למשוב</small></h3>${rows.length?rows.map(n=>`<div class="ls"><div class="sb">${esc(n)}</div><div class="tm" style="flex:0 0 auto">${x.risk[n]?`<span class="pill urg">🔴 ${x.risk[n]} בסיכון</span>`:""}${x.warn[n]?`<span class="pill off">🟠 ${x.warn[n]}</span>`:""}</div></div>`).join(""):`<div class="empty">אין מקצועות בסיכון 🎉</div>`}</div>`}).join("");
+  let sel="";
+  const draw=()=>{
+    const cls=sel?[sel]:Object.keys(CLASSES_META);
+    const sum={active:0,mashov:0,risk:{},warn:{}};
+    for(const c of cls){const x=r.classes[c]||{};sum.active+=x.active||0;sum.mashov+=x.mashov||0;for(const k of ["risk","warn"])for(const [n,v] of Object.entries(x[k]||{}))sum[k][n]=(sum[k][n]||0)+v}
+    const subj=[...new Set([...Object.keys(sum.risk),...Object.keys(sum.warn)])].sort((a,b)=>((sum.risk[b]||0)-(sum.risk[a]||0))||((sum.warn[b]||0)-(sum.warn[a]||0)));
+    const base=Math.max(1,sum.mashov);
+    const usage=Object.keys(CLASSES_META).filter(c=>!sel||c===sel).map(c=>{const x=r.classes[c]||{active:0,mashov:0};return `<div class="bar2"><span class="lb">${esc(clsL(c))}</span><span class="tr"><i style="width:${x.active?x.mashov/x.active*100:0}%;background:var(--green)"></i><i style="width:${x.active?(x.active-x.mashov)/x.active*100:0}%;background:var(--accent)"></i></span><span class="n">${x.mashov}/${x.active}</span></div>`}).join("");
+    box.innerHTML=`<div class="kpis" style="margin-top:12px"><div class="kpi"><b>${sum.active}</b><span>השתמשו השבוע</span></div><div class="kpi"><b>${sum.mashov}</b><span>חיברו משוב</span></div>
+        <div class="kpi ${Object.keys(sum.risk).length?"bad":""}"><b>${Object.values(sum.risk).reduce((a,n)=>a+n,0)}</b><span>🔴 מקרים מעל 30%</span></div><div class="kpi ${Object.keys(sum.warn).length?"warn":""}"><b>${Object.values(sum.warn).reduce((a,n)=>a+n,0)}</b><span>🟠 מקרים קרובים</span></div></div>
+      <h3 style="margin:16px 0 4px">📱 שימוש באפליקציה</h3><div class="legend"><span><i style="background:var(--green)"></i>חיברו משוב</span><span><i style="background:var(--accent)"></i>בלי משוב</span></div>${usage}
+      <h3 style="margin:16px 0 4px">📚 חיסורים לפי מקצוע${sel?" – "+esc(clsL(sel)):""}</h3>
+      <div class="legend"><span><i style="background:var(--red)"></i>🔴 עברו 30%</span><span><i style="background:#ff9f43"></i>🟠 קרובים (25%–30%)</span><span>מתוך ${sum.mashov} שחיברו משוב</span></div>
+      ${subj.length?subj.map(n=>{const a=sum.risk[n]||0,w=sum.warn[n]||0;return `<div class="bar2"><span class="lb" title="${esc(n)}">${esc(n)}</span><span class="tr"><i style="width:${a/base*100}%;background:var(--red)"></i><i style="width:${w/base*100}%;background:#ff9f43"></i></span><span class="n">${a?"🔴"+a:""} ${w?"🟠"+w:""}</span></div>`}).join("")
+        :`<p class="hint">${sum.mashov?"אין אף מקצוע בסיכון 🎉":"עוד אין תלמידים שחיברו משוב השבוע, אז אין נתוני חיסורים."}</p>`}`;
+  };
+  $("stC").querySelectorAll("button").forEach(b=>b.onclick=()=>{sel=b.dataset.v;$("stC").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));draw()});
+  draw();
+  if(admin){const o=await loadOV();if($("stLine"))$("stLine").innerHTML=o.ok?lineChart(o.daily||[]):`<p class="hint">${esc(ERR[o.error]||"שגיאה.")}</p>`}
 }
 
 // ---- מערכת: לפי כיתה או לפי מורה ----
@@ -863,7 +882,7 @@ function showCode(u,code){
   box.innerHTML=`הקוד של <b>${esc(u.name)}</b> (מוצג רק עכשיו):<div class="code">${esc(code)}</div><div class="row"><a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">📤 שלח בוואטסאפ</a><button class="btn ghost" id="cpy">העתק הודעה</button></div>`;
   $("cpy").onclick=async()=>{try{await navigator.clipboard.writeText(text);$("cpy").textContent="הועתק ✓"}catch(e){}};
 }
-$("logout").onclick=()=>{T.set(null);me=null;tab="write";showLogin()};
+$("logout").onclick=()=>{T.set(null);me=null;tab="";showLogin()};
 start();
 </script>
 </body>

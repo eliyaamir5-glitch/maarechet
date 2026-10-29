@@ -35,6 +35,7 @@ const res = []; const ok = (n, c) => { res.push([n, !!c]); console.log(c ? "✅"
 let dlg = []; p.on("dialog", d => { dlg.push(d.message()); d.accept(); });
 await api({ action: "birthday", device: "device-zzzz-9999", name: "יוסי בדיקה", cls: "y1", md: "03-05" }, null, "/api/feed");
 const tabs = ["qs", "stats", "list", "rel"]; console.log("tabs", tabs.join(","));
+await p.evaluate(() => goTab("write")); await sleep(500);
 ok("schedule field visible (server caps)", await p.evaluate(() => !document.getElementById("when").hidden));
 // questions: hide → hidden filter → restore
 const qt = tabs.find(t => /q/.test(t)); if (qt) { await p.evaluate(t => goTab(t), qt); await sleep(700); }

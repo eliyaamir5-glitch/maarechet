@@ -124,7 +124,7 @@ log((await T.$eval("#rList", e => e.innerText)).includes("תור לרופא"), "
 await sleep(4000);
 await T.evaluate(() => goTab("stats")); await sleep(600);
 const st = await T.$eval("#stBody", e => e.innerText.replace(/\s+/g, " "));
-log(/י'2 \d+ תלמידים השתמשו/.test(st) && !/יוסי/.test(st), "principal stats: usage per class, no names", st.slice(0, 160));
+log(/י'2 \d+\/\d+/.test(st) && /השתמשו השבוע/.test(st) && !/יוסי/.test(st), "principal stats: usage per class, no names", st.slice(0, 160));
 await T.screenshot({ path: "p2-stats.png", fullPage: true });
 // ---- הזמן מגיע: העדכון המתוזמן מופיע ----
 const r0 = await api({ action: "login", code: "TEST-CODE-1234" });

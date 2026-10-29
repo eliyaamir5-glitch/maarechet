@@ -1621,26 +1621,27 @@ async function hello(){
   const obj=x=>x&&typeof x==="object"&&!Array.isArray(x)?x:null;
   try{localStorage.setItem("appCtl",JSON.stringify({maint:obj(r.maint),susp:obj(r.susp),at:Date.now()}))}catch(e){}
   if(Array.isArray(r.msgs)){
-    const list=r.msgs.filter(m=>m&&typeof m==="object"&&m.id!=null&&typeof m.text==="string").map(m=>({id:String(m.id),text:m.text,at:+m.at||0,exp:+m.exp||0})).slice(0,30);
+    const list=r.msgs.filter(m=>m&&typeof m==="object"&&m.id!=null&&typeof m.text==="string").map(m=>({id:String(m.id),text:m.text,at:+m.at||0,exp:+m.exp||0,...(m.from==="principal"?{from:"principal"}:{})})).slice(0,30);
     try{localStorage.setItem("ownerMsgs",JSON.stringify(list))}catch(e){}
     // טוסט פעם אחת לכל הודעה (נזכר גם אחרי סגירה ופתיחה)
     let tw=[];try{tw=JSON.parse(localStorage.getItem("ownerToast")||"[]");if(!Array.isArray(tw))tw=[]}catch(e){tw=[]}
     const rd=ownRead(),fresh=list.filter(m=>m.exp>Date.now()&&!rd.includes(m.id)&&!tw.includes(m.id)&&!toasted.has(m.id));
     fresh.forEach(m=>toasted.add(m.id));
     if(fresh.length){try{localStorage.setItem("ownerToast",JSON.stringify([...tw,...fresh.map(m=>m.id)].slice(-100)))}catch(e){}
-      if(!document.getElementById("suspWall"))toast("📩 הודעה ממנהל המערכת",escH(fresh[0].text.slice(0,80)))}
+      if(!document.getElementById("suspWall"))toast(msgFrom(fresh[0]),escH(fresh[0].text.slice(0,80)))}
   }
   applyCtl();renderOwn();
 }
 // ---- מצב מהשרת: השעיה (מחסום) ומצב עדכון (פס + "בעבודה") ----
 function appCtl(){try{const c=JSON.parse(localStorage.getItem("appCtl")||"{}");return c&&typeof c==="object"&&!Array.isArray(c)?c:{}}catch(e){return{}}}
+const msgFrom=m=>m&&m.from==="principal"?"📩 הודעה מהנהלת הישיבה":"📩 הודעה ממנהל המערכת";
 function ownMsgs(){try{const a=JSON.parse(localStorage.getItem("ownerMsgs")||"[]");return Array.isArray(a)?a.filter(m=>m&&typeof m==="object"&&m.id!=null&&typeof m.text==="string"&&+m.exp>Date.now()):[]}catch(e){return[]}}
 function ownRead(){try{const a=JSON.parse(localStorage.getItem("ownerRead")||"[]");return Array.isArray(a)?a.map(String):[]}catch(e){return[]}}
 // 📩 הודעות ממנהל המערכת – מוצגות עד שלוחצים "קראתי" (גם כשהפיד לא זמין, וגם במצב עדכון)
 function renderOwn(){
   const ob=document.getElementById("ownBox");if(!ob)return;
   const omr=ownRead(),om=ownMsgs().filter(m=>!omr.includes(String(m.id)));
-  const h=om.map(m=>`<div class="xcard ownmsg"><div class="xhead">📩 הודעה ממנהל המערכת <button type="button" class="xbtn" data-omread="${escH(m.id)}">קראתי ✓</button></div><div class="om">${escH(m.text)}</div></div>`).join("");
+  const h=om.map(m=>`<div class="xcard ownmsg"><div class="xhead">${msgFrom(m)} <button type="button" class="xbtn" data-omread="${escH(m.id)}">קראתי ✓</button></div><div class="om">${escH(m.text)}</div></div>`).join("");
   ob.innerHTML=h;ob.hidden=!h;
   ob.querySelectorAll("[data-omread]").forEach(b=>b.onclick=()=>{const r=ownRead();if(!r.includes(b.dataset.omread))r.push(b.dataset.omread);try{localStorage.setItem("ownerRead",JSON.stringify(r.slice(-100)))}catch(e){}renderOwn()});
 }
