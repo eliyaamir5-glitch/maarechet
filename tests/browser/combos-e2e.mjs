@@ -68,22 +68,26 @@ async function sweep(p) {
   }, SUN.getTime());
 }
 
-// ===== 1. כל 54 הצירופים =====
+// ===== 1. כל הצירופים (כל הכיתות; פנימייה/בית וניצנים לסירוגין) =====
 let combos = 0;
-for (const cls of ["y1", "y2"]) for (const eng of Object.keys(D.ENG)) for (const math of Object.keys(D.MATH)) for (const major of Object.keys(D.MAJORS)) {
-  const prof = { first: "בדיקה", last: "צירוף", cls, eng, math, major, since: "2026-09-01" };
+for (const cls of Object.keys(D.CLASSES_META)) { const G = D.groupsOf(cls), nz = D.GRADES[D.gradeOf(cls)].extra.includes("nitz");
+ for (const [ei, eng] of Object.keys(G.ENG).entries()) for (const [mi, math] of Object.keys(G.MATH).entries()) for (const major of Object.keys(G.MAJORS)) {
+  if (cls.startsWith("ya") && ei !== mi) continue; // י"א: מדגם (כל הקבצה פעם אחת לכל מגמה), כדי שהרובוט לא יעבור 8 דקות
+  const dorm = combos % 2 ? "no" : "yes", nitz = nz ? (combos % 4 < 2 ? "yes" : "no") : undefined;
+  const file = `${cls}-${eng}-${math}-${major}${dorm === "no" ? "-home" : ""}${nitz === "yes" ? "-nz" : ""}`;
+  const prof = { first: "בדיקה", last: "צירוף", cls, eng, math, major, dorm, ...(nitz && { nitz }), since: "2026-09-01" };
   const { p, errs } = await open(prof, { width: [320, 360, 375][combos % 3] });
   const bad = await sweep(p);
-  log(!bad.length && !errs.length, `${cls}-${eng}-${math}-${major}: every 5 minutes Sun–Thu`, [...bad.slice(0, 4), ...errs.slice(0, 3)].join(" | "));
+  log(!bad.length && !errs.length, `${file}: every 5 minutes Sun–Thu`, [...bad.slice(0, 4), ...errs.slice(0, 3)].join(" | "));
   // היומן: כל אירוע שבועי בקובץ = שיעור במסך באותו יום ושעה
   const app = await p.evaluate(() => [0, 1, 2, 3, 4].map(i => lessonsOf(DAYS[i]).map(l => `${l.s}-${l.e} ${l.n}`)));
-  const ics = fs.readFileSync(`${ROOT}/cal/${cls}-${eng}-${math}-${major}.ics`, "utf8").replace(/\r\n /g, "");
+  const ics = fs.readFileSync(`${ROOT}/cal/${file}.ics`, "utf8").replace(/\r\n /g, "");
   const ev = ics.split("BEGIN:VEVENT").slice(1).map(b => ({ s: (b.match(/DTSTART;TZID=Asia\/Jerusalem:\d{8}T(\d\d)(\d\d)/) || []).slice(1).join(":"), e: (b.match(/DTEND;TZID=Asia\/Jerusalem:\d{8}T(\d\d)(\d\d)/) || []).slice(1).join(":"), day: (b.match(/BYDAY=(\w\w)/) || [])[1], n: ((b.match(/SUMMARY:(.*)/) || [])[1] || "").replace(/\\(.)/g, "$1").trim() })).filter(x => x.day && !/^🎒/.test(x.n));
   const BY = ["SU", "MO", "TU", "WE", "TH"]; let calBad = [];
   BY.forEach((bd, i) => { const c = ev.filter(x => x.day === bd).map(x => `${x.s}-${x.e} ${x.n}`).sort(), a = app[i].slice().sort(); if (JSON.stringify(c) !== JSON.stringify(a)) calBad.push(`${bd}: cal ${c.length} vs app ${a.length} ${c.filter(x => !a.includes(x)).concat(a.filter(x => !c.includes(x))).join(",")}`); });
-  log(!calBad.length, `${cls}-${eng}-${math}-${major}: calendar file = app`, calBad.join(" | "));
+  log(!calBad.length, `${file}: calendar file = app`, calBad.join(" | "));
   await p.close(); combos++;
-}
+}}
 console.log(`combos checked: ${combos}`);
 
 // ===== 2. שינויים במערכת =====

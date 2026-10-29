@@ -80,7 +80,7 @@ await P.goto("http://localhost:8787/index.html", { waitUntil: "networkidle2" });
 log(await P.$("#phonesBtn") !== null, "home: '📞 ספר טלפונים' button");
 log(await P.$eval("#phonesBtn", a => a.getAttribute("href")) === "phones.html", "button opens phones.html"); await P.goto("http://localhost:8787/phones.html", { waitUntil: "networkidle2" }); await P.waitForSelector(".ct"); await sleep(300);
 const n = await P.$$eval(".ct", l => l.length);
-log(n === 19, "lists all 19 teachers from the timetable", n);
+log(n === 25, "lists all 25 teachers from the timetable (י' + י\"א)", n);
 log((await P.$eval("#count", e => e.textContent)).includes("0 עם מספר"), "no numbers yet", await P.$eval("#count", e => e.textContent));
 await P.screenshot({ path: "phones-empty.png" });
 // השלמה אוטומטית
