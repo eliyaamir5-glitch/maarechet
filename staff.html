@@ -252,6 +252,8 @@ async function showDash(){
   <div class="card"><h2>🏫 לפי כיתה</h2>
     <div class="legend"><span><i style="background:var(--green)"></i>נכנסו היום</span><span><i style="background:var(--accent)"></i>השתמשו השבוע</span><span><i style="background:var(--line)"></i>רשומים</span></div>
     ${byCls.map(x=>`<div class="bar2"><span class="lb">${esc(clsL(x.k))}</span><span class="tr"><i style="width:${x.td/maxN*100}%;background:var(--green)"></i><i style="width:${(x.wk-x.td)/maxN*100}%;background:var(--accent)"></i><i style="width:${(x.n-x.wk)/maxN*100}%;background:var(--line)"></i></span><span class="n">${x.td}/${x.n}</span></div>`).join("")}</div>
+  ${(r.departures||[]).length?`<div class="card" id="depCard"><h2>🗑️ מחקו את המשתמש (30 יום)</h2><p class="crumb">תלמיד שמחק את המשתמש שלו באפליקציה. כשהוא נרשם שוב באותו שם ובאותה כיתה – רואים כאן שחזר.</p>
+    ${r.departures.map(d=>`<div class="bar2" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:4px 0"><span><b>${esc(d.name)}</b> · ${esc(clsL(d.cls))} · ${new Date(d.at).toLocaleDateString("he-IL")}</span><span>${d.back?`🔄 חזר ב-${new Date(d.back).toLocaleDateString("he-IL")}`:"עוד לא חזר"}</span></div>`).join("")}</div>`:""}
   <div class="card"><h2>📈 כניסות ב-30 הימים האחרונים</h2>${lineChart(r.daily||[])}</div>`;
   $("main").querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{tab=b.dataset.go;showHome()});
 }

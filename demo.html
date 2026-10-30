@@ -96,7 +96,7 @@ input,select{width:100%;border:1.5px solid var(--line);border-radius:10px;paddin
       </div>
 
       <div class="box"><h2>🔥 אפקטים (הדגמה)</h2>
-        <div class="seg" id="fxBtns"><button type="button" data-fx="10">🔥 רצף 10</button><button type="button" data-fx="30">💙 רצף 30</button><button type="button" data-fx="100">👑 רצף 100</button><button type="button" data-fx="truck">🚒 רצף נשבר</button><button type="button" data-fx="praise">⭐ צל"ש חדש</button></div>
+        <div class="seg" id="fxBtns"><button type="button" data-fx="10">🔥 רצף 10</button><button type="button" data-fx="30">💙 רצף 30</button><button type="button" data-fx="100">👑 רצף 100</button><button type="button" data-fx="truck">🚒 רצף נשבר</button><button type="button" data-fx="praise">⭐ צל"ש חדש</button><button type="button" data-fx="bday">🎂 יום הולדת</button><button type="button" data-fx="recap">✨ סיכום חודשי</button><button type="button" data-fx="del">🗑️ מחיקת משתמש</button></div>
         <p class="note" style="margin:8px 0 0">אצל תלמיד אמיתי זה מופיע לבד, פעם אחת, כשמגיע רצף (כל 10 שיעורים) או כשהרצף נשבר.</p>
       </div>
 
@@ -411,6 +411,9 @@ function fxDemo(run){
 }
 document.querySelectorAll("#fxBtns [data-fx]").forEach(b=>b.onclick=()=>{const v=b.dataset.fx;fxDemo(w=>{
   if(v==="truck")w.extinguish("גמרא",24);
+  else if(v==="bday")w.bdSurprise(99);
+  else if(v==="recap")w.openRecap({kind:"month",key:"demo",from:"",to:"",title:"אוקטובר שלך",label:"חודש אוקטובר"},{name:"דני",days:19,tef:17,mashov:true,held:96,missed:3,lates:2,praise:4,best:{n:38,s:"גמרא"},grades:5,top:{g:98,s:"מתמטיקה"},avg:88});
+  else if(v==="del")w.delHold();
   else if(v==="praise"){const d=w.document;d.getElementById("evT").textContent="⭐ קיבלת צל\"ש!";
     d.getElementById("evList").innerHTML=`<div class="ev"><span class="i">⭐</span><span><b>צל"ש באנגלית</b><small>היום · שיעור 3</small><small>אלוף! המורה שם לב אליך 🌟</small></span></div>`;d.getElementById("evDlg").showModal()}
   else w.celebrate("גמרא",+v);

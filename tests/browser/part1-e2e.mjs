@@ -33,6 +33,7 @@ await p.evaluate(() => { document.querySelector("#zmanim details").open = true; 
 await p.screenshot({ path: "p1-zmanim.png" });
 // 38+39 צבע וטקסט גדול
 await p.evaluate(() => window.scrollTo(0, 0)); await p.click("#hAvatar"); await sleep(400);
+await p.evaluate(() => document.querySelectorAll("#profBody details.pf-sec").forEach(d => d.open = true)); await sleep(150); // החלקים בפרופיל מקופלים
 log(await p.$$eval("#profBody [data-th]", l => l.length) === 6 && await p.$("#pfBig") !== null && await p.$("#pfParent") !== null, "profile: 6 colours, big text, share-with-parents");
 await p.click('#profBody [data-th="forest"]'); await sleep(150);
 const grad = await p.evaluate(() => getComputedStyle(document.querySelector(".hdr, header, .top, #hdr") || document.body).backgroundImage + "|" + getComputedStyle(document.documentElement).getPropertyValue("--grad"));

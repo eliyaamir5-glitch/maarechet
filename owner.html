@@ -161,7 +161,7 @@ const ST={now:["d-now","מחובר עכשיו"],today:["d-today","נכנס הי�
 const devKind=p=>/iPhone|Android/.test(p)?"טלפון":/iPad/.test(p)?"טאבלט":p?"מחשב":"לא ידוע";
 
 let D=null,filt={q:"",cls:"",st:"",sort:"last"},timer=null;const sel=new Set();
-const LOGI={logoutAll:"🚪",login:"🔓",loginFail:"⚠️",maintOn:"🚧",maintOff:"✅",suspend:"⛔",unsuspend:"✅",msgSend:"✉️",msgDelete:"🗑️",forget:"🗑️",errClear:"🐞"};
+const LOGI={logoutAll:"🚪",login:"🔓",loginFail:"⚠️",maintOn:"🚧",maintOff:"✅",suspend:"⛔",unsuspend:"✅",msgSend:"✉️",msgDelete:"🗑️",forget:"🗑️",errClear:"🐞",leave:"🗑️",return:"🔄"};
 const SUS_OPTS=[["60","שעה"],["1440","יום"],["4320","3 ימים"],["10080","שבוע"],["","עד שאחזיר"]];
 // רשימת המושעים: שורה לכל השעיה (שם+כיתה והמכשירים שהושעו איתו). "להחזיר" מחזיר את כל השורה
 function susGroups(){

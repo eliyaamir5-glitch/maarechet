@@ -101,13 +101,13 @@ log(tabs.length >= 5, "day tabs exist", String(tabs.length));
 const tabClick = i => p.evaluate(i => document.querySelectorAll("#tabs button, #tabs .tab")[i].click(), i);
 for (let i = 0; i < tabs.length; i++) { await tabClick(i); await sleep(250); const n = await p.$$eval("#content .row", r => r.length); if (i < 5) log(n > 0, `day tab ${i} shows lessons`, String(n)); }
 await tabClick(3); await sleep(300);
-await click(p, "#content .row .edit", "open gear editor");
+await click(p, "#content .list > .row .edit", "open gear editor");
 log(await p.evaluate(() => !!document.querySelector("#dlg[open]")), "gear dialog opens");
 await p.$eval("#dlgText", e => { e.value = "ספר, מחברת <i>x</i>"; });
 await p.evaluate(() => { const d = document.getElementById("dlg"); d.returnValue = "save"; d.close("save"); });
 await sleep(300);
 log(await p.evaluate(() => [...document.querySelectorAll("#content .chip")].some(c => c.textContent.includes("<i>"))), "gear with HTML is shown as text");
-await click(p, "#content .row .edit", "open gear editor again");
+await click(p, "#content .list > .row .edit", "open gear editor again");
 await p.$eval("#dlgText", e => { e.value = "לא אמור להישמר"; });
 await p.keyboard.press("Escape"); await sleep(300);
 log(!(await p.evaluate(() => JSON.stringify(localStorage.getItem("gear") || "").includes("לא אמור"))), "Esc in gear editor does not save");

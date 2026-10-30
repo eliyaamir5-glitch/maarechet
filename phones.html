@@ -238,7 +238,7 @@ function draw(){
     if(!q&&filter==="all"){const L=sortKey(p.name)[0]||"";if(L!==letter){letter=L;h+=`<div class="letter">${esc(L)}</div>`}}
     const sub=p.extra?esc(p.note):esc(p.subj.slice(0,3).join(" · "))+(p.subj.length>3?` · +${p.subj.length-3}`:"")+(p.note?` · ${esc(p.note)}`:"");
     const hi=encodeURIComponent("שלום, ");
-    h+=`<div class="ct${picked===p.name?" hl":""}" data-n="${esc(p.name)}"><div class="av">${esc(initials(p.name))}</div><div class="info"><b>${hl(p.name,q)}</b>${sub?`<small>${sub}</small>`:""}${p.phone?`<div class="ph">${esc(p.phone)}</div>`:`<div class="none">אין מספר עדיין</div>`}
+    h+=`<div class="ct${picked===p.name?" hl":""}" data-n="${esc(p.name)}"><div class="av">${esc(initials(p.name))}</div><div class="info"><b>${hl(p.name,q)}</b>${sub?`<small>${sub}</small>`:""}${p.phone?`<div class="ph">${esc(p.phone)}</div>`:(editing?`<div class="none">אין מספר עדיין</div>`:"")}
       ${editing?`<div class="edit"><input class="inp" inputmode="tel" value="${esc(p.phone)}" placeholder="050-000-0000" data-ph="${esc(p.name)}"><button class="btn" data-save="${esc(p.name)}">שמור</button>${p.extra?`<button class="btn ghost" data-del="${esc(p.name)}">✕</button>`:""}</div><div class="msg" data-m="${esc(p.name)}"></div>`:""}</div>
       ${dial(p.phone)&&!editing?`<div class="acts"><a class="call" href="tel:${dial(p.phone)}" aria-label="התקשרות ל${esc(p.name)}">📞</a>${/^972\d{8,9}$/.test(intl(p.phone))?`<a class="wa" href="https://wa.me/${intl(p.phone)}?text=${hi}" target="_blank" rel="noopener noreferrer" aria-label="וואטסאפ ל${esc(p.name)}">💬</a>`:""}<a class="sms" href="sms:${dial(p.phone)}" aria-label="SMS ל${esc(p.name)}">📱</a></div>`:""}</div>`;
   }

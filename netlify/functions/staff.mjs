@@ -656,7 +656,7 @@ async function handle(req, context, headers) {
 
 // ---------- פיד לתלמידים: הכל בבקשה אחת (עדכונים, סקרים, אירועים, תשובות, ימי הולדת) ----------
 // GET  /api/feed               → { ok, now, updates, polls, events, answers, birthdays }
-// POST /api/feed {action, ...}  → vote | ask | birthday | ping | release   (ציבורי, עם הגבלות)
+// POST /api/feed {action, ...}  → vote | ask | birthday | wish | leave | ping | release   (ציבורי, עם הגבלות)
 const DEV_RE = /^[A-Za-z0-9-]{8,64}$/;
 // אימוג'י אחד (כולל גוון עור, דגל או צירוף) – בלי אותיות. בודקים לפי טווחי קוד, בלי \p{…},
 // כי בשרת של נטליפיי הביטוי עם \p{…} דחה גם אימוג'י תקינים
@@ -768,7 +768,7 @@ const msgsFor = (list, k, pk, cls, now) => (Array.isArray(list) ? list : []).fil
 
 // תמונת מצב של בית הספר: תלמידים, שימוש יומי, השעיות, הודעות ותוכן. full = מנהל המערכת (גם תקלות ויומן)
 async function schoolOverview(S, now, full) {
-  const keys = ["presence", "users", "updates", "polls", "events", "questions", "feedback", "contacts", "releases", "changes", "reactions", "birthdays", "sets", "views", "control", "ownerMsgs", "errors", "ownerLog"];
+  const keys = ["presence", "users", "updates", "polls", "events", "questions", "feedback", "contacts", "releases", "changes", "reactions", "birthdays", "sets", "views", "control", "ownerMsgs", "errors", "ownerLog", "departures"];
   const v = Object.fromEntries(await Promise.all(keys.map(async k => [k, await S.get(k)])));
   const arr = x => Array.isArray(x) ? x : [], obj = x => x && typeof x === "object" && !Array.isArray(x) ? x : {};
   // תגובות לפי שם (השם שהתלמיד כתב בפרופיל), ימי הולדת לפי שם+כיתה
@@ -802,6 +802,7 @@ async function schoolOverview(S, now, full) {
     suspended: [...Object.entries(obj(ctl.suspN)).map(([p, x]) => ({ person: p, ...x })), ...Object.entries(obj(ctl.susp)).map(([k, x]) => ({ key: k, ...x }))].filter(x => liveUntil(x, now))
       .map(x => ({ ...(x.person ? { person: x.person } : { key: x.key }), until: x.until ?? null, reason: x.reason || "", at: x.at || 0, g: x.g || "" })),
     msgs: arr(v.ownerMsgs).filter(m => m.expiresAt > now && (full || m.from === "principal")).map(m => ({ id: m.id, text: m.text, to: m.to, from: m.from || "owner", names: m.names || [], count: (m.keys || []).length, createdAt: m.createdAt, expiresAt: m.expiresAt })),
+    departures: arr(v.departures).filter(d => d && d.at > now - 30 * 864e5).map(d => ({ name: d.name, cls: d.cls, at: d.at, back: d.back || 0 })),
     staff: arr(v.users).map(u => ({ name: u.name, role: u.role, owner: !!u.owner, createdAt: u.createdAt || 0 })),
     content: {
       updatesActive: activeUpdates(v.updates, now).length, updatesTotal: arr(v.updates).length,
@@ -884,6 +885,16 @@ async function msgDeleteOp(S, b, by, onlyPrincipal = false) {
     return { ok: true };
   }
 
+// תלמיד שמחק את המשתמש ונרשם מחדש: אותו שם ואותה כיתה, ולפחות עוד פרט אחד תואם (הקבצה/מגמה) → "חזר"
+const DEPART_DAYS = 120;
+async function noticeReturn(S, k, rec, now) {
+  const pk = personKey(rec.name, rec.cls), dep = await S.get("departures");
+  const hit = d => d && !d.back && personKey(d.name, d.cls) === pk && ["eng", "math", "major"].some(f => d[f] && d[f] === rec[f]);
+  if (!Array.isArray(dep) || !dep.some(hit)) return;
+  let found = null;
+  await S.update("departures", cur => { const l = Array.isArray(cur) ? cur : [], d = l.find(hit); if (!d) return undefined; d.back = now; found = d; return l; });
+  if (found) { const days = Math.round((now - found.at) / 864e5); await olog(S, "return", `🔄 ${rec.name} (${rec.cls}) חזר למערכת${days ? " אחרי " + days + " ימים" : ""}, ממשתמש חדש`); }
+}
 // יומן פעולות של מנהל המערכת (300 אחרונות)
 async function olog(S, action, detail) {
   const now = Date.now(), e = { at: now, action, detail: clean(detail, 300) };
@@ -1054,8 +1065,9 @@ async function feed(req, S, ip, headers) {
     // כותבים רק כשצריך: מכשיר חדש, יום חדש, כל 7 דקות, או פרטים שהשתנו (לכל היותר פעם בדקה).
     // אחרת כל "שלום" היה כותב מחדש את כל הרשימה – עלות, ועומס כשכולם פותחים בהפסקה
     const due = old => !old || !Array.isArray(old.days) || !old.days.includes(day) || !(now - old.last < HELLO_TOUCH) || (sig(old) !== sig(rec) && !(now - old.last < 60e3));
+    let isNew = false;
     try {
-      const old0 = mine(await S.get("presence"));
+      const old0 = mine(await S.get("presence")); isNew = !old0;
       if (due(old0)) {
         if (!old0) await rateLimit(S, "helloNew", ip, 1500); // מכשירים חדשים מכתובת אחת – שאי אפשר למלא את הרשימה במכשירים מזויפים
         await S.update("presence", cur => {
@@ -1069,8 +1081,10 @@ async function feed(req, S, ip, headers) {
         });
       }
     } catch (e) { if (!(e instanceof Fail)) console.error("hello presence:", e && e.message); } // רשימה מלאה / עומס – עדיין עונים עם מצב עדכון/השעיה/הודעות
-    const [ctl, om] = await Promise.all([S.get("control"), S.get("ownerMsgs")]), pk = personKey(rec.name, cls);
-    return reply(200, { ok: true, maint: maintOf(ctl, now), susp: suspOf(ctl, k, pk, now), msgs: msgsFor(om, k, pk, cls, now) }, headers);
+    const [ctl, om, wz] = await Promise.all([S.get("control"), S.get("ownerMsgs"), S.get("wishes")]), pk = personKey(rec.name, cls);
+    if (isNew && rec.name) await noticeReturn(S, k, rec, now).catch(() => {});
+    const w = wz && Object.hasOwn(wz, pk) && wz[pk] && wz[pk].day === day ? Object.values(wz[pk].from || {}).map(x => x.name).filter(Boolean).slice(0, 200) : [];
+    return reply(200, { ok: true, maint: maintOf(ctl, now), susp: suspOf(ctl, k, pk, now), msgs: msgsFor(om, k, pk, cls, now), ...(w.length ? { wishes: w } : {}) }, headers);
   }
   if (action === "birthday") {
     if (!DEV_RE.test(device)) return reply(400, { ok: false, error: "bad_request" }, headers);
@@ -1081,6 +1095,39 @@ async function feed(req, S, ip, headers) {
     await rateLimit(S, "bdRate", ip, 1000);
     await S.update("birthdays", cur => { const m = cur || {}; if (!m[k] && Object.keys(m).length >= 2000) throw new Fail(413, "too_many"); m[k] = { name, cls, md, at: now }; return m; });
     return reply(200, { ok: true }, headers);
+  }
+  if (action === "leave") { // התלמיד מחק את המשתמש שלו: מוחקים את מה שנשמר עליו בשרת, ומודיעים להנהלה
+    if (!DEV_RE.test(device)) return reply(400, { ok: false, error: "bad_request" }, headers);
+    await rateLimit(S, "leaveRate", ip, 200);
+    const k = devKey(device);
+    let rec = null;
+    await S.update("presence", cur => { if (!cur || !Object.hasOwn(cur, k)) return undefined; rec = cur[k]; const m = { ...cur }; delete m[k]; return m; });
+    for (const key of ["birthdays", "stats", "push"]) await S.update(key, cur => { if (!cur || !Object.hasOwn(cur, k)) return undefined; const m = { ...cur }; delete m[k]; return m; });
+    const name = clean(rec?.name || b.name, MAX_NAME), c = rec?.cls || cls;
+    if (name) {
+      const d = { name, cls: c, eng: rec?.eng || "", math: rec?.math || "", major: rec?.major || "", at: now, first: rec?.first || 0 };
+      await S.update("departures", cur => [d, ...(Array.isArray(cur) ? cur : []).filter(x => x && x.at > now - DEPART_DAYS * 864e5)].slice(0, 300));
+      await olog(S, "leave", `🗑️ ${name}${c ? " (" + c + ")" : ""} מחק את המשתמש שלו`);
+    }
+    return reply(200, { ok: true }, headers);
+  }
+  if (action === "wish") { // "🎉 מזל טוב" לחבר מהשכבה שיש לו היום יום הולדת. החוגג רואה מי איחל לו
+    const to = personKey(b.toName, AUDIENCES.includes(b.toCls) ? b.toCls : ""), name = clean(b.name, MAX_NAME);
+    if (!DEV_RE.test(device) || !name || !cls || !b.toName || to.endsWith("|")) return reply(400, { ok: false, error: "bad_request" }, headers);
+    const day = israelDay(now), bd = await S.get("birthdays");
+    if (!Object.values(bd || {}).some(x => x && personKey(x.name, x.cls) === to && x.md === day.slice(5))) return reply(404, { ok: false, error: "not_found" }, headers);
+    await rateLimit(S, "wishRate", ip, 3000);
+    const k = devKey(device);
+    let n = 0;
+    await S.update("wishes", cur => {
+      const m = {};
+      for (const [x, v] of Object.entries(cur && typeof cur === "object" ? cur : {})) if (v && v.day === day) m[x] = v; // רק של היום
+      const w = Object.hasOwn(m, to) ? m[to] : (m[to] = { day, from: {} });
+      if (!w.from[k] && Object.keys(w.from).length >= 300) throw new Fail(413, "too_many");
+      w.from[k] = { name, cls, at: now }; n = Object.keys(w.from).length;
+      return m;
+    });
+    return reply(200, { ok: true, count: n }, headers);
   }
   if (action === "ping") {
     // סטטיסטיקה אנונימית למנהל: כיתה + אילו מקצועות בסיכון. בלי שם ובלי מזהה אמיתי
