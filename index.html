@@ -63,7 +63,7 @@ main{padding:16px 14px 40px;max-width:560px;margin:0 auto;display:flex;flex-dire
 /* בטלפון: עמודה אחת, באותו סדר כמו תמיד */
 .col-main,.col-side{display:contents}
 #maintBar{order:0}#ownBox{order:1}#updates{order:1}
-body.maint #hero{order:2}body.maint #content{order:3}body.maint :is(#updates,#extras,#board,#zmanim,#qaBox){order:20}#pushBox{order:2}#extras{order:2}#streakPill{order:3}#absAlert{order:4}#board{order:5}#hero{order:6}#content{order:7}#zmanim{order:8}#qaBox{order:9}#imgBtn{order:10}#tefLine{order:11}main>.foot{order:12}
+body.maint #hero{order:2}body.maint #content{order:3}body.maint :is(#updates,#extras,#board,#zmanim,#qaBox){order:20}#gradeBox{order:2}#pushBox{order:2}#extras{order:2}#streakPill{order:3}#absAlert{order:4}#board{order:5}#hero{order:6}#content{order:7}#zmanim{order:8}#qaBox{order:9}#imgBtn{order:10}#tefLine{order:11}main>.foot{order:12}
 /* 💻 מחשב: הכל נפרס – המערכת מימין, עדכונים וזמנים משמאל */
 @media (min-width:1000px){
   .top{padding-left:32px;padding-right:32px}
@@ -385,7 +385,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
   <button id="calBtn">📅 ליומן</button>
   <a id="relBtn" href="shichrur.html">🏃 שחרורון</a>
   <a id="cardsBtn" href="cards.html">🃏 כרטיסיות</a>
-  <a id="absBtn" href="absences.html">📊 נוכחות</a>
+  <a id="absBtn" href="absences.html">📊 נוכחות וציונים</a>
   <a id="calcBtn" href="calc.html">🧮 מחשבון חכם</a>
   <a id="phonesBtn" href="phones.html">📞 ספר טלפונים</a>
 </div>
@@ -423,6 +423,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
   <div class="col-side">
   <div id="ownBox" hidden></div>
   <div id="updates" hidden></div>
+  <div id="gradeBox" hidden></div>
   <div id="pushBox" hidden></div>
   <div id="extras" hidden></div>
   <div id="board" hidden role="button" tabindex="0"></div>
@@ -1135,7 +1136,7 @@ function renderProfile(){
       return `<div class="pf-stats">${a.lead&&a.lead[1].current?`<span>🔥 ${a.lead[1].current} ברצף ב${escH(a.lead[0])}</span>`:""}${a.pr.total?`<span>⭐ ${a.pr.total} צל"שים</span>`:""}</div>
       <div class="pf-stats"><span>🟢 ${cnt("green")+cnt("early")} תקינים</span>${cnt("orange")?`<span>🟠 ${cnt("orange")} לשים לב</span>`:""}${cnt("red")+cnt("lost")?`<span>🔴 ${cnt("red")+cnt("lost")} מסוכנים</span>`:""}</div>
       ${worst?`<div class="pf-sub" style="margin-top:6px">הכי קרוב ל-30%: <b>${escH(worst.name)}</b> (${Math.round(worst.pct*100)}%)</div>`:""}
-      <div class="pf-stats"><a href="absences.html">📊 לכל הפרטים ←</a></div>`})()}
+      <div class="pf-stats"><a href="absences.html">📊 נוכחות ←</a><a href="absences.html#grades">📝 הציונים שלי ←</a></div>`})()}
     <div class="pf-acts" style="justify-content:center"><button type="button" class="ghost" id="pfEdit">✎ עריכת פרטים והקבצות</button><button type="button" class="ghost" id="pfFb">💬 רעיון או תקלה</button><button type="button" class="ghost" id="pfNew">✨ מה חדש</button></div></div>
   <div class="pf-row"><h4>🎨 תצוגה</h4><div class="pf-sub">צבע לאפליקציה:</div><div class="th-sw">${Object.entries(Theme.THEMES).map(([k,t])=>`<button type="button" class="sw ${Theme.current()===k?"on":""}" data-th="${k}" style="background:${t.grad}" aria-label="${t.name}" title="${t.name}"></button>`).join("")}</div>
     <label class="tgl-row"><input type="checkbox" id="pfBig" ${Theme.big()?"checked":""}> 🔍 טקסט גדול</label></div>
@@ -1328,7 +1329,7 @@ function tick(){const t=new Date().toDateString();if(t!==__lastDay){__lastDay=t;
 setTimeout(()=>{tick();setInterval(tick,30000)},60000-Date.now()%60000+300); // מיושר לתחילת דקה
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)tick()});
 Mashov.autoRefresh().catch(()=>{});
-document.addEventListener("mashov-updated",()=>{render();renderAbsAlert()});
+document.addEventListener("mashov-updated",()=>{render();renderAbsAlert();renderGradeNote()});
 // התראת חיסורים במסך הראשי: רק אם יש מקצוע בגרות מעל 20%
 // ---- המערכת שלי כתמונה / PDF ----
 async function openImage(){
@@ -1506,6 +1507,25 @@ function renderPushPrefs(){
   $("ppTef").onchange=prefs;$("ppUrg").onchange=prefs;
 }
 setTimeout(()=>{renderPushCard();pushSync()},3000);
+
+// ---- 🆕 ציון חדש ממשוב (רק בטלפון; התלמיד יכול לכבות בדף הציונים) ----
+const gKeyI=g=>[g.date,g.subject,g.event,g.grade].join("|");
+function renderGradeNote(){
+  const box=document.getElementById("gradeBox");if(!box)return;
+  let on=true,seen=null;try{on=JSON.parse(localStorage.getItem("gradeNotice")??"true")!==false;seen=JSON.parse(localStorage.getItem("gradesSeen")||"null")}catch(e){}
+  const md=typeof Mashov!=="undefined"&&Mashov.connected()?Mashov.data():null,G=(md&&Array.isArray(md.grades)?md.grades:[]).filter(g=>g&&g.subject);
+  const save=a=>{try{localStorage.setItem("gradesSeen",JSON.stringify(a.slice(0,800)))}catch(e){}};
+  if(!G.length||!on){box.hidden=true;return}
+  if(!Array.isArray(seen)){save(G.map(gKeyI));box.hidden=true;return} // פעם ראשונה: לא מציפים בכל הציונים הישנים
+  const S=new Set(seen),fresh=G.filter(g=>!S.has(gKeyI(g))).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  if(!fresh.length){box.hidden=true;return}
+  box.hidden=false;
+  box.innerHTML=`<div class="pushc"><div class="xhead">🆕 ${fresh.length===1?"ציון חדש":fresh.length+" ציונים חדשים"} ממשוב</div>
+    ${fresh.slice(0,3).map(g=>`<div class="xsub">${escH(g.subject)}${g.event?" · "+escH(g.event):""}: <b>${escH(g.grade??"—")}</b></div>`).join("")}
+    <div class="row"><a class="go" href="absences.html#grades" style="text-decoration:none">📝 לכל הציונים</a><button type="button" class="xbtn" id="gnOk">הבנתי</button></div></div>`;
+  document.getElementById("gnOk").onclick=()=>{save([...S,...fresh.map(gKeyI)]);box.hidden=true};
+}
+setTimeout(renderGradeNote,2000);
 
 // ---- מהפיד: סקרים, ימי הולדת, אירועים, שאלות ותשובות ----
 function deviceId(){let d=null;try{d=localStorage.getItem("deviceId")}catch(e){}if(!d){d=(crypto.randomUUID?crypto.randomUUID():"d"+Date.now().toString(36)+Math.random().toString(36).slice(2));try{localStorage.setItem("deviceId",d)}catch(e){}}return d}

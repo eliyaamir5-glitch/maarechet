@@ -20,12 +20,12 @@ const out = await p.evaluate(async () => {
   // מנהל רואה בלשונית פניות
   document.getElementById("goStaff").click(); await sleep(2500);
   if (f().getElementById("lCode")) { f().getElementById("lCode").value = "demo"; f().getElementById("lGo").click(); await sleep(1500); }
-  f().querySelector('#tabs [data-t="fb"]').click(); await sleep(800);
+  f().defaultView.goTab("fb"); await sleep(800);
   r.fbItems = f().querySelectorAll("#fbList .item").length;
   r.first = f().querySelector("#fbList .item .t")?.textContent;
   f().querySelector("[data-done]").click(); await sleep(800);
   r.afterDone = f().querySelectorAll("#fbList .item").length;
-  f().querySelector('#tabs [data-t="me"]').click(); await sleep(400);
+  f().defaultView.goTab("me"); await sleep(400);
   f().getElementById("mCode").value = "abcdef"; f().getElementById("mCode2").value = "abcdef"; f().getElementById("mCodeGo").click(); await sleep(600);
   r.codeMsg = f().getElementById("mCodeMsg").textContent;
   return r;

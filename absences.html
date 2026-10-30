@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#5b6cff">
-<title>הנוכחות שלי</title>
+<title>משוב: נוכחות וציונים</title>
 <script src="demo-shim.js"></script>
 <script src="theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -48,6 +48,22 @@ main{padding:16px 14px 40px;max-width:560px;margin:0 auto}
 .slim{padding:12px 16px}
 .foot{margin-top:16px;color:var(--muted);font-size:12px;text-align:center;line-height:1.6}
 [hidden]{display:none!important}
+/* מעבר נוכחות / ציונים */
+.vseg{display:flex;gap:6px;margin-top:12px}
+.vseg button{flex:1;border:1.5px solid rgba(255,255,255,.55);background:transparent;color:#fff;border-radius:999px;padding:8px 10px;font:inherit;font-size:15px;font-weight:800;cursor:pointer}
+.vseg button.on{background:#fff;color:#2b2f6b;border-color:transparent}
+/* 📝 ציונים */
+.gk{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.gk div{background:var(--bg);border-radius:14px;padding:10px 4px}.gk b{display:block;font-size:24px;font-weight:900}.gk span{font-size:12px;color:var(--muted)}
+.gsub{border:1.5px solid var(--line);border-radius:16px;margin-bottom:10px;overflow:hidden}
+.gsub summary{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;list-style:none}
+.gsub summary::-webkit-details-marker{display:none}
+.gsub .nm{flex:1;font-weight:800;font-size:16px}.gsub .nm small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.gav{min-width:54px;text-align:center;border-radius:12px;padding:6px 8px;font-weight:900;font-size:19px;color:#fff}
+.gl{display:flex;justify-content:space-between;gap:8px;padding:8px 14px;border-top:1px dashed var(--line);font-size:14px}
+.gl .ev{flex:1}.gl .ev small{display:block;color:var(--muted);font-size:12px}.gl b{font-size:17px}
+.gnew{background:var(--next);border-radius:999px;padding:1px 8px;font-size:11px;font-weight:900;margin-inline-start:6px}
+.tgl{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}.tgl input{width:20px;height:20px}
 
 /* כניסה מדורגת: הכרטיסים "עולים" אחד אחרי השני */
 .rv{opacity:0;transform:translateY(16px);animation:rise .55s cubic-bezier(.2,.8,.2,1) forwards}
@@ -134,8 +150,9 @@ body.noscroll{overflow:hidden}
 <body>
 <div class="top">
   <a href="./">🏠 חזרה למערכת</a>
-  <h1>📊 הנוכחות שלי</h1>
-  <p>רצף לכל מקצוע וכלל ה-30% · פרטי לך בלבד</p>
+  <h1 id="hT">📊 הנוכחות שלי</h1>
+  <p id="hS">רצף לכל מקצוע וכלל ה-30% · פרטי לך בלבד</p>
+  <div class="vseg" id="vseg"><button type="button" data-v="att">📊 נוכחות</button><button type="button" data-v="grades">📝 ציונים</button></div>
 </div>
 <main id="main"></main>
 
@@ -155,7 +172,7 @@ const load=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:JSON.pa
 let profile=load("profile",null);
 if(profile&&!profile.major&&profile.phys==="yes")profile.major="phys";
 let countJustified=true;try{countJustified=localStorage.getItem("absCountJustified")!=="0"}catch(e){}
-let demo=location.hash==="#demo";
+let demo=/demo/.test(location.hash);
 
 // נתוני דוגמה: כדי לראות את המסך לפני שמחברים משוב
 function demoBehave(){
@@ -183,7 +200,59 @@ function ring(p,color){
 }
 const stkHTML=(s,label)=>{const t=Absences.tierOf(s.current);return `<span class="stk ${t.cls}"><span class="f">🔥</span><span data-count="${s.current}">0</span>${label?` <span style="font-weight:700">${label}</span>`:""}</span>`};
 
+// ===== 📝 ציונים (ממשוב, נשמרים רק בטלפון) =====
+const isGrades=()=>/grades/.test(location.hash);
+const gNum=g=>{const n=typeof g==="number"?g:parseFloat(String(g??"").replace(",","."));return isFinite(n)&&n>=0&&n<=100?n:null};
+const gColor=n=>n==null?"var(--grey)":n>=85?"var(--green)":n>=70?"#3d9bff":n>=55?"var(--orange)":"var(--red)";
+const gKey=g=>[g.date,g.subject,g.event,g.grade].join("|");
+function demoGrades(){const S=[["אנגלית","רחלי אניג'ר",[88,92,79,95]],["מתמטיקה","אדיר חניה",[74,81,68]],["היסטוריה","נוף מויאל",[90,85]],["תנ\"ך","אורי זרביב",[62,71]],["לשון","פרץ דמרי",[83]]],out=[];
+  S.forEach(([s,t,gs],i)=>gs.forEach((g,j)=>out.push({date:`2026-${String(9+Math.floor((j*3+i)/6)).padStart(2,"0")}-${String(3+((j*7+i*3)%25)).padStart(2,"0")}`,subject:s,event:["בוחן","מבחן","עבודה","מבחן מחצית"][j%4],type:"",grade:g,teacher:t})));return out}
+function renderGrades(){
+  const m=$("main"),conn=Mashov.connected(),md=Mashov.data();
+  if(!conn&&!demo){m.innerHTML=`<div class="card rv"><h2>📝 הציונים שלי</h2><p class="hint">מחברים את משוב, ורואים כאן את כל הציונים במבחנים ובעבודות – לפי מקצוע, עם ממוצע. הכול נשאר רק בטלפון שלך.</p>
+    <div class="row"><a class="btn" href="./#profile">חבר משוב</a><button class="btn ghost" id="demoBtn">הצג דוגמה</button></div></div>`;
+    $("demoBtn").onclick=()=>{demo=true;history.replaceState(null,"","#grades-demo");render()};return}
+  const raw=(demo?demoGrades():(md?.grades||[])).filter(g=>g&&g.subject);
+  const all=raw.map(g=>({...g,num:gNum(g.grade)})).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  const seen=new Set(load("gradesSeen",[])),fresh=demo?new Set():new Set(all.filter(g=>!seen.has(gKey(g))).map(gKey));
+  if(!demo)try{localStorage.setItem("gradesSeen",JSON.stringify(all.map(gKey).slice(0,800)))}catch(e){}
+  let h="",d=0;const rv=()=>`rv" style="animation-delay:${(d++)*60}ms`;
+  if(demo)h+=`<div class="demo">👀 מצב דוגמה: אלה לא הציונים שלך. <a href="#" id="exitDemo">יציאה מהדוגמה</a></div>`;
+  else h+=`<div class="card slim ${rv()}"><div class="bar"><span>📝 משוב · ${Mashov.agoText()}</span><button class="btn ghost" id="refresh" style="padding:7px 12px;font-size:13px">🔄 רענון</button></div></div>`;
+  const nums=all.filter(g=>g.num!=null);
+  if(!all.length){m.innerHTML=h+`<div class="card ${rv()}"><h2>📝 עוד אין ציונים</h2><p class="hint">כשמורה יכניס ציון למשוב, הוא יופיע כאן אחרי הרענון הבא.</p></div>`;wireTop();return}
+  // לפי מקצוע
+  const bySub=new Map();for(const g of all){if(!bySub.has(g.subject))bySub.set(g.subject,[]);bySub.get(g.subject).push(g)}
+  const subs=[...bySub.entries()].map(([name,L])=>{const n=L.filter(g=>g.num!=null);const avg=n.length?n.reduce((a,g)=>a+g.num,0)/n.length:null;
+    const tr=n.length>=2?n[0].num-n[1].num:0;return {name,L,avg,tr,teacher:(L.find(g=>g.teacher)||{}).teacher||""}}).sort((a,b)=>(b.avg??-1)-(a.avg??-1));
+  const subAvgs=subs.filter(x=>x.avg!=null),overall=subAvgs.length?subAvgs.reduce((a,x)=>a+x.avg,0)/subAvgs.length:null;
+  h+=`<div class="card ${rv()}"><h2>⭐ סיכום</h2><div class="gk"><div><b style="color:${gColor(overall)}">${overall==null?"—":Math.round(overall)}</b><span>ממוצע כללי</span></div><div><b>${nums.length}</b><span>ציונים</span></div><div><b>${subAvgs[0]?Math.round(subAvgs[0].avg):"—"}</b><span>${subAvgs[0]?"הכי גבוה: "+esc(subAvgs[0].name):"הכי גבוה"}</span></div></div>
+    <p class="hint" style="margin:10px 0 0">ממוצע פשוט של הציונים כאן – <b>זה לא הציון בתעודה</b> (כל מורה שוקל מבחנים ועבודות אחרת).</p></div>`;
+  if(fresh.size)h+=`<div class="card ${rv()}" style="border-color:var(--accent)"><h2>🆕 ציונים חדשים</h2>${all.filter(g=>fresh.has(gKey(g))).slice(0,8).map(g=>`<div class="gl" style="padding:8px 0"><span class="ev">${esc(g.subject)} · ${esc(g.event||g.type||"ציון")}<small>${g.date?fmtD(g.date):""}</small></span><b style="color:${gColor(g.num)}">${esc(g.grade??"—")}</b></div>`).join("")}</div>`;
+  h+=`<div class="sec ${rv()}">📚 לפי מקצוע <small>לחיצה פותחת את כל הציונים</small></div>`;
+  h+=subs.map(x=>`<details class="gsub ${rv()}"><summary><span class="nm">${esc(x.name)}<small>${esc(x.teacher)} · ${x.L.length} ציונים${x.tr>0?" · ↗️ עלייה":x.tr<0?" · ↘️ ירידה":""}</small></span><span class="gav" style="background:${gColor(x.avg)}">${x.avg==null?"—":Math.round(x.avg)}</span></summary>
+    ${x.L.map(g=>`<div class="gl"><span class="ev">${esc(g.event||g.type||"ציון")}${fresh.has(gKey(g))?`<span class="gnew">חדש</span>`:""}<small>${g.date?fmtD(g.date):""}${g.type&&g.event?" · "+esc(g.type):""}</small></span><b style="color:${gColor(g.num)}">${esc(g.grade??"—")}</b></div>`).join("")}</details>`).join("");
+  const on=load("gradeNotice",true)!==false;
+  h+=`<div class="card slim ${rv()}"><label class="tgl"><input type="checkbox" id="gn" ${on?"checked":""}> להראות במסך הראשי כשמגיע ציון חדש</label></div>
+    <div class="foot">🔒 הציונים נשארים רק בטלפון שלך. אף אחד – לא המורים, לא ההנהלה ולא מנהל האפליקציה – לא רואה אותם דרך האפליקציה.</div>`;
+  m.innerHTML=h;wireTop();
+  $("gn").onchange=e=>{try{localStorage.setItem("gradeNotice",JSON.stringify(e.target.checked))}catch(_){}};
+}
+function wireTop(){
+  if($("exitDemo"))$("exitDemo").onclick=e=>{e.preventDefault();demo=false;history.replaceState(null,"",isGrades()?"#grades":" ");render()};
+  if($("refresh"))$("refresh").onclick=async()=>{$("refresh").disabled=true;$("refresh").textContent="מרענן…";try{await Mashov.refresh()}catch(e){}render()};
+}
+function setView(){
+  const g=isGrades();
+  $("vseg").querySelectorAll("button").forEach(b=>b.classList.toggle("on",(b.dataset.v==="grades")===g));
+  $("hT").textContent=g?"📝 הציונים שלי":"📊 הנוכחות שלי";$("hS").textContent=g?"כל הציונים ממשוב, לפי מקצוע · פרטי לך בלבד":"רצף לכל מקצוע וכלל ה-30% · פרטי לך בלבד";
+  document.title=g?"הציונים שלי":"הנוכחות שלי";
+}
+$("vseg").querySelectorAll("button").forEach(b=>b.onclick=()=>{const g=b.dataset.v==="grades";history.replaceState(null,"",g?(demo?"#grades-demo":"#grades"):(demo?"#demo":" "));render()});
+
 function render(){
+  setView();
+  if(isGrades()){if(/demo/.test(location.hash))demo=true;return renderGrades()}
   const m=$("main");
   if(!profile||!profile.major){m.innerHTML=`<div class="card"><h2>קודם נרשמים</h2><p class="hint">צריך להשלים את ההרשמה במערכת (כיתה, הקבצות ומגמה) כדי לחשב את הנוכחות שלך.</p><a class="btn" href="./">להרשמה</a></div>`;return}
   const conn=Mashov.connected(), md=Mashov.data();

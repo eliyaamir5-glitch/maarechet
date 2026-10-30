@@ -154,7 +154,7 @@ const Y1 = { first: "יוסי", last: "כהן", cls: "y1", eng: "minervi", math:
     [...document.querySelectorAll("#day button")].find(b => b.textContent === "שני").click(); await sleep(1500);
     document.getElementById("goStaff").click(); await sleep(2000);
     if (f().getElementById("lCode")) { f().getElementById("lCode").value = "demo"; f().getElementById("lGo").click(); await sleep(1200); }
-    f().querySelector('#tabs [data-t="chg"]').click(); await sleep(800);
+    f().defaultView.goTab("chg"); await sleep(800);
     [...f().querySelectorAll("#cC button")].find(b => b.dataset.v === "y2").click(); await sleep(100);
     const sel = f().getElementById("cL"), opt = [...sel.options].find(o => o.textContent.startsWith("10:30"));
     r.opt = opt && opt.textContent; sel.value = opt.value; sel.dispatchEvent(new Event("change"));
@@ -165,7 +165,7 @@ const Y1 = { first: "יוסי", last: "כהן", cls: "y1", eng: "minervi", math:
     r.student = [...f().querySelectorAll(".chg")].map(x => x.closest("[class]").parentElement.innerText.replace(/\s+/g, " ").slice(0, 80));
     // מחיקה
     document.getElementById("goStaff").click(); await sleep(2000);
-    f().querySelector('#tabs [data-t="chg"]').click(); await sleep(800);
+    f().defaultView.goTab("chg"); await sleep(800);
     f().querySelector("[data-cdel]").click(); await sleep(900);
     r.after = f().getElementById("cList").innerText;
     return r;
