@@ -95,6 +95,11 @@ input,select{width:100%;border:1.5px solid var(--line);border-radius:10px;paddin
         <p class="note" style="margin:8px 0 0">מופיע רק כשלוחצים כאן (לחיצה נוספת מבטלת). בהשעיה – לוחצים שוב על "השעיה" כדי לחזור.</p>
       </div>
 
+      <div class="box"><h2>🔥 אפקטים (הדגמה)</h2>
+        <div class="seg" id="fxBtns"><button type="button" data-fx="10">🔥 רצף 10</button><button type="button" data-fx="30">💙 רצף 30</button><button type="button" data-fx="100">👑 רצף 100</button><button type="button" data-fx="truck">🚒 רצף נשבר</button><button type="button" data-fx="praise">⭐ צל"ש חדש</button></div>
+        <p class="note" style="margin:8px 0 0">אצל תלמיד אמיתי זה מופיע לבד, פעם אחת, כשמגיע רצף (כל 10 שיעורים) או כשהרצף נשבר.</p>
+      </div>
+
       <div class="box"><h2>🧭 מעבר למסך</h2>
         <div class="nav" id="nav"></div>
       </div>
@@ -397,6 +402,19 @@ $("time").onchange=e=>{cfg.time=e.target.value||"10:40";cfg.real=false;timeChang
 $("realNow").onclick=()=>{cfg.real=true;timeChanged()};
 $("samples").onchange=e=>{cfg.samples=e.target.checked;saveCfg();delete host.store.updatesCache;reloadFrame()};
 $("goStaff").onclick=()=>go("staff.html");
+// 🔥 הדגמת אפקטים: עוברים למסך הראשי (אם צריך) ומפעילים את האפקט בתוכו
+function fxDemo(run){
+  const fire=()=>{try{const w=$("frame").contentWindow;w.document.querySelectorAll("dialog[open]").forEach(d=>d.close());run(w)}catch(e){}};
+  let onIndex=false;try{onIndex=/index\.html$|\/$/.test($("frame").contentWindow.location.pathname)}catch(e){}
+  if(onIndex)return fire();
+  $("frame").addEventListener("load",()=>setTimeout(fire,1200),{once:true});go("index.html");
+}
+document.querySelectorAll("#fxBtns [data-fx]").forEach(b=>b.onclick=()=>{const v=b.dataset.fx;fxDemo(w=>{
+  if(v==="truck")w.extinguish("גמרא",24);
+  else if(v==="praise"){const d=w.document;d.getElementById("evT").textContent="⭐ קיבלת צל\"ש!";
+    d.getElementById("evList").innerHTML=`<div class="ev"><span class="i">⭐</span><span><b>צל"ש באנגלית</b><small>היום · שיעור 3</small><small>אלוף! המורה שם לב אליך 🌟</small></span></div>`;d.getElementById("evDlg").showModal()}
+  else w.celebrate("גמרא",+v);
+})});
 $("rePop").onclick=()=>{delete host.store.updatesSeen;go("index.html")};
 $("newStudent").onclick=()=>{for(const k of Object.keys(host.store))delete host.store[k];simStore();cfg.page="index.html";saveCfg();markNav();$("frame").src="index.html"};
 $("reset").onclick=()=>{if(!confirm("לאפס את הדמו להגדרות ההתחלה?"))return;cfg=Object.assign({},DEF,{day:cfg.day});host.staffUpdates=[];host.codes={};host.sim={maint:null,susp:null};host.ownMsgs=[];simMark();Object.assign(host,JSON.parse(INITIAL));saveCfg();applyTime();panel();buildStore(false);$("frame").src="index.html"};
