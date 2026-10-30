@@ -15,7 +15,7 @@ async function newPage(w, scheme) {
   await p.emulateMediaFeatures([{ name: "prefers-color-scheme", value: scheme }]);
   await p.evaluateOnNewDocument(t => {
     const R = Date, off = t - R.now(); class D extends R { constructor(...a) { if (a.length) super(...a); else super(R.now() + off); } static now() { return R.now() + off; } } window.Date = D;
-    if (!localStorage.getItem("profile")) { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "y2", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); localStorage.setItem("feedOk", "1");
+    if (!localStorage.getItem("profile")) { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "y2", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ localStorage.setItem("seenVersion", "9999"); localStorage.setItem("feedOk", "1");
       localStorage.setItem("sets", JSON.stringify([{ id: "s1", title: "בדיקה", subject: "היסטוריה", cards: [{ t: "1948", d: "מלחמת העצמאות" }, { t: "1967", d: "ששת הימים" }, { t: "1973", d: "יום כיפור" }, { t: "1982", d: "לבנון" }] }])); }
     window.open = () => null; // שלא ייפתחו חלונות חיצוניים
     try { navigator.share = undefined; } catch (e) {}

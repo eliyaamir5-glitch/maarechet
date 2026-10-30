@@ -18,7 +18,7 @@ async function page({ w = 390, h = 844, scheme = "dark", ua, ls = {} } = {}) {
   p.errs = []; p.on("pageerror", e => p.errs.push(e.message)); p.on("dialog", d => d.accept());
   await p.evaluateOnNewDocument((prof, ls) => {
     if (sessionStorage.getItem("seeded")) return; sessionStorage.setItem("seeded", "1");
-    localStorage.setItem("profile", JSON.stringify(prof)); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); localStorage.setItem("feedOk", "1");
+    localStorage.setItem("profile", JSON.stringify(prof)); localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ localStorage.setItem("seenVersion", "9999"); localStorage.setItem("feedOk", "1");
     localStorage.setItem("bday", JSON.stringify({ optOut: true }));
     for (const [k, v] of Object.entries(ls)) v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v);
   }, PROF, ls);

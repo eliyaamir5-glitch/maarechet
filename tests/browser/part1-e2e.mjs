@@ -13,7 +13,7 @@ async function page(setup) {
   p.on("request", r => /netlify\.app|web3forms/.test(r.url()) ? r.respond({ status: 200, contentType: "application/json", body: '{"ok":true,"updates":[]}', headers: { "Access-Control-Allow-Origin": "*" } }) : r.continue());
   return p;
 }
-const student = (extra = {}) => () => { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "y2", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); for (const [k, v] of Object.entries(window.__extra || {})) localStorage.setItem(k, v); };
+const student = (extra = {}) => () => { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "y2", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ for (const [k, v] of Object.entries(window.__extra || {})) localStorage.setItem(k, v); };
 
 // 42 מה חדש: משתמש קיים בלי seenVersion רואה פעם אחת
 let p = await page(student());

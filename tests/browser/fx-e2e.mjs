@@ -18,7 +18,7 @@ async function open(url, { behave = [], grades = [], ls = {} } = {}) {
     class D extends R { constructor(...a) { if (a.length) super(...a); else super(R.now() + off); } static now() { return R.now() + off; } }
     window.Date = D;
     if (sessionStorage.getItem("s")) return; sessionStorage.setItem("s", 1);
-    localStorage.setItem("profile", JSON.stringify(pr)); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999");
+    localStorage.setItem("profile", JSON.stringify(pr)); localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ localStorage.setItem("seenVersion", "9999");
     localStorage.setItem("mashovConn", JSON.stringify({ schoolId: 1, schoolName: "בית יהודה", user: "x", year: 2027, at: Date.now() }));
     localStorage.setItem("mashovData", JSON.stringify({ at, behave, grades, groups: [], lessonsCount: [] }));
     localStorage.setItem("tef", JSON.stringify({ d: "2026-10-29", a: "yes" }));

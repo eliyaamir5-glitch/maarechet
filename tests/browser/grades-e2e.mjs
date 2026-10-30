@@ -20,7 +20,7 @@ async function open(url, { grades = G, seen, notice } = {}) {
   p.on("request", q => /^http:\/\/localhost/.test(q.url()) ? q.continue() : q.abort());
   await p.evaluateOnNewDocument((pr, grades, seen, notice) => {
     if (sessionStorage.getItem("s")) return; sessionStorage.setItem("s", 1);
-    localStorage.setItem("profile", JSON.stringify(pr)); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999");
+    localStorage.setItem("profile", JSON.stringify(pr)); localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ localStorage.setItem("seenVersion", "9999");
     localStorage.setItem("mashovConn", JSON.stringify({ schoolId: 1, schoolName: "בית יהודה", user: "x", year: 2027, at: Date.now() }));
     localStorage.setItem("mashovData", JSON.stringify({ at: new Date().toISOString(), behave: [], grades, groups: [], lessonsCount: [] }));
     if (seen) localStorage.setItem("gradesSeen", JSON.stringify(seen));

@@ -30,7 +30,7 @@ async function page(setup, w = 390) {
   });
   return p;
 }
-const stud = cls => () => { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "__CLS__", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); };
+const stud = cls => () => { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "__CLS__", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ localStorage.setItem("seenVersion", "9999"); };
 const S2 = s => new Function(`(${s().toString().replace("__CLS__", "y2")})()`);
 const S1 = s => new Function(`(${s().toString().replace("__CLS__", "y1")})()`);
 

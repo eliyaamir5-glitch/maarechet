@@ -13,7 +13,7 @@ async function open(prof) {
   await p.setRequestInterception(true);
   p.on("request", q => /^http:\/\/localhost/.test(q.url()) ? q.continue() : q.abort());
   await p.evaluateOnNewDocument(pr => { if (sessionStorage.getItem("s")) return; sessionStorage.setItem("s", 1);
-    localStorage.setItem("profile", JSON.stringify(pr)); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); }, prof);
+    localStorage.setItem("profile", JSON.stringify(pr)); localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ localStorage.setItem("seenVersion", "9999"); }, prof);
   await p.goto("http://localhost:8787/index.html", { waitUntil: "domcontentloaded" }); await sleep(1200);
   return p;
 }

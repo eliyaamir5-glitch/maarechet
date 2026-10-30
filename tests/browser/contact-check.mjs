@@ -5,7 +5,7 @@ const p = await b.newPage(); await p.setViewport({ width: 390, height: 844, devi
 const errs = []; p.on("pageerror", e => errs.push(e.message));
 const res = []; const log = (ok, n, x = "") => { res.push(ok); console.log(ok ? "✅" : "❌", n, ok ? "" : x); };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-await p.evaluateOnNewDocument(() => { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "y1", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); });
+await p.evaluateOnNewDocument(() => { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "y1", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ localStorage.setItem("seenVersion", "9999"); });
 await p.setRequestInterception(true); p.on("request", r => /netlify\.app|web3forms/.test(r.url()) ? r.respond({ status: 200, contentType: "application/json", body: '{"ok":true,"updates":[]}', headers: { "Access-Control-Allow-Origin": "*" } }) : r.continue());
 await p.goto("http://localhost:8787/index.html", { waitUntil: "networkidle2" }); await sleep(600);
 log(await p.$(".foot .contact") === null && await p.$("#fbOpen") !== null, "footer: only the 'כתבו לנו' button, no phone/email");

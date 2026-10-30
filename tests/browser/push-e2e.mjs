@@ -24,7 +24,7 @@ async function open({ ua, perm = "granted" } = {}) {
     return q.abort();
   });
   await p.evaluateOnNewDocument((pr, perm) => {
-    if (!sessionStorage.getItem("s")) { sessionStorage.setItem("s", 1); localStorage.setItem("profile", JSON.stringify(pr)); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); }
+    if (!sessionStorage.getItem("s")) { sessionStorage.setItem("s", 1); localStorage.setItem("profile", JSON.stringify(pr)); localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ localStorage.setItem("seenVersion", "9999"); }
     // הרשאה ורישום מדומים (בענן אין שירות התראות אמיתי)
     let state = "default", sub = null;
     window.Notification = { get permission() { return state; }, requestPermission: async () => (state = perm) };

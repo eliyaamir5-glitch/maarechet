@@ -30,7 +30,7 @@ async function page(setup, w = 390) {
 }
 const own = async b => (await H(new Request("http://localhost/api/owner", { method: "POST", headers: { "Content-Type": "application/json", ...(OT ? { authorization: "Bearer " + OT } : {}) }, body: JSON.stringify(b) }), { ip: "9.9.9.9" })).json();
 let OT = null; OT = (await own({ action: "login", code: "OWNERTEST1234567" })).token;
-const prof = new Function(`localStorage.setItem("profile", JSON.stringify({ first: "רון", last: "בדיקה", cls: "y1", eng: "hadad", math: "adir", major: "cs", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); localStorage.setItem("bday", JSON.stringify({optOut:true}));`);
+const prof = new Function(`localStorage.setItem("profile", JSON.stringify({ first: "רון", last: "בדיקה", cls: "y1", eng: "hadad", math: "adir", major: "cs", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ localStorage.setItem("seenVersion", "9999"); localStorage.setItem("bday", JSON.stringify({optOut:true}));`);
 const S = await page(prof, 390);
 await S.goto("http://localhost:8787/index.html", { waitUntil: "networkidle2" }); await sleep(2500);
 let ov = await own({ action: "overview" }); const ron = ov.students.find(s => s.name === "רון בדיקה");

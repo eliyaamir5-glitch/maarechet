@@ -24,7 +24,7 @@ async function open(profile, { feed = null, width = 375, t0 = SUN.getTime() + 10
     const R = Date; window.__R = R; window.__T = t0; window.__base = R.now();
     class X extends R { constructor(...a) { if (a.length) super(...a); else super(window.__T + (R.now() - window.__base)); } static now() { return window.__T + (R.now() - window.__base); } }
     window.Date = X;
-    localStorage.setItem("profile", JSON.stringify(profile)); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); localStorage.setItem("feedOk", "1");
+    localStorage.setItem("profile", JSON.stringify(profile)); localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ localStorage.setItem("seenVersion", "9999"); localStorage.setItem("feedOk", "1");
     for (const [k, v] of Object.entries(extra)) localStorage.setItem(k, v);
   }, profile, t0, extra);
   await p.setRequestInterception(true);
@@ -153,7 +153,7 @@ const feed = { ok: true, updates: [{ id: "u1", text: "שלום", author: "<b>מ�
   await p.close();
   for (const prof of ['"hello"', "[1,2]", "5", '{"cls":"__proto__","eng":"constructor","math":"toni","major":"phys","first":"x"}', '{"cls":"y3","first":"x","eng":"hadad","math":"toni","major":"bio"}']) {
     const pg = await browser.newPage(); const e2 = []; pg.on("pageerror", e => e2.push(e.message));
-    await pg.evaluateOnNewDocument(v => { localStorage.setItem("profile", v); localStorage.setItem("introSeen", "1"); }, prof);
+    await pg.evaluateOnNewDocument(v => { localStorage.setItem("profile", v); localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ }, prof);
     await pg.setRequestInterception(true); pg.on("request", r => /netlify|web3forms/.test(r.url()) ? r.respond({ status: 200, contentType: "application/json", headers: { "Access-Control-Allow-Origin": "*" }, body: '{"ok":true,"updates":[]}' }) : r.continue());
     await pg.goto(BASE, { waitUntil: "networkidle2" }); await sleep(700);
     const wiz = await pg.evaluate(() => !document.getElementById("wiz").hidden);

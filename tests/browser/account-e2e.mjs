@@ -27,7 +27,7 @@ async function open({ at, ls = {}, bdays = [], wishes = null } = {}) {
   await p.evaluateOnNewDocument((pr, ls, at) => {
     if (at) { const R = Date, off = new R(at).getTime() - R.now(); class D extends R { constructor(...a) { if (a.length) super(...a); else super(R.now() + off); } static now() { return R.now() + off; } } window.Date = D; }
     if (window.name === "seeded") return; window.name = "seeded"; // נשמר גם אחרי ריענון ומחיקת האחסון
-    localStorage.setItem("profile", JSON.stringify(pr)); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); localStorage.setItem("feedOk", "1");
+    localStorage.setItem("profile", JSON.stringify(pr)); localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ localStorage.setItem("seenVersion", "9999"); localStorage.setItem("feedOk", "1");
     localStorage.setItem("push", JSON.stringify({ askLater: Date.now() + 9e9 }));
     for (const [k, v] of Object.entries(ls)) localStorage.setItem(k, JSON.stringify(v));
   }, PROF, ls, at || null);

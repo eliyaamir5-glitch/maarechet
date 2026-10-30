@@ -30,16 +30,16 @@ async function page(setup, w = 390) {
   });
   return p;
 }
-const stud = cls => () => { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "__CLS__", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); };
+const stud = cls => () => { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "__CLS__", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ localStorage.setItem("seenVersion", "9999"); };
 const S2 = s => new Function(`(${s().toString().replace("__CLS__", "y2")})()`);
 const S1 = s => new Function(`(${s().toString().replace("__CLS__", "y1")})()`);
 
 // ---- הצוות ----
 const T = await page(null, 1100);
-const studN = (first, cls, extra) => new Function(`localStorage.setItem("profile", JSON.stringify({ first: "${first}", last: "לוי", cls: "${cls}", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); ${extra || ""}`);
+const studN = (first, cls, extra) => new Function(`localStorage.setItem("profile", JSON.stringify({ first: "${first}", last: "לוי", cls: "${cls}", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ localStorage.setItem("seenVersion", "9999"); ${extra || ""}`);
 const tdy = new Date(); const D = tdy.getDate(), M = tdy.getMonth() + 1;
 // 1. תלמיד חדש: האשף שואל על יום הולדת
-const N = await page(() => { localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); });
+const N = await page(() => { localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ localStorage.setItem("seenVersion", "9999"); });
 await N.goto("http://localhost:8787/index.html", { waitUntil: "networkidle2" }); await sleep(800);
 await N.type("#wzFirst", "רון"); await N.type("#wzLast", "לוי"); await N.click("#wzNext"); await sleep(300);
 await N.click("#wzPhSkip"); await sleep(300);
