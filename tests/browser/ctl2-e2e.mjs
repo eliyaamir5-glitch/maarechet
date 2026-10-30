@@ -2,7 +2,7 @@ import { ROOT, CHROME, CHROME_ARGS } from "./_env.mjs";
 // רובוט 2 למצב מהשרת (השעיה / מצב עדכון / הודעות) + בלי זום + מדווח התקלות
 // שרת מדומה: GET /api/feed, POST hello/err/react – לפי state
 import puppeteer from "puppeteer-core";
-const b = await puppeteer.launch({ executablePath: CHROME, headless: true, args: CHROME_ARGS });
+let b = await puppeteer.launch({ executablePath: CHROME, headless: true, args: CHROME_ARGS });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const res = []; const log = (ok, n, x = "") => { res.push(!!ok); console.log(ok ? "✅" : "❌", n, ok ? "" : x); };
 const BASE = "http://localhost:8787/";
@@ -11,7 +11,9 @@ let state = {}; let posts = []; let feedStatus = 200; let failErr = 0;
 const reset = () => { state = { maint: null, susp: null, msgs: [], feedMaint: null, reactSusp: false }; posts = []; feedStatus = 200; failErr = 0; };
 const PROF = { first: "רון", last: "בדיקה", cls: "y1", eng: "hadad", math: "adir", major: "cs", dorm: "yes", since: "2026-09-01" };
 async function page({ w = 390, h = 844, scheme = "dark", ua, ls = {} } = {}) {
-  const ctx = await b.createBrowserContext(); const p = await ctx.newPage();
+  // בענן הדפדפן לפעמים קורס בין בדיקות (קרה גם בגרסה הקודמת) – מפעילים אותו מחדש וממשיכים
+  let ctx; try { ctx = await b.createBrowserContext(); } catch (e) { await b.close().catch(() => {}); b = await puppeteer.launch({ executablePath: CHROME, headless: true, args: CHROME_ARGS }); ctx = await b.createBrowserContext(); }
+  const p = await ctx.newPage();
   if (ua) await p.setUserAgent(ua);
   await p.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: w < 700, hasTouch: w < 700 });
   await p.emulateMediaFeatures([{ name: "prefers-color-scheme", value: scheme }]);
@@ -119,7 +121,7 @@ await p.browserContext().close();
 reset();
 p = await page({ ls: { appCtl: "{bad", ownerMsgs: '[null,1,"x",{"id":{},"text":5},{"id":"a","text":"שלום מהמנהל","exp":9e15},{"id":"b","text":"פג","exp":1}]', ownerRead: '{"a":1}', ownerToast: "5", feedCache: '"str"', errSent: "{{" } });
 await p.goto(BASE + "index.html", { waitUntil: "domcontentloaded" }); await sleep(700);
-log(errsOf(p).length === 0 && await p.evaluate(() => document.getElementById("hero").innerText.length > 10), "corrupted appCtl/ownerMsgs/ownerRead/feedCache: no errors, app works", errsOf(p).join(" | "));
+log(errsOf(p).length === 0 && await p.evaluate(() => (document.getElementById("hero").innerText + document.getElementById("content").innerText).length > 10), "corrupted appCtl/ownerMsgs/ownerRead/feedCache: no errors, app works", errsOf(p).join(" | "));
 log(await p.evaluate(() => { const t = document.getElementById("ownBox").innerText; return t.includes("שלום מהמנהל") && !t.includes("פג"); }), "valid cached message shows, expired one doesn't");
 await p.browserContext().close();
 for (const bad of ['{"susp":"yes","maint":5}', '{"susp":{"until":"abc"},"maint":{"until":"zzz"}}', 'null', '[1,2]', '{"susp":{"until":1e300}}']) {

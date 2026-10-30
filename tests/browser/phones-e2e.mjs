@@ -39,6 +39,7 @@ async function page(w = 390) {
 const T = await page();
 await T.goto("http://localhost:8787/staff.html", { waitUntil: "networkidle2" }); await sleep(400);
 await T.type("#lCode", "TEST-CODE-1234"); await T.click("#lGo"); await sleep(900);
+await T.evaluate(() => goTab("write")); await sleep(500); // המנהל נכנס ל"מבט על"
 await T.type("#text", "שיעורי בית בעמוד הזה: https://example.com/hw/page-3. ובסרטון ההסבר.");
 await T.type("#video", "youtube.com/watch?v=dQw4w9WgXcQ"); await sleep(200);
 log((await T.$eval("#videoHint", e => e.textContent)).includes("✓"), "staff: video link recognised (even without https://)", await T.$eval("#videoHint", e => e.textContent));

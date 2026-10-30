@@ -13,7 +13,7 @@ const keys = async seq => { for (const k of seq) await key(k); };
 await p.evaluateOnNewDocument(() => { localStorage.setItem("profile", JSON.stringify({ first: "יוסי", last: "כהן", cls: "y1", eng: "minervi", math: "toni", major: "phys", dorm: "yes", since: "2026-09-01" })); localStorage.setItem("introSeen", "1"); if (!localStorage.getItem("tef")) { const n = new Date(); localStorage.setItem("tef", JSON.stringify({ d: n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"), a: "yes" })); } /* שתזכורת התפילין (בשעה שלפני השקיעה) לא תקפוץ באמצע הבדיקה */ localStorage.setItem("seenVersion", "9999"); });
 await p.setRequestInterception(true); p.on("request", r => /netlify\.app|web3forms/.test(r.url()) ? r.respond({ status: 200, contentType: "application/json", body: '{"ok":true,"updates":[]}', headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type, Authorization" } }) : r.continue());
 await p.goto("http://localhost:8787/index.html", { waitUntil: "networkidle2" }); await sleep(600);
-log(await p.$eval("#calcBtn", e => e.getBoundingClientRect().width > 120), "home: calculator button visible");
+log(await p.$eval("#calcBtn", e => e.getBoundingClientRect().width > 70 && e.getBoundingClientRect().height > 20), "home: calculator button visible"); // בטלפון: שורת כפתורים שגוללים הצידה
 await p.screenshot({ path: "calc-home-btn.png", clip: { x: 0, y: 0, width: 390, height: 420 } });
 await p.click("#calcBtn"); await p.waitForSelector("#vHome .tile"); await sleep(300);
 log((await text("#vHome")).includes("פתרון תרגיל"), "calculator opens with topics");

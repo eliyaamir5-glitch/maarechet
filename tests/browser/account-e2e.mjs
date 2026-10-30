@@ -101,7 +101,7 @@ await p.browserContext().close();
 
 // 7. יום הולדת: הפתעה לחוגג, ומזל טוב מחבר
 const now = new Date(Date.now() + 3 * 3600e3);
-p = await open({ ls: { bday: { d: now.getUTCDate(), m: now.getUTCMonth() + 1, share: true }, tef: { d: "x", a: "yes" } }, wishes: ["יוסי כהן", "אבי מזרחי"],
+p = await open({ ls: { bday: { d: now.getUTCDate(), m: now.getUTCMonth() + 1, share: true } }, wishes: ["יוסי כהן", "אבי מזרחי"],
   bdays: [{ name: "דני לוי", cls: "y1", md: md(now), inDays: 0 }, { name: "נועם בר", cls: "y2", md: md(now), inDays: 0 }] });
 await sleep(1500);
 log(await p.$("#fx.bday") && await p.$("#bdBlow"), "birthday: surprise with a cake opens by itself");

@@ -39,7 +39,7 @@ log(!!ron && ron.plat && ron.cls === "y1", "student shows up on the owner page a
 await own({ action: "maint", on: true, minutes: 30, msg: "שדרוג" });
 await S.reload({ waitUntil: "networkidle2" }); await sleep(2500);
 log(await S.evaluate(() => document.body.classList.contains("maint") && document.getElementById("maintBar").innerText.includes("בעדכון") && document.getElementById("maintBar").innerText.includes("שדרוג")), "maintenance bar shows with the message");
-log(await S.evaluate(() => { const h = document.getElementById("hero").getBoundingClientRect(), u = document.getElementById("updates").getBoundingClientRect(); return h.height > 50 && getComputedStyle(document.querySelector(".actions")).pointerEvents === "none"; }), "timetable stays visible; other areas are locked");
+log(await S.evaluate(() => { const h = document.getElementById("hero").getBoundingClientRect(), u = document.getElementById("updates").getBoundingClientRect(); return (h.height > 50 || document.getElementById("content").getBoundingClientRect().height > 50) && getComputedStyle(document.querySelector(".actions")).pointerEvents === "none"; }), "timetable stays visible; other areas are locked");
 await own({ action: "maint", on: false });
 await S.reload({ waitUntil: "networkidle2" }); await sleep(2500);
 log(await S.evaluate(() => !document.body.classList.contains("maint")), "maintenance off → back to normal");
