@@ -433,7 +433,7 @@ async function resume() {
   let p = null; try { p = JSON.parse(sessionStorage.getItem("asst:pending") || "null"); sessionStorage.removeItem("asst:pending"); } catch (e) {}
   if (!p || Date.now() - p.at > 30000 || !ACT[p.id]) return;
   await sleep(700);
-  if (ACT[p.id].answer) { openPanel(); botSay(answer(p.id, p.arg)); return; }
+  if (ACT[p.id].answer) { if (panel) { openPanel(); botSay(answer(p.id, p.arg)); } else toastSay(answer(p.id, p.arg)); return; }
   if (p.say) toastSay(p.say);
   try { await ACT[p.id].run?.(p.arg); } catch (e) { console.warn(e); }
 }
@@ -460,14 +460,45 @@ let panel, log, inp, hist = [], busy = false;
 function css() {
   const s = document.createElement("style");
   s.textContent = `
-#asstBtn{position:fixed;left:14px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:9000;width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;font-size:28px;color:#fff;
-  background:linear-gradient(135deg,#5b6cff,#a259ff 60%,#ff6bd6);box-shadow:0 8px 24px rgba(91,108,255,.45);display:flex;align-items:center;justify-content:center;animation:asstIn .5s cubic-bezier(.2,1.6,.4,1)}
-#asstBtn::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(162,89,255,.55);animation:asstPulse 2.6s infinite}
-@keyframes asstIn{from{transform:scale(0)}}@keyframes asstPulse{0%{transform:scale(1);opacity:.9}70%{transform:scale(1.35);opacity:0}100%{opacity:0}}
+/* 🤖 הרובוט: גוררים לכל מקום בצד (נצמד לקצה), מתחבא חצי כשגוללים */
+#asstBtn{position:fixed;left:0;top:0;z-index:9000;width:60px;height:60px;border-radius:50%;border:none;cursor:grab;padding:0;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+  background:radial-gradient(circle at 35% 30%,#8f9bff,#5b6cff 45%,#a259ff 80%,#ff6bd6);box-shadow:0 10px 26px rgba(91,108,255,.5),inset 0 -4px 10px rgba(0,0,0,.18);
+  transform:translate(var(--x,0px),var(--y,0px));transition:transform .45s cubic-bezier(.2,1.3,.4,1),opacity .3s,box-shadow .3s;animation:asstIn .6s cubic-bezier(.2,1.6,.4,1)}
+#asstBtn.drag{transition:none;cursor:grabbing;box-shadow:0 18px 40px rgba(91,108,255,.6)}
+#asstBtn.tuck{transform:translate(calc(var(--x,0px) + var(--tx,0px)),var(--y,0px));opacity:.55}
+#asstBtn::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(162,89,255,.55);animation:asstPulse 2.8s infinite;pointer-events:none}
+#asstBtn.drag::after,#asstBtn.tuck::after,#asstBtn.away::after{display:none}
+#asstBtn.away{transform:translate(calc(var(--x,0px) + var(--tx,0px) * 2.2),var(--y,0px));opacity:0;pointer-events:none}
+@keyframes asstIn{from{opacity:0;scale:0}}@keyframes asstPulse{0%{transform:scale(1);opacity:.9}70%{transform:scale(1.4);opacity:0}100%{opacity:0}}
+.abot{width:100%;height:100%;display:block;overflow:visible}
+.abot .body{animation:aBob 3.2s ease-in-out infinite;transform-origin:32px 40px}
+.abot .eyes{transform-box:fill-box;transform-origin:center;animation:aBlink 4.6s infinite}
+.abot .look{transition:transform .25s ease}
+.abot .ant{animation:aAnt 2.2s infinite}
+.abot .mouth{transition:d .2s}
+.abot .ms{display:block}.abot .mo{display:none}
+.abot .ear{transform-box:fill-box;transform-origin:center}
+@keyframes aBob{50%{transform:translateY(-2.5px) rotate(-2deg)}}
+@keyframes aBlink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.12)}}
+@keyframes aAnt{0%,100%{fill:#7cf5ff;filter:drop-shadow(0 0 2px #7cf5ff)}50%{fill:#ff6bd6;filter:drop-shadow(0 0 5px #ff6bd6)}}
+.abot.think .look{animation:aScan 1.1s ease-in-out infinite alternate}.abot.think .ant{animation-duration:.45s}.abot.think .ms{display:none}.abot.think .mo{display:block}
+@keyframes aScan{from{transform:translateX(-3px)}to{transform:translateX(3px)}}
+.abot.talk .mo{display:block;animation:aTalk .18s infinite alternate;transform-box:fill-box;transform-origin:center}.abot.talk .ms{display:none}
+@keyframes aTalk{from{transform:scaleY(.3)}to{transform:scaleY(1.2)}}
+.abot.happy .body{animation:aHop .7s cubic-bezier(.2,1.6,.4,1)}.abot.happy .eyes{animation:none}.abot.happy .eye{transform:scaleY(.5);transform-box:fill-box;transform-origin:center}
+@keyframes aHop{0%{transform:translateY(0)}35%{transform:translateY(-9px) rotate(8deg)}70%{transform:translateY(0) rotate(-4deg)}}
+.abot.wave .ear.r{animation:aWave .4s 3 alternate}@keyframes aWave{to{transform:rotate(-35deg) translateY(-3px)}}
+.asst-tip{position:fixed;z-index:9002;max-width:220px;background:#fff;color:#1d2247;border-radius:16px;padding:9px 12px;font-size:14px;font-weight:700;line-height:1.4;box-shadow:0 10px 30px rgba(0,0,0,.25);animation:asstUp .35s ease;direction:rtl;pointer-events:none}
+.asst-tip small{display:block;font-weight:500;color:#6c7093;font-size:12px;margin-top:2px}
+.asst-spark{position:fixed;z-index:9002;pointer-events:none;font-size:16px;animation:aSpark .8s ease-out forwards}@keyframes aSpark{to{transform:translate(var(--sx),var(--sy)) scale(.4);opacity:0}}
+@media (prefers-reduced-motion:reduce){.abot *,#asstBtn::after{animation:none!important}}
 body.asst-hide #asstBtn,body:has(#suspWall) #asstBtn,body:has(#wiz:not([hidden])) #asstBtn,body:has(#intro:not([hidden])) #asstBtn,body:has(#build:not([hidden])) #asstBtn,body:has(#fx) #asstBtn,body:has(#recap) #asstBtn,body:has(#delFx:not([hidden])) #asstBtn{display:none}
 #asstP{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:9001;max-width:460px;margin:0 auto;max-height:min(78vh,640px);display:flex;flex-direction:column;
   background:var(--card,#1d2247);color:var(--ink,#f4f5ff);border:1.5px solid var(--line,#2b3162);border-radius:22px;box-shadow:0 18px 60px rgba(0,0,0,.45);overflow:hidden;animation:asstUp .3s ease;font-family:inherit;direction:rtl}
 #asstP[hidden]{display:none}@keyframes asstUp{from{transform:translateY(30px);opacity:0}}
+#asstP.pop{animation:asstPop .38s cubic-bezier(.2,1.3,.4,1);transform-origin:var(--ox,10%) 100%}@keyframes asstPop{from{transform:scale(.2);opacity:0}}
+#asstP .am{animation:aMsg .3s ease}@keyframes aMsg{from{transform:translateY(8px);opacity:0}}
+#asstP .ah .hb{width:40px;height:40px;flex:0 0 40px}#asstP .ah .hide{width:auto;border-radius:999px;padding:0 10px;font-size:12px;font-weight:700}
 #asstP .ah{display:flex;align-items:center;gap:10px;padding:12px 14px;background:linear-gradient(135deg,#5b6cff,#a259ff 60%,#ff6bd6);color:#fff}
 #asstP .ah b{font-size:17px;flex:1}#asstP .ah small{display:block;font-size:12px;opacity:.9;font-weight:500}#asstP .ah button{border:none;background:rgba(255,255,255,.2);color:#fff;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer}
 #asstP .alog{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:120px}
@@ -494,18 +525,75 @@ body.asst-hide #asstBtn,body:has(#suspWall) #asstBtn,body:has(#wiz:not([hidden])
 @media print{#asstBtn,#asstP{display:none}}`;
   document.head.appendChild(s);
 }
+// הרובוט: ראש עם מסך, עיניים זוהרות, אנטנה, אוזניים
+function robotSVG(cls = "") {
+  return `<svg class="abot ${cls}" viewBox="0 0 64 64" aria-hidden="true"><g class="body">
+    <line x1="32" y1="9" x2="32" y2="16" stroke="#e8ebff" stroke-width="2.5" stroke-linecap="round"/><circle class="ant" cx="32" cy="7.5" r="3.6" fill="#7cf5ff"/>
+    <rect class="ear l" x="6.5" y="27" width="6" height="12" rx="3" fill="#dfe4ff"/><rect class="ear r" x="51.5" y="27" width="6" height="12" rx="3" fill="#dfe4ff"/>
+    <rect x="11" y="15" width="42" height="36" rx="14" fill="#f2f4ff"/><rect x="15.5" y="20" width="33" height="24" rx="9" fill="#1b1f45"/>
+    <g class="look"><g class="eyes"><ellipse class="eye" cx="25" cy="30" rx="3.8" ry="4.6" fill="#7cf5ff"/><ellipse class="eye" cx="39" cy="30" rx="3.8" ry="4.6" fill="#7cf5ff"/>
+      <circle cx="26.3" cy="28.3" r="1.2" fill="#fff"/><circle cx="40.3" cy="28.3" r="1.2" fill="#fff"/></g></g>
+    <path class="ms" d="M27 37.5 Q32 41.5 37 37.5" fill="none" stroke="#7cf5ff" stroke-width="2.2" stroke-linecap="round"/>
+    <ellipse class="mo" cx="32" cy="38.5" rx="3" ry="2" fill="#7cf5ff"/>
+    <circle cx="19.5" cy="38" r="2.2" fill="#ff6bd6" opacity=".55"/><circle cx="44.5" cy="38" r="2.2" fill="#ff6bd6" opacity=".55"/></g></svg>`;
+}
+const bots = () => document.querySelectorAll(".abot");
+function mood(m, ms) { bots().forEach(b => { b.classList.remove("think", "talk", "happy", "wave"); if (m) b.classList.add(m); }); clearTimeout(mood.t); if (m && ms) mood.t = setTimeout(() => mood(null), ms); }
+function sparks(el) { const r = el.getBoundingClientRect(); for (let i = 0; i < 8; i++) { const s = document.createElement("span"); s.className = "asst-spark"; s.textContent = ["✨", "⭐", "💜"][i % 3]; s.style.left = r.left + r.width / 2 - 8 + "px"; s.style.top = r.top + r.height / 2 - 8 + "px"; const a = Math.PI * 2 * i / 8; s.style.setProperty("--sx", Math.cos(a) * 48 + "px"); s.style.setProperty("--sy", Math.sin(a) * 48 + "px"); document.body.appendChild(s); setTimeout(() => s.remove(), 850); } }
+// מיקום: צד (ימין/שמאל) + גובה, נשמר. גוררים → נצמד לקצה הקרוב
+const POSK = "asstPos";
+function posGet() { try { const p = JSON.parse(localStorage.getItem(POSK) || "null"); if (p && (p.side === "l" || p.side === "r") && p.y >= 0 && p.y <= 1) return p; } catch (e) {} return { side: "l", y: 0.86 }; }
+function place(b, p, anim = true) {
+  const W = innerWidth, H = innerHeight, s = 60, m = 12, top = 70, bot = H - s - 16;
+  const x = p.side === "r" ? W - s - m : m, y = Math.max(top, Math.min(bot, top + p.y * (bot - top)));
+  b.classList.toggle("drag", !anim); b.style.setProperty("--x", x + "px"); b.style.setProperty("--y", y + "px"); b.style.setProperty("--tx", (p.side === "r" ? 38 : -38) + "px");
+}
+function dragify(b, onTap) {
+  let st = null;
+  b.addEventListener("pointerdown", e => { st = { x: e.clientX, y: e.clientY, ox: parseFloat(b.style.getPropertyValue("--x")), oy: parseFloat(b.style.getPropertyValue("--y")), moved: false, id: e.pointerId }; try { b.setPointerCapture(e.pointerId); } catch (_) {} });
+  b.addEventListener("pointermove", e => { if (!st) return; const dx = e.clientX - st.x, dy = e.clientY - st.y; if (!st.moved && Math.hypot(dx, dy) < 8) return; st.moved = true; b.classList.add("drag"); b.style.setProperty("--x", st.ox + dx + "px"); b.style.setProperty("--y", st.oy + dy + "px"); });
+  const end = e => { if (!st) return; const s0 = st; st = null; b.classList.remove("drag", "tuck");
+    if (!s0.moved) { onTap(); return; }
+    const x = parseFloat(b.style.getPropertyValue("--x")), y = parseFloat(b.style.getPropertyValue("--y")), H = innerHeight;
+    const p = { side: x + 30 > innerWidth / 2 ? "r" : "l", y: Math.max(0, Math.min(1, (y - 70) / Math.max(1, H - 60 - 16 - 70))) };
+    try { localStorage.setItem(POSK, JSON.stringify(p)); } catch (_) {} place(b, p); mood("happy", 800); };
+  b.addEventListener("pointerup", end); addEventListener("pointerup", end); // גם אם האצבע "ברחה" מהרובוט b.addEventListener("pointercancel", () => { if (st) { st = null; b.classList.remove("drag"); place(b, posGet()); } });
+  b.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onTap(); } });
+}
+// גוללים → מתחבא חצי לצד; עוצרים → חוזר
+function tuckOnScroll(b) { let t = 0, lastY = scrollY; addEventListener("scroll", () => { if (Math.abs(scrollY - lastY) < 6) return; lastY = scrollY; if (!panel || panel.hidden) b.classList.add("tuck"); clearTimeout(t); t = setTimeout(() => b.classList.remove("tuck"), 1100); }, { passive: true }); }
+// כותבים בשדה כלשהו בדף → הרובוט זז לגמרי מהדרך (שלא יסתיר כפתורים ליד המקלדת)
+function awayWhileTyping(b) {
+  const isField = el => el && el.matches && el.matches("input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select,[contenteditable]") && !el.closest("#asstP");
+  document.addEventListener("focusin", e => { if (isField(e.target)) b.classList.add("away"); });
+  document.addEventListener("focusout", () => setTimeout(() => { if (!isField(document.activeElement)) b.classList.remove("away"); }, 200));
+}
+// העיניים מסתכלות לכיוון האצבע/העכבר
+function eyesFollow() { addEventListener("pointermove", e => { const b = document.getElementById("asstBtn"); if (!b) return; const r = b.getBoundingClientRect(), dx = e.clientX - (r.left + 30), dy = e.clientY - (r.top + 30), d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 300);
+  b.querySelectorAll(".look").forEach(l => { if (!l.closest(".think")) l.style.transform = `translate(${(dx / d * 2.6 * k).toFixed(2)}px,${(dy / d * 2.2 * k).toFixed(2)}px)`; }); }, { passive: true }); }
+function hideToday() { try { localStorage.setItem("asstHideDay", new Date().toDateString()); } catch (e) {} closePanel(); const b = document.getElementById("asstBtn"); if (b) b.remove(); toastSay("נתראה מחר 👋 אפשר להחזיר אותי בפרופיל ← תצוגה"); }
+function greet(b) {
+  let seen = false; try { seen = localStorage.getItem("asstGreeted") === "1"; localStorage.setItem("asstGreeted", "1"); } catch (e) {}
+  if (seen) return;
+  setTimeout(() => { if (!b.isConnected || b.getClientRects().length === 0 || getComputedStyle(b).display === "none") return;
+    mood("wave", 1400); const r = b.getBoundingClientRect(), t = document.createElement("div"); t.className = "asst-tip"; t.innerHTML = "היי! אני מערכתי 👋<small>אפשר לשאול אותי הכל – ולגרור אותי לאן שנוח</small>";
+    document.body.appendChild(t); const tw = t.offsetWidth; t.style.top = Math.max(10, r.top - t.offsetHeight - 10) + "px"; t.style.left = Math.min(innerWidth - tw - 10, Math.max(10, r.left + 30 - tw / 2)) + "px";
+    const bye = () => { t.remove(); removeEventListener("pointerdown", bye, true); }; addEventListener("pointerdown", bye, true); setTimeout(bye, 6000); }, 1800);
+}
 function build() {
   css();
-  const b = document.createElement("button"); b.id = "asstBtn"; b.type = "button"; b.setAttribute("aria-label", "מערכתי – העוזר"); b.title = "מערכתי – העוזר"; b.textContent = "🤖"; document.body.appendChild(b);
+  const b = document.createElement("button"); b.id = "asstBtn"; b.type = "button"; b.setAttribute("aria-label", "מערכתי – העוזר (אפשר לגרור)"); b.title = "מערכתי – העוזר (אפשר לגרור)"; b.innerHTML = robotSVG(); document.body.appendChild(b);
+  place(b, posGet()); addEventListener("resize", () => place(b, posGet()));
   panel = document.createElement("div"); panel.id = "asstP"; panel.hidden = true; panel.setAttribute("role", "dialog"); panel.setAttribute("aria-label", "מערכתי");
-  panel.innerHTML = `<div class="ah"><span style="font-size:26px">🤖</span><b>מערכתי<small>העוזר שלך באפליקציה</small></b><button type="button" class="ax" aria-label="סגור">✕</button></div>
+  panel.innerHTML = `<div class="ah"><span class="hb">${robotSVG()}</span><b>מערכתי<small>העוזר שלך באפליקציה</small></b><button type="button" class="hide" title="להסתיר את הרובוט עד מחר">👋 הסתר</button><button type="button" class="ax" aria-label="סגור">✕</button></div>
     <div class="alog" aria-live="polite"></div><div class="achips">${CHIPS.map(c => `<button type="button">${esc(c)}</button>`).join("")}</div>
     <div class="quota" id="asstQ"></div>
     <form><input type="text" placeholder="מה צריך? כתוב או דבר 🎤" enterkeyhint="send" autocomplete="off" aria-label="ההודעה שלך"><button type="button" class="mic" aria-label="דבר">🎤</button><button type="submit" aria-label="שלח">➤</button></form>`;
   document.body.appendChild(panel);
   log = panel.querySelector(".alog"); inp = panel.querySelector("input");
-  b.onclick = () => (panel.hidden ? openPanel() : closePanel());
+  dragify(b, () => (panel.hidden ? openPanel() : closePanel())); tuckOnScroll(b); awayWhileTyping(b); eyesFollow(); greet(b);
   panel.querySelector(".ax").onclick = closePanel;
+  panel.querySelector(".hide").onclick = hideToday;
   panel.querySelector("form").onsubmit = e => { e.preventDefault(); const v = inp.value.trim(); if (v) { inp.value = ""; send(v); } };
   panel.querySelectorAll(".achips button").forEach(c => c.onclick = () => send(c.textContent));
   const mic = panel.querySelector(".mic"), SR = root.SpeechRecognition || root.webkitSpeechRecognition;
@@ -513,13 +601,14 @@ function build() {
   try { hist = JSON.parse(sessionStorage.getItem("asst:hist") || "[]"); } catch (e) { hist = []; }
   if (hist.length) hist.slice(-8).forEach(h => bubble(h.role === "user" ? "me" : "bot", h.html || esc(h.text)));
 }
-function openPanel() { panel.hidden = false; if (!log.children.length) bubble("bot", HELP); quota(); setTimeout(() => inp.focus({ preventScroll: true }), 50); log.scrollTop = log.scrollHeight; }
+function openPanel() { const b = document.getElementById("asstBtn"); if (b) { const r = b.getBoundingClientRect(); panel.style.setProperty("--ox", (r.left + 30 < innerWidth / 2 ? 8 : 92) + "%"); sparks(b); } document.querySelectorAll(".asst-tip").forEach(t => t.remove());
+  panel.classList.remove("pop"); void panel.offsetWidth; panel.classList.add("pop"); panel.hidden = false; mood("wave", 1300); if (!log.children.length) bubble("bot", HELP); quota(); setTimeout(() => inp.focus({ preventScroll: true }), 50); log.scrollTop = log.scrollHeight; }
 function closePanel() { panel.hidden = true; }
 function closePanelSoft() { if (!panel) return; if (innerWidth < 700) panel.hidden = true; }
 function quota() { const st = aiLS(), el = panel && panel.querySelector("#asstQ"); if (!el) return; el.textContent = st.day === new Date().toDateString() && typeof st.left === "number" ? (st.left > 0 ? `🧠 נשארו לך היום ${st.left} שאלות למוח החכם` : "🧠 המוח החכם נח עד מחר – המוח המהיר ממשיך לעזור ⚡") : ""; }
 function bubble(who, html, cls = "") { const d = document.createElement("div"); d.className = `am ${who} ${cls}`; d.innerHTML = html; log.appendChild(d); log.scrollTop = log.scrollHeight; return d; }
 function remember(role, text, html, ai) { hist.push({ role, text: String(text).slice(0, 400), html: html ? String(html).slice(0, 2000) : undefined, ...(ai ? { ai: 1 } : {}) }); hist = hist.slice(-12); try { sessionStorage.setItem("asst:hist", JSON.stringify(hist)); } catch (e) {} }
-function botSay(html, cls) { if (!panel) return; if (panel.hidden) panel.hidden = false; const d = bubble("bot", html, cls); remember("bot", d.textContent, html, cls === "ai"); return d; }
+function botSay(html, cls) { if (!panel) return; if (panel.hidden) panel.hidden = false; mood("talk", Math.min(2200, 500 + String(html).length * 12)); const d = bubble("bot", html, cls); remember("bot", d.textContent, html, cls === "ai"); return d; }
 function say(t) { botSay(esc(t)); }
 function toastSay(html) { const t = document.createElement("div"); t.className = "asst-toast"; t.innerHTML = "🤖 " + html; document.body.appendChild(t); setTimeout(() => t.remove(), 3200); }
 function listen(SR, mic) {
@@ -571,15 +660,18 @@ async function local(r, pre = "") {
   await sleep(450); await act(r.id, r.arg, { say: sayFor(r) });
 }
 function wire() { log.querySelectorAll("button.go:not([data-w])").forEach(b => { b.dataset.w = 1; b.onclick = () => { let a = null; try { a = JSON.parse(b.dataset.g || "null"); } catch (e) {} act(b.dataset.a, a ?? undefined); }; }); }
-async function withDots(f) { const d = document.createElement("div"); d.className = "dots"; d.innerHTML = "<i></i><i></i><i></i>"; log.appendChild(d); log.scrollTop = log.scrollHeight; try { return await f(); } finally { d.remove(); } }
+async function withDots(f) { const d = document.createElement("div"); d.className = "dots"; d.innerHTML = "<i></i><i></i><i></i>"; log.appendChild(d); log.scrollTop = log.scrollHeight; mood("think"); try { return await f(); } finally { d.remove(); mood(null); } }
 
 // ===================== הפעלה =====================
 const api = { think, norm, ACT, INT, mathExpr, equation, findSubject, findDay, findLevel, findColor, answer, act };
 if (typeof module !== "undefined" && module.exports) { module.exports = api; return; }
 root.Asst = api;
+api.show = () => { try { localStorage.removeItem("asstOff"); localStorage.removeItem("asstHideDay"); } catch (e) {} if (!document.getElementById("asstBtn")) { if (panel) { panel.remove(); panel = null; } build(); } };
+api.off = () => { try { localStorage.setItem("asstOff", "1"); } catch (e) {} const b = document.getElementById("asstBtn"); if (b) b.remove(); if (panel) panel.hidden = true; };
 function start() {
   if (document.getElementById("asstBtn")) return;
-  try { if (localStorage.getItem("asstOff") === "1") return; } catch (e) {}
+  let off = false; try { off = localStorage.getItem("asstOff") === "1" || localStorage.getItem("asstHideDay") === new Date().toDateString(); } catch (e) {}
+  if (off) { resume(); return; } // מוסתר – אבל פעולה שהתחילה בדף אחר עדיין מסתיימת
   build(); resume();
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();

@@ -25,7 +25,8 @@ await p.evaluateOnNewDocument(() => {
   localStorage.setItem("tef", JSON.stringify({ d: "2026-11-02", a: "yes" })); localStorage.setItem("bday", JSON.stringify({ d: 12, m: 3, share: true }));
 });
 const go = async u => { await p.goto("http://localhost:8787/" + u, { waitUntil: "domcontentloaded" }); await sleep(1800); };
-const open = async () => { if (await p.$eval("#asstP", e => e.hidden)) await p.click("#asstBtn"); await sleep(250); };
+// הרובוט מתחבא חצי כשגוללים וחוזר אחרי שנייה – מחכים שיחזור לפני שלוחצים
+const open = async () => { if (await p.$eval("#asstP", e => e.hidden)) { await p.waitForFunction(() => { const b = document.getElementById("asstBtn"); return b && !/tuck|away/.test(b.className); }, { timeout: 4000 }).catch(() => {}); await sleep(500); await p.click("#asstBtn"); } await sleep(250); };
 const send = async (t, w = 1300) => { await open(); await p.type("#asstP input", t); await p.keyboard.press("Enter"); await sleep(w); };
 const lastBot = () => p.$$eval("#asstP .am.bot", l => (l[l.length - 1] || {}).innerText || "");
 
@@ -74,6 +75,24 @@ log(/נשארו לך היום 19/.test(await p.$eval("#asstQ", e => e.innerText)
 ai = { ok: false, error: "quota", left: 0 };
 await send("משהו ממש פתוח ומוזר על החיים", 2000);
 log(/20 השאלות|לא בטוח/.test(await p.$eval("#asstP .alog", e => e.innerText)), "after the quota → fast brain keeps helping");
+// גרירה לצד השני, נשמר; מסתתר בזמן הקלדה; "הסתר" להיום ומחזירים מהפרופיל
+await go("index.html"); await p.evaluate(() => document.getElementById("asstP").hidden = true);
+let bb = await (await p.$("#asstBtn")).boundingBox();
+await p.mouse.move(bb.x + 30, bb.y + 30); await p.mouse.down(); await p.mouse.move(330, 300, { steps: 8 }); await p.mouse.up(); await sleep(700);
+bb = await (await p.$("#asstBtn")).boundingBox();
+log(bb.x > 250 && JSON.parse(await p.evaluate(() => localStorage.getItem("asstPos"))).side === "r", "drag the robot → snaps to the right side and remembers", JSON.stringify(bb));
+log(await p.$eval("#asstP", e => e.hidden), "dragging doesn't open the chat");
+await p.evaluate(() => { const i = document.createElement("input"); i.id = "tmpIn"; document.body.prepend(i); i.focus(); }); await sleep(300);
+log(await p.$eval("#asstBtn", e => e.classList.contains("away")), "typing in a field → robot moves out of the way");
+await p.evaluate(() => { document.getElementById("tmpIn").blur(); document.getElementById("tmpIn").remove(); }); await sleep(500);
+log(!(await p.$eval("#asstBtn", e => e.classList.contains("away"))), "…and comes back");
+await open(); await p.click("#asstP .hide"); await sleep(400);
+log(!(await p.$("#asstBtn")), "'👋 הסתר' hides it for today");
+await p.reload({ waitUntil: "domcontentloaded" }); await sleep(1800);
+log(!(await p.$("#asstBtn")), "…still hidden after reopening");
+await p.evaluate(() => openProfile()); await sleep(300); await p.evaluate(() => { document.querySelector('[data-sec="theme"]').open = true; }); await p.click("#pfAsst"); await sleep(500);
+log(await p.$("#asstBtn"), "profile → 'להציג את העוזר' brings it back");
+await p.evaluate(() => document.getElementById("profDlg").close());
 // אחרי הרשמה בלבד
 const p2 = await ctx.newPage(); await p2.evaluateOnNewDocument(() => { window.name = "seeded"; localStorage.clear(); });
 await p2.setRequestInterception(true); p2.on("request", q => /^http:\/\/localhost/.test(q.url()) ? q.continue() : q.abort());
