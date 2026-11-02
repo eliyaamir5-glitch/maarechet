@@ -100,6 +100,13 @@ input,select{width:100%;border:1.5px solid var(--line);border-radius:10px;paddin
         <p class="note" style="margin:8px 0 0">אצל תלמיד אמיתי זה מופיע לבד, פעם אחת, כשמגיע רצף (כל 10 שיעורים) או כשהרצף נשבר.</p>
       </div>
 
+      <div class="box"><h2>🎉 מצב חג (הדגמה)</h2>
+        <div class="seg" id="holBtns"></div>
+        <div class="row" style="margin-top:8px;align-items:center;gap:6px"><span class="note" style="margin:0">🕎 לילה בחנוכה:</span><div class="seg" id="holNight"></div></div>
+        <div class="row" style="margin-top:8px"><button class="btn" id="holSoon">⏳ ספירה לאחור (עוד 10 ימים חנוכה)</button><button class="btn" id="holOff">✖ בלי חג</button></div>
+        <p class="note" style="margin:8px 0 0">אצל תלמיד אמיתי החג מופיע לבד בתאריך שלו (לפי הלוח העברי), בכל העמודים. בימי זיכרון – עיצוב שקט, בלי אפקטים.</p>
+      </div>
+
       <div class="box"><h2>🧭 מעבר למסך</h2>
         <div class="nav" id="nav"></div>
       </div>
@@ -418,6 +425,14 @@ document.querySelectorAll("#fxBtns [data-fx]").forEach(b=>b.onclick=()=>{const v
     d.getElementById("evList").innerHTML=`<div class="ev"><span class="i">⭐</span><span><b>צל"ש באנגלית</b><small>היום · שיעור 3</small><small>אלוף! המורה שם לב אליך 🌟</small></span></div>`;d.getElementById("evDlg").showModal()}
   else w.celebrate("גמרא",+v);
 })});
+// 🎉 מצב חג: טוענים את האפליקציה בדמו עם החג שנבחר (נשמר בדמו גם במעבר בין עמודים, עד "בלי חג")
+const HOLS=[["hanukkah","🕎 חנוכה"],["purim","🎭 פורים"],["atzmaut","🇮🇱 יום העצמאות"],["zikaron","🕯️ יום הזיכרון"],["shoah","🕯️ יום השואה"],["lagbaomer","🔥 ל\"ג בעומר"],["rosh","🍎 ראש השנה"],["kippur","🤍 יום כיפור"],["sukkot","🌿 סוכות"],["simchat","📜 שמחת תורה"],["tubishvat","🌳 ט\"ו בשבט"],["pesach","🍷 פסח"],["yerushalayim","✨ יום ירושלים"],["shavuot","🌾 שבועות"],["tishabav","🕯️ תשעה באב"]];
+let holNight=3;
+function holGo(q){cfg.page="index.html";saveCfg();markNav();$("frame").addEventListener("load",()=>[400,1200,2200].forEach(t=>setTimeout(()=>{try{$("frame").contentWindow.document.querySelectorAll("dialog[open]").forEach(d=>d.close());$("frame").contentWindow.document.querySelectorAll(".upd-pop").forEach(x=>x.remove())}catch(e){}},t)),{once:true});$("frame").src=`index.html?${q}&d=${Date.now()}`}
+seg("holBtns",HOLS,"",k=>holGo(`hol=${k}&holday=${k==="hanukkah"?holNight:1}`));
+seg("holNight",[1,2,3,4,5,6,7,8].map(n=>[n,String(n)]),holNight,n=>{holNight=n;$("holBtns").querySelectorAll("button").forEach((b,i)=>b.classList.toggle("on",i===0));holGo(`hol=hanukkah&holday=${n}`)});
+$("holSoon").onclick=()=>{$("holBtns").querySelectorAll("button").forEach(b=>b.classList.remove("on"));holGo("hol=hanukkah&holnext=10")};
+$("holOff").onclick=()=>{$("holBtns").querySelectorAll("button").forEach(b=>b.classList.remove("on"));holGo("hol=off")};
 $("rePop").onclick=()=>{delete host.store.updatesSeen;go("index.html")};
 $("newStudent").onclick=()=>{for(const k of Object.keys(host.store))delete host.store[k];simStore();cfg.page="index.html";saveCfg();markNav();$("frame").src="index.html"};
 $("reset").onclick=()=>{if(!confirm("לאפס את הדמו להגדרות ההתחלה?"))return;cfg=Object.assign({},DEF,{day:cfg.day});host.staffUpdates=[];host.codes={};host.sim={maint:null,susp:null};host.ownMsgs=[];simMark();Object.assign(host,JSON.parse(INITIAL));saveCfg();applyTime();panel();buildStore(false);$("frame").src="index.html"};

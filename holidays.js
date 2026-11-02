@@ -43,7 +43,7 @@
     if (prev && C.BY[prev.k]) {
       const def = C.BY[prev.k], st = C.ilNow(Date.now()).ymd;
       const h = Object.assign({}, def, { start: st, end: C.add(st, def.len - 1), day: prev.d, eve: false, preview: true });
-      return prev.n != null ? { next: Object.assign(h, { inDays: prev.n }) } : { now: h };
+      return prev.n != null ? { next: Object.assign(h, { inDays: prev.n, start: C.add(st, prev.n), end: C.add(st, prev.n + def.len - 1) }) } : { now: h };
     }
     if (ctl.off) return {};
     const off = k => ctl.offKeys && ctl.offKeys[k];
