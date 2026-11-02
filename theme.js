@@ -93,25 +93,27 @@
   window.addEventListener("error", e => { try { if (e && e.message) report(e.message, `${e.filename || ""}:${e.lineno || 0}:${e.colno || 0}`); } catch (x) {} });
   window.addEventListener("unhandledrejection", e => { try { const r = e && e.reason; report(r && (r.name === "AbortError" || r.name === "NotAllowedError" ? "" : r.message || String(r)), r && r.stack ? String(r.stack).split("\n")[1] || "" : "promise"); } catch (x) {} });
   window.reportError2 = report; // לבדיקות
-  // 🔄 עדכון אוטומטי: בכל פתיחה / חזרה לאפליקציה בודקים אם יש גרסה חדשה.
-  // כשהגרסה החדשה מוכנה – מרעננים פעם אחת (לא באמצע כתיבה או חלון פתוח)
+  // 🔄 עדכון שקט: בודקים גרסה חדשה בכל פתיחה, כל 2 דקות ובכל חזרה לאפליקציה.
+  // כשהיא מוכנה – מחליפים בלי שירגישו: כשהאפליקציה ברקע, או אחרי 30 שניות בלי מגע (לא באמצע כתיבה/חלון),
+  // וחוזרים לאותו מקום במסך
   if ("serviceWorker" in navigator && !window.__DEMO) {
     const check = () => navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {});
     addEventListener("load", () => setTimeout(check, 4000));
+    setInterval(() => { if (!document.hidden) check(); }, 2 * 60e3);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) check(); });
-    let had = !!navigator.serviceWorker.controller, pending = false;
-    const busy = () => !!document.querySelector("dialog[open],#fx,#recap,#delFx:not([hidden])") || (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) || !!(document.getElementById("wiz") && !document.getElementById("wiz").hidden);
+    let had = !!navigator.serviceWorker.controller, pending = false, lastTouch = Date.now();
+    for (const ev of ["pointerdown", "keydown", "scroll", "touchstart"]) addEventListener(ev, () => { lastTouch = Date.now(); }, { passive: true, capture: true });
+    const busy = () => !!document.querySelector("dialog[open],#fx,#recap,#delFx:not([hidden]),#asstP:not([hidden])") || (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) || !!(document.getElementById("wiz") && !document.getElementById("wiz").hidden);
     const reload = () => {
-      try { const t = +sessionStorage.getItem("swReloadAt") || 0; if (Date.now() - t < 60000) return; sessionStorage.setItem("swReloadAt", String(Date.now())); } catch (e) {}
-      const n = document.createElement("div"); n.textContent = "✨ יש גרסה חדשה – מעדכן…";
-      n.style.cssText = "position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:99999;background:#5b6cff;color:#fff;border-radius:999px;padding:10px 18px;font:700 15px system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.3)";
-      (document.body || document.documentElement).appendChild(n); setTimeout(() => location.reload(), 900);
+      try { const t = +sessionStorage.getItem("swReloadAt") || 0; if (Date.now() - t < 60000) return; sessionStorage.setItem("swReloadAt", String(Date.now())); sessionStorage.setItem("softPos", JSON.stringify({ y: scrollY, at: Date.now(), path: location.pathname + location.hash })); } catch (e) {}
+      location.reload();
     };
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      if (!had) { had = true; return; } // התקנה ראשונה – אין מה לרענן
-      if (!busy()) reload(); else pending = true;
-    });
-    document.addEventListener("visibilitychange", () => { if (pending && !document.hidden && !busy()) { pending = false; reload(); } });
-    setInterval(() => { if (pending && !busy()) { pending = false; reload(); } }, 15000);
+    const tryApply = () => { if (!pending) return; if (document.hidden || (!busy() && Date.now() - lastTouch > 30000)) { pending = false; reload(); } };
+    window.SoftUpdate = { request() { pending = true; tryApply(); } };
+    navigator.serviceWorker.addEventListener("controllerchange", () => { if (!had) { had = true; return; } pending = true; tryApply(); });
+    document.addEventListener("visibilitychange", tryApply);
+    setInterval(tryApply, 5000);
+    // אחרי עדכון שקט – חוזרים לאותו מקום במסך
+    try { const sp = JSON.parse(sessionStorage.getItem("softPos") || "null"); if (sp && Date.now() - sp.at < 20000 && sp.path === location.pathname + location.hash) { sessionStorage.removeItem("softPos"); addEventListener("load", () => setTimeout(() => scrollTo(0, sp.y), 60)); } } catch (e) {}
   }
 })();

@@ -128,7 +128,7 @@
     url() { return ((typeof SERVER_BASE !== "undefined" && SERVER_BASE) || "") + "/api/updates"; },
     feedUrl() { return ((typeof SERVER_BASE !== "undefined" && SERVER_BASE) || "") + "/api/feed"; },
     // סקרים, אירועים, תשובות לשאלות וימי הולדת – מגיעים יחד עם העדכונים
-    feed() { const f = load("feedCache", null) || {}, A = x => Array.isArray(x) ? x.filter(o => o && typeof o === "object") : []; return { polls: A(f.polls), events: A(f.events), answers: A(f.answers), birthdays: A(f.birthdays), changes: A(f.changes), maint: f.maint && typeof f.maint === "object" ? f.maint : null, at: +f.at || 0 }; },
+    feed() { const f = load("feedCache", null) || {}, A = x => Array.isArray(x) ? x.filter(o => o && typeof o === "object") : []; return { msgs: A(f.msgs), polls: A(f.polls), events: A(f.events), answers: A(f.answers), birthdays: A(f.birthdays), changes: A(f.changes), maint: f.maint && typeof f.maint === "object" ? f.maint : null, at: +f.at || 0 }; },
     cached() { const c = load(KEY, null); return c && Array.isArray(c.list) ? c.list.filter(u => u && typeof u === "object" && u.id != null && +u.expiresAt > Date.now()) : []; },
     async refresh() {
       try {
@@ -137,7 +137,7 @@
         try { const r = await fetch(this.feedUrl(), { cache: "no-store" }); answered = r.status === 404 || r.ok; if (r.ok) j = await r.json(); } catch (e) {}
         // האם השרת כבר מכיר את הפיד המשולב (סקרים, שאלות וכו') – אם לא, התכונות האלה מוסתרות
         if (answered) try { localStorage.setItem("feedOk", j && j.ok ? "1" : "0"); } catch (e) {}
-        if (j && j.ok && Array.isArray(j.updates)) save("feedCache", { at: Date.now(), polls: j.polls || [], events: j.events || [], answers: j.answers || [], birthdays: j.birthdays || [], changes: j.changes || [], maint: j.maint && typeof j.maint === "object" ? j.maint : null });
+        if (j && j.ok && Array.isArray(j.updates)) save("feedCache", { at: Date.now(), msgs: Array.isArray(j.msgs) ? j.msgs : [], polls: j.polls || [], events: j.events || [], answers: j.answers || [], birthdays: j.birthdays || [], changes: j.changes || [], maint: j.maint && typeof j.maint === "object" ? j.maint : null });
         else { const r = await fetch(this.url(), { cache: "no-store" }); j = await r.json(); }
         if (j && j.ok && Array.isArray(j.updates)) { save(KEY, { at: Date.now(), list: j.updates }); if (this.onFeed) try { this.onFeed(); } catch (e) {} return true; }
       } catch (e) {}
@@ -299,10 +299,11 @@
       this.redraw = draw;
       const tryPop = () => { if (ok() && !document.hidden) this.popup(box, getCls()); };
       draw();
-      const tick = async () => { await this.refresh(); draw(); tryPop(); this.badge(getCls()); }; // מציירים גם אם הרענון נכשל, כדי להעלים עדכונים שפג תוקפם
+      const tick = async () => { await this.refresh(); draw(); tryPop(); this.badge(getCls()); if (typeof this.onFeed === "function") try { this.onFeed(); } catch (e) {} }; // מציירים גם אם הרענון נכשל, כדי להעלים עדכונים שפג תוקפם
       setTimeout(tryPop, 700); // מהמטמון, מיד בפתיחה
       tick();
-      setInterval(tick, 60e3);
+      // כל 20 שניות כשהאפליקציה פתוחה (השרת שומר עותק משותף, אז זה זול), ומיד כשחוזרים אליה
+      setInterval(() => { if (!document.hidden) tick(); }, 20e3);
       document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
       this.retryPop = tryPop;
     },

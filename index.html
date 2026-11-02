@@ -2158,7 +2158,7 @@ function platLabel(){
 }
 var helloAt=0,toasted=new Set();
 async function hello(){
-  if(!profile||!profile.cls||window.__DEMO||document.hidden||Date.now()-helloAt<150e3)return;
+  if(!profile||!profile.cls||window.__DEMO||document.hidden||Date.now()-helloAt<(document.visibilityState==="visible"&&hello.back?45e3:150e3))return;hello.back=false;
   helloAt=Date.now();
   const inst=!!((window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone);
   const r=await feedPost({action:"hello",device:deviceId(),name:`${profile.first||""} ${profile.last||""}`.trim(),cls:profile.cls,eng:profile.eng||"",math:profile.math||"",major:profile.major||"",
@@ -2169,12 +2169,7 @@ async function hello(){
   if(Array.isArray(r.msgs)){
     const list=r.msgs.filter(m=>m&&typeof m==="object"&&m.id!=null&&typeof m.text==="string").map(m=>({id:String(m.id),text:m.text,at:+m.at||0,exp:+m.exp||0,...(m.from==="principal"?{from:"principal"}:{})})).slice(0,30);
     try{localStorage.setItem("ownerMsgs",JSON.stringify(list))}catch(e){}
-    // טוסט פעם אחת לכל הודעה (נזכר גם אחרי סגירה ופתיחה)
-    let tw=[];try{tw=JSON.parse(localStorage.getItem("ownerToast")||"[]");if(!Array.isArray(tw))tw=[]}catch(e){tw=[]}
-    const rd=ownRead(),fresh=list.filter(m=>m.exp>Date.now()&&!rd.includes(m.id)&&!tw.includes(m.id)&&!toasted.has(m.id));
-    fresh.forEach(m=>toasted.add(m.id));
-    if(fresh.length){try{localStorage.setItem("ownerToast",JSON.stringify([...tw,...fresh.map(m=>m.id)].slice(-100)))}catch(e){}
-      if(!document.getElementById("suspWall"))toast(msgFrom(fresh[0]),escH(fresh[0].text.slice(0,80)))}
+    ownToastNew(list);
   }
   if(Array.isArray(r.wishes))gotWishes(r.wishes);
   applyCtl();renderOwn();
@@ -2182,7 +2177,20 @@ async function hello(){
 // ---- מצב מהשרת: השעיה (מחסום) ומצב עדכון (פס + "בעבודה") ----
 function appCtl(){try{const c=JSON.parse(localStorage.getItem("appCtl")||"{}");return c&&typeof c==="object"&&!Array.isArray(c)?c:{}}catch(e){return{}}}
 const msgFrom=m=>m&&m.from==="principal"?"📩 הודעה מהנהלת הישיבה":"📩 הודעה ממנהל המערכת";
-function ownMsgs(){try{const a=JSON.parse(localStorage.getItem("ownerMsgs")||"[]");return Array.isArray(a)?a.filter(m=>m&&typeof m==="object"&&m.id!=null&&typeof m.text==="string"&&+m.exp>Date.now()):[]}catch(e){return[]}}
+function ownMsgs(){
+  let a=[];try{a=JSON.parse(localStorage.getItem("ownerMsgs")||"[]");if(!Array.isArray(a))a=[]}catch(e){a=[]}
+  // גם הודעות לכולם/לכיתה שמגיעות מהר דרך הפיד
+  try{const f=window.Updates&&Updates.feed?Updates.feed().msgs:[],c=profile&&profile.cls;for(const m of f||[])if(m&&(m.to==="all"||m.to===c)&&!a.some(x=>String(x.id)===String(m.id)))a.push({id:String(m.id),text:m.text,at:+m.at||0,exp:+m.exp||0,...(m.from==="principal"?{from:"principal"}:{})})}catch(e){}
+  return a.filter(m=>m&&typeof m==="object"&&m.id!=null&&typeof m.text==="string"&&+m.exp>Date.now());
+}
+// טוסט פעם אחת לכל הודעה חדשה (נזכר גם אחרי סגירה ופתיחה)
+function ownToastNew(list){
+  let tw=[];try{tw=JSON.parse(localStorage.getItem("ownerToast")||"[]");if(!Array.isArray(tw))tw=[]}catch(e){tw=[]}
+  const rd=ownRead(),fresh=list.filter(m=>m.exp>Date.now()&&!rd.includes(m.id)&&!tw.includes(m.id)&&!toasted.has(m.id));
+  fresh.forEach(m=>toasted.add(m.id));
+  if(fresh.length){try{localStorage.setItem("ownerToast",JSON.stringify([...tw,...fresh.map(m=>m.id)].slice(-100)))}catch(e){}
+    if(!document.getElementById("suspWall"))toast(msgFrom(fresh[0]),escH(fresh[0].text.slice(0,80)))}
+}
 function ownRead(){try{const a=JSON.parse(localStorage.getItem("ownerRead")||"[]");return Array.isArray(a)?a.map(String):[]}catch(e){return[]}}
 // 📩 הודעות ממנהל המערכת – מוצגות עד שלוחצים "קראתי" (גם כשהפיד לא זמין, וגם במצב עדכון)
 function renderOwn(){
@@ -2252,8 +2260,9 @@ if(window.Updates){
   setInterval(()=>Updates.retryPop&&Updates.retryPop(),2500);
 }
 // "שלום" לשרת + מצב השעיה/עדכון: בפתיחה, כל 3 דקות, וכשחוזרים לאפליקציה (גם אם updates.js לא נטען)
+if(window.Updates)Updates.onFeed=()=>{if(window.__DEMO)return;renderOwn();ownToastNew(ownMsgs())};
 {const sf=f=>{try{f()}catch(e){console.warn(e)}};sf(applyCtl);sf(renderOwn);setTimeout(()=>hello().catch(()=>{}),1500);setInterval(()=>hello().catch(()=>{}),3*60e3);
-  document.addEventListener("visibilitychange",()=>{if(!document.hidden){sf(applyCtl);hello().catch(()=>{})}})}
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden){sf(applyCtl);hello.back=true;hello().catch(()=>{})}})}
 if(location.hash==="#profile"){history.replaceState(null,"",location.pathname);setTimeout(()=>openProfile(),300)}
 
 // ---- עבודה בלי אינטרנט ----
@@ -2269,10 +2278,10 @@ async function versionCheck(){
     if(done===m[1])return;try{sessionStorage.setItem("verFix",m[1])}catch(e){}
     try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}
     try{const r=await navigator.serviceWorker.getRegistration();if(r)await r.update()}catch(e){}
-    toast("✨ יש גרסה חדשה","מעדכן את האפליקציה…");setTimeout(()=>location.reload(),1200);
+    if(window.SoftUpdate)SoftUpdate.request();else location.reload();
   }catch(e){}
 }
-setTimeout(versionCheck,5000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(versionCheck,1500)});
+setTimeout(versionCheck,5000);setInterval(()=>{if(!document.hidden)versionCheck()},2*60e3);document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(versionCheck,1500)});
 
 // ---- הוספה ליומן (קובץ ICS) ----
 const BYDAY=["SU","MO","TU","WE","TH","FR","SA"];

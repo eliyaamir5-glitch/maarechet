@@ -76,3 +76,12 @@ ok("same name in another class is not 'back'", r.json.departures.some(d => d.nam
   m = (await call("/api/feed", { action: "mates", device: "device-z-999999" })).json;
   ok("unregistered device gets nothing", m.ok === false);
 }
+// הפיד הציבורי: הודעות לכולם/לכיתה (לא אישיות) + שמירת עותק בנטליפיי
+{ const ot = (await call("/api/owner", { action: "login", code: "OWNERTEST1234567" })).json.token;
+  await call("/api/owner", { action: "msgSend", text: "הודעה לכולם", to: "all", hours: 24 }, { token: ot });
+  await call("/api/owner", { action: "msgSend", text: "הודעה אישית", to: "some", keys: ["0123456789abcdef01234567"], names: ["x"], hours: 24 }, { token: ot });
+  const r = await handler(new Request("http://localhost/api/feed", { headers: { origin: "https://eliyaamir5-glitch.github.io" } }), { ip: "1.1.1.1" }), j = await r.json();
+  ok("feed carries messages to everyone/class", j.msgs.some(m => m.text === "הודעה לכולם" && m.to === "all"), JSON.stringify(j.msgs));
+  ok("…but never personal messages", !j.msgs.some(m => m.text === "הודעה אישית"));
+  ok("feed is edge-cached briefly (cheap to poll)", /s-maxage=15/.test(r.headers.get("Netlify-CDN-Cache-Control") || "") && /Origin/.test(r.headers.get("Netlify-Vary") || ""), r.headers.get("Netlify-CDN-Cache-Control"));
+}

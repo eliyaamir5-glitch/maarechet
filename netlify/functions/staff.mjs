@@ -92,6 +92,9 @@ async function store() {
 }
 
 // ---- עזרים ----
+// תשובות ציבוריות שזהות לכולם (עדכונים, פיד): נטליפיי שומר עותק 15 שניות, אז גם 400 תלמידים שבודקים כל 20 שניות
+// עולים בערך כמו בקשה אחת (הפונקציה לא רצה בכל פעם). לפי כתובת המקור – כי כותרות ה-CORS שונות
+const EDGE = { "Cache-Control": "public, max-age=10", "Netlify-CDN-Cache-Control": "public, durable, s-maxage=15, stale-while-revalidate=30", "Netlify-Vary": "header=Origin" };
 function corsHeaders(origin) {
   const h = { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "Vary": "Origin" };
   if (origin && ALLOWED.some(r => r.test(origin))) {
@@ -237,7 +240,7 @@ async function handle(req, context, headers) {
     if (req.method !== "GET") return reply(405, { ok: false, error: "method" }, headers);
     const list = await S.get("updates") || [];
     const updates = activeUpdates(list).map(publicUpdate);
-    return reply(200, { ok: true, now: Date.now(), updates }, { ...headers, "Cache-Control": "public, max-age=20" });
+    return reply(200, { ok: true, now: Date.now(), updates }, { ...headers, ...EDGE });
   }
 
   // ---- ציבורי: סטי הכרטיסיות של הכיתה ----
@@ -970,7 +973,7 @@ async function owner(req, S, ip, headers) {
 async function feed(req, S, ip, headers) {
   if (req.method === "GET") {
     const now = Date.now(), today = israelDay(now);
-    const [ups, polls, events, qs, bd, rx, chg, ctl] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions", "changes", "control"].map(k => S.get(k)));
+    const [ups, polls, events, qs, bd, rx, chg, ctl, om] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions", "changes", "control", "ownerMsgs"].map(k => S.get(k)));
     return reply(200, {
       ok: true, now,
       updates: activeUpdates(ups, now).map(u => ({ ...publicUpdate(u), reacts: reactCounts(reactsOf(rx, u.id)) })),
@@ -982,7 +985,9 @@ async function feed(req, S, ip, headers) {
       birthdays: upcomingBirthdays(bd, now),
       changes: (chg || []).filter(x => x.date >= today).sort((a, b) => (a.date + a.s).localeCompare(b.date + b.s)).slice(0, 200).map(publicChange),
       maint: maintOf(ctl, now),
-    }, { ...headers, "Cache-Control": "public, max-age=20" });
+      // הודעות של המנהל/מנהל המערכת לכולם או לכיתה – מגיעות מהר דרך הפיד (הודעות אישיות – רק דרך "שלום")
+      msgs: (Array.isArray(om) ? om : []).filter(m => m.expiresAt > now && m.to !== "some").map(m => ({ id: m.id, text: m.text, to: m.to, at: m.createdAt, exp: m.expiresAt, ...(m.from ? { from: m.from } : {}) })),
+    }, { ...headers, ...EDGE });
   }
   if (req.method !== "POST") return reply(405, { ok: false, error: "method" }, headers);
   let b; try { b = await req.json(); } catch { return reply(400, { ok: false, error: "bad_request" }, headers); }
