@@ -49,6 +49,21 @@ const wrongI = it.opts.findIndex(o => !o.ok); await p.click(`.popt[data-i="${wro
 log(/❌/.test(await txt("#pFb")) && (it.opts[wrongI].why ? (await txt("#pFb")).length > 10 : true), "multiple choice: wrong option explains why");
 const rightI = it.opts.findIndex(o => o.ok); await p.click(`.popt[data-i="${rightI}"]`); await sleep(200);
 log(/✅/.test(await txt("#pFb")), "…right option → correct");
+// 🎹 מקלדת לפי נושא + הקלדה רק מהמקלדת
+await p.goto("http://localhost:8787/calc.html#t-quad", { waitUntil: "domcontentloaded" }); await sleep(800);
+log(/x/.test(await txt("#prac .pkx")) && await p.$eval("#pIn0", e => e.getAttribute("inputmode")) === "none", "equations: keypad has x (phone keyboard stays closed)");
+it = await p.evaluate(() => PR.it);
+const keys = []; it.ans.forEach((v, i) => { if (i) keys.push(", "); keys.push("x", "=", ...String(v).split("")); });
+await p.click("#pIn0"); for (const k of keys) { await p.evaluate(k => [...document.querySelectorAll("#prac .pkp button")].find(b => b.dataset.pk === k).click(), k); await sleep(15); }
+await p.click("#pChk"); await sleep(250);
+log(/✅/.test(await txt("#pFb")), "answer typed only with the keypad, as 'x=…, x=…' → correct", await p.$eval("#pIn0", e => e.value).catch(() => ""));
+await p.goto("http://localhost:8787/calc.html#t-trigright", { waitUntil: "domcontentloaded" }); await sleep(800);
+log(/°/.test(await txt("#prac .pkx")) && /π/.test(await txt("#prac .pkx")), "trigonometry: keypad has ° and π");
+await p.goto("http://localhost:8787/calc.html#t-roots", { waitUntil: "domcontentloaded" }); await sleep(800);
+log(/√/.test(await txt("#prac .pkx")), "roots: keypad has √");
+await p.click("#pKb"); await sleep(200);
+log(await p.$eval("#pIn0", e => e.getAttribute("inputmode")) === "text" && await p.$eval("#prac .pkp", e => e.classList.contains("off")), "'⌨️ מקלדת רגילה' switches to the phone keyboard");
+await p.click("#pKb"); await sleep(200);
 // התקדמות נשמרת
 await p.goto("http://localhost:8787/calc.html#topics", { waitUntil: "domcontentloaded" }); await sleep(700);
 log(/🎯 \d+/.test(await txt("#tAll")), "topics list shows practice progress 🎯");

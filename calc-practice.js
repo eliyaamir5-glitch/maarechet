@@ -467,10 +467,20 @@ normal(L) {
 
 // ---- בדיקת תשובה ----
 // מספר מתוך טקסט: "3", "-2.5", "3/4", "x=5", "−3"
+// מספרים מתוך התשובה: "3", "-2.5", "3/4", "x=5", "x=2, x=-3", וגם ביטויים: "2√3", "3π", "2^5", "√(2)/2", "45°"
+const SIMPLE = /^-?\d+(?:\.\d+)?(?:\/-?\d+(?:\.\d+)?)?$/;
 function nums(s) {
-  const t = String(s || "").replace(/[−–]/g, "-").replace(/[xyXY]\s*[=:]/g, " ").replace(/[°%]/g, "");
-  const out = []; const re = /-?\d+(?:\.\d+)?(?:\s*\/\s*-?\d+(?:\.\d+)?)?/g; let m;
-  while ((m = re.exec(t))) { const [p, q] = m[0].split("/").map(Number); if (q === 0) continue; out.push(q === undefined ? p : p / q); }
+  const t = String(s || "").replace(/[−–]/g, "-").replace(/×/g, "*").replace(/÷/g, "/").replace(/[°%]/g, "").replace(/\b[a-zA-Z]\s*(?:_?\d)?\s*[=:]/g, " ");
+  const parts = t.split(/\s*[,;]\s*|\s+ו\s*|\s+או\s+/).map(x => x.replace(/\s+/g, "")).filter(Boolean);
+  const Sci = typeof root !== "undefined" && root.Sci;
+  const out = [];
+  for (const p of parts) {
+    if (SIMPLE.test(p)) { const [a, b] = p.split("/").map(Number); if (b !== 0) out.push(b === undefined ? a : a / b); continue; }
+    if (Sci && /[√π^()*e]/.test(p) && !/[a-df-zA-Z]/.test(p.replace(/sqrt|pi/g, ""))) { try { const v = Sci.evaluate(p, { deg: true }); if (isFinite(v)) { out.push(v); continue; } } catch (e) {} }
+    // לא הצלחנו לקרוא כביטוי – לוקחים את המספרים שבתוכו (כמו קודם)
+    const re = /-?\d+(?:\.\d+)?(?:\s*\/\s*-?\d+(?:\.\d+)?)?/g; let m;
+    while ((m = re.exec(p))) { const [a, b] = m[0].split("/").map(Number); if (b === 0) continue; out.push(b === undefined ? a : a / b); }
+  }
   return out;
 }
 const near = (u, v, round) => Math.abs(u - v) <= (round != null ? 10 ** -round * 1.01 : 1e-6 * Math.max(1, Math.abs(v)));

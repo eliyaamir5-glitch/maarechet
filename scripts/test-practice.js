@@ -1,5 +1,6 @@
 // בדיקה לתרגול במחשבון: בכל נושא ובכל רמה – 300 תרגילים, בלי שגיאות, התשובה הנכונה מתקבלת,
 // ותשובה עם "טעות נפוצה" לא מתקבלת כנכונה.   node scripts/test-practice.js
+global.Sci = require("../calc-sci.js");
 const P = require("../calc-practice.js"), T = require("../calc-topics.js");
 let bad = 0, n = 0;
 const fail = (m) => { if (bad++ < 25) console.log("❌", m); };
@@ -40,5 +41,11 @@ if (P.check(it, "").ok || !P.check(it, "").empty) fail("empty input");
 if (!P.check({ kind: "set", ans: [2, -3] }, "x=-3, x=2").ok) fail("set input");
 if (P.check({ kind: "set", ans: [2, -3] }, "2").why !== "מה שכתבת נכון – אבל חסרים עוד פתרונות.") fail("partial set message");
 if (!P.check({ kind: "num", ans: -4 }, "−4").ok) fail("unicode minus");
+// תשובות עם x, שורש, π וחזקה (מהמקלדת החדשה)
+const C = (it, s, want) => { if (!!P.check(it, s).ok !== want) fail(`input "${s}" for ${JSON.stringify(it.ans)} should be ${want}`); };
+C({ kind: "num", ans: 3 }, "x=3", true); C({ kind: "set", ans: [2, -3] }, "x=2, x=-3", true); C({ kind: "set", ans: [2, -3] }, "x=2 או x=-3", true);
+C({ kind: "num", ans: 2 * Math.sqrt(3), round: 2 }, "2√3", true); C({ kind: "num", ans: 3 * Math.PI, round: 2 }, "3π", true); C({ kind: "num", ans: 32 }, "2^5", true);
+C({ kind: "num", ans: Math.sqrt(2) / 2, round: 2 }, "√(2)/2", true); C({ kind: "num", ans: 45, round: 1 }, "45°", true); C({ kind: "num", ans: 0.75 }, "3/4", true);
+C({ kind: "num", ans: 5 }, "2√3", false); C({ kind: "pair", ans: [4, -7] }, ["x=4", "y=-7"], true);
 console.log(bad ? `❌ ${bad} problems` : `✅ practice: ${P.ids.length} topics × 4 levels, ${n} exercises OK`);
 process.exitCode = bad ? 1 : 0;
