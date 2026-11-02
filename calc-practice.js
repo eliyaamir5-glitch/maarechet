@@ -504,6 +504,13 @@ function check(item, input) {
   return { ok: false };
 }
 function make(id, L) { const g = G[id]; if (!g) return null; for (let i = 0; i < 6; i++) { try { const it = g(L); if (it && (it.kind === "choice" || it.ans != null)) { it.L = L; if (it.ansT == null) it.ansT = Array.isArray(it.ans) ? it.ans.join(", ") : String(r2(it.ans, it.round ?? 4)); return it; } } catch (e) { if (i === 5) throw e; } } return null; }
-const api = { LEVELS, make, check, has: id => !!G[id], ids: Object.keys(G), nums };
+// 🎹 המקלדת של כל נושא: מקשים מיוחדים (מעבר לספרות, − / . , ⌫). k = מה נכתב, l = מה כתוב על המקש
+const KEY = { x: ["x", "x"], y: ["y", "y"], eq: ["=", "="], lp: ["(", "("], rp: [")", ")"], sq: ["^2", "x²"], pw: ["^", "xⁿ"], rt: ["√(", "√"], pi: ["π", "π"], deg: ["°", "°"], e: ["e", "e"], pm: ["±", "±"] };
+const PAD_CAT = { alg: ["x", "sq", "pw", "rt", "lp", "rp"], eq: ["x", "eq", "sq", "rt", "lp", "rp"], fn: ["x", "y", "eq", "sq", "lp", "rp"], geo: ["rt", "pi", "sq", "lp", "rp"], trig: ["deg", "rt", "sq", "pi", "lp", "rp"],
+  seq: ["pw", "sq", "lp", "rp", "rt"], exp: ["pw", "x", "eq", "lp", "rp", "rt"], calc: ["x", "sq", "pw", "lp", "rp", "pi"], prob: ["lp", "rp", "pw", "rt"] };
+const PAD_TOPIC = { powers: ["pw", "sq", "x", "lp", "rp", "rt"], roots: ["rt", "sq", "pw", "lp", "rp", "x"], percent: ["lp", "rp", "sq"], ratio: ["x", "sq", "lp", "rp"], areas: ["pi", "sq", "rt", "lp", "rp"], circle: ["deg", "pi", "rt", "sq", "lp", "rp"],
+  angles: ["deg", "sq", "lp", "rp"], pyth: ["rt", "sq", "lp", "rp"], analytic: ["rt", "sq", "x", "y", "lp", "rp"], normal: ["lp", "rp", "rt", "sq"], binom: ["pw", "lp", "rp"], log: ["pw", "x", "lp", "rp", "rt"], growth: ["pw", "lp", "rp"], expln: ["x", "e", "pi", "pw", "lp", "rp"] };
+function pad(id, cat) { return (PAD_TOPIC[id] || PAD_CAT[cat] || PAD_CAT.alg).map(k => KEY[k]); }
+const api = { LEVELS, make, check, pad, KEY, has: id => !!G[id], ids: Object.keys(G), nums };
 if (typeof module !== "undefined" && module.exports) module.exports = api; else root.Practice = api;
 })(typeof window !== "undefined" ? window : globalThis);

@@ -62,6 +62,14 @@ main{padding:16px 14px 40px;max-width:560px;margin:0 auto}
 .tlb{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:10px 12px;font:inherit;font-size:15px;cursor:pointer;text-align:start}
 .tlb small{color:var(--muted);font-size:12px;white-space:nowrap}
 .prac{border-top:2px dashed var(--line);padding-top:12px}
+.tjump{display:flex;gap:8px;margin-top:12px}.tjump .btn{margin-top:0;font-size:15px;padding:12px 8px}
+.tpl{border-top:2px dashed var(--line);padding-top:12px}
+.tform{display:flex;flex-wrap:wrap;align-items:center;gap:6px;justify-content:center;background:var(--bg);border:2px solid var(--accent);border-radius:16px;padding:14px 10px;font-size:20px;font-weight:700;line-height:2.2;font-family:Georgia,"Times New Roman",serif}
+.tin{width:62px;border:2px solid var(--line);border-radius:10px;padding:6px 4px;font:inherit;font-family:Rubik,"Segoe UI",Arial,sans-serif;font-size:18px;text-align:center;background:var(--card);color:var(--ink)}.tin.wide{width:min(260px,100%)}
+.tin:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,140,255,.25)}.tin.bad{border-color:var(--bad);animation:surShake .3s}
+@keyframes surShake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.tsel{border:2px solid var(--line);border-radius:10px;padding:6px;font:inherit;font-family:Rubik,"Segoe UI",Arial,sans-serif;font-size:16px;background:var(--card);color:var(--ink);direction:rtl}
+.tres{margin-top:10px}.tres .steps .m{display:inline-block;font-size:17px;text-align:inherit}.tres .steps .h{font-size:16px;color:var(--ink);line-height:1.9}
 .lvl{background:var(--bg);border:1.5px solid var(--line);border-radius:16px;padding:10px 12px;margin-bottom:8px}
 .lvh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.lvh b{font-size:17px}.lvh small{color:var(--muted);font-size:13px}
 .lvl input[type=range]{width:100%;margin:10px 0 2px;accent-color:var(--accent);direction:rtl}
@@ -495,13 +503,14 @@ function showTopic(t){
   const sec=(h,body)=>body?`<div class="tsec"><h3>${h}</h3>${body}</div>`:"";
   const related=Topics.TOPICS.filter(x=>x.cat===t.cat&&x.id!==t.id).slice(0,4);
   $("tOne").innerHTML=`<div><span class="tag">${Topics.CATS[t.cat][0]} ${Topics.CATS[t.cat][1]}</span><span class="tag">כיתה ${escT(t.g)}</span></div>
-    ${Practice.has(t.id)?`<button type="button" class="btn primary" id="toPrac" style="margin-top:12px">🎯 לתרגל את הנושא – לפי הרמה שלי</button>`:""}
+    <div class="tjump">${Tools.TPL[t.id]?`<button type="button" class="btn ghost" id="toTpl">📝 יש לי תרגיל – לפתור</button>`:""}${Practice.has(t.id)?`<button type="button" class="btn primary" id="toPrac">🎯 לתרגל לפי רמה</button>`:""}</div>
     ${sec("💡 מה זה?",`<p>${R(t.what)}</p>`)}
     ${t.f?sec("📌 נוסחאות וכללים",`<div class="fbox">${t.f.map(f=>`<div>${R(f)}</div>`).join("")}</div>`):""}
     ${t.how?sec("🪜 איך פותרים – שלב אחרי שלב",`<ol>${t.how.map(h=>`<li>${R(h)}</li>`).join("")}</ol>`):""}
     ${t.ex?sec("✏️ דוגמה פתורה",`<div class="fbox"><div><b>התרגיל:</b> ${R(t.ex.q)}</div></div>
       <button type="button" class="btn ghost reveal" id="tRev">👀 נסה לבד – ואז לחץ כאן לראות את הפתרון</button>
       <div id="tSol" hidden><ol class="steps">${t.ex.s.map(x=>`<li><span class="h">${R(x)}</span></li>`).join("")}</ol><div class="ans"><small>התשובה</small>${R(t.ex.a)}</div></div>`):""}
+    ${Tools.TPL[t.id]?`<div class="tsec tpl" id="tpl"></div>`:""}
     ${Practice.has(t.id)?`<div class="tsec prac" id="prac"></div>`:""}
     ${t.err?sec("⚠️ טעויות נפוצות",`<div class="warn"><ul>${t.err.map(e=>`<li>${R(e)}</li>`).join("")}</ul></div>`):""}
     ${t.tool?`<button type="button" class="btn primary" id="tTool">${TOOLN[t.tool.go]}</button>`:""}
@@ -509,6 +518,7 @@ function showTopic(t){
   const rv=$("tRev");if(rv)rv.onclick=()=>{$("tSol").hidden=false;rv.hidden=true};
   const tb=$("tTool");if(tb)tb.onclick=()=>useTool(t.tool);
   if($("prac")){pracStart(t.id);$("toPrac").onclick=()=>$("prac").scrollIntoView({behavior:"smooth",block:"start"})}
+  if($("tpl")){tplDraw(t);$("toTpl").onclick=()=>{$("tpl").scrollIntoView({behavior:"smooth",block:"start"});const f=$("tpl").querySelector(".tin");if(f)setTimeout(()=>f.focus({preventScroll:true}),400)}}
 }
 // ---- 🎯 תרגול: 4 רמות, תרגיל חדש כל פעם, בדיקה והסבר לפי התשובה ----
 const PR={id:null,L:2,it:null,tries:0,done:false,streak:0,wrongRow:0,ok:0,n:0};
@@ -520,14 +530,44 @@ function pracStart(id){
   pracNew();
 }
 function pracSave(){const st=pracLS();st.L=PR.L;st.t[PR.id]={L:PR.L,ok:PR.ok,n:PR.n,at:Date.now()};save("calcPractice",st)}
+// 📝 "יש לי תרגיל כזה": תבנית של התרגיל, ממלאים את המספרים ומקבלים פתרון עם שלבים
+function tplDraw(t){
+  const T=Tools.TPL[t.id],box=$("tpl");let n=0;
+  const html=escT(T.view).replace(/\{(\w+)(?::([^}]*))?\}/g,(m,k,o)=>{
+    if(o&&o.includes("|"))return `<select class="tsel" data-k="${k}">${o.split("|").map(x=>`<option>${escT(x)}</option>`).join("")}</select>`;
+    if(o==="expr"||o==="poly"||o==="list")return `<input class="tin wide" data-k="${k}" data-t="${o}" id="tf-${k}" dir="ltr" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="${pracNative?"text":"none"}" placeholder="${o==="poly"?"x^3-3x+2":o==="list"?"5, 8, 3, 9":"2+3*4"}">`;
+    n++;return `<input class="tin" data-k="${k}" ${o==="opt"?'data-opt="1"':""} id="tf-${k}" dir="ltr" autocomplete="off" inputmode="${pracNative?"text":"none"}" placeholder="${o==="opt"?"לא חובה":k}">`;
+  });
+  box.innerHTML=`<h3>📝 יש לך תרגיל כזה? מלא את המספרים</h3><p class="hint">מקלידים את המספרים מהתרגיל (אפשר שברים, מינוס, √) – ומקבלים פתרון עם כל השלבים.${T.hint?`<br>${escT(T.hint)}`:""}</p>
+    <div class="tform" dir="ltr">${html}</div><div class="tkp" hidden>${pracPad(t.cat,{kind:"num"}).replace('id="pKb"','id="tKb"')}</div>
+    <button type="button" class="btn primary" id="tGo">פתור ✨</button><div id="tOut"></div>`;
+  box.querySelectorAll(".tin").forEach(el=>el.addEventListener("focus",()=>{pracTarget=el.id;box.querySelector(".tkp").hidden=pracNative}));
+  box.querySelectorAll(".tkp [data-pk]").forEach(b=>{b.onpointerdown=e=>e.preventDefault();b.onclick=()=>pracKey(b.dataset.pk)});
+  const kb=box.querySelector("#tKb");if(kb)kb.onclick=()=>{pracNative=!pracNative;save("pracNative",pracNative);box.querySelectorAll(".tin").forEach(x=>x.setAttribute("inputmode",pracNative?"text":"none"));box.querySelector(".tkp").hidden=pracNative;const f=$(pracTarget);if(f)f.focus()};
+  box.querySelectorAll(".tin").forEach(el=>el.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("tGo").click()}});
+  $("tGo").onclick=()=>{
+    const v={};let miss=null;
+    box.querySelectorAll(".tsel").forEach(x=>v[x.dataset.k]=x.value);
+    box.querySelectorAll(".tin").forEach(x=>{const raw=x.value.trim();if(x.dataset.t){v[x.dataset.k]=raw;if(!raw&&!miss)miss=x;return}
+      if(!raw){if(x.dataset.opt)v[x.dataset.k]="";else if(!miss)miss=x;return}
+      const nn=Practice.nums(raw);if(nn.length!==1||!isFinite(nn[0])){if(!miss)miss=x;return}v[x.dataset.k]=nn[0]});
+    if(miss){$("tOut").innerHTML=`<div class="warn" style="margin-top:10px">✏️ חסר מספר (או שהוא לא תקין) במשבצת המסומנת</div>`;miss.classList.add("bad");miss.focus();setTimeout(()=>miss.classList.remove("bad"),1500);return}
+    for(const k in v)if(typeof v[k]==="number")v[k]=Math.round(v[k]*1e9)/1e9;
+    let r;try{r=T.run(v)}catch(e){$("tOut").innerHTML=`<div class="warn" style="margin-top:10px">⚠️ ${escT(e.message)}</div>`;return}
+    if(r.solve)return useTool({go:"solve",x:r.solve});
+    if(r.sys)return useTool({go:"sys",a:r.sys[0],b:r.sys[1]});
+    if(r.func)return useTool({go:"func",x:r.func});
+    $("tOut").innerHTML=`<div class="tres"><div class="ans"><small>התשובה</small><div dir="auto">${escT(r.ans)}</div></div>${r.steps&&r.steps.length?`<ol class="steps">${r.steps.map(x=>`<li><span class="h">${R(x)}</span></li>`).join("")}</ol>`:""}</div>`;
+    box.querySelector(".tkp").hidden=true;$("tOut").scrollIntoView({behavior:"smooth",block:"nearest"});
+  };
+}
 // 🎹 מקלדת לתרגול – לפי הנושא: x, שורש, π, חזקה, מעלות… (בלי המקלדת של הטלפון, שאין בה את כל אלה)
 let pracNative=load("pracNative",false),pracTarget="pIn0";
-const PAD_EXTRA={alg:["x","(",")","^","√"],eq:["x","=","(",")","^","√"],fn:["x","y","=","(",")","^"],geo:["√","π","(",")","^"],trig:["°","√","π","(",")"],seq:["^","(",")","√"],exp:["^","(",")","√","x"],calc:["x","^","(",")","√","π"],prob:["(",")","^"]};
 function pracPad(cat,it){
-  const ex=PAD_EXTRA[cat]||["x","(",")","^","√"],K=(k,l,c="")=>`<button type="button" class="${c}" data-pk="${k}" aria-label="${l||k}">${l||k}</button>`;
-  return `<div class="pkp${pracNative?" off":""}"><div class="pkx">${ex.map(k=>K(k==="√"?"√(":k,k,"ex")).join("")}</div>
+  const ex=Practice.pad(PR.id,cat),K=(k,l,c="")=>`<button type="button" class="${c}" data-pk="${escT(k)}" aria-label="${escT(l||k)}">${l||k}</button>`;
+  return `<div class="pkp${pracNative?" off":""}"><div class="pkx">${ex.map(([k,l])=>K(k,l,"ex")).join("")}</div>
     <div class="pkd">${["7","8","9"].map(d=>K(d)).join("")}${K("/","÷","op")}${K("BS","⌫","op")}${["4","5","6"].map(d=>K(d)).join("")}${K("-","−","op")}${K("CLR","C","op")}${["1","2","3"].map(d=>K(d)).join("")}${K(".")}${K(", ",",","op")}${K("0","0","zero")}${K("L","◀","op")}${K("R","▶","op")}</div></div>
-    <div class="pkb"><button type="button" id="pKb" class="kbt">${pracNative?"🎹 המקלדת של המחשבון":"⌨️ מקלדת רגילה"}</button>${it.kind==="set"?`<small>כמה תשובות? מפרידים בפסיק</small>`:""}</div>`;
+    <div class="pkb"><button type="button" id="pKb" class="kbt">${pracNative?"🎹 המקלדת של המחשבון":"⌨️ מקלדת רגילה"}</button><small>${it.kind==="set"?"כמה תשובות? מפרידים בפסיק · ":""}x² / xⁿ = חזקה</small></div>`;
 }
 function pracKey(k){
   const el=$(pracTarget)||$("pIn0");if(!el)return;

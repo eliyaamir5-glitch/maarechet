@@ -49,3 +49,22 @@ C({ kind: "num", ans: Math.sqrt(2) / 2, round: 2 }, "√(2)/2", true); C({ kind:
 C({ kind: "num", ans: 5 }, "2√3", false); C({ kind: "pair", ans: [4, -7] }, ["x=4", "y=-7"], true);
 console.log(bad ? `❌ ${bad} problems` : `✅ practice: ${P.ids.length} topics × 4 levels, ${n} exercises OK`);
 process.exitCode = bad ? 1 : 0;
+// 🎹 כל נושא: המקלדת מכילה כל מה שצריך – לכתוב את התשובה, ולכתוב סימנים שמופיעים בתרגיל (חזקה, שורש, π, מעלות, x)
+{ let bk = 0;
+  for (const t of T.TOPICS) {
+    if (!P.has(t.id)) continue;
+    const keys = P.pad(t.id, t.cat).map(k => k[0]), has = k => keys.includes(k), typeable = new Set("0123456789.-/, ".split("").concat(keys.join("").split("")));
+    const need = new Set();
+    for (let L = 1; L <= 4; L++) for (let i = 0; i < 300; i++) { const it = P.make(t.id, L); if (it.kind === "choice") continue;
+      for (const ch of String(it.ansT)) if (!typeable.has(ch)) need.add("answer:" + ch);
+      const q = it.q.replace(/\$[^$]*\$/g, m => m); // מה שמופיע בתרגיל
+      if (/\^/.test(q) && !has("^") && !has("^2")) need.add("power");
+      if (/sqrt|√/.test(q) && !has("√(")) need.add("√");
+      if (/(^|[^a-z])pi([^a-z]|$)|π/.test(q) && !has("π")) need.add("π");
+      if (/°/.test(q) && !has("°")) need.add("°");
+      if (/\$[^$]*x[^$]*\$/.test(q) && !/[a-z]x|x[a-z]/.test(q.replace(/max|exp/g, "")) && t.cat !== "trig" && !has("x") && !["linefn", "deriv", "tangent", "study", "integral", "expln"].includes("_")) need.add("x"); }
+    if (!has("^") && !has("^2")) need.add("power key (every topic)");
+    if (need.size) { bk++; console.log("❌ keypad for", t.id, "missing:", [...need].join(" ")); }
+  }
+  if (bk) process.exitCode = 1; console.log(bk ? `❌ ${bk} topics missing keys` : "✅ every topic's keypad has what it needs (checked 1,200 exercises per topic)");
+}

@@ -64,6 +64,22 @@ log(/√/.test(await txt("#prac .pkx")), "roots: keypad has √");
 await p.click("#pKb"); await sleep(200);
 log(await p.$eval("#pIn0", e => e.getAttribute("inputmode")) === "text" && await p.$eval("#prac .pkp", e => e.classList.contains("off")), "'⌨️ מקלדת רגילה' switches to the phone keyboard");
 await p.click("#pKb"); await sleep(200);
+// 📝 "יש לי תרגיל" – תבנית: ממלאים מספרים ומקבלים פתרון
+{ const fill = async (id, txt) => { await p.click("#tf-" + id); for (const c of txt) { await p.evaluate(c => [...document.querySelectorAll("#tpl .tkp button")].find(b => b.dataset.pk === c).click(), c); await sleep(15); } };
+  await p.goto("http://localhost:8787/calc.html#t-pyth", { waitUntil: "domcontentloaded" }); await sleep(800);
+  log(await p.$("#toTpl") && await p.$("#tpl .tform"), "topic page has a 'fill in your exercise' template");
+  await p.click("#tGo"); await sleep(200);
+  log(/חסר מספר/.test(await txt("#tOut")), "empty template → asks for the missing number");
+  await fill("a", "5"); await fill("b", "12"); await p.click("#tGo"); await sleep(300);
+  log(/יתר = 13/.test(await txt("#tOut")), "Pythagoras 5,12 → 13 with steps", await txt("#tOut"));
+  await p.goto("http://localhost:8787/calc.html#t-quad", { waitUntil: "domcontentloaded" }); await sleep(800);
+  await fill("a", "1"); await fill("b", "-5"); await fill("c", "6"); await p.click("#tGo"); await sleep(1200);
+  const so = await txt("#sOut");
+  log(/#solve/.test(p.url()) && /2/.test(so) && /3/.test(so), "quadratic template → solved in the step-by-step solver", so.slice(0, 80));
+  await p.goto("http://localhost:8787/calc.html#t-trigid", { waitUntil: "domcontentloaded" }); await sleep(800);
+  await fill("v", "0.5"); await p.click("#tGo"); await sleep(300);
+  log(/30°/.test(await txt("#tOut")) && /150°/.test(await txt("#tOut")), "sin x = 0.5 → 30°, 150°", await txt("#tOut"));
+}
 // התקדמות נשמרת
 await p.goto("http://localhost:8787/calc.html#topics", { waitUntil: "domcontentloaded" }); await sleep(700);
 log(/🎯 \d+/.test(await txt("#tAll")), "topics list shows practice progress 🎯");
@@ -98,7 +114,7 @@ log(/בין 0 ל-5/.test(await txt("#bOut")), "bad input → clear message");
 
 // 5. מקשי פונקציות במקלדת של "פתרון תרגיל"
 await p.goto("http://localhost:8787/calc.html#solve", { waitUntil: "domcontentloaded" }); await sleep(600);
-await p.click("#sIn"); for (const k of ["sin(", "3", "0", ")", "+", "1"]) { await p.evaluate(k => [...document.querySelectorAll("#keys button")].find(x => x.dataset.k === k).click(), k); await sleep(30); }
+await p.click("#sIn"); await p.evaluate(() => [...document.querySelectorAll("#keys button")].find(x => x.dataset.k === "CLR").click()); for (const k of ["sin(", "3", "0", ")", "+", "1"]) { await p.evaluate(k => [...document.querySelectorAll("#keys button")].find(x => x.dataset.k === k).click(), k); await sleep(30); }
 log((await p.$eval("#sIn", e => e.value)) === "sin(30)+1", "keypad: new sin key works", await p.$eval("#sIn", e => e.value));
 await p.evaluate(() => [...document.querySelectorAll("#keys button")].find(x => x.dataset.k === "CLR").click());
 log((await p.$eval("#sIn", e => e.value)) === "", "keypad: C clears");

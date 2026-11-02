@@ -346,6 +346,7 @@ function mathHTML(src) {
     if (two === "!=") { out.push("≠"); i += 2; continue; }
     const ch = s[i];
     if (ch === "*") out.push("·");
+    else if (ch === "'") out.push("′"); // נגזרת: f′(x)
     else if (ch === "~") out.push("≈");
     else if (ch === "-") out.push("−");
     else if (/[a-zA-Z]/.test(ch) && !/[a-zA-Z]/.test(s[i - 1] || "") && !/[a-zA-Z]/.test(s[i + 1] || "")) out.push(`<var>${ch}</var>`);
