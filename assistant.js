@@ -139,7 +139,7 @@ A("exit", { page: "shichrur.html", hash: "", label: "שחרורון – אישו
 A("about", { page: "about.html", hash: "", label: "על האפליקציה ופרטיות" });
 A("staff", { page: "staff.html", hash: "", label: "כניסת צוות" });
 // תשובות על המערכת האישית – מחושבות בטלפון (במסך הראשי)
-for (const id of ["now", "next", "today", "dayinfo", "gear", "end", "brk", "when", "teacher", "abs", "avg", "streak", "tef", "bdays", "time", "me", "start", "nth", "changes", "vac", "parsha", "zmanim", "news", "polls", "events", "qanswers", "wishes", "lates", "praise", "left30", "best", "teachers", "subjects", "weekly", "mashovAge"]) A(id, { page: ix, label: "", answer: true });
+for (const id of ["now", "next", "today", "dayinfo", "gear", "end", "brk", "when", "teacher", "abs", "avg", "streak", "tef", "bdays", "time", "me", "start", "nth", "changes", "vac", "parsha", "zmanim", "news", "polls", "events", "qanswers", "wishes", "lates", "praise", "left30", "best", "teachers", "subjects", "weekly", "mashovAge", "mates", "bdayOf"]) A(id, { page: ix, label: "", answer: true });
 
 // ===================== המוח המהיר: כוונות =====================
 // p = ביטויים (אחרי norm). w = משקל. need = ישות שחייבת להופיע
@@ -161,6 +161,8 @@ const INT = [
   { id: "tef", p: ["תפילין", "לתפילין", "נשאר לתפילין", "זמן לתפילין", "עד מתי אפשר להניח", "מתי השקיעה", "שקיעה", "להניח תפילין", "הנחתי תפילין"] },
   { id: "bdays", p: ["ימי הולדת", "למי יש יום הולדת", "יום הולדת היום", "מי חוגג", "ימי הולדת השבוע"] },
   { id: "time", p: ["מה השעה", "איזה יום היום", "מה התאריך", "תאריך עברי", "איזה תאריך"] },
+  // ---- הכיתה שלי ----
+  { id: "mates", p: ["מי מהכיתה שלי יש את האפליקציה", "מי בכיתה שלי", "מי הילדים בכיתה שלי", "מי איתי בכיתה", "כמה מהכיתה משתמשים", "רשימת הכיתה", "מי עוד משתמש באפליקציה", "מי החברים שלי בכיתה", "מי הילדים שאיתי", "מי לומד איתי", "מי מהכיתה רשום", "התלמידים בכיתה שלי", "מי החברים שלי", "מי עוד יש לו את האפליקציה"], w: 1.35 },
   // ---- עוד על המערכת ----
   { id: "start", p: ["מתי מתחילים", "מתי השיעור הראשון", "באיזה שעה מתחילים", "באיזו שעה מתחיל", "מתי צריך להגיע", "מתי מתחיל היום", "מתי קמים", "מתי מתחילים מחר"], w: 1.15, day: true },
   { id: "changes", p: ["יש שינויים", "שינויים במערכת", "מה השתנה במערכת", "בוטל שיעור", "יש ביטולים", "מורה מחליף", "שיעור שבוטל", "יש שינוי", "מה בוטל", "שינויים היום", "שינויים מחר"], w: 1.15, day: true },
@@ -329,6 +331,9 @@ function thinkCore(qRaw, ctx = {}) {
   const ORD = { "ראשונ": 1, "שני": 2, "שלישי": 3, "רביעי": 4, "חמישי": 5, "שישי": 6, "שביעי": 7, "שמיני": 8, "תשיעי": 9, "עשירי": 10 };
   const om = qn.match(/(?:^| )(?:ה|ב|ו)?שיעור (?:מספר )?(?:ה)?(ראשונ|שני|שלישי|רביעי|חמישי|שישי|שביעי|שמיני|תשיעי|עשירי|\d{1,2})(?= |$)/);
   if (om) { const n = ORD[om[1]] || +om[1]; const rest = qn.replace(om[0], " "); return { id: "nth", arg: { n, day: findDay(rest) || undefined }, conf: 0.95 }; }
+  // 0.5 "מתי יום ההולדת של יוסי?" / "מתי דני חוגג?"
+  const bdm = qn.match(/(?:יומ ה?הולדת|ימי הולדת|תאריכ לידה)(?: של| ל)? ([א-ת]{2,}(?: [א-ת]{2,})?)$/) || qn.match(/^(?:מתי )([א-ת]{2,}(?: [א-ת]{2,})?) (?:חוגג|נולד|יש לו יומ הולדת)/);
+  if (bdm && !/^(שלי|לי|היומ|השבוע|החודש|הזה|שלו|שלכמ|שלנו|חברימ|בכיתה|בשכבה|כולמ|של)( |$)/.test(bdm[1])) return { id: "bdayOf", arg: bdm[1].replace(/^(ה|ל)(?=[א-ת]{3})/, m => (bdm[1].length > 4 ? "" : m)), conf: 0.95 };
   // 1. תרגיל לחישוב
   const ex = mathExpr(q); if (ex) return { id: "compute", arg: ex, conf: 0.95 };
   const eq = equation(q);
@@ -379,6 +384,8 @@ function thinkCore(qRaw, ctx = {}) {
   if (id === "when" && subj && day) arg = { s: subj, day };
   if (id === "teachers" && subj) { id = "teacher"; arg = subj; }
   if (id === "me" && subj && /מורה|מלמד/.test(qn)) { id = "teacher"; arg = subj; } // "איך קוראים למורה של אנגלית"
+  if (id === "mates" && /(מורה|מחנכ|הרב|רב הכיתה)/.test(qn)) arg = "withRav"; // "מי המורה שלי והילדים שאיתי"
+  if (["teacher", "me", "teachers"].includes(id) && /(הילדימ|התלמידימ|מי איתי|שאיתי|החברימ)/.test(qn)) { id = "mates"; arg = "withRav"; }
   if (id === "subjects" && /(^| )עכשיו( |$)/.test(qn)) { id = "now"; arg = undefined; }
   if (id === "subjects" && day) { id = "dayinfo"; arg = day; }
   if (id === "teacher" && !subj && /(^| )(ה)?מורימ( |$)/.test(qn)) { id = "teachers"; arg = undefined; }
@@ -430,6 +437,35 @@ const tm = t => { const [a, b] = String(t).split(":").map(Number); return a * 60
 const nowMin = () => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); };
 const list = L => L.map(l => `<div class="al"><b>${l.s}</b> ${esc(l.n)}${l.w ? ` <small>${esc(l.w)}</small>` : ""}</div>`).join("");
 function dayDate(a) { const dt = new Date(); if (a && a.rel != null) dt.setDate(dt.getDate() + a.rel); else if (a && a.day != null) dt.setDate(dt.getDate() + ((a.day - dt.getDay() + 7) % 7 || (a.day === dt.getDay() ? 0 : 7))); return dt; }
+// תשובות שצריכות את השרת (שמות בכיתה, ימי הולדת של חברים) – נשמרות 10 דקות בטלפון
+async function matesData() {
+  try { const c = JSON.parse(sessionStorage.getItem("asst:mates") || "null"); if (c && Date.now() - c.at < 10 * 60e3) return c; } catch (e) {}
+  const base = (typeof SERVER_BASE !== "undefined" && SERVER_BASE) || "https://lucent-crepe-6db22c.netlify.app";
+  try { const r = await fetch(base + "/api/feed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "mates", device: deviceId() }) }); const j = await r.json();
+    if (j && j.ok) { const c = { at: Date.now(), mates: j.mates || [], bdays: j.bdays || [] }; try { sessionStorage.setItem("asst:mates", JSON.stringify(c)); } catch (e) {} return c; } return { err: j && j.error }; } catch (e) { return { err: "network" }; }
+}
+async function answerAsync(id, arg) {
+  const prof = g("profile"); if (!prof || !prof.cls) return answer(id, arg);
+  const d = await matesData();
+  if (d.err) return d.err === "not_registered" ? "עוד לא הספקתי להירשם בשרת – נסה שוב בעוד דקה 🙂" : "אין חיבור כרגע – נסה שוב בעוד רגע 📶";
+  const C = g("CLASSES"), c = C && C[prof.cls], me = `${prof.first || ""} ${prof.last || ""}`.trim();
+  if (id === "mates") {
+    const others = d.mates.filter(n => norm(n) !== norm(me));
+    const head = arg === "withRav" && c ? `👨‍🏫 המחנך שלך: <b>${esc(c.rav)}</b><br>` : "";
+    return head + (others.length ? `👥 מהכיתה שלך (${esc(c ? c.label : "")}) ${others.length === 1 ? "רשום עוד תלמיד אחד" : `רשומים עוד <b>${others.length}</b> תלמידים`} באפליקציה:<br>${others.map(esc).join(" · ")}` : "עוד אף אחד מהכיתה שלך לא נרשם – תשלח להם את האפליקציה 😉") + "<br><small>מי שלא רוצה להופיע – אפשר להסתיר בפרופיל ← תצוגה</small>";
+  }
+  if (id === "bdayOf") {
+    const q = norm(String(arg || "")).split(" ").filter(Boolean), M = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
+    const hits = d.bdays.filter(x => { const nw = norm(x.name).split(" "); return q.every(w => nw.some(n => n === w || (w.length >= 3 && n.startsWith(w)) || forms(w).includes(n))); });
+    const fmt = x => { const [m, dd] = x.md.split("-").map(Number); const now = new Date(), t = new Date(now.getFullYear(), m - 1, dd); if (t < new Date(now.toDateString())) t.setFullYear(t.getFullYear() + 1); const inD = Math.round((t - new Date(now.toDateString())) / 864e5);
+      return `🎂 <b>${esc(x.name)}</b>${C && C[x.cls] ? ` (${esc(C[x.cls].label)})` : ""}: ${dd} ב${M[m - 1]}${inD === 0 ? " – <b>היום!</b> 🎉" : inD === 1 ? " – מחר!" : inD <= 30 ? ` – בעוד ${inD} ימים` : ""}`; };
+    if (hits.length) return hits.slice(0, 5).map(fmt).join("<br>") + (hits.length > 5 ? `<br>ועוד ${hits.length - 5}…` : "");
+    return `לא מצאתי יום הולדת של <b>${esc(arg)}</b> 🤔 אולי הוא עוד לא שיתף אותו (או שהוא לא בשכבה שלך).`;
+  }
+  return answer(id, arg);
+}
+const ASYNC = new Set(["mates", "bdayOf"]);
+async function sayAnswer(id, arg) { if (!ASYNC.has(id)) { botSay(answer(id, arg)); return; } const out = await withDots(() => answerAsync(id, arg)); botSay(out); }
 function answer(id, arg) {
   const prof = g("profile");
   if (!prof || !prof.cls) return "קודם צריך להירשם באפליקציה – ואז אוכל לענות על המערכת שלך 🙂";
@@ -672,7 +708,7 @@ async function act(id, arg, opts = {}) {
     location.href = page + (h ? "#" + h : ""); return;
   }
   if (a.hash != null) { const h = typeof a.hash === "function" ? a.hash(arg) : a.hash; if (("#" + h) !== location.hash && (h || location.hash)) { location.hash = h; await sleep(500); } }
-  if (a.answer) { botSay(answer(id, arg)); return; }
+  if (a.answer) { await sayAnswer(id, arg); return; }
   closePanelSoft();
   if (a.run) await a.run(arg);
 }
@@ -680,7 +716,7 @@ async function resume() {
   let p = null; try { p = JSON.parse(sessionStorage.getItem("asst:pending") || "null"); sessionStorage.removeItem("asst:pending"); } catch (e) {}
   if (!p || Date.now() - p.at > 30000 || !ACT[p.id]) return;
   await sleep(700);
-  if (ACT[p.id].answer) { if (panel) { openPanel(); botSay(answer(p.id, p.arg)); } else toastSay(answer(p.id, p.arg)); return; }
+  if (ACT[p.id].answer) { if (panel) { openPanel(); await sayAnswer(p.id, p.arg); } else toastSay(ASYNC.has(p.id) ? await answerAsync(p.id, p.arg) : answer(p.id, p.arg)); return; }
   if (p.say) toastSay(p.say);
   try { await ACT[p.id].run?.(p.arg); } catch (e) { console.warn(e); }
 }
@@ -913,14 +949,14 @@ async function local(r, pre = "") {
   if (r.id === "mood") { botSay(MOOD[r.arg] || MOOD.good); if (r.arg === "sad") { botSay(`<button class="go" data-a="ask">💬 שאלה לצוות (בלי שם)</button>`); wire(); } return; }
   if (r.say) botSay((pre ? pre + "<br>" : "") + r.say);
   else { const s = sayFor(r); if (s) botSay((pre ? pre + "<br>" : "") + s); }
-  if (ACT[r.id] && ACT[r.id].answer) { if (onPage(ix)) botSay(answer(r.id, r.arg)); else { botSay("רגע, בודק במערכת שלך… 🔎"); await act(r.id, r.arg); } return; }
+  if (ACT[r.id] && ACT[r.id].answer) { if (onPage(ix)) await sayAnswer(r.id, r.arg); else { botSay("רגע, בודק במערכת שלך… 🔎"); await act(r.id, r.arg); } return; }
   await sleep(450); await act(r.id, r.arg, { say: sayFor(r) });
 }
 function wire() { log.querySelectorAll("button.go:not([data-w])").forEach(b => { b.dataset.w = 1; b.onclick = () => { let a = null; try { a = JSON.parse(b.dataset.g || "null"); } catch (e) {} act(b.dataset.a, a ?? undefined); }; }); }
 async function withDots(f) { const d = document.createElement("div"); d.className = "dots"; d.innerHTML = "<i></i><i></i><i></i>"; log.appendChild(d); log.scrollTop = log.scrollHeight; mood("think"); try { return await f(); } finally { d.remove(); mood(null); } }
 
 // ===================== הפעלה =====================
-const api = { think, canon, norm, ACT, INT, mathExpr, equation, findSubject, findDay, findLevel, findColor, answer, act };
+const api = { think, canon, norm, answerAsync, ACT, INT, mathExpr, equation, findSubject, findDay, findLevel, findColor, answer, act };
 if (typeof module !== "undefined" && module.exports) { module.exports = api; return; }
 root.Asst = api;
 api.show = () => { try { localStorage.removeItem("asstOff"); localStorage.removeItem("asstHideDay"); } catch (e) {} if (!document.getElementById("asstBtn")) { if (panel) { panel.remove(); panel = null; } build(); } };

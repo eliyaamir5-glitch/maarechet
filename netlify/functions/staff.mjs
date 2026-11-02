@@ -1061,8 +1061,8 @@ async function feed(req, S, ip, headers) {
     // כל בית הספר יכול לצאת מאותה כתובת (400 תלמידים × "שלום" כל 3 דקות = 8,000 בשעה) – לכן הגבלה בזיכרון בלבד, נדיבה
     memRate("hello", ip, 20000);
     const k = devKey(device), day = israelDay(now), key = x => /^[a-z]{2,12}$/.test(String(x || "")) ? String(x) : "";
-    const rec = { name: clean(b.name, MAX_NAME), cls, eng: key(b.eng), math: key(b.math), major: key(b.major), mashov: !!b.mashov, ver: clean(b.ver, 20), plat: clean(b.plat, 40), inst: !!b.inst };
-    const sig = x => JSON.stringify([x.name, x.cls, x.eng, x.math, x.major, x.mashov, x.ver, x.plat, x.inst]);
+    const rec = { name: clean(b.name, MAX_NAME), cls, eng: key(b.eng), math: key(b.math), major: key(b.major), mashov: !!b.mashov, ver: clean(b.ver, 20), plat: clean(b.plat, 40), inst: !!b.inst, ...(b.hide ? { hide: true } : {}) };
+    const sig = x => JSON.stringify([x.name, x.cls, x.eng, x.math, x.major, x.mashov, x.ver, x.plat, x.inst, !!x.hide]);
     const mine = m => m && typeof m === "object" && Object.hasOwn(m, k) && m[k] && typeof m[k] === "object" ? m[k] : null;
     // כותבים רק כשצריך: מכשיר חדש, יום חדש, כל 7 דקות, או פרטים שהשתנו (לכל היותר פעם בדקה).
     // אחרת כל "שלום" היה כותב מחדש את כל הרשימה – עלות, ועומס כשכולם פותחים בהפסקה
@@ -1097,6 +1097,21 @@ async function feed(req, S, ip, headers) {
     await rateLimit(S, "bdRate", ip, 1000);
     await S.update("birthdays", cur => { const m = cur || {}; if (!m[k] && Object.keys(m).length >= 2000) throw new Fail(413, "too_many"); m[k] = { name, cls, md, at: now }; return m; });
     return reply(200, { ok: true }, headers);
+  }
+  if (action === "mates") { // לעוזר: מי מהכיתה שלי רשום באפליקציה (שמות), וימי הולדת ששותפו בשכבה שלי
+    if (!DEV_RE.test(device)) return reply(400, { ok: false, error: "bad_request" }, headers);
+    memRate("mates", ip, 3000);
+    const pres = await S.get("presence"), k = devKey(device), me = pres && Object.hasOwn(pres, k) ? pres[k] : null;
+    if (!me || !me.cls) return reply(403, { ok: false, error: "not_registered" }, headers); // רק תלמיד רשום, ורק על הכיתה/השכבה שלו
+    const grade = c => (String(c).startsWith("ya") ? "11" : "10"), now2 = Date.now();
+    const seen = new Set(), mates = [];
+    for (const [kk, x] of Object.entries(pres || {})) {
+      if (!isDevKey(kk) || !x || x.cls !== me.cls || x.hide || !x.name || !(now2 - x.last <= PRESENCE_DAYS * 864e5)) continue;
+      const pk = personKey(x.name, x.cls); if (seen.has(pk)) continue; seen.add(pk); mates.push(x.name);
+    }
+    mates.sort((a, b) => a.localeCompare(b, "he"));
+    const bd = await S.get("birthdays"), bdays = Object.values(bd || {}).filter(x => x && x.name && x.md && grade(x.cls) === grade(me.cls)).map(x => ({ name: x.name, cls: x.cls, md: x.md }));
+    return reply(200, { ok: true, cls: me.cls, mates, bdays }, headers);
   }
   if (action === "leave") { // התלמיד מחק את המשתמש שלו: מוחקים את מה שנשמר עליו בשרת, ומודיעים להנהלה
     if (!DEV_RE.test(device)) return reply(400, { ok: false, error: "bad_request" }, headers);

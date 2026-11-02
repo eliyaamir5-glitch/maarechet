@@ -64,3 +64,15 @@ await call("/api/feed", { action: "leave", device: "device-dddd-0004" });
 await hello("device-eeee-0005", "יוסי לוי", "y1", { eng: "hadad", math: "zz", major: "econ" });
 r = await call("/api/staff", { action: "pOverview" }, { token: admin });
 ok("same name in another class is not 'back'", r.json.departures.some(d => d.name === "יוסי לוי" && !d.back));
+// "מי בכיתה שלי" וימי הולדת של חברים – לעוזר
+{ await hello("device-m-000001", "אבי כהן", "y1"); await hello("device-m-000002", "בני לוי", "y1"); await hello("device-m-000003", "גדי רז", "y2");
+  await hello("device-m-000004", "דן מוסתר", "y1", { hide: true }); await hello("device-m-000005", "ענבל יא", "ya1");
+  const md2 = "03-12"; await call("/api/feed", { action: "birthday", device: "device-m-000002", name: "בני לוי", cls: "y1", md: md2 }); await call("/api/feed", { action: "birthday", device: "device-m-000003", name: "גדי רז", cls: "y2", md: "05-20" });
+  await call("/api/feed", { action: "birthday", device: "device-m-000005", name: "ענבל יא", cls: "ya1", md: "01-01" });
+  let m = (await call("/api/feed", { action: "mates", device: "device-m-000001" })).json;
+  ok("classmates: names of my class only", m.ok && m.mates.includes("אבי כהן") && m.mates.includes("בני לוי") && !m.mates.includes("גדי רז") && !m.mates.includes("ענבל יא"), JSON.stringify(m));
+  ok("hidden student is not listed", !m.mates.includes("דן מוסתר"));
+  ok("birthdays: my grade only (both classes), not other grades", m.bdays.some(x => x.name === "בני לוי" && x.md === md2) && m.bdays.some(x => x.name === "גדי רז") && !m.bdays.some(x => x.name === "ענבל יא"), JSON.stringify(m.bdays));
+  m = (await call("/api/feed", { action: "mates", device: "device-z-999999" })).json;
+  ok("unregistered device gets nothing", m.ok === false);
+}

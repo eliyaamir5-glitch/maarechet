@@ -1329,6 +1329,7 @@ function renderProfile(){
     <div class="pf-acts" style="justify-content:center"><button type="button" class="ghost" id="pfEdit">✎ עריכת פרטים והקבצות</button><button type="button" class="ghost" id="pfFb">💬 רעיון או תקלה</button><button type="button" class="ghost" id="pfNew">✨ מה חדש</button></div></div>
   ${pfSec("theme","🎨 תצוגה",(Theme.THEMES[Theme.current()]||{}).name||"",false,`<div class="pf-sub">צבע לאפליקציה:</div><div class="th-sw">${Object.entries(Theme.THEMES).map(([k,t])=>`<button type="button" class="sw ${Theme.current()===k?"on":""}" data-th="${k}" style="background:${t.grad}" aria-label="${t.name}" title="${t.name}"></button>`).join("")}</div>
     <label class="tgl-row"><input type="checkbox" id="pfBig" ${Theme.big()?"checked":""}> 🔍 טקסט גדול</label>
+    <label class="tgl-row"><input type="checkbox" id="pfMate" ${(()=>{try{return localStorage.getItem("hideFromClass")!=="1"}catch(e){return true}})()?"checked":""}> 👥 להופיע כשחברים מהכיתה שואלים את העוזר "מי בכיתה שלי"</label>
     <label class="tgl-row"><input type="checkbox" id="pfAsst" ${(()=>{try{return localStorage.getItem("asstOff")!=="1"&&localStorage.getItem("asstHideDay")!==new Date().toDateString()}catch(e){return true}})()?"checked":""}> 🤖 להציג את העוזר "מערכתי"</label>`)}
   ${pfSec("cal","📅 יומן",calAdded()?"✅ הוספת":"לא נוסף",false,`<div class="pf-sub">${calAdded()?"✅ המערכת שלך כבר ביומן של הטלפון, והיא מתעדכנת שם לבד. צריך להוסיף שוב רק אם מחקת אותה מהיומן.":"המערכת שלך ביומן של הטלפון, עם תזכורת 10 דקות לפני כל שיעור. מתעדכן לבד."}</div><div class="pf-acts"><button type="button" class="${calAdded()?"ghost":"primary"}" id="pfCal">${calAdded()?"להוסיף שוב":"📅 הוסף ליומן"}</button></div>`)}
   ${pfSec("parent","👨‍👩‍👦 ההורים","",false,`<div class="pf-sub">קישור שבו ההורים רואים את המערכת שלך: מה יש היום ומה להביא. בלי ציונים ובלי חיסורים.</div><div class="pf-acts"><button type="button" class="primary" id="pfParent">📤 שליחת קישור להורים</button></div>`)}
@@ -1354,6 +1355,7 @@ function renderProfile(){
   $("pfNew").onclick=()=>{document.getElementById("profDlg").close();openWhatsNew(true)};
   b.querySelectorAll("[data-th]").forEach(x=>x.onclick=()=>{Theme.setTheme(x.dataset.th);b.querySelectorAll("[data-th]").forEach(y=>y.classList.toggle("on",y===x))});
   $("pfBig").onchange=e=>Theme.setBig(e.target.checked);
+  $("pfMate").onchange=e=>{try{e.target.checked?localStorage.removeItem("hideFromClass"):localStorage.setItem("hideFromClass","1")}catch(_){}helloAt=0;hello().catch(()=>{});toast(e.target.checked?"👥 מופיע ברשימת הכיתה":"🙈 השם שלך מוסתר מרשימת הכיתה","מתעדכן תוך דקה")};
   $("pfAsst").onchange=e=>{if(!window.Asst)return;if(e.target.checked){Asst.show();toast("🤖 הנה אני!","אפשר לגרור אותי לכל צד של המסך")}else{Asst.off();toast("👋 הסתרתי את העוזר","אפשר להחזיר כאן מתי שתרצה")}};
   $("pfParent").onclick=shareParent;
   const bdSave=async()=>{const d=+$("pfBdD").value,m=+$("pfBdM").value,share=$("pfBdShare").checked,msg=$("pfBdMsg");
@@ -2160,7 +2162,7 @@ async function hello(){
   helloAt=Date.now();
   const inst=!!((window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone);
   const r=await feedPost({action:"hello",device:deviceId(),name:`${profile.first||""} ${profile.last||""}`.trim(),cls:profile.cls,eng:profile.eng||"",math:profile.math||"",major:profile.major||"",
-    mashov:!!(typeof Mashov!=="undefined"&&Mashov.connected&&Mashov.connected()),ver:typeof APP_VERSION!=="undefined"?APP_VERSION:"",plat:platLabel(),inst});
+    mashov:!!(typeof Mashov!=="undefined"&&Mashov.connected&&Mashov.connected()),ver:typeof APP_VERSION!=="undefined"?APP_VERSION:"",plat:platLabel(),inst,hide:(()=>{try{return localStorage.getItem("hideFromClass")==="1"}catch(e){return false}})()});
   if(!r||!r.ok)return;
   const obj=x=>x&&typeof x==="object"&&!Array.isArray(x)?x:null;
   try{localStorage.setItem("appCtl",JSON.stringify({maint:obj(r.maint),susp:obj(r.susp),at:Date.now()}))}catch(e){}

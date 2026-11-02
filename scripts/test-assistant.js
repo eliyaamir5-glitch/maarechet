@@ -169,3 +169,8 @@ const F = [[{ id: "today" }, "ומחר?", "dayinfo"], [{ id: "start", arg: { rel
   [{ id: "dayinfo", arg: { rel: 1 } }, "וביום חמישי?", "dayinfo", a => a.day === 4], [{ id: "now" }, "מה להביא מחר", "gear"]];
 for (const [last, q, want, f] of F) { nP++; const r = A.think(q, { Topics: global.Topics, last }); if (r.id !== want || (f && !f(r.arg))) { badP++; console.log("❌ follow-up", JSON.stringify(last), q, "→", r.id, JSON.stringify(r.arg)); } }
   if (badP) process.exitCode = 1; console.log(badP ? `❌ ${badP}/${nP} paraphrases` : `✅ ${nP} paraphrases + follow-ups understood`); }
+// הכיתה שלי + ימי הולדת של חברים
+{ let b6 = 0; for (const [q, w, f] of [["מי מהכיתה שלי יש את האפליקציה", "mates"], ["מי בכיתה שלי", "mates"], ["מי הילדים שאיתי בכיתה", "mates"], ["כמה מהכיתה משתמשים באפליקציה", "mates"], ["מי המורה שלי והילדים שאיתי", "mates", a => a === "withRav"],
+  ["מתי יום ההולדת של יוסי", "bdayOf", a => a === "יוסי"], ["מתי יום הולדת של דני לוי", "bdayOf", a => a === "דני לוי"], ["מתי יוסי חוגג", "bdayOf", a => a === "יוסי"], ["מתי יום ההולדת שלי", "me"], ["למי יש יום הולדת השבוע", "bdays"], ["לשנות יום הולדת", "bday"]]) {
+    const r = A.think(q, { Topics: global.Topics }); if (r.id !== w || (f && !f(r.arg))) { b6++; console.log("❌", q, "→", r.id, JSON.stringify(r.arg)); } }
+  if (b6) process.exitCode = 1; console.log(b6 ? `❌ ${b6} class/birthday problems` : "✅ classmates + friends' birthdays understood"); }

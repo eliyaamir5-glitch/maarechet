@@ -13,7 +13,9 @@ const H = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": 
 p.on("request", q => {
   const u = q.url();
   if (/\/api\/assist/.test(u)) { if (q.method() === "OPTIONS") return q.respond({ status: 204, headers: H }); aiCalls.push(JSON.parse(q.postData() || "{}")); return q.respond({ status: 200, contentType: "application/json", headers: H, body: JSON.stringify(ai) }); }
-  if (/\/api\//.test(u)) { if (q.method() === "OPTIONS") return q.respond({ status: 204, headers: H }); return q.respond({ status: 200, contentType: "application/json", headers: H, body: '{"ok":true}' }); }
+  if (/\/api\//.test(u)) { if (q.method() === "OPTIONS") return q.respond({ status: 204, headers: H }); const bd = JSON.parse(q.postData() || "{}");
+    if (bd.action === "mates") return q.respond({ status: 200, contentType: "application/json", headers: H, body: JSON.stringify({ ok: true, cls: "y1", mates: ["אבי כהן", "דני לוי", "יוסי מזרחי"], bdays: [{ name: "יוסי מזרחי", cls: "y1", md: "03-12" }, { name: "רון בר", cls: "y2", md: "07-01" }] }) });
+    return q.respond({ status: 200, contentType: "application/json", headers: H, body: '{"ok":true}' }); }
   if (/^http:\/\/localhost/.test(u)) return q.continue();
   return q.abort();
 });
@@ -50,6 +52,12 @@ await send("מה זה 30 אחוז");
 log(/30%/.test(await lastBot()) && /בגרות/.test(await lastBot()), "how-to questions get a ready answer", await lastBot());
 await send("מה יש לי היום?"); await send("ומחר?");
 log(/מחר/.test(await lastBot()), "follow-up: 'ומחר?' after 'what's today' → tomorrow", await lastBot());
+await send("מי המורה שלי והילדים שאיתי", 2000);
+log(/הרב/.test(await lastBot()) && /אבי כהן/.test(await lastBot()) && /יוסי מזרחי/.test(await lastBot()) && !/דני לוי ·/.test(await lastBot()), "'my teacher and the kids with me' → rav + classmates (without me)", await lastBot());
+await send("מתי יום ההולדת של יוסי?", 2000);
+log(/יוסי מזרחי/.test(await lastBot()) && /12 במרץ/.test(await lastBot()), "friend's birthday by name", await lastBot());
+await send("מתי יום ההולדת של משה?", 2000);
+log(/לא מצאתי/.test(await lastBot()), "unknown friend → polite 'not shared'", await lastBot());
 await send("כמה זה 15% מ-200");
 log(/= 30/.test(await lastBot()), "computes 15% of 200 = 30", await lastBot());
 await send("תשנה צבע לירוק", 1800);
