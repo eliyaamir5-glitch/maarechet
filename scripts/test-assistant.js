@@ -52,7 +52,7 @@ for (const [q, want, chk] of CASES) {
   if (!ok) { bad++; console.log("❌", JSON.stringify(q), "→", r.id, JSON.stringify(r.arg), "conf", r.conf && r.conf.toFixed(2), "(want", want + ")"); }
 }
 // כל פעולה מוכרת קיימת
-for (const it of A.INT) if (!A.ACT[it.id] && !["hi", "thanks", "help", "joke"].includes(it.id)) { bad++; console.log("❌ intent without action:", it.id); }
+for (const it of A.INT) if (!A.ACT[it.id] && !["hi", "thanks", "help", "joke", "faq", "mood", "love", "motivate"].includes(it.id)) { bad++; console.log("❌ intent without action:", it.id); }
 console.log(bad ? `❌ ${bad}/${CASES.length} sentences misunderstood` : `✅ assistant: ${CASES.length} sentences understood`);
 process.exitCode = bad ? 1 : 0;
 // מילים עם אותיות סופיות (ם ן) אחרי ההמרה
@@ -91,3 +91,29 @@ const C2 = [
     const r = A.think(q, { Topics: global.Topics }); if (r.id !== "me" || r.arg !== a) { b4++; console.log("❌", q, "→", r.id, r.arg, "(want me/" + a + ")"); } }
   for (const [q, w] of [["לשנות יום הולדת", "bday"], ["מי המורה שלי באנגלית", "teacher"]]) { const r = A.think(q, { Topics: global.Topics }); if (r.id !== w) { b4++; console.log("❌", q, "→", r.id); } }
   if (b4) process.exitCode = 1; console.log(b4 ? `❌ ${b4} "about me" problems` : "✅ 'about me' questions understood"); }
+// סבב 3: כל סוגי השאלות החדשות
+const C3 = [
+  ["מתי מתחילים מחר", "start"], ["מתי השיעור הראשון", "nth"], ["באיזה שעה מתחילים היום", "start"], ["מתי צריך להגיע מחר בבוקר", "start"],
+  ["מה השיעור השלישי", "nth", a => a.n === 3], ["מה יש בשיעור הרביעי מחר", "nth", a => a.n === 4 && a.day && a.day.rel === 1], ["מה השיעור החמישי ביום שלישי", "nth", a => a.n === 5 && a.day && a.day.day === 2], ["שיעור 2", "nth", a => a.n === 2],
+  ["יש לי מחר ספורט?", "when", a => a && a.s === "חינוך גופני" && a.day.rel === 1], ["יש לי היום אנגלית", "when", a => a && a.s === "אנגלית"], ["יש גמרא ביום רביעי?", "when", a => a && a.s === "גמרא" && a.day.day === 3],
+  ["יש שינויים במערכת?", "changes"], ["בוטל לי שיעור?", "changes"], ["יש מורה מחליף היום", "changes"], ["מה השתנה במערכת מחר", "changes", a => a && a.rel === 1],
+  ["מתי החופש הבא", "vac"], ["מתי חנוכה", "vac"], ["מתי נגמרת השנה", "vac"], ["מתי פסח", "vac"], ["יש חופש בקרוב?", "vac"],
+  ["מה הפרשה השבוע", "parsha"], ["פרשת השבוע", "parsha"],
+  ["מתי נכנסת שבת", "zmanim"], ["מתי הזריחה", "zmanim"], ["סוף זמן קריאת שמע", "zmanim"], ["הדלקת נרות", "zmanim"], ["מתי יוצאת שבת", "zmanim"],
+  ["יש עדכונים מהצוות?", "news"], ["מה הודיעו היום", "news"], ["יש הודעה מהמנהל", "news"],
+  ["יש סקר?", "polls"], ["אירועים קרובים", "events"], ["מתי הטיול", "events"], ["יש שבתון?", "events"],
+  ["ענו לי על השאלה?", "qanswers"], ["מי איחל לי מזל טוב", "wishes"],
+  ["כמה איחורים יש לי", "lates"], ["כמה צלשים קיבלתי", "praise"], ["כמה עוד מותר לי להחסיר בגמרא", "left30"], ["כמה חיסורים נשארו לי", "left30"],
+  ["באיזה מקצוע אני הכי חלש", "best"], ["במה אני הכי טוב", "best"], ["מה הציון הכי גבוה שלי", "best"],
+  ["מי המורים שלי", "teachers"], ["אילו מקצועות יש לי", "subjects"], ["כמה שעות אנגלית בשבוע", "weekly", a => a === "אנגלית"], ["כמה פעמים בשבוע יש גמרא", "weekly", a => a === "גמרא"],
+  ["מתי עודכן משוב", "mashovAge"],
+  ["איך מוסיפים ציוד לשיעור", "faq", a => a === "gear"], ["זה עובד בלי אינטרנט?", "faq", a => a === "offline"], ["אתם שומרים את הסיסמה של משוב?", "faq", a => a === "password"],
+  ["מה זה 30 אחוז", "faq", a => a === "rule30"], ["מה זה רצף", "faq", a => a === "streak"], ["איך עושים שחרורון", "faq", a => a === "exit"], ["איך משתפים כרטיסיות", "faq", a => a === "share"],
+  ["מי בנה את האפליקציה", "faq", a => a === "who"], ["למה אין לי התראות", "faq", a => a === "noPush"], ["איך רואים מערכת של חבר", "faq", a => a === "other"], ["יש טעות במערכת", "faq", a => a === "wrong"], ["מה זה צלש", "faq", a => a === "praiseMean"],
+  ["אני לחוץ מהמבחן מחר", "mood", a => a === "stress"], ["אין לי כוח", "mood", a => a === "tired"], ["רע לי", "mood", a => a === "sad"], ["קיבלתי 100 במבחן", "mood", a => a === "good"],
+  ["אני אוהב אותך", "love"], ["תן לי מוטיבציה", "motivate"],
+  // ותיקים – לוודא שלא נשברו
+  ["מה יש לי עכשיו", "now"], ["מה יש מחר", "dayinfo"], ["מתי יש לי אנגלית", "when", a => a === "אנגלית"], ["מי המורה שלי באנגלית", "teacher"], ["כמה חיסורים יש לי", "abs"], ["מה השם שלי", "me"],
+];
+{ let b5 = 0; for (const [q, w, f] of C3) { const r = A.think(q, { Topics: global.Topics }); if (r.id !== w || (f && !f(r.arg))) { b5++; console.log("❌", q, "→", r.id, JSON.stringify(r.arg), "(want", w + ")"); } }
+  if (b5) process.exitCode = 1; console.log(b5 ? `❌ ${b5}/${C3.length} round-3 sentences` : `✅ ${C3.length} round-3 sentences understood`); }

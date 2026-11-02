@@ -35,7 +35,7 @@ function lev(a, b) {
 function wordHit(qw, pw) {
   const fq = forms(qw), fp = forms(pw);
   if (fq.some(a => fp.includes(a))) return 1;
-  if (pw.length >= 4 && fq.some(a => a.length >= 4 && lev(a, pw) <= (pw.length >= 7 ? 2 : 1))) return 0.8;
+  if (pw.length >= 5 && fq.some(a => a.length >= 4 && lev(a, pw) <= (pw.length >= 8 ? 2 : 1))) return 0.8; // שגיאת כתיב – רק במילים ארוכות
   return 0;
 }
 // כמה מהביטוי נמצא בשאלה: 0..1 (ביטוי של כמה מילים צריך את כולן)
@@ -83,7 +83,7 @@ function mathExpr(q) {
     .replace(/בריבוע/g, "^2").replace(/בשלישית|בחזקת שלוש/g, "^3").replace(/בחזקת/g, "^").replace(/שורש(?: של)?/g, "√").replace(/פאי/g, "π")
     .replace(/(כמה זה|כמה יוצא|תחשב לי|תחשב|חשב|מה התוצאה של|מה זה|כמה)/g, " ");
   const t = s.replace(/\s+/g, "");
-  if (/[א-ת]/.test(t) || !/\d/.test(t) || !/[-+*/^√%!×÷]|sin|cos|tan|log/.test(t) || /[=<>x]/i.test(t)) return null;
+  if (/[א-ת]/.test(t) || !/\d/.test(t) || !/[-+*/^√%!×÷]|sin|cos|tan|log/.test(t) || /[=<>x]/i.test(t) || /^\d+(\.\d+)?%$/.test(t)) return null;
   return t;
 }
 // משוואה/ביטוי עם x: "תפתור 2x+3=11"
@@ -139,7 +139,7 @@ A("exit", { page: "shichrur.html", hash: "", label: "שחרורון – אישו
 A("about", { page: "about.html", hash: "", label: "על האפליקציה ופרטיות" });
 A("staff", { page: "staff.html", hash: "", label: "כניסת צוות" });
 // תשובות על המערכת האישית – מחושבות בטלפון (במסך הראשי)
-for (const id of ["now", "next", "today", "dayinfo", "gear", "end", "brk", "when", "teacher", "abs", "avg", "streak", "tef", "bdays", "time", "me"]) A(id, { page: ix, label: "", answer: true });
+for (const id of ["now", "next", "today", "dayinfo", "gear", "end", "brk", "when", "teacher", "abs", "avg", "streak", "tef", "bdays", "time", "me", "start", "nth", "changes", "vac", "parsha", "zmanim", "news", "polls", "events", "qanswers", "wishes", "lates", "praise", "left30", "best", "teachers", "subjects", "weekly", "mashovAge"]) A(id, { page: ix, label: "", answer: true });
 
 // ===================== המוח המהיר: כוונות =====================
 // p = ביטויים (אחרי norm). w = משקל. need = ישות שחייבת להופיע
@@ -158,9 +158,47 @@ const INT = [
   { id: "avg", p: ["מה הממוצע", "ממוצע", "מה הציון", "ציונים שלי", "כמה קיבלתי", "הציון שלי", "ציון", "מה קיבלתי", "קיבלתי במבחן", "ציון במבחן", "איך הלך לי במבחן"] },
   { id: "goal", p: ["כמה אני צריך במבחן", "כמה צריך לקבל", "כמה אני צריך לקבל", "כמה צריך במבחן הבא", "מטרה לממוצע", "יעד לממוצע", "להגיע לממוצע"], w: 1.2 },
   { id: "streak", p: ["רצף", "כמה ברצף", "הרצף שלי", "רצפים"] },
-  { id: "tef", p: ["תפילין", "עד מתי אפשר להניח", "מתי השקיעה", "שקיעה", "להניח תפילין", "הנחתי תפילין"] },
+  { id: "tef", p: ["תפילין", "לתפילין", "נשאר לתפילין", "זמן לתפילין", "עד מתי אפשר להניח", "מתי השקיעה", "שקיעה", "להניח תפילין", "הנחתי תפילין"] },
   { id: "bdays", p: ["ימי הולדת", "למי יש יום הולדת", "יום הולדת היום", "מי חוגג", "ימי הולדת השבוע"] },
   { id: "time", p: ["מה השעה", "איזה יום היום", "מה התאריך", "תאריך עברי", "איזה תאריך"] },
+  // ---- עוד על המערכת ----
+  { id: "start", p: ["מתי מתחילים", "מתי השיעור הראשון", "באיזה שעה מתחילים", "באיזו שעה מתחיל", "מתי צריך להגיע", "מתי מתחיל היום", "מתי קמים", "מתי מתחילים מחר"], w: 1.15, day: true },
+  { id: "changes", p: ["יש שינויים", "שינויים במערכת", "מה השתנה במערכת", "בוטל שיעור", "יש ביטולים", "מורה מחליף", "שיעור שבוטל", "יש שינוי", "מה בוטל", "שינויים היום", "שינויים מחר"], w: 1.15, day: true },
+  { id: "vac", p: ["מתי החופש", "מתי חופשה", "חופשה הבאה", "מתי יש חופש", "חופש", "מתי חנוכה", "מתי פסח", "מתי סוכות", "מתי נגמרת השנה", "סוף השנה", "יש לימודים ב", "חגים", "ימי חופש", "מתי ל\"ג בעומר", "מתי פורים"], w: 1.1 },
+  { id: "parsha", p: ["מה הפרשה", "פרשת השבוע", "איזו פרשה", "פרשה"], w: 1.1 },
+  { id: "zmanim", p: ["זמני היום", "זריחה", "סוף זמן קריאת שמע", "סוף זמן תפילה", "צאת הכוכבים", "מתי נכנסת שבת", "הדלקת נרות", "מתי יוצאת שבת", "כניסת שבת", "יציאת שבת", "חצות", "עלות השחר", "מנחה גדולה", "זמני תפילה"], w: 1.15 },
+  { id: "news", p: ["יש עדכונים", "מה העדכונים", "עדכונים מהצוות", "הודעה מהמנהל", "מה הודיעו", "הודעות", "יש הודעה", "מה חדש מהצוות", "עדכונים"], w: 1.05 },
+  { id: "polls", p: ["יש סקר", "סקרים", "סקר", "להצביע"], w: 1.05 },
+  { id: "events", p: ["אירועים", "מה יש השבוע בישיבה", "אירועים קרובים", "טיול", "שבתון", "מה מתוכנן", "לוח אירועים"], w: 1.05 },
+  { id: "qanswers", p: ["ענו לי", "ענו על השאלה שלי", "תשובות לשאלות", "התשובה לשאלה שלי", "תשובה מהצוות"], w: 1.15 },
+  { id: "wishes", p: ["מי איחל לי", "מי איחל לי מזל טוב", "קיבלתי איחולים"], w: 1.2 },
+  { id: "lates", p: ["כמה איחורים", "איחורים", "כמה פעמים איחרתי", "איחרתי"], w: 1.15 },
+  { id: "praise", p: ["כמה צלשים", "צלשים", "צלש", "כמה מחמאות", "חיזוקים", "הערות חיוביות"], w: 1.15 },
+  { id: "left30", p: ["כמה עוד מותר לי להחסיר", "כמה מותר לי לחסר", "כמה חיסורים נשארו לי", "כמה עוד אפשר להחסיר", "כמה פעמים מותר לי", "כמה נשאר לי עד 30"], w: 1.3 },
+  { id: "best", p: ["באיזה מקצוע אני הכי טוב", "באיזה מקצוע אני הכי חלש", "המקצוע הכי טוב שלי", "הציון הכי גבוה", "הציון הכי נמוך", "איפה אני הכי חלש", "במה אני טוב", "במה אני חלש"], w: 1.3 },
+  { id: "teachers", p: ["מי המורים שלי", "כל המורים", "רשימת מורים", "רשימת המורים"], w: 1.0 },
+  { id: "subjects", p: ["אילו מקצועות יש לי", "כמה מקצועות", "המקצועות שלי", "איזה מקצועות", "מה אני לומד"], w: 1.2 },
+  { id: "weekly", p: ["כמה שעות בשבוע", "כמה פעמים בשבוע", "כמה שיעורים בשבוע"], w: 1.25, subj: true },
+  { id: "mashovAge", p: ["מתי עודכן משוב", "משוב מעודכן", "לרענן משוב", "עדכון משוב", "הנתונים ממשוב"], w: 1.2 },
+  // ---- איך עושים / מה זה (תשובות מוכנות) ----
+  { id: "faq", arg: "gear", p: ["איך מוסיפים ציוד", "איך משנים ציוד", "ציוד לשיעור", "איך מוסיפים מה להביא", "לערוך ציוד"], w: 1.35 },
+  { id: "faq", arg: "offline", p: ["עובד בלי אינטרנט", "בלי אינטרנט", "אין לי אינטרנט", "אופליין"], w: 1.3 },
+  { id: "faq", arg: "password", p: ["שומרים את הסיסמה", "הסיסמה של משוב", "זה בטוח", "אתם רואים את הסיסמה", "הסיסמה שלי"], w: 1.3 },
+  { id: "faq", arg: "rule30", p: ["מה זה 30 אחוז", "מה זה שלושים אחוז", "מה הכלל של 30", "מה קורה אם עוברים 30", "חוק ה 30"], w: 1.4 },
+  { id: "faq", arg: "streak", p: ["מה זה רצף", "איך עובד הרצף", "איך בונים רצף", "למה נשבר הרצף", "מה זה כבאית"], w: 1.4 },
+  { id: "faq", arg: "exit", p: ["איך עושים שחרורון", "איך מבקשים יציאה", "איך יוצאים מהישיבה", "איך ההורים חותמים"], w: 1.35 },
+  { id: "faq", arg: "share", p: ["איך משתפים כרטיסיות", "לשלוח כרטיסיות לחבר", "לשתף סט"], w: 1.35 },
+  { id: "faq", arg: "who", p: ["מי בנה את האפליקציה", "מי עשה את האפליקציה", "מי המציא", "מי אחראי על האפליקציה"], w: 1.3 },
+  { id: "faq", arg: "noPush", p: ["למה אין לי התראות", "לא מגיעות התראות", "התראות לא עובדות", "לא קיבלתי התראה"], w: 1.35 },
+  { id: "faq", arg: "other", p: ["מערכת של כיתה אחרת", "לראות מערכת של חבר", "מערכת של חבר"], w: 1.3 },
+  { id: "faq", arg: "wrong", p: ["המערכת לא נכונה", "יש טעות במערכת", "שיעור לא נכון", "המורה לא נכון", "השעה לא נכונה"], w: 1.35 },
+  { id: "faq", arg: "praiseMean", p: ["מה זה צלש", "מה זה צל\"ש"], w: 1.45 },
+  // ---- מצב רוח ----
+  { id: "mood", arg: "stress", p: ["אני לחוץ", "לחוץ מהמבחן", "יש לי מבחן", "מפחד מהמבחן", "לחץ", "אני לא אצליח"], w: 1.1 },
+  { id: "mood", arg: "tired", p: ["אין לי כוח", "עייף", "משעמם לי", "משעמם", "לא בא לי"], w: 1.05 },
+  { id: "mood", arg: "sad", p: ["אני עצוב", "רע לי", "קשה לי", "אני בדיכאון", "אף אחד לא אוהב אותי", "בודד"], w: 1.1 },
+  { id: "mood", arg: "good", p: ["אני שמח", "היה יום טוב", "הצלחתי במבחן", "קיבלתי 100"], w: 1.05 },
+  { id: "love", p: ["אני אוהב אותך", "אתה הכי טוב", "אתה מגניב", "אתה חמוד", "אתה תותח"], w: 0.95 },
   // ---- עליי (מהפרופיל, בטלפון) ----
   { id: "me", arg: "name", p: ["מה השם שלי", "איך קוראים לי", "מי אני", "אתה יודע מי אני", "מה שמי", "השם שלי"], w: 1.3 },
   { id: "me", arg: "cls", p: ["באיזה כיתה אני", "באיזו כיתה אני", "מה הכיתה שלי", "הכיתה שלי", "באיזה שכבה אני", "באיזו שכבה אני"], w: 1.3 },
@@ -185,7 +223,7 @@ const INT = [
   { id: "feedback", p: ["תקלה", "באג", "משהו לא עובד", "לא עובד", "לדווח על תקלה", "נתקע", "שגיאה"], arg: "bug" },
   { id: "ask", p: ["שאלה לצוות", "לשאול מורה", "לשאול את הצוות", "שאלה אנונימית", "לשאול בלי שם", "לשאול את המורה"], w: 1.1 },
   { id: "image", p: ["מערכת כתמונה", "לשתף את המערכת", "צילום מערכת", "להדפיס", "להדפיס את המערכת", "תמונה של המערכת", "לשלוח את המערכת", "וואטסאפ מערכת", "לצלם את המערכת", "תשלח את המערכת", "לשתף מערכת", "לשלוח מערכת לחבר"] },
-  { id: "parents", p: ["הורים", "לשלוח להורים", "קישור להורים", "אמא שלי", "אבא שלי", "שההורים יראו"] },
+  { id: "parents", p: ["הורים", "לשלוח להורים", "קישור להורים", "אמא שלי", "אבא שלי", "שההורים יראו", "ההורים שלי יראו", "ההורים שלי"], w: 1.1 },
   { id: "recap", p: ["סיכום חודשי", "סיכום שנתי", "הסיכום שלי", "סיכום החודש", "סיכום"] },
   { id: "mashov", p: ["לחבר משוב", "משוב", "להתחבר למשוב", "חיבור למשוב", "סיסמה של משוב"] },
   { id: "mashovOff", p: ["לנתק משוב", "לנתק את משוב", "להתנתק ממשוב", "לבטל משוב"], w: 1.2 },
@@ -222,6 +260,7 @@ const INT = [
   { id: "thanks", p: ["תודה", "תודה רבה", "תותח", "אלוף", "סבבה", "מעולה"], w: 0.7 },
   { id: "help", p: ["מה אתה יודע לעשות", "מי אתה", "עזרה", "מה אפשר לשאול", "איך אתה עובד", "מה אתה"], w: 0.9 },
   { id: "joke", p: ["בדיחה", "תספר בדיחה", "משהו מצחיק", "תצחיק אותי"] },
+  { id: "motivate", p: ["תן לי מוטיבציה", "מוטיבציה", "משפט השראה", "תחזק אותי", "משפט מחזק"] },
 ];
 const IDX = INT.map(it => ({ ...it, pn: it.p.map(norm) }));
 
@@ -230,6 +269,10 @@ const IDX = INT.map(it => ({ ...it, pn: it.p.map(norm) }));
 function think(qRaw, ctx = {}) {
   const q = String(qRaw || "").trim(); const qn = norm(q); if (!qn) return { id: "help", conf: 1 };
   const qWords = qn.split(" ");
+  // 0. "מה השיעור השלישי (מחר)?"
+  const ORD = { "ראשונ": 1, "שני": 2, "שלישי": 3, "רביעי": 4, "חמישי": 5, "שישי": 6, "שביעי": 7, "שמיני": 8, "תשיעי": 9, "עשירי": 10 };
+  const om = qn.match(/(?:^| )(?:ה|ב|ו)?שיעור (?:מספר )?(?:ה)?(ראשונ|שני|שלישי|רביעי|חמישי|שישי|שביעי|שמיני|תשיעי|עשירי|\d{1,2})(?= |$)/);
+  if (om) { const n = ORD[om[1]] || +om[1]; const rest = qn.replace(om[0], " "); return { id: "nth", arg: { n, day: findDay(rest) || undefined }, conf: 0.95 }; }
   // 1. תרגיל לחישוב
   const ex = mathExpr(q); if (ex) return { id: "compute", arg: ex, conf: 0.95 };
   const eq = equation(q);
@@ -248,6 +291,7 @@ function think(qRaw, ctx = {}) {
   let top = scored[0];
   // נושא עם שגיאת כתיב ("לירוק"≈"פירוק") לא גובר על פקודה ברורה
   if (topic && !topic.exact && top && top.s >= 0.6 && !learnish && !practiceish) topic = null;
+  if (topic && top && ["faq", "mood", "me"].includes(top.it.id) && top.raw === 1) topic = null; // "מה זה 30 אחוז" = שאלה על האפליקציה, לא נושא במתמטיקה
   // 4. פעולות עם תרגיל
   const eqOk = eq && /[-+*/^=<>²³√]/.test(eq) && !(learnish && !/(תגזור|לגזור|תפתור|לפתור|פתור)/.test(qn));
   if (eqOk && /(תגזור|לגזור|נגזרת)/.test(qn)) return { id: "der", arg: eq.replace(/^y=|^f\(x\)=/, ""), conf: 0.95 };
@@ -261,6 +305,8 @@ function think(qRaw, ctx = {}) {
     // "סדרה חשבונית" → הסבר; "לחשב סדרה" → כלי
     if (!(top && top.s >= 0.9 && ["seq", "bin", "pct", "tri", "func", "line", "sys", "der", "sci"].includes(top.it.id) && !learnish)) return { id: "topic", arg: topic.id, conf: 0.88, topicName: topic.t };
   }
+  if (!top && color && /(תעשה|תצבע|צבע|שיהיה|תהפוכ|רוצה)/.test(qn)) return { id: "theme", arg: color, conf: 0.95 };
+  if (!top && day && subj) return { id: "when", arg: { s: subj, day }, conf: 0.9 }; // "יש לי היום אנגלית?"
   if (!top && day) return { id: "dayinfo", arg: day, conf: 0.8 };
   if (!top) return topic ? { id: "topic", arg: topic.id, conf: 0.7, topicName: topic.t } : { id: null, conf: 0, alts: [] };
   // 6. ישויות
@@ -271,6 +317,14 @@ function think(qRaw, ctx = {}) {
   if (id === "dayinfo" || ((id === "today" || id === "now") && day && day.rel !== 0)) { id = "dayinfo"; arg = day || { rel: 1 }; }
   if (["when", "teacher", "abs", "avg", "grades", "goal"].includes(id)) arg = subj || undefined;
   if (id === "when" && !subj && day) { id = "dayinfo"; arg = day; }
+  if (id === "when" && subj && day) arg = { s: subj, day };
+  if (id === "teachers" && subj) { id = "teacher"; arg = subj; }
+  if (id === "teacher" && !subj && /(^| )(ה)?מורימ( |$)/.test(qn)) { id = "teachers"; arg = undefined; }
+  // "יש לי מחר ספורט?" – מקצוע + יום בלי מילת שאלה אחרת
+  if (subj && day && ["dayinfo", "today", "now"].includes(id) && /(^| )יש( |$)/.test(qn)) { id = "when"; arg = { s: subj, day }; }
+  if (["start", "changes"].includes(id)) arg = day || undefined;
+  if (id === "vac" || id === "zmanim") arg = qn;
+  if (id === "weekly") arg = subj || undefined;
   if (id === "phones" && !arg) { const n = teacherIn(qn) || (subj ? teacherOf(subj) : null); if (n) arg = n; }
   // ביטוי שנמצא בדיוק, בשאלה קצרה = פקודה ברורה (לא מבזבזים שאלה של המוח החכם)
   let conf = Math.min(1, top.s);
@@ -318,6 +372,80 @@ function answer(id, arg) {
   const prof = g("profile");
   if (!prof || !prof.cls) return "קודם צריך להירשם באפליקציה – ואז אוכל לענות על המערכת שלך 🙂";
   const now = new Date(), nm = nowMin();
+  if (id === "start") {
+    const dt = arg ? dayDate(arg) : now, t = todayLessons(dt), lbl = !arg || arg.rel === 0 ? "היום" : arg.rel === 1 ? "מחר" : `ביום ${DAYS_HE[dt.getDay()]}`;
+    if (!t || !t.L.length) return `${lbl} אין לימודים 😎`;
+    const f = t.L[0], firstClass = t.L.find(l => !NOT_CLASS.test(l.n));
+    return `${lbl} מתחילים ב-<b>${f.s}</b> (${esc(f.n)})${firstClass && firstClass !== f ? `<br>השיעור הראשון: ${esc(firstClass.n)} ב-${firstClass.s}` : ""}`;
+  }
+  if (id === "nth") {
+    const dt = arg && arg.day ? dayDate(arg.day) : now, t = todayLessons(dt), lbl = !arg || !arg.day || arg.day.rel === 0 ? "היום" : arg.day.rel === 1 ? "מחר" : `ביום ${DAYS_HE[dt.getDay()]}`;
+    if (!t || !t.L.length) return `${lbl} אין לימודים 😎`;
+    const C = t.L.filter(l => !NOT_CLASS.test(l.n)), n = arg && arg.n || 1, l = C[n - 1];
+    return l ? `השיעור ה-${n} ${lbl}: <b>${esc(l.n)}</b> (${l.s}–${l.e})${l.w ? ` עם ${esc(l.w)}` : ""}` : `${lbl} יש רק ${C.length} שיעורים (בלי תפילות וארוחות).`;
+  }
+  if (id === "changes") {
+    const out = [];
+    for (const k of arg ? [arg] : [{ rel: 0 }, { rel: 1 }]) { const dt = dayDate(k), t = todayLessons(dt); if (!t) continue; const lbl = k.rel === 0 ? "היום" : k.rel === 1 ? "מחר" : `ביום ${DAYS_HE[dt.getDay()]}`;
+      const lo = g("lessonsOf"), wc = g("withChanges"), iso = g("isoOf"); let all = []; try { all = wc(lo(t.d), iso(dt)); } catch (e) {}
+      for (const l of all.filter(l => l.chg)) out.push(`${lbl} ${l.s} · ${esc(l.n)}: ${l.chg.kind === "cancel" ? "❌ בוטל" : l.chg.kind === "move" ? "⏰ הוזז" : l.chg.kind === "sub" ? "🔄 מורה מחליף" + (l.w ? " – " + esc(l.w) : "") : "שינוי"}${l.chg.note ? ` (${esc(l.chg.note)})` : ""}`); }
+    return out.length ? "🔄 שינויים:<br>" + out.join("<br>") : "✅ אין שינויים במערכת" + (arg ? "" : " היום ומחר") + ".";
+  }
+  if (id === "vac") {
+    const Y = g("SCHOOL_YEAR"); if (!Y) return "לא מצאתי את לוח החופשות 😕"; const iso = isoOf2(now), off = (Y.off || []).filter(o => o.to >= iso).sort((a, b) => a.from.localeCompare(b.from));
+    const q = norm(String(arg || "")), want = off.find(o => q && norm(o.label).split(" ").some(w => w.length > 2 && q.includes(w)));
+    const f = d => { const [y, m, dd] = d.split("-").map(Number); return `${dd}.${m}`; };
+    const one = o => `<b>${esc(o.label)}</b>: ${f(o.from)}${o.to !== o.from ? "–" + f(o.to) : ""}${o.from <= iso ? " (עכשיו! 🎉)" : ` – בעוד ${Math.round((new Date(o.from + "T12:00") - now) / 864e5)} ימים`}`;
+    if (want) return "🏖️ " + one(want);
+    if (/סוף השנה|נגמרת השנה|אחרונ/.test(q)) return `📅 שנת הלימודים נגמרת ב-<b>${f(Y.end)}</b>.`;
+    return off.length ? "🏖️ החופשות הקרובות:<br>" + off.slice(0, 3).map(one).join("<br>") + `<br><small>סוף השנה: ${f(Y.end)}</small>` : `אין יותר חופשות השנה. סוף השנה: ${f(Y.end)} 🎓`;
+  }
+  if (id === "parsha") { let h = null; try { h = g("hebParts"); } catch (e) {} return h && h.parsha ? `📜 ${esc(h.parsha)}${h.date ? ` · ${esc(h.date)}` : ""}` : "לא הצלחתי לבדוק את הפרשה כרגע (צריך אינטרנט) 😕"; }
+  if (id === "zmanim") {
+    const box = document.getElementById("zmanim"); if (!box || box.hidden) return "זמני היום לא נטענו (צריך אינטרנט) 😕";
+    const rows = [...box.querySelectorAll(".zm-grid > div")].map(d => [d.querySelector("span")?.textContent || "", d.querySelector("b")?.textContent || ""]);
+    const sh = box.querySelector(".zm-shabbat"), qn2 = norm(String(arg || ""));
+    if (/שבת|נרות/.test(qn2)) return sh ? sh.innerHTML : "השבת עוד לא בשבוע הקרוב.";
+    const hit = rows.find(([n]) => qn2 && norm(n).split(" ").some(w => w.length > 2 && qn2.includes(w)));
+    if (hit) return `🕰️ ${esc(hit[0])} היום: <b>${esc(hit[1])}</b>`;
+    return "🕰️ זמני היום:<br>" + rows.map(([n, t]) => `${esc(n)} – <b>${esc(t)}</b>`).join("<br>") + (sh ? "<br>" + sh.innerHTML : "");
+  }
+  if (id === "news") {
+    const U = g("Updates"), up = U && U.cached ? U.cached() : [], om = g("ownMsgs"), msgs = om ? om() : [];
+    const L = [...msgs.map(m => `📩 ${esc(m.text.slice(0, 140))}`), ...up.slice(0, 5).map(u => `${u.urgent ? "🚨" : "📢"} ${esc(String(u.text || "").slice(0, 140))}${u.author ? ` <small>– ${esc(u.author)}</small>` : ""}`)];
+    return L.length ? L.join("<br>") : "אין כרגע עדכונים מהצוות ✅";
+  }
+  if (id === "polls" || id === "events" || id === "qanswers") {
+    const U = g("Updates"), f = U && U.feed ? U.feed() : {};
+    if (id === "polls") { const P = (f.polls || []).slice(0, 3); return P.length ? "📊 " + P.map(x => esc(x.q)).join("<br>📊 ") + "<br><small>מצביעים בכרטיס הסקר במסך הראשי</small>" : "אין כרגע סקרים פתוחים."; }
+    if (id === "events") { const E = (f.events || []).slice(0, 4); return E.length ? "📅 " + E.map(e => `<b>${esc(e.title)}</b> – ${esc(e.date.split("-").reverse().slice(0, 2).join("."))}${e.time ? " " + esc(e.time) : ""}${e.place ? ` · 📍${esc(e.place)}` : ""}`).join("<br>📅 ") : "אין אירועים קרובים בלוח."; }
+    const mq = g("myQs"), mine = mq ? mq() : [], A2 = (f.answers || []).filter(a => mine.includes(a.id));
+    return A2.length ? A2.slice(0, 3).map(a => `❓ ${esc(a.q)}<br>💬 <b>${esc(a.a)}</b> <small>– ${esc(a.by || "")}</small>`).join("<br><br>") : mine.length ? "עוד לא ענו על השאלות ששלחת. כשיענו – זה יופיע למעלה במסך הראשי 🙂" : "לא שלחת שאלות לצוות. רוצה לשאול? כתוב \"שאלה לצוות\".";
+  }
+  if (id === "wishes") { const W = g("bdWishes"), w = W ? W() : []; return w.length ? `🎁 איחלו לך מזל טוב: ${w.map(esc).join(", ")}` : "היום עוד לא הגיעו איחולים (הם מגיעים ביום ההולדת שלך 🎂)."; }
+  if (id === "lates" || id === "praise" || id === "left30") {
+    const st = g("absState"), a = st && st(); if (!a) return "כדי לדעת את זה צריך לחבר את משוב (בפרופיל). כתוב \"לחבר משוב\".";
+    const subs = a.r.subjects.filter(x => x.held > 0);
+    if (id === "praise") return a.pr.total ? `⭐ קיבלת <b>${a.pr.total}</b> צל"שים השנה. כל הכבוד!` : "עוד אין צל\"שים השנה – הראשון בדרך 😉";
+    if (id === "lates") { const L = subs.filter(x => x.lates).sort((x, y) => y.lates - x.lates), tot = L.reduce((t, x) => t + x.lates, 0); return tot ? `⏰ <b>${tot}</b> איחורים השנה: ${L.slice(0, 4).map(x => `${esc(x.name)} (${x.lates})`).join(", ")}` : "⏰ אין לך איחורים השנה. אלוף!"; }
+    const S2 = arg ? subs.filter(x => match(x.name, arg)) : subs.filter(x => !x.nonBagrut).sort((x, y) => x.allowedLeft - y.allowedLeft).slice(0, 4);
+    return S2.length ? "📉 כמה עוד אפשר להחסיר עד 30%:<br>" + S2.map(x => `${esc(x.name)}: ${x.allowedLeft < 0 ? "⚠️ כבר עברת" : `<b>${x.allowedLeft}</b> שיעורים`}`).join("<br>") + "<br><small>הערכה לפי השיעורים עד עכשיו – כדאי לא להגיע לגבול 😉</small>" : `לא מצאתי נתונים${arg ? " ב" + esc(arg) : ""}.`;
+  }
+  if (id === "best") {
+    const M = g("Mashov"), md = M && M.data && M.data(); if (!md) return "כדי לדעת צריך לחבר את משוב (בפרופיל).";
+    const by = {}; for (const x of md.grades || []) { const v = parseFloat(x.grade); if (isFinite(v)) (by[x.subject] = by[x.subject] || []).push(v); }
+    const L = Object.entries(by).map(([n, v]) => [n, Math.round(v.reduce((a, b) => a + b, 0) / v.length)]).sort((a, b) => b[1] - a[1]);
+    if (!L.length) return "אין עדיין ציונים.";
+    return `🏆 הכי חזק: <b>${esc(L[0][0])}</b> (${L[0][1]})${L.length > 1 ? `<br>💪 שווה לחזק: <b>${esc(L[L.length - 1][0])}</b> (${L[L.length - 1][1]}) – אפשר לתרגל במחשבון 🎯` : ""}`;
+  }
+  if (id === "teachers" || id === "subjects" || id === "weekly") {
+    const D = g("DAYS"), lo = g("lessonsOf"); if (!D || !lo) return "לא הצלחתי לקרוא את המערכת 😕";
+    const m = new Map(); for (const d of D) if (d && d.lessons && !d.shabbat) for (const l of lo(d)) { if (NOT_CLASS.test(l.n)) continue; const x = m.get(l.n) || { w: l.w, c: 0 }; x.c++; m.set(l.n, x); }
+    if (id === "weekly") { if (!arg) return "איזה מקצוע? למשל: \"כמה שעות אנגלית בשבוע\""; const e = [...m].find(([n]) => match(n, arg)); return e ? `${esc(e[0])}: <b>${e[1].c}</b> שיעורים בשבוע.` : `לא מצאתי ${esc(arg)} במערכת שלך.`; }
+    if (id === "subjects") return `📚 ${m.size} מקצועות: ${[...m.keys()].map(esc).join(" · ")}`;
+    return "👩‍🏫 המורים שלך:<br>" + [...m].filter(([, x]) => x.w).map(([n, x]) => `${esc(n)} – ${esc(x.w)}`).join("<br>");
+  }
+  if (id === "mashovAge") { const M = g("Mashov"); return M && M.connected && M.connected() ? `📊 משוב עודכן ${esc(M.agoText ? M.agoText() : "")}. לרענון: פרופיל ← משוב ← "רענן עכשיו".` : "משוב לא מחובר. כתוב \"לחבר משוב\"."; }
   if (id === "me") {
     const C = g("CLASSES"), c = C && C[prof.cls], G = g("groupsOf"), gr = G ? G(prof.cls) : null, nm = `${prof.first || ""} ${prof.last || ""}`.trim();
     const eng = gr && gr.ENG && gr.ENG[prof.eng], math = gr && gr.MATH && gr.MATH[prof.math], mj = gr && gr.MAJORS && gr.MAJORS[prof.major];
@@ -355,6 +483,11 @@ function answer(id, arg) {
   if (id === "gear") { const tg = g("tomorrowGear"); if (!tg) return "לא הצלחתי לבדוק 😕"; const h = tg(now.getDay()); return h ? h.replace(/<\/?b>/g, "").replace(/<[^>]+>/g, "") : "לא מצאתי יום לימודים קרוב."; }
   if (id === "end") { const t = todayLessons(now); if (!t || !t.L.length) return "היום אין לימודים 😎"; const last = t.L[t.L.length - 1]; return tm(last.e) <= nm ? "כבר סיימנו להיום 🎉" : `היום מסיימים ב-<b>${last.e}</b> (${esc(last.n)}).`; }
   if (id === "brk") { const t = todayLessons(now); if (!t || !t.L.length) return "היום אין לימודים 😎"; for (let i = 1; i < t.L.length; i++) { const a = t.L[i - 1], b = t.L[i]; if (tm(b.s) - tm(a.e) >= 10 && tm(b.s) > nm) return `ההפסקה הבאה: <b>${a.e}–${b.s}</b> (${tm(b.s) - tm(a.e)} דק').`; } return "אין יותר הפסקות היום."; }
+  if (id === "when" && arg && typeof arg === "object") { // "יש לי מחר ספורט?"
+    const dt = dayDate(arg.day), t = todayLessons(dt), lbl = arg.day.rel === 0 ? "היום" : arg.day.rel === 1 ? "מחר" : `ביום ${DAYS_HE[dt.getDay()]}`;
+    const l = t && t.L.find(x => match(x.n, arg.s));
+    return l ? `כן ✅ ${lbl} יש ${esc(l.n)} ב-${l.s}${l.w ? ` עם ${esc(l.w)}` : ""}.` : `לא – ${lbl} אין ${esc(arg.s)}.`;
+  }
   if (id === "when") {
     if (!arg) return "איזה מקצוע? למשל: \"מתי יש לי אנגלית?\"";
     for (let k = 0; k < 8; k++) { const dt = new Date(now); dt.setDate(now.getDate() + k); const t = todayLessons(dt); if (!t) break;
@@ -386,6 +519,28 @@ function answer(id, arg) {
   if (id === "bdays") { const U = g("Updates"), f = U && U.feed && U.feed(), B = (f && f.birthdays || []).filter(x => x.inDays >= 0 && x.inDays <= 7); return B.length ? "🎂 " + B.map(x => `${esc(x.name)} – ${x.inDays === 0 ? "<b>היום!</b>" : x.inDays === 1 ? "מחר" : "בעוד " + x.inDays + " ימים"}`).join(" · ") : "אין ימי הולדת בשבוע הקרוב."; }
   return "";
 }
+const NOT_CLASS = /תפיל|ארוחת|שחרית|מנחה|ערבית|סדר ערב/;
+const isoOf2 = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const FAQ = {
+  gear: "🎒 לוחצים על \"+ ציוד\" (או \"ערוך ציוד\") ליד כל שיעור במסך הראשי, כותבים מה להביא – וזה נשמר בטלפון. \"מה להביא מחר\" יוצא מזה אוטומטית.",
+  offline: "📶 כן! המערכת עובדת גם בלי אינטרנט. רק עדכונים, משוב, AI וזמני היום צריכים חיבור.",
+  password: "🔒 הסיסמה של משוב <b>לא נשמרת אצלנו בשרת</b> – היא עוברת רק בזמן החיבור. אפשר לבחור לשמור אותה בטלפון שלך (בשביל רענון מהיר), או לא. הנתונים ממשוב נשמרים רק בטלפון.",
+  rule30: "📏 בכל מקצוע בגרות, אם מחסירים יותר מ-30% מהשיעורים – אפשר לאבד את הזכות להיבחן/לקבל ציון שנתי. האפליקציה מחשבת לך את זה ממשוב ומתריעה מראש ⚠️ (חיסור מוצדק לפעמים לא נספר – תלוי בהגדרה).",
+  streak: "🔥 רצף = כמה שיעורים ברצף הגעת למקצוע בלי חיסור לא מוצדק. כל 10 – חגיגה, ב-100 – משהו מטורף 👑. חיסור לא מוצדק שובר את הרצף (ואז מגיעה כבאית 🚒), איחור לא שובר.",
+  exit: "🏃 שחרורון: ממלאים פרטים (מתי ולמה), שולחים קישור להורה, ההורה חותם בטלפון – והאישור מגיע לצוות. רוצה שאפתח? כתוב \"שחרורון\".",
+  share: "🃏 בתוך סט כרטיסיות לוחצים \"שתף\" – נוצר קישור. מי שפותח אותו מקבל עותק של הסט אצלו.",
+  who: "😎 את האפליקציה בנה <b>אליה עמיר</b>, תלמיד בישיבה – בשביל כל התלמידים. רעיונות? כתוב \"יש לי רעיון\".",
+  noPush: "🔔 בודקים: 1) בפרופיל ← \"התראות\" – מסומן? 2) באייפון – רק כשהאפליקציה מותקנת במסך הבית. 3) בהגדרות הטלפון – לאשר התראות לדפדפן/לאפליקציה. אין התראות בלילה ובשבת.",
+  other: "👀 כל טלפון מראה את המערכת של מי שרשום בו. אפשר לשלוח למישהו את המערכת שלך כתמונה (\"המערכת כתמונה\") או קישור להורים.",
+  wrong: "🛠️ אם משהו במערכת לא נכון – כתוב \"יש לי תקלה\" ותתאר מה בדיוק, ונתקן. אם ההקבצה שלך לא נכונה – \"עריכת פרטים\".",
+  praiseMean: "⭐ צל\"ש = ציון לשבח: הערה חיובית מהמורה במשוב. האפליקציה סופרת אותם ומראה לך כשמגיע חדש.",
+};
+const MOOD = {
+  stress: "🤗 נשום עמוק – זה רק מבחן, ואתה יותר מהציון. רוצה לתרגל? כתוב \"תרגול ב…\" + הנושא, או לחזור על מילים בכרטיסיות. 15 דקות תרגול עכשיו עושות הבדל ענק 💪",
+  tired: "😴 מבין אותך. אולי הפסקה קצרה, מים, ואז 10 דקות בלבד – אחר כך כבר יותר קל. אני כאן אם צריך 🙂",
+  sad: "💙 צר לי לשמוע. אתה לא לבד – כדאי מאוד לדבר עם מישהו שאתה סומך עליו: הרב, המחנך, ההורים או חבר. אם זה דחוף – פנה עכשיו למבוגר בישיבה. רוצה שאפתח לך \"שאלה לצוות\" (בלי שם)?",
+  good: "🎉 איזה כיף! תמשיך ככה – ותספר לעצמך שזה בזכותך 💪",
+};
 const match = (a, b) => { const x = norm(a), y = norm(b); if (x.includes(y) || y.includes(x)) return true; const al = SUBJ_ALIAS[b]; return !!(al && al.some(w => x.includes(norm(w)))); };
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -412,10 +567,12 @@ function sayFor(r) {
 const SMALL = {
   hi: ["היי! 👋 אני מערכתי. מה צריך?", "שלום! במה אפשר לעזור? 😊", "אהלן! אני כאן 🤖"],
   thanks: ["בכיף! 😊", "תמיד! 💪", "בשמחה 🤖"],
+  motivate: ["כל רצף מתחיל בשיעור אחד 🔥 תגיע לבא – והוא כבר שלך.", "\"לא עליך המלאכה לגמור, ולא אתה בן חורין להיבטל ממנה\" 💪", "אתה לא צריך להיות מושלם – רק קצת יותר טוב מאתמול ✨", "הכי קשה זה להתחיל. אחרי 5 דקות זה כבר זורם 🚀"],
+  love: ["אוי, גם אני אוהב אותך 🤖💜", "תודה! אתה יותר 😎", "ממש מחמיא לי 🥹 בוא נמשיך לעבוד ביחד!"],
   joke: ["למה המחשבון לא מפחד ממבחנים? כי הוא תמיד יודע את התשובה 😄", "מה אמר המשולש לעיגול? אתה חסר טעם – אין לך בכלל פינות! 📐", "למה הספר של המתמטיקה עצוב? יש לו יותר מדי בעיות 😅"],
 };
-const HELP = `אני <b>מערכתי</b> 🤖 אפשר לכתוב לי או לדבר איתי, למשל:<br>• "מה יש לי עכשיו?" / "מה להביא מחר?"<br>• "תיקח אותי לנגזרת" / "תרגול בשברים ברמה קלה"<br>• "תפתור 2x+3=11" / "כמה זה 15% מ-200"<br>• "לשנות יום הולדת" / "תצבע בירוק"<br>• "כמה חיסורים יש לי באנגלית?"`;
-const CHIPS = ["מה יש לי עכשיו?", "מה להביא מחר?", "תיקח אותי לנגזרת", "כמה חיסורים יש לי?", "תרגול במשוואות"];
+const HELP = `אני <b>מערכתי</b> 🤖 אפשר לכתוב לי או לדבר איתי, למשל:<br>• "מה יש לי עכשיו?" / "מה להביא מחר?"<br>• "תיקח אותי לנגזרת" / "תרגול בשברים ברמה קלה"<br>• "תפתור 2x+3=11" / "כמה זה 15% מ-200"<br>• "לשנות יום הולדת" / "תצבע בירוק"<br>• "כמה חיסורים יש לי באנגלית?" / "יש לי מחר ספורט?"<br>• "מתי החופש הבא?" / "יש שינויים במערכת?" / "מה השם שלי?"<br><small>אפשר לשאול אותי כמעט הכל על האפליקציה 🙂</small>`;
+const CHIPS = ["מה יש לי עכשיו?", "מה להביא מחר?", "יש שינויים?", "מתי החופש הבא?", "תיקח אותי לנגזרת", "כמה חיסורים יש לי?", "תרגול במשוואות"];
 
 // ===================== מבצע: "אצבע" שלוחצת =====================
 const PAGE = isNode ? "index.html" : (location.pathname.split("/").pop() || "index.html");
@@ -682,6 +839,8 @@ async function handle(text) {
 async function local(r, pre = "") {
   if (SMALL[r.id]) { botSay((pre ? pre + "<br>" : "") + SMALL[r.id][Math.floor(Math.random() * SMALL[r.id].length)]); return; }
   if (r.id === "help") { botSay(HELP); return; }
+  if (r.id === "faq") { botSay((pre ? pre + "<br>" : "") + (FAQ[r.arg] || HELP)); return; }
+  if (r.id === "mood") { botSay(MOOD[r.arg] || MOOD.good); if (r.arg === "sad") { botSay(`<button class="go" data-a="ask">💬 שאלה לצוות (בלי שם)</button>`); wire(); } return; }
   if (r.say) botSay((pre ? pre + "<br>" : "") + r.say);
   else { const s = sayFor(r); if (s) botSay((pre ? pre + "<br>" : "") + s); }
   if (ACT[r.id] && ACT[r.id].answer) { if (onPage(ix)) botSay(answer(r.id, r.arg)); else { botSay("רגע, בודק במערכת שלך… 🔎"); await act(r.id, r.arg); } return; }
