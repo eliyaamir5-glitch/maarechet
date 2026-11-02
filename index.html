@@ -1856,7 +1856,7 @@ const pushSupported=()=>"serviceWorker" in navigator&&"PushManager" in window&&"
 const isIOSDev=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 const pushLS=()=>{try{const p=JSON.parse(localStorage.getItem("push")||"null");return p&&typeof p==="object"?p:{}}catch(e){return{}}};
 const pushSave=o=>{try{localStorage.setItem("push",JSON.stringify(o))}catch(e){}};
-const pushPrefs=()=>({tef:pushLS().prefs?.tef!==false,urgent:pushLS().prefs?.urgent!==false});
+const pushPrefs=()=>({tef:pushLS().prefs?.tef!==false,urgent:pushLS().prefs?.urgent!==false,holiday:pushLS().prefs?.holiday!==false});
 const b64u=s=>{const p="=".repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(b,c=>c.charCodeAt(0))};
 async function pushPost(body){try{const r=await fetch(PUSH_API(),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});return await r.json()}catch(e){return{ok:false,error:"network"}}}
 async function pushSubscribe(){
@@ -1911,11 +1911,12 @@ function renderPushPrefs(){
     <div id="ppMore" ${on?"":"hidden"} style="padding-inline-start:20px">
       <label><input type="checkbox" id="ppTef" ${pr.tef?"checked":""}> 🙏 תזכורת תפילין (שעה לפני השקיעה)</label>
       <label><input type="checkbox" id="ppUrg" ${pr.urgent?"checked":""}> 🚨 הודעות דחופות מהצוות</label>
+      <label><input type="checkbox" id="ppHol" ${pr.holiday?"checked":""}> 🎉 ברכה לכל חג (בערב חג, בצהריים)</label>
     </div><div class="pf-sub" id="ppMsg">${Notification.permission==="denied"?"ההתראות חסומות בהגדרות של הטלפון/הדפדפן.":"בלי התראות בלילה (22:00–07:00) ובשבת."}</div>`;
   const $=id=>document.getElementById(id);
   $("ppOn").onchange=async e=>{$("ppMsg").textContent="רגע…";if(e.target.checked){const r=await pushEnable();if(r!=="on")e.target.checked=false}else await pushDisable();renderPushPrefs();renderPushCard()};
-  const prefs=async()=>{pushSave({...pushLS(),prefs:{tef:$("ppTef").checked,urgent:$("ppUrg").checked},synced:0});$("ppMsg").textContent="נשמר ✓";try{await pushSubscribe()}catch(e){$("ppMsg").textContent="לא הצלחתי לשמור עכשיו"}};
-  $("ppTef").onchange=prefs;$("ppUrg").onchange=prefs;
+  const prefs=async()=>{pushSave({...pushLS(),prefs:{tef:$("ppTef").checked,urgent:$("ppUrg").checked,holiday:$("ppHol").checked},synced:0});$("ppMsg").textContent="נשמר ✓";try{await pushSubscribe()}catch(e){$("ppMsg").textContent="לא הצלחתי לשמור עכשיו"}};
+  $("ppTef").onchange=prefs;$("ppUrg").onchange=prefs;$("ppHol").onchange=prefs;
 }
 setTimeout(()=>{renderPushCard();pushSync()},3000);
 

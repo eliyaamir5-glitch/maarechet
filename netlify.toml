@@ -4,7 +4,7 @@
   command = "node scripts/build.js"
   # חיסכון בקרדיטים של נטליפיי: התלמידים משתמשים באתר שבגיטהאב, ונטליפיי צריך רק את השרת.
   # לכן בונים מחדש רק כשקוד השרת משתנה (יציאה 0 = לדלג על הבנייה).
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- netlify/functions package.json"
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- netlify/functions package.json holidays-core.js"
 
 [build.environment]
   NODE_VERSION = "22"

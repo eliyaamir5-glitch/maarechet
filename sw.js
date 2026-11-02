@@ -1,8 +1,8 @@
 // Service Worker: מאפשר לאפליקציה להיפתח גם בלי אינטרנט.
 // אסטרטגיה: קודם רשת ואם אין – מהמטמון (כך עדכונים מגיעים מיד כשיש קליטה).
 // לפונטים של גוגל: קודם מטמון, כי הם לא משתנים.
-const CACHE = "maarechet-v63";
-const PRECACHE = ["./", "./index.html", "./data.js", "./shichrur.html", "./cards.html", "./sets.js", "./card-editor.js", "./calc.html", "./calc-topics.js", "./calc-practice.js", "./calc-sci.js", "./calc-tools.js", "./assistant.js", "./parent.html", "./theme.js", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./phones.html", "./calc-engine.js", "./board.js", "./mashov.js", "./absences.js", "./absences.html", "./timetable-image.js", "./about.html", "./updates.js", "./demo-shim.js", "./staff.html", "./mashov-schools.json"];
+const CACHE = "maarechet-v64";
+const PRECACHE = ["./", "./index.html", "./data.js", "./shichrur.html", "./cards.html", "./sets.js", "./card-editor.js", "./calc.html", "./calc-topics.js", "./calc-practice.js", "./calc-sci.js", "./calc-tools.js", "./assistant.js", "./parent.html", "./theme.js", "./holidays-core.js", "./holidays.js", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./phones.html", "./calc-engine.js", "./board.js", "./mashov.js", "./absences.js", "./absences.html", "./timetable-image.js", "./about.html", "./updates.js", "./demo-shim.js", "./staff.html", "./mashov-schools.json"];
 
 // בנטליפיי (ובשרת המקומי) x.html מופנה ל-x. תשובה שעברה הפניה אסור להחזיר לניווט,
 // אז שומרים עותק "נקי" (בלי סימון ההפניה), כדי שגם עמוד שלא נפתח עם אינטרנט ייפתח בלי אינטרנט

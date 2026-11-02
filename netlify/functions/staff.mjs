@@ -27,6 +27,7 @@
 //                                     שומרים רק: כתובת ההתראות של המכשיר, הכיתה וההעדפות. בלי שם.
 import crypto from "node:crypto";
 import webpush from "web-push";
+import HC from "../../holidays-core.js"; // 🎉 לוח החגים (משותף עם האפליקציה)
 
 export const config = { path: ["/api/updates", "/api/staff", "/api/feedback", "/api/sets", "/api/contacts", "/api/feed", "/api/owner", "/api/push", "/api/assist"] };
 
@@ -966,6 +967,8 @@ async function owner(req, S, ip, headers) {
   if (b.action === "suspend" || b.action === "unsuspend") return reply(200, await suspendOp(S, b, now, ""), headers);
   if (b.action === "msgSend") return reply(200, await msgSendOp(S, b, now, ""), headers);
   if (b.action === "msgDelete") return reply(200, await msgDeleteOp(S, b, ""), headers);
+  if (b.action === "holGet") return reply(200, await holOverview(S, now), { ...headers, "Cache-Control": "no-store" });
+  if (b.action === "holSet") return reply(200, await holSetOp(S, b), headers);
   if (b.action !== "overview") return reply(400, { ok: false, error: "bad_action" }, headers);
   return reply(200, await schoolOverview(S, now, true), { ...headers, "Cache-Control": "no-store" });
 }
@@ -973,9 +976,11 @@ async function owner(req, S, ip, headers) {
 async function feed(req, S, ip, headers) {
   if (req.method === "GET") {
     const now = Date.now(), today = israelDay(now);
-    const [ups, polls, events, qs, bd, rx, chg, ctl, om] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions", "changes", "control", "ownerMsgs"].map(k => S.get(k)));
+    const [ups, polls, events, qs, bd, rx, chg, ctl, om, hc] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions", "changes", "control", "ownerMsgs", "holCfg"].map(k => S.get(k)));
     return reply(200, {
       ok: true, now,
+      // 🎉 מצב חג: האם מנהל המערכת כיבה (הכל / חג מסוים). התאריכים עצמם מחושבים בטלפון
+      hol: holPublic(hc),
       updates: activeUpdates(ups, now).map(u => ({ ...publicUpdate(u), reacts: reactCounts(reactsOf(rx, u.id)) })),
       polls: (polls || []).filter(p => p.endsAt > now).sort((a, b) => b.createdAt - a.createdAt).map(publicPoll),
       events: (events || []).filter(e => e.date >= today).sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || ""))).slice(0, 30)
@@ -1247,7 +1252,7 @@ async function contacts(req, S, ip, headers) {
 // ===== 🔔 התראות לטלפון (Web Push) =====
 // המפתחות (VAPID) נוצרים לבד בפעם הראשונה ונשמרים באחסון – אין מה להגדיר בנטליפיי.
 // "push" = { [devKey]: { sub:{endpoint,keys}, cls, prefs:{tef,urgent}, at, last } }. בלי שם ובלי מזהה המכשיר עצמו.
-const PUSH_MAX = 4000, PUSH_PREFS = ["tef", "urgent"];
+const PUSH_MAX = 4000, PUSH_PREFS = ["tef", "urgent", "holiday"];
 const PUSH_HOSTS = /^https:\/\/([a-z0-9-]+\.)*(googleapis\.com|mozilla\.com|mozaws\.net|push\.apple\.com|windows\.com|microsoft\.com|notify\.windows\.com)\//i;
 let pushSender = (sub, payload, opts) => webpush.sendNotification(sub, payload, opts);
 export function __setPushSender(f) { pushSender = f; }
@@ -1437,4 +1442,53 @@ export async function pushTick(now = Date.now()) {
   const hm = new Date(ss).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Jerusalem" });
   const sent = await sendPush(S, () => true, { title: "🙏 תפילין", body: `נשארה בערך שעה להנחת תפילין – אפשר עד ${hm}. כבר הנחת? כל הכבוד! 💪`, tag: "tef-" + day }, { pref: "tef", ttl: 3000, force: true });
   return { sent };
+}
+
+// ---- 🎉 חגים: ברכה לטלפונים בתחילת כל חג + הגדרות של מנהל המערכת ----
+// "holCfg" = { off: כיבוי מצב החג כולו, push: false = בלי ברכות לטלפון, offKeys: {key:true} חגים מכובים, text: {key:"נוסח משלך"} }
+// "holSent" = { "hanukkah:2026-12-05": זמן } – כל ברכה נשלחת פעם אחת בלבד
+const holCfgOf = c => (c && typeof c === "object" ? c : {});
+function holPublic(c) { c = holCfgOf(c); const offKeys = {}; for (const k of Object.keys(c.offKeys || {})) if (HC.BY[k] && c.offKeys[k]) offKeys[k] = true; return { off: !!c.off, offKeys }; }
+const holText = (c, h) => (holCfgOf(c).text || {})[h.key] || h.greet || "";
+async function holOverview(S, now) {
+  const [c, sent] = await Promise.all([S.get("holCfg"), S.get("holSent")]), cfg = holCfgOf(c), today = israelDay(now);
+  const list = HC.list(today, 380).map(h => {
+    const at = HC.sendAt(h);
+    return { key: h.key, name: h.name, em: h.em, type: h.type, start: h.start, end: h.end, off: !!(cfg.offKeys || {})[h.key],
+      push: at ? { day: at.day, hour: at.hour } : null, text: holText(c, h), custom: !!(cfg.text || {})[h.key], def: h.greet || "",
+      sent: (sent || {})[h.key + ":" + h.start] || 0 };
+  });
+  return { ok: true, off: !!cfg.off, push: cfg.push !== false, list };
+}
+async function holSetOp(S, b) {
+  const key = b.key == null ? "" : String(b.key);
+  if (key && !HC.BY[key]) return { ok: false, error: "bad_request" };
+  let what = "";
+  await S.update("holCfg", cur => {
+    const c = { ...holCfgOf(cur) }; c.offKeys = { ...(c.offKeys || {}) }; c.text = { ...(c.text || {}) };
+    if (!key && typeof b.off === "boolean") { c.off = b.off; what = b.off ? "כיבוי מצב החג" : "הפעלת מצב החג"; }
+    if (!key && typeof b.push === "boolean") { c.push = b.push; what = b.push ? "הפעלת ברכות החג לטלפונים" : "כיבוי ברכות החג לטלפונים"; }
+    if (key && typeof b.off === "boolean") { if (b.off) c.offKeys[key] = true; else delete c.offKeys[key]; what = `${HC.BY[key].name}: ${b.off ? "כובה" : "הופעל"}`; }
+    if (key && typeof b.text === "string") { const t = clean(b.text, 160); if (t && t !== HC.BY[key].greet) c.text[key] = t; else delete c.text[key]; what = `${HC.BY[key].name}: נוסח הברכה ${t && t !== HC.BY[key].greet ? "עודכן" : "חזר לברירת המחדל"}`; }
+    return c;
+  });
+  if (what) await olog(S, "holiday", "🎉 " + what);
+  return { ok: true };
+}
+// רץ כמה פעמים בבוקר ובצהריים (holiday-tick.mjs). שולח ברכה כשהגיע הזמן שלה (ערב חג 12:00 / היום עצמו 09:00), פעם אחת
+export async function holidayTick(now = Date.now()) {
+  const S = await store(), { ymd, hour } = HC.ilNow(now), c = holCfgOf(await S.get("holCfg"));
+  if (c.off || c.push === false) return { skipped: "off" };
+  const due = HC.list(HC.add(ymd, -1), 10).filter(h => { const at = HC.sendAt(h); return at && at.day === ymd && hour >= at.hour && hour < 17 && !(c.offKeys || {})[h.key]; });
+  const out = [];
+  for (const h of due) {
+    const id = h.key + ":" + h.start; let first = false;
+    await S.update("holSent", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; if (o[id]) return undefined; o[id] = now;
+      for (const k of Object.keys(o)) if (now - o[k] > 400 * 864e5) delete o[k]; first = true; return o; });
+    if (!first) { out.push({ id, skipped: "done" }); continue; }
+    const sent = await sendPush(S, () => true, { title: `${h.em || "🎉"} ${h.name}`, body: holText(c, h), tag: "hol-" + id }, { pref: "holiday", ttl: 8 * 3600 });
+    await olog(S, "holidayPush", `🎉 נשלחה ברכה ל${h.name} ל-${sent} טלפונים`);
+    out.push({ id, sent });
+  }
+  return out.length ? { out } : { skipped: "none" };
 }

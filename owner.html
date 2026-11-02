@@ -160,8 +160,9 @@ const nk=n=>String(n||"").replace(/[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u206
 const ST={now:["d-now","מחובר עכשיו"],today:["d-today","נכנס היום"],week:["d-week","נכנס השבוע"],old:["d-old","לא נכנס שבוע+"]};
 const devKind=p=>/iPhone|Android/.test(p)?"טלפון":/iPad/.test(p)?"טאבלט":p?"מחשב":"לא ידוע";
 
+let HOL=null;
 let D=null,filt={q:"",cls:"",st:"",sort:"last"},timer=null;const sel=new Set();
-const LOGI={logoutAll:"🚪",login:"🔓",loginFail:"⚠️",maintOn:"🚧",maintOff:"✅",suspend:"⛔",unsuspend:"✅",msgSend:"✉️",msgDelete:"🗑️",forget:"🗑️",errClear:"🐞",leave:"🗑️",return:"🔄"};
+const LOGI={logoutAll:"🚪",login:"🔓",loginFail:"⚠️",maintOn:"🚧",maintOff:"✅",suspend:"⛔",unsuspend:"✅",msgSend:"✉️",msgDelete:"🗑️",forget:"🗑️",errClear:"🐞",leave:"🗑️",return:"🔄",holiday:"🎉",holidayPush:"🎉"};
 const SUS_OPTS=[["60","שעה"],["1440","יום"],["4320","3 ימים"],["10080","שבוע"],["","עד שאחזיר"]];
 // רשימת המושעים: שורה לכל השעיה (שם+כיתה והמכשירים שהושעו איתו). "להחזיר" מחזיר את כל השורה
 function susGroups(){
@@ -200,6 +201,28 @@ function people(){
       reacts:Math.max(...d.map(x=>x.reacts||0)),bday:d.map(x=>x.bday).find(Boolean)||"",inst:d.some(x=>x.inst),mashov:d.some(x=>x.mashov),old:CUR&&top.ver&&top.ver<CUR}});
 }
 
+// 🎉 חגים: מתי כל חג, מה הברכה שתישלח לטלפונים ומתי, כיבוי/הדלקה, נוסח משלך ותצוגה מקדימה
+const HDAYS=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+const hDate=ymd=>{const d=new Date(ymd+"T12:00:00Z");return`${HDAYS[d.getUTCDay()]} ${d.getUTCDate()}.${d.getUTCMonth()+1}`};
+function holCard(){
+  if(!HOL)return"";
+  const L=HOL.list.slice(0,10);
+  return`<div class="card"><h2>🎉 חגים ומועדים</h2><p class="hint">בכל חג האפליקציה מתלבשת בעיצוב של החג (בכל העמודים), ובערב החג ב-12:00 נשלחת ברכה לטלפונים (למי שהפעיל התראות). בימי זיכרון – עיצוב שקט ומכובד, בלי ברכה. התאריכים מחושבים לבד מהלוח העברי, כל שנה.</p>
+    <div class="row" style="margin:6px 0 10px"><button class="b2 ${HOL.off?"":"ghost"}" id="holAll">${HOL.off?"▶️ להפעיל את מצב החג":"⏸ לכבות את מצב החג (הכל)"}</button><button class="b2 ${HOL.push?"ghost":""}" id="holPush">${HOL.push?"🔕 בלי ברכות לטלפון":"🔔 להפעיל ברכות לטלפון"}</button></div>
+    ${HOL.off?`<div class="sub" style="margin-bottom:8px">⏸ מצב החג כבוי – אין עיצוב ואין ברכות.</div>`:""}
+    ${L.map(h=>`<div class="msg1"${h.off||HOL.off?' style="opacity:.55"':""}><div class="row" style="justify-content:space-between;align-items:flex-start"><div><b>${h.em} ${esc(h.name)}</b> <span class="sub">${h.start===h.end?esc(hDate(h.start)):esc(hDate(h.start))+" – "+esc(hDate(h.end))}${h.type==="sad"?" · יום זיכרון":""}</span>
+      <div class="sub" style="margin-top:4px">${h.push?`🔔 ${h.sent?"נשלח ✓":`יישלח ב${esc(hDate(h.push.day))} ב-${h.push.hour}:00`}: "${esc(h.text)}"${h.custom?" (הנוסח שלך)":""}`:"בלי ברכה לטלפון"}</div></div></div>
+      <div class="row" style="margin-top:6px"><a class="b2 ghost sm" href="index.html?hol=${esc(h.key)}" target="_blank" rel="noopener" style="text-decoration:none">👁 תצוגה מקדימה</a>${h.push?`<button class="b2 ghost sm" data-holtxt="${esc(h.key)}">✏️ לשנות ברכה</button>`:""}<button class="b2 ghost sm" data-holoff="${esc(h.key)}" data-v="${h.off?0:1}">${h.off?"▶️ להפעיל":"⏸ לכבות"}</button></div></div>`).join("")}
+    <p class="hint" style="margin-top:8px">בתצוגה המקדימה רואים את החג בטלפון שלך בלבד. לחזרה לרגיל: index.html?hol=off</p></div>`;
+}
+function holWire(){
+  if(!HOL)return;
+  const go=async(body,btn)=>{if(btn)btn.disabled=true;const r=await api({action:"holSet",...body});if(!r.ok){if(btn)btn.disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}load()};
+  if($("holAll"))$("holAll").onclick=e=>{if(!HOL.off&&!confirm("לכבות את מצב החג לכולם? (בלי עיצוב ובלי ברכות)"))return;go({off:!HOL.off},e.target)};
+  if($("holPush"))$("holPush").onclick=e=>go({push:!HOL.push},e.target);
+  document.querySelectorAll("[data-holoff]").forEach(b=>b.onclick=()=>go({key:b.dataset.holoff,off:b.dataset.v==="1"},b));
+  document.querySelectorAll("[data-holtxt]").forEach(b=>b.onclick=()=>{const h=HOL.list.find(x=>x.key===b.dataset.holtxt);const t=prompt(`הברכה ל${h.name} (ריק = לחזור לברירת המחדל):`,h.text);if(t==null)return;go({key:h.key,text:t.trim()},b)});
+}
 // מה נשלח לשרת על תלמיד: שם+כיתה (אם יש שם) והמכשירים שלו – קבוצה אחת להשעיה/החזרה/הודעה
 const who=p=>({...(p.named?{name:p.name}:{}),cls:p.cls,keys:p.devs.map(d=>d.key).slice(0,20)});
 async function showDash(){
@@ -209,8 +232,8 @@ async function showDash(){
 }
 async function load(manual){
   if(manual)$("upd").textContent="מרענן…";
-  const r=await api({action:"overview"});if(!r.ok){if(T.get())$("upd").textContent=ERR[r.error]||"לא הצלחנו לטעון.";return}
-  D=r;draw();
+  const [r,h]=await Promise.all([api({action:"overview"}),api({action:"holGet"}).catch(()=>null)]);if(!r.ok){if(T.get())$("upd").textContent=ERR[r.error]||"לא הצלחנו לטעון.";return}
+  if(h&&h.ok)HOL=h;D=r;draw();
 }
 // טיוטות: רענון אוטומטי לא מוחק הודעה שהתחלת לכתוב (או בחירה ברשימות)
 const DRAFT=["oText","oTo","oHrs","mMsg","mMin"];
@@ -259,6 +282,7 @@ function draw(){
       <div class="row" style="margin-top:10px"><button class="b2 ghost sm" id="outAll">🚪 לנתק את כל המכשירים</button><span class="sub">אם נכנסת ממחשב של מישהו אחר</span></div>
     </div>
   </div>
+  ${holCard()}
   ${(D.suspended||[]).length?`<div class="card"><h2>⛔ מושעים כרגע (${susGroups().length})</h2>${susList()}</div>`:""}
   <div class="grid2">
     <div class="card"><h2>📈 כמה תלמידים נכנסו בכל יום</h2><p class="hint">30 הימים האחרונים. ירוק = היום, חלש = שישי ושבת.</p>
@@ -304,6 +328,7 @@ function draw(){
   $("selClr").onclick=()=>{sel.clear();drawRows()};
   $("selMsg").onclick=()=>{$("oTo").value="some";$("oText").focus();$("oText").scrollIntoView({behavior:"smooth",block:"center"})};
   $("selSus").onclick=()=>susDialog(chosen());
+  holWire();
   // מצב עדכון
   if($("mGo"))$("mGo").onclick=async()=>{const min=$("mMin").value;if(!confirm(`להפעיל מצב עדכון לכל התלמידים ${min?"ל-"+$("mMin").selectedOptions[0].textContent:"עד שתעצור"}?`))return;
     $("mGo").disabled=true;const r=await api({action:"maint",on:true,minutes:min?+min:null,msg:$("mMsg").value.trim()});if(!r.ok){$("mGo").disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}load()};
