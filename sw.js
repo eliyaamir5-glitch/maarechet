@@ -1,7 +1,7 @@
 // Service Worker: מאפשר לאפליקציה להיפתח גם בלי אינטרנט.
 // אסטרטגיה: קודם רשת ואם אין – מהמטמון (כך עדכונים מגיעים מיד כשיש קליטה).
 // לפונטים של גוגל: קודם מטמון, כי הם לא משתנים.
-const CACHE = "maarechet-v55";
+const CACHE = "maarechet-v56";
 const PRECACHE = ["./", "./index.html", "./data.js", "./shichrur.html", "./cards.html", "./sets.js", "./card-editor.js", "./calc.html", "./calc-topics.js", "./calc-practice.js", "./calc-sci.js", "./calc-tools.js", "./assistant.js", "./parent.html", "./theme.js", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./phones.html", "./calc-engine.js", "./board.js", "./mashov.js", "./absences.js", "./absences.html", "./timetable-image.js", "./about.html", "./updates.js", "./demo-shim.js", "./staff.html", "./mashov-schools.json"];
 
 // בנטליפיי (ובשרת המקומי) x.html מופנה ל-x. תשובה שעברה הפניה אסור להחזיר לניווט,
@@ -9,7 +9,8 @@ const PRECACHE = ["./", "./index.html", "./data.js", "./shichrur.html", "./cards
 const fresh = async res => res.redirected ? new Response(await res.blob(), { status: res.status, statusText: res.statusText, headers: res.headers }) : res;
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => Promise.all(PRECACHE.map(async u => {
+  // קובץ אחד שנכשל (רשת חלשה וכו') לא עוצר את כל העדכון – אחרת הטלפון נתקע על הגרסה הישנה
+  e.waitUntil(caches.open(CACHE).then(c => Promise.allSettled(PRECACHE.map(async u => {
     const res = await fresh(await fetch(u, { cache: "reload" }));
     if (!res.ok) throw new Error("precache failed: " + u);
     // נשמר גם תחת x.html וגם תחת הכתובת הנקייה x
@@ -50,7 +51,9 @@ self.addEventListener("fetch", e => {
   if (url.origin === location.origin) {
     const nav = req.mode === "navigate";
     e.respondWith(
-      (nav ? fetch(req) : fetch(req, { cache: "no-cache" })).then(res => { // קבצים: תמיד הגרסה הכי חדשה מהשרת (ניווט נשאר רגיל, בגלל הפניות)
+      // תמיד שואלים את השרת אם יש גרסה חדשה (no-cache) – גם בעמוד עצמו, לא רק בקבצים.
+      // בניווט: בקשה חדשה לאותה כתובת, ואם הייתה הפניה – מחזירים עותק "נקי" (אסור להחזיר תשובה מופנית לניווט)
+      (nav ? fetch(req.url, { cache: "no-cache", credentials: "same-origin" }).then(fresh) : fetch(req, { cache: "no-cache" })).then(res => {
         if (res.ok) { const copy = res.clone(); fresh(copy).then(r => caches.open(CACHE).then(c => c.put(req, r))).catch(() => {}); }
         return res;
       }).catch(() => caches.match(req, nav ? { ignoreSearch: true } : undefined).then(hit => hit || (nav ? caches.match("./index.html") : undefined)))

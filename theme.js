@@ -93,4 +93,25 @@
   window.addEventListener("error", e => { try { if (e && e.message) report(e.message, `${e.filename || ""}:${e.lineno || 0}:${e.colno || 0}`); } catch (x) {} });
   window.addEventListener("unhandledrejection", e => { try { const r = e && e.reason; report(r && (r.name === "AbortError" || r.name === "NotAllowedError" ? "" : r.message || String(r)), r && r.stack ? String(r.stack).split("\n")[1] || "" : "promise"); } catch (x) {} });
   window.reportError2 = report; // לבדיקות
+  // 🔄 עדכון אוטומטי: בכל פתיחה / חזרה לאפליקציה בודקים אם יש גרסה חדשה.
+  // כשהגרסה החדשה מוכנה – מרעננים פעם אחת (לא באמצע כתיבה או חלון פתוח)
+  if ("serviceWorker" in navigator && !window.__DEMO) {
+    const check = () => navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {});
+    addEventListener("load", () => setTimeout(check, 4000));
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) check(); });
+    let had = !!navigator.serviceWorker.controller, pending = false;
+    const busy = () => !!document.querySelector("dialog[open],#fx,#recap,#delFx:not([hidden])") || (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) || !!(document.getElementById("wiz") && !document.getElementById("wiz").hidden);
+    const reload = () => {
+      try { const t = +sessionStorage.getItem("swReloadAt") || 0; if (Date.now() - t < 60000) return; sessionStorage.setItem("swReloadAt", String(Date.now())); } catch (e) {}
+      const n = document.createElement("div"); n.textContent = "✨ יש גרסה חדשה – מעדכן…";
+      n.style.cssText = "position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:99999;background:#5b6cff;color:#fff;border-radius:999px;padding:10px 18px;font:700 15px system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.3)";
+      (document.body || document.documentElement).appendChild(n); setTimeout(() => location.reload(), 900);
+    };
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!had) { had = true; return; } // התקנה ראשונה – אין מה לרענן
+      if (!busy()) reload(); else pending = true;
+    });
+    document.addEventListener("visibilitychange", () => { if (pending && !document.hidden && !busy()) { pending = false; reload(); } });
+    setInterval(() => { if (pending && !busy()) { pending = false; reload(); } }, 15000);
+  }
 })();
