@@ -44,6 +44,8 @@ In source only hashes: `OWNER` (salt+scrypt) and legacy `PHONE_HASH`/`INVITE_HAS
 
 ## Map
 - `index.html` – the student app (wizard, now/next, lessons + lesson changes, updates, reactions, birthdays, folded "שאלה לצוות", owner messages, update-mode bar, suspension wall). `theme.js` (in every page head): colours, big text, **no-zoom**, **client error reporter**.
+- `assistant.js` – 🤖 "מערכתי" assistant on every student page: local "fast brain" (intents in Hebrew, answers from timetable/Mashov on the phone, actions that "click" across pages) + "smart brain" `/api/assist` in staff.mjs (Gemini free tier, key in Netlify env `GEMINI_API_KEY`, optional `GEMINI_MODEL`; 20 questions/day per device, 900/day total; only the question text is sent – never name/class/grades). Tests: `scripts/test-assistant.js` (200 sentences), `scripts/test-assist.mjs`, robot `assistant-e2e`.
+- `calc-practice.js` (practice per topic, 4 levels), `calc-sci.js` (scientific calculator), `calc-tools.js` (derivative/sequences/binomial).
 - `updates.js` – staff updates + emoji reactions + feed cache. `data.js` – timetable (`forProfile` with `only`/`alt`), SCHOOL_YEAR, SERVER_BASE.
 - `staff.html` – staff/principal page. `owner.html` – **system-owner dashboard** (students online/today/week with names & profiles, update mode, messages, suspensions, live errors, action log).
 - `netlify/functions/staff.mjs` – the whole server on Netlify Blobs (`/api/staff`, `/api/feed`, `/api/owner`, `/api/contacts`, `/api/sets`, `/api/updates`, `/api/feedback`). `mashov.mjs` – Mashov bridge (passwords never stored).
@@ -51,4 +53,4 @@ In source only hashes: `OWNER` (salt+scrypt) and legacy `PHONE_HASH`/`INVITE_HAS
 - Local preview with a fake server and 46 sample students: `npm run dev` → http://localhost:8790 (owner code there: `DEV0-DEV0-DEV0-DEV0`). Listens on localhost only – stop it when done.
 
 ## Privacy rules
-Presence sends name, class, groups, device type, version, last seen. Never collect grades, absences, passwords, IP/location, who asked an anonymous question, or poll votes. Keep `about.html` in sync with any change.
+Presence sends name, class, groups, device type, version, last seen. Never collect grades, absences, passwords, IP/location, who asked an anonymous question, or poll votes. The assistant's AI questions go to Google Gemini without name/class – keep it that way (counts only on the server, no content). Keep `about.html` in sync with any change.

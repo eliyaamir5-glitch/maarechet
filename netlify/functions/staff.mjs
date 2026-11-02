@@ -28,7 +28,7 @@
 import crypto from "node:crypto";
 import webpush from "web-push";
 
-export const config = { path: ["/api/updates", "/api/staff", "/api/feedback", "/api/sets", "/api/contacts", "/api/feed", "/api/owner", "/api/push"] };
+export const config = { path: ["/api/updates", "/api/staff", "/api/feedback", "/api/sets", "/api/contacts", "/api/feed", "/api/owner", "/api/push", "/api/assist"] };
 
 const ALLOWED = [/^https:\/\/eliyaamir5-glitch\.github\.io$/, /^https:\/\/([a-z0-9-]+--)?lucent-crepe-6db22c\.netlify\.app$/, /^http:\/\/localhost(:\d+)?$/];
 const MAX_FEEDBACK = 1000, FEEDBACK_KINDS = ["idea", "bug", "other"], FEEDBACK_PER_HOUR = 30;
@@ -250,6 +250,7 @@ async function handle(req, context, headers) {
   // ---- פיד לתלמידים ----
   if (url.pathname.endsWith("/feed")) return feed(req, S, ip, headers);
   if (url.pathname.endsWith("/push")) return push(req, S, ip, headers);
+  if (url.pathname.endsWith("/assist")) return assist(req, S, ip, headers);
 
   // ---- דף מנהל המערכת ----
   if (url.pathname.endsWith("/owner")) return owner(req, S, ip, headers);
@@ -768,7 +769,7 @@ const msgsFor = (list, k, pk, cls, now) => (Array.isArray(list) ? list : []).fil
 
 // תמונת מצב של בית הספר: תלמידים, שימוש יומי, השעיות, הודעות ותוכן. full = מנהל המערכת (גם תקלות ויומן)
 async function schoolOverview(S, now, full) {
-  const keys = ["presence", "users", "updates", "polls", "events", "questions", "feedback", "contacts", "releases", "changes", "reactions", "birthdays", "sets", "views", "control", "ownerMsgs", "errors", "ownerLog", "departures"];
+  const keys = ["presence", "users", "updates", "polls", "events", "questions", "feedback", "contacts", "releases", "changes", "reactions", "birthdays", "sets", "views", "control", "ownerMsgs", "errors", "ownerLog", "departures", "aiStats"];
   const v = Object.fromEntries(await Promise.all(keys.map(async k => [k, await S.get(k)])));
   const arr = x => Array.isArray(x) ? x : [], obj = x => x && typeof x === "object" && !Array.isArray(x) ? x : {};
   // תגובות לפי שם (השם שהתלמיד כתב בפרופיל), ימי הולדת לפי שם+כיתה
@@ -802,6 +803,7 @@ async function schoolOverview(S, now, full) {
     suspended: [...Object.entries(obj(ctl.suspN)).map(([p, x]) => ({ person: p, ...x })), ...Object.entries(obj(ctl.susp)).map(([k, x]) => ({ key: k, ...x }))].filter(x => liveUntil(x, now))
       .map(x => ({ ...(x.person ? { person: x.person } : { key: x.key }), until: x.until ?? null, reason: x.reason || "", at: x.at || 0, g: x.g || "" })),
     msgs: arr(v.ownerMsgs).filter(m => m.expiresAt > now && (full || m.from === "principal")).map(m => ({ id: m.id, text: m.text, to: m.to, from: m.from || "owner", names: m.names || [], count: (m.keys || []).length, createdAt: m.createdAt, expiresAt: m.expiresAt })),
+    ai: (() => { const st = obj(v.aiStats); return st.day === israelDay(now) ? { ok: st.ok || 0, fail: st.fail || 0, users: Object.keys(obj(st.users)).length, on: !!aiKey() } : { ok: 0, fail: 0, users: 0, on: !!aiKey() }; })(),
     departures: arr(v.departures).filter(d => d && d.at > now - 30 * 864e5).map(d => ({ name: d.name, cls: d.cls, at: d.at, back: d.back || 0 })),
     staff: arr(v.users).map(u => ({ name: u.name, role: u.role, owner: !!u.owner, createdAt: u.createdAt || 0 })),
     content: {
@@ -1240,6 +1242,94 @@ function cleanSub(sub) {
   if (e.length > 600 || !PUSH_HOSTS.test(e) || !/^[A-Za-z0-9_-]{40,200}$/.test(p) || !/^[A-Za-z0-9_-]{10,60}$/.test(a)) return null;
   return { endpoint: e, keys: { p256dh: p, auth: a } };
 }
+
+// ===== 🤖 מערכתי – "המוח החכם" (Gemini, מסלול חינמי) =====
+// POST /api/assist {device, q, page, grade, hist:[{role,text}]} → {ok, reply, action:{id,arg}|null, left}
+// המפתח רק במשתני הסביבה של נטליפיי (GEMINI_API_KEY). לא שולחים לגוגל שם, כיתה, ציונים או חיסורים – רק את השאלה.
+const AI_PER_DEVICE = 20, AI_PER_DAY = 900, AI_Q_MAX = 300;
+let aiFetch = (...a) => fetch(...a), aiKeyOverride = null;
+export function __setAiFetch(f) { aiFetch = f; }
+export function __setAiKey(k) { aiKeyOverride = k; }
+const aiKey = () => (aiKeyOverride != null ? aiKeyOverride : (process.env.GEMINI_API_KEY || ""));
+const aiModel = () => process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const AI_TOPICS = [["order","סדר פעולות חשבון"],["fractions","שברים: חיבור, חיסור, כפל וחילוק"],["powers","חוקי חזקות"],["roots","שורשים"],["expand","פתיחת סוגריים וכינוס איברים"],["special","נוסחאות הכפל המקוצר"],["factor","פירוק לגורמים"],["algfrac","שברים אלגבריים"],["percent","אחוזים"],["ratio","יחס ופרופורציה"],["linear","משוואה ממעלה ראשונה"],["fraceq","משוואה עם שברים"],["lineq","אי-שוויון ממעלה ראשונה"],["system","מערכת משוואות (שני נעלמים)"],["quad","משוואה ריבועית (נוסחת השורשים)"],["quadineq","אי-שוויון ריבועי"],["biquad","משוואה דו-ריבועית והצבת עזר"],["radeq","משוואה עם שורש (אי-רציונלית)"],["linefn","פונקציה קווית (ישר): שיפוע ומשוואת ישר"],["parabola","פרבולה: קודקוד, חיתוכים וגרף"],["domain","תחום הגדרה של פונקציה"],["transform","הזזות ומתיחות של גרפים"],["pyth","משפט פיתגורס"],["areas","שטחים והיקפים"],["angles","זוויות: במשולש, במקבילים ובמצולע"],["congruent","חפיפת משולשים"],["similar","דמיון משולשים"],["circle","מעגל: זוויות, מיתרים ומשיקים"],["analytic","גיאומטריה אנליטית: מרחק, אמצע ומעגל"],["trigright","טריגונומטריה במשולש ישר-זווית"],["sinlaw","משפט הסינוסים"],["coslaw","משפט הקוסינוסים"],["trigarea","שטח משולש בעזרת סינוס"],["trigid","זהויות ומשוואות טריגונומטריות"],["arith","סדרה חשבונית"],["geom","סדרה הנדסית"],["expeq","משוואות מעריכיות"],["log","לוגריתמים"],["growth","גדילה ודעיכה"],["deriv","נגזרת: כללי גזירה"],["tangent","משיק לגרף"],["study","חקירת פונקציה"],["extreme","בעיות קיצון (מקסימום ומינימום)"],["integral","אינטגרל: פונקציה קדומה ושטח"],["expln","נגזרות של ,  וטריגו"],["prob","הסתברות בסיסית"],["tree","עץ הסתברות והסתברות מותנית"],["binom","התפלגות בינומית (ברנולי)"],["stats","סטטיסטיקה: ממוצע, חציון, שכיח וסטיית תקן"],["normal","התפלגות נורמלית"]];
+const AI_ACTIONS = {
+  home: "המסך הראשי", profile: "הפרופיל", edit: "עריכת פרטים: כיתה, הקבצות, מגמה, פנימייה, שם", photo: "תמונת פרופיל", theme: "צבע לאפליקציה (arg: purple|ocean|forest|sunset|rose|night)",
+  bigtext: "טקסט גדול (arg: on|off)", push: "הגדרות התראות", calendar: "הוספת המערכת ליומן", install: "התקנה למסך הבית", whatsnew: "מה חדש", intro: "הדרכה קצרה על האפליקציה",
+  feedback: "רעיון או תקלה (arg: idea|bug)", ask: "שאלה אנונימית לצוות", image: "המערכת כתמונה לשיתוף/הדפסה", parents: "קישור להורים", recap: "הסיכום החודשי",
+  mashov: "חיבור משוב", mashovOff: "ניתוק משוב", email: "אימייל", bday: "שינוי יום ההולדת", delete: "מחיקת המשתמש (רק פותח – לא מוחק)", day: "המערכת ביום מסוים (arg: 0-6, ראשון=0)",
+  calc: "המחשבון החכם", sci: "מחשבון מדעי", topics: "רשימת כל הנושאים במתמטיקה", topic: "הסבר על נושא במתמטיקה (arg: מזהה נושא)", practice: "תרגול בנושא (arg: מזהה נושא:רמה 1-4)",
+  solve: "פתרון משוואה/תרגיל עם שלבים (arg: התרגיל, למשל 2x+3=11)", der: "נגזרת של פולינום (arg: הפולינום)", seq: "מחשבון סדרות", bin: "הסתברות בינומית", func: "גרף של פונקציה",
+  line: "ישר דרך 2 נקודות", tri: "משולש ישר-זווית", pct: "מחשבון אחוזים", sys: "מערכת משוואות", attendance: "דף הנוכחות", grades: "דף הציונים (arg: מקצוע)", goal: "כמה צריך במבחן (arg: מקצוע)",
+  cards: "כרטיסיות לשינון", newset: "סט כרטיסיות חדש", dict: "מילון אנגלית-עברית", phones: "ספר טלפונים של המורים (arg: שם)", exit: "שחרורון – אישור יציאה", about: "על האפליקציה ופרטיות",
+  now: "מה יש לי עכשיו", next: "השיעור הבא", today: "המערכת היום", dayinfo: "המערכת ביום (arg: +1 למחר, או 0-6)", gear: "מה להביא מחר", end: "מתי נגמר היום", brk: "מתי ההפסקה",
+  when: "מתי יש מקצוע (arg: מקצוע)", teacher: "מי המורה של מקצוע (arg: מקצוע)", abs: "חיסורים (arg: מקצוע)", avg: "ממוצע ציונים (arg: מקצוע)", streak: "רצפים", tef: "עד מתי אפשר להניח תפילין", bdays: "ימי הולדת קרובים", time: "שעה ותאריך",
+};
+function aiPrompt(page, grade) {
+  return `אתה "מערכתי" 🤖 – העוזר באפליקציית מערכת השעות של ישיבת בני עקיבא בית יהודה (כפר מימון). מדברים איתך תלמידי ${grade === "11" ? 'כיתה י"א' : grade === "10" ? "כיתה י'" : "תיכון"}.
+כללים:
+- עונים בעברית, קצר וברור (עד 70 מילים), בגובה העיניים, בחום ובכבוד. אימוג'י אחד-שניים זה בסדר.
+- שאלה בלימודים: מסבירים ומדריכים צעד-צעד, נותנים רמז או דוגמה דומה – אבל לא פותרים שיעורי בית במקום התלמיד. אפשר להציע פעולה topic/practice/solve.
+- אין לך מידע אישי על התלמיד (מערכת, ציונים, חיסורים, שמות). לשאלה כזו בוחרים את הפעולה המתאימה (now/next/today/dayinfo/gear/end/brk/when/teacher/abs/avg/streak/tef/bdays/time) והאפליקציה תענה בעצמה – אל תמציא תשובה.
+- כשהתלמיד מבקש להגיע למקום / לשנות הגדרה – בוחרים פעולה מהרשימה, ו-reply קצר שאומר מה עושים.
+- לא עוזרים במשהו לא מתאים (אלימות, פגיעה, תוכן לא צנוע, עקיפת כללי הישיבה). מפנים בעדינות לצוות או לרב.
+- אם לא בטוחים – שואלים שאלה קצרה בחזרה, בלי פעולה.
+התשובה תמיד JSON: {"reply": "...", "action": "<מזהה מהרשימה או ריק>", "arg": "<פרמטר או ריק>"}.
+פעולות: ${Object.entries(AI_ACTIONS).map(([k, v]) => `${k}=${v}`).join("; ")}.
+נושאי מתמטיקה (מזהה=שם): ${AI_TOPICS.map(([k, v]) => `${k}=${v}`).join("; ")}.
+התלמיד נמצא עכשיו בדף: ${page || "index.html"}.`;
+}
+// הפרמטר של ה-AI (טקסט) → הפרמטר של האפליקציה
+function aiArg(id, a) {
+  a = String(a || "").trim().slice(0, 120); if (!a) return undefined;
+  if (id === "practice") { const [t, L] = a.split(/[:|,\s]+/); return AI_TOPICS.some(x => x[0] === t) ? { t, ...(+L >= 1 && +L <= 4 ? { L: +L } : {}) } : undefined; }
+  if (id === "topic") return AI_TOPICS.some(x => x[0] === a) ? a : undefined;
+  if (id === "day") return /^[0-6]$/.test(a) ? +a : undefined;
+  if (id === "dayinfo") return /^\+?[0-2]$/.test(a) && a.startsWith("+") ? { rel: +a } : /^[0-6]$/.test(a) ? { day: +a } : { rel: 1 };
+  if (id === "theme") return ["purple", "ocean", "forest", "sunset", "rose", "night"].includes(a) ? a : undefined;
+  if (id === "bigtext") return a === "off" ? "off" : "on";
+  if (id === "feedback") return a === "bug" ? "bug" : "idea";
+  if (["solve", "der"].includes(id)) return /^[0-9xX+\-*/^().=²³√<>≤≥ ]{1,60}$/.test(a) ? a.replace(/\s+/g, "") : undefined;
+  return a.replace(/[<>"'`]/g, "");
+}
+async function assist(req, S, ip, headers) {
+  if (req.method !== "POST") return reply(405, { ok: false, error: "method" }, headers);
+  let b; try { b = await req.json(); } catch { return reply(400, { ok: false, error: "bad_request" }, headers); }
+  const device = String(b?.device || ""), q = clean(b?.q, AI_Q_MAX);
+  if (!DEV_RE.test(device) || !q) return reply(400, { ok: false, error: "bad_request" }, headers);
+  if (!aiKey()) return reply(200, { ok: false, error: "no_ai" }, headers);
+  memRate("assist", ip, 1500);
+  const k = devKey(device), day = israelDay(), now = Date.now();
+  const use = await S.get("aiUse"), u = use && use.day === day ? use : { day, total: 0, dev: {} };
+  const mine = +(u.dev && Object.hasOwn(u.dev, k) ? u.dev[k] : 0) || 0;
+  if (mine >= AI_PER_DEVICE) return reply(200, { ok: false, error: "quota", left: 0 }, headers);
+  if (u.total >= AI_PER_DAY) return reply(200, { ok: false, error: "busy", left: AI_PER_DEVICE - mine }, headers);
+  const hist = (Array.isArray(b.hist) ? b.hist : []).slice(-6).map(h => ({ role: h && h.role === "model" ? "model" : "user", parts: [{ text: clean(h && h.text, 400) }] })).filter(h => h.parts[0].text);
+  const body = {
+    systemInstruction: { parts: [{ text: aiPrompt(clean(b.page, 40), b.grade === "11" ? "11" : b.grade === "10" ? "10" : "") }] },
+    contents: [...hist, { role: "user", parts: [{ text: q }] }],
+    generationConfig: { temperature: 0.4, maxOutputTokens: 700, responseMimeType: "application/json",
+      responseSchema: { type: "OBJECT", properties: { reply: { type: "STRING" }, action: { type: "STRING" }, arg: { type: "STRING" } }, required: ["reply"] } },
+    safetySettings: ["HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH", "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT"].map(category => ({ category, threshold: "BLOCK_LOW_AND_ABOVE" })),
+  };
+  let out = null, err = "server";
+  try {
+    const ctrl = new AbortController(), to = setTimeout(() => ctrl.abort(), 15000);
+    const r = await aiFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(aiModel())}:generateContent`, { method: "POST", signal: ctrl.signal, headers: { "Content-Type": "application/json", "x-goog-api-key": aiKey() }, body: JSON.stringify(body) }).finally(() => clearTimeout(to));
+    if (r.status === 429) err = "busy";
+    else if (r.ok) {
+      const j = await r.json(), c = j && j.candidates && j.candidates[0], txt = c && c.content && c.content.parts && c.content.parts.map(p => p.text || "").join("");
+      if (c && c.finishReason === "SAFETY") out = { reply: "על זה אני לא יכול לעזור 🙏 אם משהו מטריד אותך – כדאי לדבר עם הרב או עם המחנך.", action: "" };
+      else if (txt) { try { out = JSON.parse(txt); } catch (e) { out = { reply: txt.slice(0, 600), action: "" }; } }
+    } else console.error("assist: gemini", r.status);
+  } catch (e) { err = e && e.name === "AbortError" ? "slow" : "server"; console.error("assist:", e && e.message); }
+  await S.update("aiStats", cur => { const st = cur && cur.day === day ? cur : { day, ok: 0, fail: 0, users: {} }; if (out) st.ok++; else st.fail++; if (out) st.users[k] = 1; return st; }).catch(() => {});
+  if (!out) return reply(200, { ok: false, error: err, left: AI_PER_DEVICE - mine }, headers);
+  await S.update("aiUse", cur => { const x = cur && cur.day === day ? cur : { day, total: 0, dev: {} }; x.total++; x.dev[k] = (+x.dev[k] || 0) + 1; return x; });
+  const id = String(out.action || "").trim(), ok = Object.hasOwn(AI_ACTIONS, id);
+  return reply(200, { ok: true, reply: clean(out.reply, 900) || "🙂", action: ok ? { id, arg: aiArg(id, out.arg) } : null, left: Math.max(0, AI_PER_DEVICE - mine - 1) }, headers);
+}
+
 async function push(req, S, ip, headers) {
   if (req.method === "GET") return reply(200, { ok: true, key: (await vapid(S)).publicKey }, headers);
   if (req.method !== "POST") return reply(405, { ok: false, error: "method" }, headers);
