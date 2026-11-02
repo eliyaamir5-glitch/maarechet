@@ -71,7 +71,7 @@ fractions(L) {
   if (L === 3) return { q: `חשב: ${M(`frac{${a}}{${b}}:frac{${c}}{${d}}`)}`, kind: "num", ans: a * d / (b * c), ansT: frT(a * d, b * c), miss: [{ v: a * c / (b * d), why: "כפלת במקום לחלק. בחילוק הופכים את השבר השני ואז כופלים." }, { v: b * c / (a * d), why: "הפכת את השבר הלא נכון – הופכים את השני, לא את הראשון." }],
     hint: "חילוק = כפל בשבר ההפוך.", steps: [`הופכים את השבר השני: ${M(`frac{${a}}{${b}}*frac{${d}}{${c}}`)}`, `${M(`frac{${a * d}}{${b * c}}=${fr(a * d, b * c)}`)}`] };
   const e = ri(1, 4);
-  const v = a / b - (c / d) * e;
+  const v = (a * d - c * e * b) / (b * d);
   return { q: `חשב: ${M(`frac{${a}}{${b}}-frac{${c}}{${d}}*${e}`)}`, kind: "num", ans: v, ansT: frT(a * d - c * e * b, b * d), miss: [{ v: (a / b - c / d) * e, why: "חיסרת לפני שכפלת – גם בשברים כפל קודם." }],
     hint: "קודם הכפל, אחר כך החיסור עם מכנה משותף.", steps: [`כפל: ${M(`frac{${c}}{${d}}*${e}=${fr(c * e, d)}`)}`, `מכנה משותף ${b * d}: ${M(`frac{${a * d}}{${b * d}}-frac{${c * e * b}}{${b * d}}`)}`, `${M(fr(a * d - c * e * b, b * d))}`] };
 },
