@@ -61,12 +61,12 @@ function findSubject(qn) {
   let best = null, bs = 0;
   for (const s of subjectsKnown()) {
     const names = [s, ...(SUBJ_ALIAS[s] || [])].map(norm);
-    for (const n of names) { const sc = phraseScore(qWords, n) * (n.length >= 4 ? 1 : 0.9); if (sc > bs) { bs = sc; best = s; } }
+    for (const n of names) { let sc = phraseScore(qWords, n) * (n.length >= 4 ? 1 : 0.9); if (sc < 1 && n.length < 6) sc = 0; /* שגיאת כתיב רק בשמות ארוכים ("לומדים"≠"מדעים") */ if (sc > bs) { bs = sc; best = s; } }
   }
   return bs >= 0.8 ? best : null;
 }
 function findDay(qn) {
-  for (let i = 0; i < 7; i++) if (new RegExp("(^| )(ב|ל|ו)?(יומ )?" + norm(DAYS_HE[i]) + "( |$)").test(qn)) return { day: i }; // יום מסוים קודם ל"היום"
+  for (let i = 0; i < 7; i++) if (new RegExp("(^| )(ו)?(ב|ל)?(יומ )?" + norm(DAYS_HE[i]) + "( |$)").test(qn)) return { day: i }; // יום מסוים קודם ל"היום"
   if (/(^| )(מחרתיימ|למחרתיימ)( |$)/.test(qn)) return { rel: 2 };
   if (/(^| )(מחר|למחר|ומחר)( |$)/.test(qn)) return { rel: 1 };
   if (/(^| )(היומ|להיומ)( |$)/.test(qn)) return { rel: 0 };
@@ -145,17 +145,17 @@ for (const id of ["now", "next", "today", "dayinfo", "gear", "end", "brk", "when
 // p = ביטויים (אחרי norm). w = משקל. need = ישות שחייבת להופיע
 const INT = [
   // ---- שאלות על המערכת ----
-  { id: "now", p: ["מה יש לי עכשיו", "מה עכשיו", "איזה שיעור עכשיו", "שיעור עכשיו", "איפה אני צריך להיות", "איפה צריך להיות עכשיו", "מה יש עכשיו", "באיזה שיעור אני", "מה השיעור עכשיו"] },
-  { id: "next", p: ["מה השיעור הבא", "שיעור הבא", "מה הבא", "מה אחרי זה", "מה יש אחר כך", "מה אחר כך", "מה בשיעור הבא"] },
+  { id: "now", p: ["מה אני לומד עכשיו", "מה לומדים עכשיו", "איזה שיעור יש כרגע", "מה יש לי עכשיו", "מה עכשיו", "איזה שיעור עכשיו", "שיעור עכשיו", "איפה אני צריך להיות", "איפה צריך להיות עכשיו", "מה יש עכשיו", "באיזה שיעור אני", "מה השיעור עכשיו"] },
+  { id: "next", p: ["אחרי השיעור הזה", "אחרי השיעור", "מה אחרי השיעור", "מה השיעור הבא", "שיעור הבא", "מה הבא", "מה אחרי זה", "מה יש אחר כך", "מה אחר כך", "מה בשיעור הבא"] },
   { id: "today", p: ["מה יש היום", "מערכת היום", "שיעורים היום", "מה יש לי היום", "מה המערכת היום", "מה יש לנו היום"] },
   { id: "dayinfo", p: ["מה יש מחר", "מערכת מחר", "מה יש לי מחר", "מה יש ביום", "מה המערכת ביום", "שיעורים ביום", "מה יש לנו מחר", "מערכת של יום", "מה יש מחרתיים", "מה יש בראשון"], day: true },
   { id: "gear", p: ["מה להביא", "מה לקחת", "מה צריך להביא", "ציוד", "מה להכניס לתיק", "מה לשים בתיק", "מה צריך לקחת", "תיק למחר", "מה להביא מחר", "ספרים להביא", "איזה ספרים", "איזה ספרים להביא", "מחברות"] },
-  { id: "end", p: ["מתי נגמר היום", "מתי אני מסיים", "מתי מסיימים", "עד מתי לומדים", "מתי הולכים הביתה", "מתי השיעור האחרון", "מתי נגמרים הלימודים", "עד מתי היום"] },
+  { id: "end", w: 1.1, p: ["עד מתי לומדים היום", "עד מתי לומדים", "מתי נגמר", "מתי מסיימים היום", "מתי נגמר היום", "מתי אני מסיים", "מתי מסיימים", "עד מתי לומדים", "מתי הולכים הביתה", "מתי השיעור האחרון", "מתי נגמרים הלימודים", "עד מתי היום"] },
   { id: "brk", p: ["מתי ההפסקה", "הפסקה", "מתי הפסקה", "מתי יש הפסקה", "מתי אוכל", "ארוחת צהריים"] },
   { id: "when", p: ["מתי יש לי", "מתי יש", "מתי השיעור", "באיזה יום יש", "מתי לומדים"], subj: true, w: 1.1 },
   { id: "teacher", p: ["מי המורה", "מי מלמד", "מי המורה שלי", "מורה של", "מי מלמדת", "איך קוראים למורה"], subj: true, w: 1.1 },
   { id: "abs", p: ["כמה חיסורים", "חיסורים", "כמה חיסרתי", "30 אחוז", "עומד ב 30 אחוז", "עובר את ה 30", "שלושים אחוז", "מצב הנוכחות", "אני בסכנה", "כמה פעמים חיסרתי", "חיסרתי"], w: 1.05 },
-  { id: "avg", p: ["מה הממוצע", "ממוצע", "מה הציון", "ציונים שלי", "כמה קיבלתי", "הציון שלי", "ציון", "מה קיבלתי", "קיבלתי במבחן", "ציון במבחן", "איך הלך לי במבחן"] },
+  { id: "avg", w: 1.15, p: ["מה הציון שלי", "איזה ציון קיבלתי", "כמה קיבלתי במבחן", "מה קיבלתי במבחן", "מה הממוצע", "ממוצע", "מה הציון", "איך הלך לי במבחן", "ציון במבחן"] },
   { id: "goal", p: ["כמה אני צריך במבחן", "כמה צריך לקבל", "כמה אני צריך לקבל", "כמה צריך במבחן הבא", "מטרה לממוצע", "יעד לממוצע", "להגיע לממוצע"], w: 1.2 },
   { id: "streak", p: ["רצף", "כמה ברצף", "הרצף שלי", "רצפים"] },
   { id: "tef", p: ["תפילין", "לתפילין", "נשאר לתפילין", "זמן לתפילין", "עד מתי אפשר להניח", "מתי השקיעה", "שקיעה", "להניח תפילין", "הנחתי תפילין"] },
@@ -177,7 +177,7 @@ const INT = [
   { id: "left30", p: ["כמה עוד מותר לי להחסיר", "כמה מותר לי לחסר", "כמה חיסורים נשארו לי", "כמה עוד אפשר להחסיר", "כמה פעמים מותר לי", "כמה נשאר לי עד 30"], w: 1.3 },
   { id: "best", p: ["באיזה מקצוע אני הכי טוב", "באיזה מקצוע אני הכי חלש", "המקצוע הכי טוב שלי", "הציון הכי גבוה", "הציון הכי נמוך", "איפה אני הכי חלש", "במה אני טוב", "במה אני חלש"], w: 1.3 },
   { id: "teachers", p: ["מי המורים שלי", "כל המורים", "רשימת מורים", "רשימת המורים"], w: 1.0 },
-  { id: "subjects", p: ["אילו מקצועות יש לי", "כמה מקצועות", "המקצועות שלי", "איזה מקצועות", "מה אני לומד"], w: 1.2 },
+  { id: "subjects", p: ["אילו מקצועות יש לי", "כמה מקצועות", "המקצועות שלי", "איזה מקצועות", "מה אני לומד השנה", "כל המקצועות"], w: 1.2 },
   { id: "weekly", p: ["כמה שעות בשבוע", "כמה פעמים בשבוע", "כמה שיעורים בשבוע"], w: 1.25, subj: true },
   { id: "mashovAge", p: ["מתי עודכן משוב", "משוב מעודכן", "לרענן משוב", "עדכון משוב", "הנתונים ממשוב"], w: 1.2 },
   // ---- איך עושים / מה זה (תשובות מוכנות) ----
@@ -190,7 +190,7 @@ const INT = [
   { id: "faq", arg: "share", p: ["איך משתפים כרטיסיות", "לשלוח כרטיסיות לחבר", "לשתף סט"], w: 1.35 },
   { id: "faq", arg: "who", p: ["מי בנה את האפליקציה", "מי עשה את האפליקציה", "מי המציא", "מי אחראי על האפליקציה"], w: 1.3 },
   { id: "faq", arg: "noPush", p: ["למה אין לי התראות", "לא מגיעות התראות", "התראות לא עובדות", "לא קיבלתי התראה"], w: 1.35 },
-  { id: "faq", arg: "other", p: ["מערכת של כיתה אחרת", "לראות מערכת של חבר", "מערכת של חבר"], w: 1.3 },
+  { id: "faq", arg: "other", p: ["מערכת של כיתה אחרת", "לראות מערכת של חבר", "לראות את המערכת של חבר", "איך רואים מערכת של חבר"], w: 1.3 },
   { id: "faq", arg: "wrong", p: ["המערכת לא נכונה", "יש טעות במערכת", "שיעור לא נכון", "המורה לא נכון", "השעה לא נכונה"], w: 1.35 },
   { id: "faq", arg: "praiseMean", p: ["מה זה צלש", "מה זה צל\"ש"], w: 1.45 },
   // ---- מצב רוח ----
@@ -251,22 +251,78 @@ const INT = [
   { id: "newset", p: ["סט חדש", "ליצור כרטיסיות", "לעשות כרטיסיות", "סט כרטיסיות חדש", "ליצור סט"], w: 1.2 },
   { id: "dict", p: ["מילון", "תרגום", "לתרגם", "מה זה באנגלית", "איך אומרים באנגלית", "פירוש מילה"] },
   { id: "phones", p: ["ספר טלפונים", "טלפון של", "מספר של", "להתקשר", "מספר טלפון", "וואטסאפ למורה", "לדבר עם המורה", "טלפון", "מספר"], teacherName: true },
-  { id: "exit", p: ["שחרורון", "אישור יציאה", "לצאת מהישיבה", "שחרור", "יציאה הביתה", "אישור מההורים", "לצאת באמצע היום"] },
-  { id: "about", p: ["פרטיות", "על האפליקציה", "מי בנה", "מי עשה את האפליקציה", "מה אתם שומרים", "מה אתם יודעים עליי", "איזה מידע אתם שומרים", "מידע עליי"] },
+  { id: "exit", p: ["בקשת יציאה", "יציאה", "לצאת הביתה", "שחרורון", "אישור יציאה", "לצאת מהישיבה", "שחרור", "יציאה הביתה", "אישור מההורים", "לצאת באמצע היום"] },
+  { id: "about", p: ["פרטיות", "על האפליקציה", "מי בנה", "מי עשה את האפליקציה", "מה אתם שומרים", "מה אתם יודעים עליי", "איזה מידע אתם שומרים", "מידע עליי"], w: 1.25 },
   { id: "staff", p: ["כניסת צוות", "אני מורה", "כניסה למורים", "צוות"] },
   { id: "home", p: ["מסך ראשי", "המסך הראשי", "הביתה", "דף הבית", "הדף הראשי", "דף ראשי", "לחזור", "תחזיר אותי", "תחזור", "חזרה למערכת"] },
   // ---- שיחה ----
+  { id: "clear", p: ["מחק צאט", "תמחק את הצאט", "נקה את השיחה", "תנקה את הצאט", "מחק את כל הצאט", "שיחה חדשה", "תתחיל מחדש את השיחה", "תמחק את ההודעות", "תמחק הכל מהצאט", "נקה צאט"], w: 1.6 },
   { id: "hi", p: ["היי", "שלום", "הי", "מה נשמע", "מה קורה", "בוקר טוב", "ערב טוב", "אהלן", "יו"], w: 0.7 },
   { id: "thanks", p: ["תודה", "תודה רבה", "תותח", "אלוף", "סבבה", "מעולה"], w: 0.7 },
   { id: "help", p: ["מה אתה יודע לעשות", "מי אתה", "עזרה", "מה אפשר לשאול", "איך אתה עובד", "מה אתה"], w: 0.9 },
   { id: "joke", p: ["בדיחה", "תספר בדיחה", "משהו מצחיק", "תצחיק אותי"] },
   { id: "motivate", p: ["תן לי מוטיבציה", "מוטיבציה", "משפט השראה", "תחזק אותי", "משפט מחזק"] },
 ];
-const IDX = INT.map(it => ({ ...it, pn: it.p.map(norm) }));
+// ===================== מילים נרדפות: הרבה ניסוחים → אותה משמעות =====================
+// קודם ביטויים של כמה מילים, אחר כך מילה-מילה (עם אותיות שימוש), ובסוף מילים "ריקות" שלא משנות את המשמעות
+const PHR = [
+  [/(^| )(באיזה|באיזו|איזה|איזו|מאיזה|מאיזו) (שעה|זמנ)( |$)/g, " מתי "], [/(^| )עד איזה שעה( |$)/g, " עד מתי "], [/(^| )(בעוד כמה זמנ|כמה זמנ עד)( |$)/g, " מתי "],
+  [/(^| )(אפשר לדעת|רוצה לדעת|תגיד לי|תגידו לי|תספר לי|ספר לי|תבדוק לי|תבדוק|תן לי לדעת)( |$)/g, " מה "], [/(^| )(תראה לי|תראו לי|תראה|להראות|לראות)( |$)/g, " פתח "],
+  [/(^| )(צריכ|צריכה|רוצה|בא לי|מבקש|אפשר|יכול|תוכל|אתה יכול|אפשרי)( ש| ל| )?/g, " "],
+  [/(^| )(להכניס לתיק|לשימ בתיק|לקחת איתי|לקחת)( |$)/g, " להביא "], [/(^| )(הצאט|צאט|השיחה|שיחה|ההודעות האלה|ההיסטוריה)( |$)/g, " צאט "],
+  [/(^| )(מה המצב|מה נשמע|מה קורה|מה העניינימ)( |$)/g, " היי "],
+];
+const SYN = {
+  "פתח": ["תיקח", "קח", "תפתח", "פתח", "לפתוח", "תעביר", "להעביר", "תכניס", "להיכנס", "להכנס", "תוביל", "תלך", "לך", "לעבור", "תעבור", "תביא", "הבא אותי", "להגיע", "תגיע"],
+  "שנה": ["לשנות", "תשנה", "שנה", "להחליפ", "תחליפ", "לעדכנ", "תעדכנ", "לתקנ", "תתקנ", "לערוכ", "תערוכ", "שינוי", "משנימ", "מחליפימ", "מעדכנימ", "לסדר", "תסדר"],
+  "שלח": ["שלח", "תשלח", "לשלוח", "שולח", "תשתפ", "לשתפ", "שתפ"],
+  "מורה": ["מורה", "מלמד", "מלמדת", "מלמדימ", "מורימ"],
+  "חיסור": ["חיסור", "חיסורימ", "חיסרתי", "החסרתי", "חסרתי", "נעדרתי", "פספסתי", "הברזתי", "הבריז", "הברזות", "היעדרויות"],
+  "ציונ": ["ציונ", "ציונימ", "הציונ", "הציונימ"],
+  "מתי": ["מתי", "אימתי"],
+  "מחק": ["מחק", "תמחק", "למחוק", "תנקה", "לנקות", "נקה", "תאפס", "לאפס", "מחיקה", "ניקוי"],
+  "עכשיו": ["עכשיו", "כרגע", "ברגע", "הרגע", "זה עתה"],
+  "היום": ["היומ"], "מחר": ["מחר"],
+  "תסביר": ["תסביר", "הסבר", "להסביר", "תלמד", "ללמוד", "להבינ", "לימוד", "תעזור", "עזרה"],
+  "שלומ": ["שלומ", "היי", "הי", "הלו", "אהלנ", "יו"],
+};
+const SYNMAP = new Map(); for (const [c, vs] of Object.entries(SYN)) for (const v of vs) SYNMAP.set(norm(v), c);
+const STOP = new Set(["אני", "את", "אתה", "של", "שלי", "לי", "בבקשה", "בבקשהה", "אחי", "אחשלי", "נו", "רגע", "אולי", "פה", "כאנ", "יא", "וואלה", "סתמ", "טוב", "אז", "גמ", "קצת", "בדיוק", "ממש", "תודה", "שאלה", "שאלה קטנה", "מערכתי", "בוט", "עוזר", "חביבי", "גבר", "אחינו", "ת", "ש", "ה"].map(norm));
+function canon(qn) {
+  let t = " " + qn + " "; for (const [re, to] of PHR) t = t.replace(re, m => to);
+  const out = [];
+  for (const w of t.split(" ").filter(Boolean)) { if (STOP.has(w)) continue; const c = forms(w).map(f => SYNMAP.get(f)).find(Boolean); out.push(c || w); }
+  return out.length ? out.join(" ") : qn;
+}
+// לכל ביטוי: הניסוח המקורי + הניסוח הנרדף – אבל רק אם הנרדף לא "התכווץ" עד שאיבד משמעות
+const GENERIC = new Set(["מי", "מה", "מתי", "יש", "פתח", "שנה", "איכ", "כמה", "לא", "עכשיו", "היום", "מחר", "מחק", "תסביר", "איפה", "למה"]);
+function variants(p) {
+  const o = norm(p), c = canon(o), on = o.split(" ").length, cw = c.split(" ");
+  const ok = c !== o && cw.length >= Math.min(2, on) && !(cw.length === 1 && GENERIC.has(cw[0])) && !cw.every(w => GENERIC.has(w));
+  return ok ? [[o, false], [c, true]] : [[o, false]];
+}
+const IDX = INT.map(it => ({ ...it, pv: it.p.flatMap(variants) }));
 
 // ===================== המוח המהיר: לחשוב =====================
 // מחזיר { id, arg, say?, conf (0..1), alts:[{id,arg}] }
+// המשך שיחה: "מה יש לי היום?" → "ומחר?" / "כמה חיסורים בגמרא?" → "ובאנגלית?"
+const DAY_IDS = ["dayinfo", "today", "now", "start", "changes", "nth", "end", "brk"], SUBJ_IDS = ["abs", "avg", "teacher", "when", "grades", "goal", "left30", "weekly", "lates"];
 function think(qRaw, ctx = {}) {
+  const r = thinkCore(qRaw, ctx), last = ctx.last;
+  if (r.id === "dayinfo" && r.arg && r.arg.rel === 0) { r.id = "today"; r.arg = undefined; }
+  if (!last || !last.id) return r;
+  const qn = norm(qRaw), w = qn.split(" ").filter(Boolean);
+  if (w.length > 5 || (r.id && r.conf >= 0.9 && !/^ו/.test(qn))) return r;
+  const subj = findSubject(qn), day = findDay(qn), level = findLevel(qn), T = ctx.Topics || root.Topics, topic = topicFind(w, T);
+  const F = (id, arg) => ({ id, arg, conf: 0.93, follow: true });
+  if (day && DAY_IDS.includes(last.id)) return F(["today", "now", "end", "brk"].includes(last.id) ? (last.id === "now" || last.id === "today" ? "dayinfo" : last.id) : last.id, last.id === "nth" ? { ...(last.arg || {}), day } : day);
+  if (day && last.id === "when" && last.arg && (last.arg.s || typeof last.arg === "string")) return F("when", { s: last.arg.s || last.arg, day });
+  if (subj && SUBJ_IDS.includes(last.id)) return F(last.id, last.id === "when" && last.arg && last.arg.day ? { s: subj, day: last.arg.day } : subj);
+  if (level && last.id === "practice") return F("practice", { ...(last.arg || {}), L: level });
+  if (topic && (last.id === "practice" || last.id === "topic") && !r.id) return F(last.id, last.id === "practice" ? { t: topic.id, L: last.arg && last.arg.L } : topic.id);
+  return r;
+}
+function thinkCore(qRaw, ctx = {}) {
   const q = String(qRaw || "").trim(); const qn = norm(q); if (!qn) return { id: "help", conf: 1 };
   const qWords = qn.split(" ");
   // 0. "מה השיעור השלישי (מחר)?"
@@ -276,10 +332,11 @@ function think(qRaw, ctx = {}) {
   // 1. תרגיל לחישוב
   const ex = mathExpr(q); if (ex) return { id: "compute", arg: ex, conf: 0.95 };
   const eq = equation(q);
-  // 2. ציון כל הכוונות
+  // 2. ציון כל הכוונות (על הניסוח "המנורמל" – מילים נרדפות וכו')
+  const cWords = canon(qn).split(" ");
   const scored = [];
   for (const it of IDX) {
-    let best = 0, raw = 0; for (const p of it.pn) { const s = phraseScore(qWords, p); if (s) { best = Math.max(best, s * (0.6 + Math.min(p.split(" ").length, 4) * 0.12)); raw = Math.max(raw, s); } }
+    let best = 0, raw = 0; for (const [p, isC] of it.pv) { const s = phraseScore(isC ? cWords : qWords, p) * (isC ? 0.97 : 1); if (s) { best = Math.max(best, s * (0.6 + Math.min(p.split(" ").length, 4) * 0.12)); raw = Math.max(raw, s); } }
     if (best) scored.push({ it, s: best * (it.w || 1), raw });
   }
   scored.sort((a, b) => b.s - a.s);
@@ -307,7 +364,7 @@ function think(qRaw, ctx = {}) {
   }
   if (!top && color && /(תעשה|תצבע|צבע|שיהיה|תהפוכ|רוצה)/.test(qn)) return { id: "theme", arg: color, conf: 0.95 };
   if (!top && day && subj) return { id: "when", arg: { s: subj, day }, conf: 0.9 }; // "יש לי היום אנגלית?"
-  if (!top && day) return { id: "dayinfo", arg: day, conf: 0.8 };
+  if (!top && day) return { id: /(^| )מתי( |$)/.test(canon(qn)) ? "start" : "dayinfo", arg: day, conf: 0.8 };
   if (!top) return topic ? { id: "topic", arg: topic.id, conf: 0.7, topicName: topic.t } : { id: null, conf: 0, alts: [] };
   // 6. ישויות
   let id = top.it.id, arg = top.it.arg;
@@ -315,10 +372,15 @@ function think(qRaw, ctx = {}) {
   if (/(טלפונ|מספר של|להתקשר|תתקשר|וואטסאפ|לחייג|פלאפונ)/.test(qn) && !/(טלפונ הזה|למסכ)/.test(qn) && !["install", "push", "image", "parents", "exit", "feedback"].includes(id) && !/המערכת/.test(qn)) { id = "phones"; arg = teacherIn(qn) || (subj ? teacherOf(subj) : undefined); }
   if (id === "bigtext") arg = /(קטינ|קטנ|רגיל)/.test(qn) ? "off" : "on";
   if (id === "dayinfo" || ((id === "today" || id === "now") && day && day.rel !== 0)) { id = "dayinfo"; arg = day || { rel: 1 }; }
+  if (id === "dayinfo" && arg && arg.rel === 0) { id = "today"; arg = undefined; }
   if (["when", "teacher", "abs", "avg", "grades", "goal"].includes(id)) arg = subj || undefined;
-  if (id === "when" && !subj && day) { id = "dayinfo"; arg = day; }
+  if (id === "when" && !subj && day) { id = /(^| )מתי( |$)/.test(canon(qn)) ? "start" : "dayinfo"; arg = day; }
+  if (id === "dayinfo" && /(^| )מתי( |$)/.test(canon(qn)) && !subj) id = "start"; // "מאיזה שעה לומדים מחר"
   if (id === "when" && subj && day) arg = { s: subj, day };
   if (id === "teachers" && subj) { id = "teacher"; arg = subj; }
+  if (id === "me" && subj && /מורה|מלמד/.test(qn)) { id = "teacher"; arg = subj; } // "איך קוראים למורה של אנגלית"
+  if (id === "subjects" && /(^| )עכשיו( |$)/.test(qn)) { id = "now"; arg = undefined; }
+  if (id === "subjects" && day) { id = "dayinfo"; arg = day; }
   if (id === "teacher" && !subj && /(^| )(ה)?מורימ( |$)/.test(qn)) { id = "teachers"; arg = undefined; }
   // "יש לי מחר ספורט?" – מקצוע + יום בלי מילת שאלה אחרת
   if (subj && day && ["dayinfo", "today", "now"].includes(id) && /(^| )יש( |$)/.test(qn)) { id = "when"; arg = { s: subj, day }; }
@@ -641,16 +703,16 @@ async function askAI(q, hist) {
 }
 
 // ===================== ממשק =====================
-let panel, log, inp, hist = [], busy = false;
+let panel, log, inp, hist = [], busy = false, lastCtx = null;
 function css() {
   const s = document.createElement("style");
   s.textContent = `
 /* 🤖 הרובוט: גוררים לכל מקום בצד (נצמד לקצה), מתחבא חצי כשגוללים */
-#asstBtn{position:fixed;left:0;top:0;z-index:9000;width:60px;height:60px;border-radius:50%;border:none;cursor:grab;padding:0;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+#asstBtn{position:fixed;left:0;top:0;z-index:9000;width:50px;height:50px;border-radius:50%;border:none;cursor:grab;padding:0;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
   background:radial-gradient(circle at 35% 30%,#8f9bff,#5b6cff 45%,#a259ff 80%,#ff6bd6);box-shadow:0 10px 26px rgba(91,108,255,.5),inset 0 -4px 10px rgba(0,0,0,.18);
   transform:translate(var(--x,0px),var(--y,0px));transition:transform .45s cubic-bezier(.2,1.3,.4,1),opacity .3s,box-shadow .3s;animation:asstIn .6s cubic-bezier(.2,1.6,.4,1)}
 #asstBtn.drag{transition:none;cursor:grabbing;box-shadow:0 18px 40px rgba(91,108,255,.6)}
-#asstBtn.tuck{transform:translate(calc(var(--x,0px) + var(--tx,0px)),var(--y,0px));opacity:.55}
+#asstBtn.tuck{transform:translate(calc(var(--x,0px) + var(--tx,0px)),var(--y,0px)) scale(.9);opacity:.75}
 #asstBtn::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(162,89,255,.55);animation:asstPulse 2.8s infinite;pointer-events:none}
 #asstBtn.drag::after,#asstBtn.tuck::after,#asstBtn.away::after{display:none}
 #asstBtn.away{transform:translate(calc(var(--x,0px) + var(--tx,0px) * 2.2),var(--y,0px));opacity:0;pointer-events:none}
@@ -678,7 +740,7 @@ function css() {
 .asst-spark{position:fixed;z-index:9002;pointer-events:none;font-size:16px;animation:aSpark .8s ease-out forwards}@keyframes aSpark{to{transform:translate(var(--sx),var(--sy)) scale(.4);opacity:0}}
 @media (prefers-reduced-motion:reduce){.abot *,#asstBtn::after{animation:none!important}}
 body.asst-hide #asstBtn,body:has(#suspWall) #asstBtn,body:has(#wiz:not([hidden])) #asstBtn,body:has(#intro:not([hidden])) #asstBtn,body:has(#build:not([hidden])) #asstBtn,body:has(#fx) #asstBtn,body:has(#recap) #asstBtn,body:has(#delFx:not([hidden])) #asstBtn{display:none}
-#asstP{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:9001;max-width:460px;margin:0 auto;max-height:min(78vh,640px);display:flex;flex-direction:column;
+#asstP{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:9001;max-width:440px;margin:0 auto;max-height:min(70vh,600px);display:flex;flex-direction:column;
   background:var(--card,#1d2247);color:var(--ink,#f4f5ff);border:1.5px solid var(--line,#2b3162);border-radius:22px;box-shadow:0 18px 60px rgba(0,0,0,.45);overflow:hidden;animation:asstUp .3s ease;font-family:inherit;direction:rtl}
 #asstP[hidden]{display:none}@keyframes asstUp{from{transform:translateY(30px);opacity:0}}
 #asstP.pop{animation:asstPop .38s cubic-bezier(.2,1.3,.4,1);transform-origin:var(--ox,10%) 100%}@keyframes asstPop{from{transform:scale(.2);opacity:0}}
@@ -728,10 +790,14 @@ function sparks(el) { const r = el.getBoundingClientRect(); for (let i = 0; i < 
 // מיקום: צד (ימין/שמאל) + גובה, נשמר. גוררים → נצמד לקצה הקרוב
 const POSK = "asstPos";
 function posGet() { try { const p = JSON.parse(localStorage.getItem(POSK) || "null"); if (p && (p.side === "l" || p.side === "r") && p.y >= 0 && p.y <= 1) return p; } catch (e) {} return { side: "l", y: 0.86 }; }
+// רוחב/גובה אמיתיים של המסך (באייפון innerWidth יכול להיות רחב מהמסך – ואז הרובוט "נבלע" בצד)
+const vw = () => Math.min(innerWidth, document.documentElement.clientWidth || innerWidth, (root.visualViewport && visualViewport.width) || innerWidth);
+const vh = () => Math.min(innerHeight, (root.visualViewport && visualViewport.height) || innerHeight);
+const BS = 50;
 function place(b, p, anim = true) {
-  const W = innerWidth, H = innerHeight, s = 60, m = 12, top = 70, bot = H - s - 16;
-  const x = p.side === "r" ? W - s - m : m, y = Math.max(top, Math.min(bot, top + p.y * (bot - top)));
-  b.classList.toggle("drag", !anim); b.style.setProperty("--x", x + "px"); b.style.setProperty("--y", y + "px"); b.style.setProperty("--tx", (p.side === "r" ? 38 : -38) + "px");
+  const W = vw(), H = vh(), m = 10, top = 70, bot = H - BS - 18;
+  const x = p.side === "r" ? W - BS - m : m, y = Math.max(top, Math.min(bot, top + p.y * (bot - top)));
+  b.classList.toggle("drag", !anim); b.style.setProperty("--x", x + "px"); b.style.setProperty("--y", y + "px"); b.style.setProperty("--tx", (p.side === "r" ? 22 : -22) + "px");
 }
 function dragify(b, onTap) {
   let st = null;
@@ -739,14 +805,16 @@ function dragify(b, onTap) {
   b.addEventListener("pointermove", e => { if (!st) return; const dx = e.clientX - st.x, dy = e.clientY - st.y; if (!st.moved && Math.hypot(dx, dy) < 8) return; st.moved = true; b.classList.add("drag"); b.style.setProperty("--x", st.ox + dx + "px"); b.style.setProperty("--y", st.oy + dy + "px"); });
   const end = e => { if (!st) return; const s0 = st; st = null; b.classList.remove("drag", "tuck");
     if (!s0.moved) { onTap(); return; }
-    const x = parseFloat(b.style.getPropertyValue("--x")), y = parseFloat(b.style.getPropertyValue("--y")), H = innerHeight;
-    const p = { side: x + 30 > innerWidth / 2 ? "r" : "l", y: Math.max(0, Math.min(1, (y - 70) / Math.max(1, H - 60 - 16 - 70))) };
+    const x = parseFloat(b.style.getPropertyValue("--x")), y = parseFloat(b.style.getPropertyValue("--y")), H = vh();
+    const p = { side: x + BS / 2 > vw() / 2 ? "r" : "l", y: Math.max(0, Math.min(1, (y - 70) / Math.max(1, H - BS - 18 - 70))) };
     try { localStorage.setItem(POSK, JSON.stringify(p)); } catch (_) {} place(b, p); mood("happy", 800); };
   b.addEventListener("pointerup", end); addEventListener("pointerup", end); // גם אם האצבע "ברחה" מהרובוט b.addEventListener("pointercancel", () => { if (st) { st = null; b.classList.remove("drag"); place(b, posGet()); } });
   b.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onTap(); } });
 }
 // גוללים → מתחבא חצי לצד; עוצרים → חוזר
-function tuckOnScroll(b) { let t = 0, lastY = scrollY; addEventListener("scroll", () => { if (Math.abs(scrollY - lastY) < 6) return; lastY = scrollY; if (!panel || panel.hidden) b.classList.add("tuck"); clearTimeout(t); t = setTimeout(() => b.classList.remove("tuck"), 1100); }, { passive: true }); }
+function tuckOnScroll(b) { let t = 0, lastY = scrollY; const back = () => { clearTimeout(t); t = setTimeout(() => b.classList.remove("tuck"), 700); };
+  addEventListener("scroll", () => { if (Math.abs(scrollY - lastY) < 6) { back(); return; } lastY = scrollY; if (!panel || panel.hidden) b.classList.add("tuck"); back(); }, { passive: true });
+  addEventListener("scrollend", back, { passive: true }); addEventListener("touchend", back, { passive: true }); }
 // כותבים בשדה כלשהו בדף → הרובוט זז לגמרי מהדרך (שלא יסתיר כפתורים ליד המקלדת)
 function awayWhileTyping(b) {
   const isField = el => el && el.matches && el.matches("input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select,[contenteditable]") && !el.closest("#asstP");
@@ -754,7 +822,7 @@ function awayWhileTyping(b) {
   document.addEventListener("focusout", () => setTimeout(() => { if (!isField(document.activeElement)) b.classList.remove("away"); }, 200));
 }
 // העיניים מסתכלות לכיוון האצבע/העכבר
-function eyesFollow() { addEventListener("pointermove", e => { const b = document.getElementById("asstBtn"); if (!b) return; const r = b.getBoundingClientRect(), dx = e.clientX - (r.left + 30), dy = e.clientY - (r.top + 30), d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 300);
+function eyesFollow() { addEventListener("pointermove", e => { const b = document.getElementById("asstBtn"); if (!b) return; const r = b.getBoundingClientRect(), dx = e.clientX - (r.left + BS / 2), dy = e.clientY - (r.top + BS / 2), d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 300);
   b.querySelectorAll(".look").forEach(l => { if (!l.closest(".think")) l.style.transform = `translate(${(dx / d * 2.6 * k).toFixed(2)}px,${(dy / d * 2.2 * k).toFixed(2)}px)`; }); }, { passive: true }); }
 function hideToday() { try { localStorage.setItem("asstHideDay", new Date().toDateString()); } catch (e) {} closePanel(); const b = document.getElementById("asstBtn"); if (b) b.remove(); toastSay("נתראה מחר 👋 אפשר להחזיר אותי בפרופיל ← תצוגה"); }
 function greet(b) {
@@ -762,13 +830,13 @@ function greet(b) {
   if (seen) return;
   setTimeout(() => { if (!b.isConnected || b.getClientRects().length === 0 || getComputedStyle(b).display === "none") return;
     mood("wave", 1400); const r = b.getBoundingClientRect(), t = document.createElement("div"); t.className = "asst-tip"; t.innerHTML = "היי! אני מערכתי 👋<small>אפשר לשאול אותי הכל – ולגרור אותי לאן שנוח</small>";
-    document.body.appendChild(t); const tw = t.offsetWidth; t.style.top = Math.max(10, r.top - t.offsetHeight - 10) + "px"; t.style.left = Math.min(innerWidth - tw - 10, Math.max(10, r.left + 30 - tw / 2)) + "px";
+    document.body.appendChild(t); const tw = t.offsetWidth; t.style.top = Math.max(10, r.top - t.offsetHeight - 10) + "px"; t.style.left = Math.min(vw() - tw - 10, Math.max(10, r.left + BS / 2 - tw / 2)) + "px";
     const bye = () => { t.remove(); removeEventListener("pointerdown", bye, true); }; addEventListener("pointerdown", bye, true); setTimeout(bye, 6000); }, 1800);
 }
 function build() {
   css();
   const b = document.createElement("button"); b.id = "asstBtn"; b.type = "button"; b.setAttribute("aria-label", "מערכתי – העוזר (אפשר לגרור)"); b.title = "מערכתי – העוזר (אפשר לגרור)"; b.innerHTML = robotSVG(); document.body.appendChild(b);
-  place(b, posGet()); addEventListener("resize", () => place(b, posGet()));
+  place(b, posGet()); addEventListener("resize", () => place(b, posGet())); if (root.visualViewport) visualViewport.addEventListener("resize", () => place(b, posGet()));
   panel = document.createElement("div"); panel.id = "asstP"; panel.hidden = true; panel.setAttribute("role", "dialog"); panel.setAttribute("aria-label", "מערכתי");
   panel.innerHTML = `<div class="ah"><span class="hb">${robotSVG()}</span><b>מערכתי<small>העוזר שלך באפליקציה</small></b><button type="button" class="hide" title="להסתיר את הרובוט עד מחר">👋 הסתר</button><button type="button" class="ax" aria-label="סגור">✕</button></div>
     <div class="alog" aria-live="polite"></div><div class="achips">${CHIPS.map(c => `<button type="button">${esc(c)}</button>`).join("")}</div>
@@ -786,7 +854,7 @@ function build() {
   try { hist = JSON.parse(sessionStorage.getItem("asst:hist") || "[]"); } catch (e) { hist = []; }
   if (hist.length) hist.slice(-8).forEach(h => bubble(h.role === "user" ? "me" : "bot", h.html || esc(h.text)));
 }
-function openPanel() { const b = document.getElementById("asstBtn"); if (b) { const r = b.getBoundingClientRect(); panel.style.setProperty("--ox", (r.left + 30 < innerWidth / 2 ? 8 : 92) + "%"); sparks(b); } document.querySelectorAll(".asst-tip").forEach(t => t.remove());
+function openPanel() { const b = document.getElementById("asstBtn"); if (b) { const r = b.getBoundingClientRect(); panel.style.setProperty("--ox", (r.left + BS / 2 < vw() / 2 ? 8 : 92) + "%"); sparks(b); } document.querySelectorAll(".asst-tip").forEach(t => t.remove());
   panel.classList.remove("pop"); void panel.offsetWidth; panel.classList.add("pop"); panel.hidden = false; mood("wave", 1300); if (!log.children.length) bubble("bot", HELP); quota(); setTimeout(() => inp.focus({ preventScroll: true }), 50); log.scrollTop = log.scrollHeight; }
 function closePanel() { panel.hidden = true; }
 function closePanelSoft() { if (!panel) return; if (innerWidth < 700) panel.hidden = true; }
@@ -815,7 +883,8 @@ async function send(text) {
 }
 // ההחלטה: פקודה ברורה → המוח המהיר (מיידי, בלי לבזבז שאלות). אחרת → המוח החכם. אין AI → הניחוש הכי טוב + הצעות
 async function handle(text) {
-  const r = think(text);
+  const r = think(text, { last: lastCtx });
+  if (r.id && ACT[r.id]) lastCtx = { id: r.id, arg: r.arg };
   if (r.id === "compute") { await ensureSci(); try { const v = Sci.evaluate(r.arg, { deg: true }); botSay(`<span dir="ltr">${esc(r.arg.replace(/\*/g, "×").replace(/\//g, "÷"))} = <b>${esc(Sci.fmt(v))}</b></span> <button class="go" data-a="sci">🔢 למחשבון המדעי</button>`); wire(); return; } catch (e) { /* לא חישוב – ממשיכים */ } }
   if (r.id && r.conf >= 0.85) return local(r);
   const ai = await withDots(() => askAI(text, hist.slice(0, -1).filter(h => h.role === "user" || h.ai).map(h => ({ role: h.role === "user" ? "user" : "model", text: h.text }))));
@@ -827,7 +896,7 @@ async function handle(text) {
     else if (r.id && ACT[r.id] && r.conf >= 0.5 && !ACT[r.id].answer && ACT[r.id].label) btns.push([r.id, r.arg, "👉 " + ACT[r.id].label]);
     const show = btns.filter(([id, a]) => !(ai.action && ai.action.id === id && JSON.stringify(ai.action.arg) === JSON.stringify(a)));
     botSay(esc(ai.reply || "").replace(/\n/g, "<br>") + (show.length ? "<br>" + show.map(([id, a, l]) => `<button class="go" data-a="${id}" data-g='${esc(JSON.stringify(a ?? null))}'>${esc(l)}</button>`).join("") : "") + `<span class="tag">🧠 המוח החכם (AI) – כדאי לבדוק</span>`, "ai"); wire();
-    if (ok) { remember("bot", `[פעולה: ${ai.action.id}]`); await sleep(500); await act(ai.action.id, ai.action.arg, { say: esc(ai.reply || "").slice(0, 120) }); }
+    if (ok) { lastCtx = { id: ai.action.id, arg: ai.action.arg }; remember("bot", `[פעולה: ${ai.action.id}]`); await sleep(500); await act(ai.action.id, ai.action.arg, { say: esc(ai.reply || "").slice(0, 120) }); }
     return;
   }
   const why = !ai || ai.error === "no_ai" ? "" : ai.error === "quota" ? "🧠 נגמרו 20 השאלות למוח החכם להיום – אבל המוח המהיר ממשיך ⚡" : ai.error === "busy" ? "🧠 המוח החכם עמוס כרגע, אז עניתי במוח המהיר ⚡" : ai.error === "network" ? "📶 אין חיבור כרגע – עניתי במוח המהיר ⚡" : ai.error === "key" ? `🧠 המוח החכם לא מחובר כמו שצריך (בעיה במפתח${ai.code ? " · " + ai.code : ""}) – עניתי במוח המהיר ⚡` : `🧠 המוח החכם לא הצליח לענות${ai.code ? " (קוד " + ai.code + ")" : ai.error === "slow" ? " (לקח יותר מדי זמן)" : ""} – עניתי במוח המהיר ⚡`;
@@ -839,6 +908,7 @@ async function handle(text) {
 async function local(r, pre = "") {
   if (SMALL[r.id]) { botSay((pre ? pre + "<br>" : "") + SMALL[r.id][Math.floor(Math.random() * SMALL[r.id].length)]); return; }
   if (r.id === "help") { botSay(HELP); return; }
+  if (r.id === "clear") { hist = []; lastCtx = null; try { sessionStorage.removeItem("asst:hist"); } catch (e) {} log.innerHTML = ""; bubble("bot", "🧹 ניקיתי את השיחה! מה עכשיו? 😊"); mood("happy", 900); return; }
   if (r.id === "faq") { botSay((pre ? pre + "<br>" : "") + (FAQ[r.arg] || HELP)); return; }
   if (r.id === "mood") { botSay(MOOD[r.arg] || MOOD.good); if (r.arg === "sad") { botSay(`<button class="go" data-a="ask">💬 שאלה לצוות (בלי שם)</button>`); wire(); } return; }
   if (r.say) botSay((pre ? pre + "<br>" : "") + r.say);
@@ -850,7 +920,7 @@ function wire() { log.querySelectorAll("button.go:not([data-w])").forEach(b => {
 async function withDots(f) { const d = document.createElement("div"); d.className = "dots"; d.innerHTML = "<i></i><i></i><i></i>"; log.appendChild(d); log.scrollTop = log.scrollHeight; mood("think"); try { return await f(); } finally { d.remove(); mood(null); } }
 
 // ===================== הפעלה =====================
-const api = { think, norm, ACT, INT, mathExpr, equation, findSubject, findDay, findLevel, findColor, answer, act };
+const api = { think, canon, norm, ACT, INT, mathExpr, equation, findSubject, findDay, findLevel, findColor, answer, act };
 if (typeof module !== "undefined" && module.exports) { module.exports = api; return; }
 root.Asst = api;
 api.show = () => { try { localStorage.removeItem("asstOff"); localStorage.removeItem("asstHideDay"); } catch (e) {} if (!document.getElementById("asstBtn")) { if (panel) { panel.remove(); panel = null; } build(); } };

@@ -48,6 +48,8 @@ await send("מתי החופש הבא");
 log(/חנוכה/.test(await lastBot()), "'next vacation' → from the school calendar", await lastBot());
 await send("מה זה 30 אחוז");
 log(/30%/.test(await lastBot()) && /בגרות/.test(await lastBot()), "how-to questions get a ready answer", await lastBot());
+await send("מה יש לי היום?"); await send("ומחר?");
+log(/מחר/.test(await lastBot()), "follow-up: 'ומחר?' after 'what's today' → tomorrow", await lastBot());
 await send("כמה זה 15% מ-200");
 log(/= 30/.test(await lastBot()), "computes 15% of 200 = 30", await lastBot());
 await send("תשנה צבע לירוק", 1800);
@@ -85,6 +87,17 @@ log(/נשארו לך היום 19/.test(await p.$eval("#asstQ", e => e.innerText)
 ai = { ok: false, error: "quota", left: 0 };
 await send("משהו ממש פתוח ומוזר על החיים", 2000);
 log(/20 השאלות|לא בטוח/.test(await p.$eval("#asstP .alog", e => e.innerText)), "after the quota → fast brain keeps helping");
+// "תמחק את הצ'אט"
+await go("index.html"); await send("מה השם שלי?"); await send("תמחק את הצ'אט");
+log((await p.$$("#asstP .am")).length === 1 && /ניקיתי/.test(await lastBot()), "'delete the chat' clears the conversation");
+await p.reload({ waitUntil: "domcontentloaded" }); await sleep(1800); await open();
+log(!/קוראים לך/.test(await p.$eval("#asstP .alog", e => e.innerText)), "…and it stays cleared after reopening");
+await p.click("#asstP .ax"); await sleep(200);
+// לא נבלע בצד גם כשהדף רחב מהמסך (כמו שקרה באייפון)
+await p.evaluate(() => { localStorage.setItem("asstPos", JSON.stringify({ side: "r", y: 0.5 })); const w = document.createElement("div"); w.id = "wide"; w.style.cssText = "width:900px;height:10px"; document.body.appendChild(w); dispatchEvent(new Event("resize")); }); await sleep(700);
+const rb = await p.evaluate(() => { const r = document.getElementById("asstBtn").getBoundingClientRect(); return { right: r.right, cw: document.documentElement.clientWidth, w: r.width }; });
+log(rb.right <= rb.cw && rb.w <= 52, "robot fully on screen on the right side (even if the page is wider), and small (50px)", JSON.stringify(rb));
+await p.evaluate(() => { document.getElementById("wide").remove(); localStorage.removeItem("asstPos"); dispatchEvent(new Event("resize")); }); await sleep(500);
 // גרירה לצד השני, נשמר; מסתתר בזמן הקלדה; "הסתר" להיום ומחזירים מהפרופיל
 await go("index.html"); await p.evaluate(() => document.getElementById("asstP").hidden = true);
 let bb = await (await p.$("#asstBtn")).boundingBox();
