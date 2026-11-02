@@ -61,6 +61,37 @@ main{padding:16px 14px 40px;max-width:560px;margin:0 auto}
 .cat .tl{display:grid;grid-template-columns:1fr;gap:6px;margin-top:4px}
 .tlb{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:10px 12px;font:inherit;font-size:15px;cursor:pointer;text-align:start}
 .tlb small{color:var(--muted);font-size:12px;white-space:nowrap}
+.prac{border-top:2px dashed var(--line);padding-top:12px}
+.lvl{background:var(--bg);border:1.5px solid var(--line);border-radius:16px;padding:10px 12px;margin-bottom:8px}
+.lvh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.lvh b{font-size:17px}.lvh small{color:var(--muted);font-size:13px}
+.lvl input[type=range]{width:100%;margin:10px 0 2px;accent-color:var(--accent);direction:rtl}
+.lvn{display:flex;justify-content:space-between}.lvn span{display:flex;flex-direction:column;align-items:center;font-size:20px;cursor:pointer;opacity:.55;min-width:52px}.lvn span small{font-size:11px;font-weight:700}.lvn span.on{opacity:1}
+.pst{font-size:14px;color:var(--muted);margin:4px 2px 8px}
+.pcard{background:var(--bg);border:2px solid var(--accent);border-radius:18px;padding:14px}
+.pq{font-size:18px;line-height:1.8;margin-bottom:10px}.pq .m{font-size:19px}
+.pin{width:100%;border:2px solid var(--line);border-radius:14px;padding:12px 14px;font:inherit;font-size:20px;background:var(--card);color:var(--ink);direction:ltr;text-align:center}.pin:focus{outline:none;border-color:var(--accent)}
+.pin2{display:flex;gap:8px}.pin2 label{flex:1;display:flex;align-items:center;gap:6px;font-weight:900;font-size:18px}
+.pkeys{display:flex;gap:6px;margin-top:8px;direction:ltr}.pkeys button{flex:1;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:8px;font:inherit;font-size:20px;font-weight:900;cursor:pointer}
+.pacts{display:flex;gap:6px;flex-wrap:wrap}.pacts .btn{flex:1;min-width:120px;font-size:15px;padding:11px 10px}
+.popts{display:grid;gap:8px}.popt{border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:12px;font:inherit;font-size:18px;cursor:pointer;text-align:center}
+.popt.ok{border-color:var(--free);background:rgba(61,220,151,.15)}.popt.no{border-color:var(--bad);background:rgba(255,107,107,.12);opacity:.75}
+.pgood{margin-top:12px;background:rgba(61,220,151,.15);border:1.5px solid var(--free);border-radius:14px;padding:10px 12px;font-size:18px;font-weight:900}
+.pbad{margin-top:12px;background:rgba(255,107,107,.1);border:1.5px solid var(--bad);border-radius:14px;padding:10px 12px;font-size:16px;line-height:1.7}.pbad small{font-size:14px;color:var(--muted)}
+.phint{margin-top:10px;background:rgba(255,210,63,.14);border:1.5px solid var(--warn);border-radius:14px;padding:10px 12px;font-size:16px;line-height:1.7}
+.psol{margin-top:10px;font-size:16px;line-height:1.9}.psol ol{margin:4px 0;padding-inline-start:22px}.psol li.kid{color:var(--muted);list-style:none;margin-inline-start:-18px}.psol summary{cursor:pointer;font-weight:900;color:var(--accent)}
+.pans{margin-top:6px;font-weight:900;font-size:17px}
+.ptip{margin-top:10px;background:var(--next);border-radius:14px;padding:10px 12px;font-size:15px;line-height:1.7}.ptip .chip{direction:rtl;margin-inline-start:4px;font-weight:900}
+.sci .scd{background:var(--bg);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;text-align:right;min-height:96px;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;overflow:hidden}
+.sci .sce{font-size:20px;color:var(--muted);word-break:break-all;text-align:right;min-height:26px}
+.sci .scr{font-size:30px;font-weight:900;text-align:right;word-break:break-all}.sci .scr.big{font-size:38px;color:var(--accent)}.sci .scr.err{font-size:17px;color:var(--bad)}
+.scmode{display:flex;align-items:center;gap:10px;margin:8px 0}.scmode button{border:1.5px solid var(--line);background:var(--break);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}.scmode .hint{margin:0}
+.sck{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;direction:ltr}
+.sck button{border:none;border-radius:12px;padding:13px 2px;font:inherit;font-size:19px;font-weight:700;cursor:pointer;background:var(--key);color:var(--ink)}
+.sck button.f{font-size:15px;background:var(--break)}.sck button.o{background:var(--key2);font-size:22px}.sck button.c{background:rgba(255,107,107,.18)}.sck button.eq{background:var(--accent);color:var(--accent-ink);font-size:24px}
+.sck button:active{transform:scale(.95)}
+.sch{display:flex;justify-content:space-between;gap:10px;width:100%;border:none;border-bottom:1px solid var(--line);background:none;color:var(--ink);padding:9px 4px;font:inherit;font-size:16px;cursor:pointer;text-align:left}.sch span{color:var(--muted);word-break:break-all}.sch b{white-space:nowrap}
+.seg2{display:flex;gap:6px;margin:10px 0}.seg2 button{flex:1;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:9px 6px;font:inherit;font-size:15px;font-weight:700;cursor:pointer}.seg2 button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tout .steps .m{display:inline-block;font-size:17px;text-align:inherit}.tout .steps .h{font-size:16px;color:var(--ink);line-height:2}.tout .ans{font-size:19px;line-height:1.6}.tout .ans div{direction:ltr;unicode-bidi:plaintext}
 .tsec{margin-top:14px}.tsec h3{margin:0 0 6px;font-size:16px;font-weight:900}
 .tsec p,.tsec li{font-size:16px;line-height:1.8}
 .tsec ol,.tsec ul{margin:0;padding-inline-start:22px}
@@ -85,6 +116,7 @@ main{padding:16px 14px 40px;max-width:560px;margin:0 auto}
 .keys{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px;direction:ltr}
 .keys button{border:none;background:var(--key);color:var(--ink);border-radius:11px;padding:0;height:46px;font:inherit;font-size:19px;font-weight:500;cursor:pointer;touch-action:manipulation}
 .keys button.op{background:var(--key2);font-weight:700}
+.keys button.fn{background:var(--break);font-size:15px;font-weight:700}
 .keys button.v{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:21px;color:var(--accent);font-weight:700}
 .keys button:active{transform:scale(.94);filter:brightness(1.15)}
 .kbt{background:none;border:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;padding:6px 2px;text-decoration:underline}
@@ -168,6 +200,11 @@ svg text{font-family:Rubik,Arial,sans-serif}
   </div>
   <div class="tiles">
     <button class="tile big" data-go="solve"><div class="i">🟰</div><b>פתרון תרגיל</b><small>משוואה, אי-שוויון, פתיחת סוגריים, שברים ושורשים – עם כל השלבים</small></button>
+    <button class="tile big" data-go="topics" id="pracTile" style="background:linear-gradient(135deg,#10b981,#3b82f6)"><div class="i">🎯</div><b>תרגול לפי רמה</b><small>בוחרים נושא ורמה (🌱 מתחיל עד 🏆 אלוף), פותרים – ומקבלים הסבר על כל תשובה</small></button>
+    <button class="tile" data-go="sci"><div class="i">🔢</div><b>מחשבון מדעי</b><small>sin, cos, log, שורש, חזקות – והיסטוריה</small></button>
+    <button class="tile" data-go="der"><div class="i">📉</div><b>נגזרת ומשיק</b><small>גזירה עם כל השלבים, משיק ונקודות קיצון</small></button>
+    <button class="tile" data-go="seq"><div class="i">🔁</div><b>סדרות</b><small>חשבונית והנדסית: איבר וסכום</small></button>
+    <button class="tile" data-go="bin"><div class="i">🎲</div><b>הסתברות בינומית</b><small>ברנולי: בדיוק / לפחות / לכל היותר</small></button>
     <button class="tile" data-go="sys"><div class="i">✖️</div><b>מערכת משוואות</b><small>שתי משוואות עם x ו-y</small></button>
     <button class="tile" data-go="func"><div class="i">📈</div><b>גרף של פונקציה</b><small>ישר או פרבולה: קודקוד, חיתוכים</small></button>
     <button class="tile" data-go="line"><div class="i">📍</div><b>ישר דרך 2 נקודות</b><small>שיפוע, משוואה, מרחק, אמצע</small></button>
@@ -176,6 +213,54 @@ svg text{font-family:Rubik,Arial,sans-serif}
     <button class="tile big" data-go="topics" style="background:var(--card);color:var(--ink);border:1.5px solid var(--accent)"><div class="i">📚</div><b>כל הנושאים – הסברים ודוגמאות</b><small>ט' עד י"ב: נוסחאות, איך פותרים שלב-שלב, דוגמה פתורה וטעויות נפוצות</small></button>
   </div>
   <p class="hint" style="margin-top:14px;text-align:center">💡 המחשבון עוזר להבין. במבחן צריך לדעת לעשות את השלבים לבד.</p>
+</section>
+
+<!-- 📉 נגזרת -->
+<section id="vDer" hidden>
+  <div class="card">
+    <h2>📉 נגזרת, משיק וקיצון</h2><p class="hint">כותבים פולינום (למשל x³-3x+2). אפשר גם נקודה – ומקבלים את שיפוע המשיק ואת משוואתו.</p>
+    <div class="disp" style="display:flex;align-items:center;gap:8px;direction:ltr"><b style="font-size:20px;font-family:Georgia,serif;font-style:italic">f(x) =</b><div style="position:relative;flex:1"><input class="mi" inputmode="none" autocomplete="off" autocapitalize="off" spellcheck="false" id="dIn" placeholder="x³-3x+2"></div></div>
+    <div class="lbl">נקודה (לא חובה)</div><div class="pt"><b>x =</b><input class="mi sm" inputmode="none" autocomplete="off" spellcheck="false" id="dX" placeholder="2"></div>
+    <div class="kslot"></div>
+    <button class="btn primary" id="dGo">גזור ✨</button>
+  </div>
+  <div id="dOut"></div>
+</section>
+<!-- 🔁 סדרות -->
+<section id="vSeq" hidden>
+  <div class="card">
+    <h2>🔁 סדרות</h2>
+    <div class="seg2" id="qT"><button type="button" class="on" data-t="a">➕ חשבונית</button><button type="button" data-t="g">✖️ הנדסית</button></div>
+    <div class="pt"><b>a₁ =</b><input class="mi sm" inputmode="none" autocomplete="off" spellcheck="false" id="qA" placeholder="3"></div>
+    <div class="pt"><b id="qDl">d =</b><input class="mi sm" inputmode="none" autocomplete="off" spellcheck="false" id="qD" placeholder="2"></div>
+    <div class="pt"><b>n =</b><input class="mi sm" inputmode="none" autocomplete="off" spellcheck="false" id="qN" placeholder="10"></div>
+    <div class="kslot"></div>
+    <button class="btn primary" id="qGo2">חשב ✨</button>
+  </div>
+  <div id="qOut2"></div>
+</section>
+<!-- 🎲 בינומית -->
+<section id="vBin" hidden>
+  <div class="card">
+    <h2>🎲 הסתברות בינומית (ברנולי)</h2><p class="hint">n ניסויים, בכל אחד הסתברות p להצלחה. מה ההסתברות ל-k הצלחות?</p>
+    <div class="pt"><b>n =</b><input class="mi sm" inputmode="none" autocomplete="off" spellcheck="false" id="bN" placeholder="10"></div>
+    <div class="pt"><b>p =</b><input class="mi sm" inputmode="none" autocomplete="off" spellcheck="false" id="bP" placeholder="0.3 או 1/6"></div>
+    <div class="seg2" id="bM"><button type="button" class="on" data-m="eq">בדיוק</button><button type="button" data-m="ge">לפחות</button><button type="button" data-m="le">לכל היותר</button></div>
+    <div class="pt"><b>k =</b><input class="mi sm" inputmode="none" autocomplete="off" spellcheck="false" id="bK" placeholder="3"></div>
+    <div class="kslot"></div>
+    <button class="btn primary" id="bGo">חשב ✨</button>
+  </div>
+  <div id="bOut"></div>
+</section>
+
+<!-- 🔢 מחשבון מדעי -->
+<section id="vSci" hidden>
+  <div class="card sci">
+    <div class="scd"><div class="sce" id="scE" dir="ltr"></div><div class="scr" id="scR" dir="ltr">0</div></div>
+    <div class="scmode"><button type="button" id="scDeg">מעלות (DEG)</button><span class="hint" id="scMsg"></span></div>
+    <div class="sck" id="scK"></div>
+  </div>
+  <div class="card"><h2>🕘 היסטוריה</h2><p class="hint">לחיצה על שורה מחזירה אותה למחשבון.</p><div id="scH"></div></div>
 </section>
 
 <!-- 📚 כל הנושאים -->
@@ -274,6 +359,9 @@ svg text{font-family:Rubik,Arial,sans-serif}
 
 <script src="calc-engine.js"></script>
 <script src="calc-topics.js"></script>
+<script src="calc-practice.js"></script>
+<script src="calc-sci.js"></script>
+<script src="calc-tools.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -284,9 +372,9 @@ const M=h=>{const f=String(h).replace(/<[^>]+>|&[a-z]+;/g,"").match(/[A-Za-zא-�
 const D=x=>Calc.dec(x);
 
 // ---- ניווט (עם כפתור "אחורה" של הטלפון) ----
-const VIEWS={home:"vHome",solve:"vSolve",sys:"vSys",func:"vFunc",line:"vLine",tri:"vTri",pct:"vPct",topics:"vTopics",topic:"vTopic"};
-const TITLES={home:["🧮 מחשבון חכם","פותר תרגילים ומסביר כל נושא – ט' עד י\"ב"],topics:["📚 כל הנושאים","הסברים, נוסחאות ודוגמאות פתורות"],topic:["📖 נושא",""],solve:["🟰 פתרון תרגיל","משוואות, אי-שוויונים, סוגריים ושברים"],sys:["✖️ מערכת משוואות","שתי משוואות, שני נעלמים"],func:["📈 גרף של פונקציה","ישר או פרבולה"],line:["📍 ישר דרך 2 נקודות","שיפוע, משוואה, מרחק, אמצע"],tri:["📐 משולש ישר-זווית","פיתגורס וטריגונומטריה"],pct:["💯 אחוזים","אחוז מתוך, הנחה, שינוי"]};
-const FIRST={solve:"sIn",sys:"q1",func:"fIn",line:"lx1",tri:"ta"};
+const VIEWS={home:"vHome",sci:"vSci",der:"vDer",seq:"vSeq",bin:"vBin",solve:"vSolve",sys:"vSys",func:"vFunc",line:"vLine",tri:"vTri",pct:"vPct",topics:"vTopics",topic:"vTopic"};
+const TITLES={der:["📉 נגזרת ומשיק","גזירה, משיק וקיצון – שלב אחרי שלב"],seq:["🔁 סדרות","חשבונית והנדסית"],bin:["🎲 הסתברות בינומית","בדיוק, לפחות, לכל היותר"],sci:["🔢 מחשבון מדעי","sin, cos, log, שורשים וחזקות"],home:["🧮 מחשבון חכם","פותר תרגילים ומסביר כל נושא – ט' עד י\"ב"],topics:["📚 כל הנושאים","הסברים, נוסחאות ודוגמאות פתורות"],topic:["📖 נושא",""],solve:["🟰 פתרון תרגיל","משוואות, אי-שוויונים, סוגריים ושברים"],sys:["✖️ מערכת משוואות","שתי משוואות, שני נעלמים"],func:["📈 גרף של פונקציה","ישר או פרבולה"],line:["📍 ישר דרך 2 נקודות","שיפוע, משוואה, מרחק, אמצע"],tri:["📐 משולש ישר-זווית","פיתגורס וטריגונומטריה"],pct:["💯 אחוזים","אחוז מתוך, הנחה, שינוי"]};
+const FIRST={der:"dIn",seq:"qA",bin:"bN",solve:"sIn",sys:"q1",func:"fIn",line:"lx1",tri:"ta"};
 let cur="home",target=null;
 function route(){
   cur=(location.hash.slice(1)||"home");
@@ -302,6 +390,7 @@ function route(){
   $("kp").hidden=!slot;if(slot)slot.appendChild($("kp"));
   if(FIRST[cur])setTarget($(FIRST[cur]));
   if(cur==="pct")pct();
+  if(cur==="sci")sciDraw();
   window.scrollTo(0,0);
   save("calcView",cur);
 }
@@ -309,6 +398,58 @@ $("back").onclick=()=>{if(cur==="home")location.href="./";else if(cur==="topic"&
 document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>location.hash=b.dataset.go);
 window.addEventListener("hashchange",route);
 
+
+
+// ---- 📉 נגזרת · 🔁 סדרות · 🎲 בינומית ----
+function toolOut(id,f){
+  try{const r=f();$(id).innerHTML=`<div class="card tout"><div class="ans"><small>התשובה</small>${r.ans.split(" · ").map(x=>`<div dir="auto">${escT(x).replace(/\^(\d+)/g,(_,d)=>[...d].map(c=>"⁰¹²³⁴⁵⁶⁷⁸⁹"[c]).join("")).replace(/\([^()]*\)|[a-zA-Z'₀-₉0-9]+\s*=\s*[^ ,]+/g,m=>"\u2066"+m+"\u2069")}</div>`).join("")}</div><ol class="steps">${r.steps.map(x=>`<li><span class="h">${R(x)}</span></li>`).join("")}</ol></div>`}
+  catch(e){$(id).innerHTML=`<div class="card"><div class="warn">⚠️ ${escT(e.message)}</div></div>`}
+  if(innerWidth<1000)$(id).scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("dGo").onclick=()=>toolOut("dOut",()=>Tools.derivative($("dIn").value,$("dX").value));
+let seqT="a",binM="eq";
+document.querySelectorAll("#qT button").forEach(b=>b.onclick=()=>{seqT=b.dataset.t;document.querySelectorAll("#qT button").forEach(x=>x.classList.toggle("on",x===b));$("qDl").textContent=seqT==="a"?"d =":"q ="});
+document.querySelectorAll("#bM button").forEach(b=>b.onclick=()=>{binM=b.dataset.m;document.querySelectorAll("#bM button").forEach(x=>x.classList.toggle("on",x===b))});
+$("qGo2").onclick=()=>toolOut("qOut2",()=>Tools.sequence(seqT,$("qA").value,$("qD").value,$("qN").value));
+$("bGo").onclick=()=>toolOut("bOut",()=>Tools.binomial($("bN").value,$("bK").value,$("bP").value,binM));
+// ---- 🔢 מחשבון מדעי ----
+const SC={e:"",deg:load("sciDeg",true),ans:0,fresh:false};
+const SCK=[["sin","sin(","f"],["cos","cos(","f"],["tan","tan(","f"],["(","(","f"],[")",")","f"],
+  ["sin⁻¹","sin⁻¹(","f"],["cos⁻¹","cos⁻¹(","f"],["tan⁻¹","tan⁻¹(","f"],["log","log(","f"],["ln","ln(","f"],
+  ["√","√(","f"],["x²","^2","f"],["xʸ","^","f"],["π","π","f"],["e","e","f"],
+  ["7"],["8"],["9"],["÷","÷","o"],["AC","AC","c"],
+  ["4"],["5"],["6"],["×","×","o"],["⌫","BS","c"],
+  ["1"],["2"],["3"],["−","−","o"],["!","!","f"],
+  ["0"],["."],["Ans","Ans","f"],["+","+","o"],["=","=","eq"]];
+function sciDraw(){
+  $("scK").innerHTML=SCK.map(([l,v,c])=>`<button type="button" class="${c||""}" data-v="${escT(v||l)}">${l}</button>`).join("");
+  $("scDeg").textContent=SC.deg?"📐 מעלות (DEG)":"〰️ רדיאנים (RAD)";sciShow();sciHist();
+}
+function sciShow(err){
+  $("scE").textContent=SC.e||" ";
+  let prev="";if(!err&&SC.e&&!SC.fresh){try{prev=Sci.fmt(Sci.evaluate(SC.e,{deg:SC.deg,ans:SC.ans}))}catch(x){}}
+  $("scR").textContent=err?err:SC.fresh?Sci.fmt(SC.ans):prev?"= "+prev:"0";
+  $("scR").classList.toggle("err",!!err);$("scR").classList.toggle("big",SC.fresh);
+}
+function sciHist(){const h=load("sciHist",[]);$("scH").innerHTML=h.length?h.map((x,i)=>`<button type="button" class="sch" data-i="${i}" dir="ltr"><span>${escT(x.e)}</span><b>= ${escT(x.r)}</b></button>`).join("")+`<button type="button" class="chip" id="scHC" style="direction:rtl;margin-top:8px">🗑️ נקה היסטוריה</button>`:`<p class="hint">עוד אין חישובים.</p>`;
+  $("scH").querySelectorAll(".sch").forEach(b=>b.onclick=()=>{SC.e=h[+b.dataset.i].e;SC.fresh=false;sciShow();window.scrollTo({top:0,behavior:"smooth"})});
+  const c=$("scHC");if(c)c.onclick=()=>{save("sciHist",[]);sciHist()}}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("#scK button");if(!b)return;const v=b.dataset.v;
+  if(v==="AC"){SC.e="";SC.fresh=false}
+  else if(v==="BS"){SC.e=SC.fresh?"":SC.e.replace(/(sin⁻¹\(|cos⁻¹\(|tan⁻¹\(|sin\(|cos\(|tan\(|log\(|ln\(|√\(|Ans|.)$/,"");SC.fresh=false}
+  else if(v==="="){if(!SC.e)return;try{const r=Sci.evaluate(SC.e,{deg:SC.deg,ans:SC.ans}),shown=SC.e.replace(/Ans/g,"("+Sci.fmt(SC.ans)+")").replace(/^\((-?[\d.]+)\)/,"$1");SC.ans=r;const h=load("sciHist",[]);h.unshift({e:shown,r:Sci.fmt(r)});save("sciHist",h.slice(0,30));SC.fresh=true;sciShow();sciHist();
+      if(/sin|cos|tan/.test(SC.e)&&!SC.deg)$("scMsg").textContent="שים לב: אתה במצב רדיאנים";else $("scMsg").textContent="";return}catch(x){return sciShow("⚠️ "+x.message)}}
+  else{ // אחרי "=": מספר מתחיל חדש, פעולה ממשיכה מהתוצאה
+    if(SC.fresh){SC.e=/^[÷×−+^!]/.test(v)?"Ans":"";SC.fresh=false}
+    SC.e+=v}
+  sciShow();if(navigator.vibrate)try{navigator.vibrate(8)}catch(x){}
+});
+document.addEventListener("click",e=>{if(e.target.id==="scDeg"){SC.deg=!SC.deg;save("sciDeg",SC.deg);$("scDeg").textContent=SC.deg?"📐 מעלות (DEG)":"〰️ רדיאנים (RAD)";SC.fresh=false;sciShow()}});
+// מקלדת של מחשב
+document.addEventListener("keydown",e=>{if(cur!=="sci"||e.target.matches("input,textarea"))return;const k=e.key;
+  const map={"*":"×","/":"÷","-":"−","Enter":"=","=":"=","Backspace":"BS","Escape":"AC"};const v=map[k]||(/^[0-9.+()^!e]$/.test(k)?k:null);
+  if(!v)return;e.preventDefault();const b=[...document.querySelectorAll("#scK button")].find(x=>x.dataset.v===v);if(b)b.click();else{SC.e+=v;sciShow()}});
 // ---- 🔍 חיפוש נושא + הסבר מלא ----
 const R=Topics.rich;
 const escT=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -347,22 +488,95 @@ function showTopic(t){
   const sec=(h,body)=>body?`<div class="tsec"><h3>${h}</h3>${body}</div>`:"";
   const related=Topics.TOPICS.filter(x=>x.cat===t.cat&&x.id!==t.id).slice(0,4);
   $("tOne").innerHTML=`<div><span class="tag">${Topics.CATS[t.cat][0]} ${Topics.CATS[t.cat][1]}</span><span class="tag">כיתה ${escT(t.g)}</span></div>
+    ${Practice.has(t.id)?`<button type="button" class="btn primary" id="toPrac" style="margin-top:12px">🎯 לתרגל את הנושא – לפי הרמה שלי</button>`:""}
     ${sec("💡 מה זה?",`<p>${R(t.what)}</p>`)}
     ${t.f?sec("📌 נוסחאות וכללים",`<div class="fbox">${t.f.map(f=>`<div>${R(f)}</div>`).join("")}</div>`):""}
     ${t.how?sec("🪜 איך פותרים – שלב אחרי שלב",`<ol>${t.how.map(h=>`<li>${R(h)}</li>`).join("")}</ol>`):""}
     ${t.ex?sec("✏️ דוגמה פתורה",`<div class="fbox"><div><b>התרגיל:</b> ${R(t.ex.q)}</div></div>
       <button type="button" class="btn ghost reveal" id="tRev">👀 נסה לבד – ואז לחץ כאן לראות את הפתרון</button>
       <div id="tSol" hidden><ol class="steps">${t.ex.s.map(x=>`<li><span class="h">${R(x)}</span></li>`).join("")}</ol><div class="ans"><small>התשובה</small>${R(t.ex.a)}</div></div>`):""}
+    ${Practice.has(t.id)?`<div class="tsec prac" id="prac"></div>`:""}
     ${t.err?sec("⚠️ טעויות נפוצות",`<div class="warn"><ul>${t.err.map(e=>`<li>${R(e)}</li>`).join("")}</ul></div>`):""}
     ${t.tool?`<button type="button" class="btn primary" id="tTool">${TOOLN[t.tool.go]}</button>`:""}
     ${related.length?sec("🔗 נושאים קרובים",`<div class="chips tp">${related.map(x=>`<a class="chip" href="#t-${x.id}" style="text-decoration:none">${R(x.t)}</a>`).join("")}</div>`):""}`;
   const rv=$("tRev");if(rv)rv.onclick=()=>{$("tSol").hidden=false;rv.hidden=true};
   const tb=$("tTool");if(tb)tb.onclick=()=>useTool(t.tool);
+  if($("prac")){pracStart(t.id);$("toPrac").onclick=()=>$("prac").scrollIntoView({behavior:"smooth",block:"start"})}
+}
+// ---- 🎯 תרגול: 4 רמות, תרגיל חדש כל פעם, בדיקה והסבר לפי התשובה ----
+const PR={id:null,L:2,it:null,tries:0,done:false,streak:0,wrongRow:0,ok:0,n:0};
+const pracLS=()=>load("calcPractice",{L:2,t:{}});
+const PRAISE=["נכון! 🎉","מעולה! 💪","בול! 🎯","אלוף! 🏆","יפה מאוד! ⭐","בדיוק! 🔥","כל הכבוד! 👏"];
+function pracStart(id){
+  const st=pracLS(),mine=st.t[id]||{};
+  Object.assign(PR,{id,L:mine.L||st.L||2,streak:0,wrongRow:0,ok:mine.ok||0,n:mine.n||0});
+  pracNew();
+}
+function pracSave(){const st=pracLS();st.L=PR.L;st.t[PR.id]={L:PR.L,ok:PR.ok,n:PR.n,at:Date.now()};save("calcPractice",st)}
+function pracSteps(it,all){return it.steps.filter(x=>!x.startsWith("~")||it.L<=2||all).map(x=>x.startsWith("~")?`<li class="kid">💬 ${R(x.slice(1))}</li>`:`<li>${R(x)}</li>`).join("")}
+function pracNew(){PR.it=Practice.make(PR.id,PR.L);PR.tries=0;PR.done=false;pracDraw()}
+function pracDraw(fb){
+  const box=$("prac");if(!box)return;const it=PR.it,lvl=Practice.LEVELS[PR.L-1];
+  const input=it.kind==="choice"?`<div class="popts">${it.opts.map((o,i)=>`<button type="button" class="popt" data-i="${i}" ${PR.done?"disabled":""}>${R(o.t)}</button>`).join("")}</div>`
+    :it.kind==="pair"?`<div class="pin2">${it.labels.map((l,i)=>`<label><span dir="ltr">${l} =</span><input class="pin" id="pIn${i}" inputmode="decimal" autocomplete="off" ${PR.done?"disabled":""}></label>`).join("")}</div>`
+    :`<input class="pin" id="pIn0" inputmode="decimal" autocomplete="off" placeholder="${it.kind==="set"?"כמה תשובות? מפרידים בפסיק: 2, -3":"התשובה שלך (אפשר גם שבר: 3/4)"}" ${PR.done?"disabled":""}>`;
+  box.innerHTML=`<h3>🎯 תרגול</h3>
+    <div class="lvl"><div class="lvh"><b>${lvl.e} ${lvl.n}</b><small>${lvl.d}</small></div>
+      <input type="range" min="1" max="4" step="1" value="${PR.L}" id="pL" aria-label="רמת קושי"><div class="lvn">${Practice.LEVELS.map((l,i)=>`<span class="${i+1===PR.L?"on":""}" data-l="${i+1}">${l.e}<small>${l.n}</small></span>`).join("")}</div></div>
+    <div class="pst">${PR.n?`✅ ${PR.ok} נכונות מתוך ${PR.n}`:"תרגיל ראשון – בהצלחה!"}${PR.streak>=2?` · 🔥 ${PR.streak} ברצף`:""}</div>
+    <div class="pcard"><div class="pq">${R(it.q)}</div>
+      ${it.kind==="choice"||!PR.done?input:""}
+      ${it.kind!=="choice"&&!PR.done?`<div class="pkeys">${["-","/",",","."].map(k=>`<button type="button" data-pk="${k}">${k==="-"?"−":k}</button>`).join("")}</div>`:""}
+      ${PR.done?"":`<div class="pacts">${it.kind==="choice"?"":`<button type="button" class="btn primary" id="pChk">בדוק ✓</button>`}<button type="button" class="btn ghost" id="pHint">💡 רמז</button><button type="button" class="btn ghost" id="pShow">🙈 תראה פתרון</button></div>`}
+      <div id="pFb">${fb||""}</div>
+      ${PR.done?`<button type="button" class="btn primary" id="pNext">תרגיל הבא ←</button>`:""}
+    </div>`;
+  box.querySelector("#pL").oninput=e=>{PR.L=+e.target.value;PR.streak=PR.wrongRow=0;pracSave();pracNew()};
+  box.querySelectorAll(".lvn [data-l]").forEach(x=>x.onclick=()=>{PR.L=+x.dataset.l;PR.streak=PR.wrongRow=0;pracSave();pracNew()});
+  box.querySelectorAll("[data-pk]").forEach(b=>{b.onpointerdown=e=>e.preventDefault();b.onclick=()=>{const el=document.activeElement&&document.activeElement.classList.contains("pin")?document.activeElement:$("pIn0");if(!el)return;const s=el.selectionStart??el.value.length;el.value=el.value.slice(0,s)+b.dataset.pk+el.value.slice(el.selectionEnd??s);el.focus();el.setSelectionRange(s+1,s+1)}});
+  box.querySelectorAll(".popt").forEach(b=>b.onclick=()=>pracAnswer(+b.dataset.i));
+  box.querySelectorAll(".pin").forEach(el=>el.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();pracAnswer()}});
+  if($("pChk"))$("pChk").onclick=()=>pracAnswer();
+  if($("pHint"))$("pHint").onclick=()=>{const f=$("pFb");if(!f.querySelector(".phint"))f.insertAdjacentHTML("afterbegin",`<div class="phint">💡 ${R(it.hint||"נסה לכתוב מה נתון ומה מבקשים.")}</div>`)};
+  if($("pShow"))$("pShow").onclick=()=>pracReveal(false);
+  if($("pNext"))$("pNext").onclick=()=>{pracNew();setTimeout(()=>{const i=$("pIn0");if(i)i.focus({preventScroll:true})},50)};
+}
+function pracReveal(gotIt,why){
+  const it=PR.it;PR.done=true;
+  if(!gotIt){PR.n++;PR.streak=0;PR.wrongRow++}
+  pracSave();
+  let tip="";
+  if(!gotIt&&PR.wrongRow>=2&&PR.L>1)tip=`<div class="ptip">💙 זה בסדר לגמרי. רוצה לנסות רמה קלה יותר כדי לתפוס את הרעיון? <button type="button" class="chip" id="pDown">${Practice.LEVELS[PR.L-2].e} לרמת ${Practice.LEVELS[PR.L-2].n}</button></div>`;
+  pracDraw(`${why?`<div class="pbad">❌ ${R(why)}</div>`:""}<div class="psol"><b>${gotIt?"ככה פותרים:":"הפתרון:"}</b><ol>${pracSteps(it,!gotIt)}</ol><div class="pans">התשובה: <span dir="ltr">${R(it.kind==="choice"?it.ansT:"$"+it.ansT.replace(/(\d+)\/(\d+)/g,"frac{$1}{$2}")+"$")}</span></div></div>${tip}`);
+  const d=$("pDown");if(d)d.onclick=()=>{PR.L--;PR.wrongRow=0;pracSave();pracNew()};
+}
+function pracAnswer(choiceIdx){
+  const it=PR.it;if(PR.done)return;
+  const input=it.kind==="choice"?choiceIdx:it.kind==="pair"?it.labels.map((_,i)=>$("pIn"+i).value):$("pIn0").value;
+  const r=Practice.check(it,input);
+  if(r.empty){const f=$("pFb");f.innerHTML=`<div class="pbad">✏️ כתוב תשובה${it.kind==="pair"?" בשני השדות":""} – מספר, שבר (3/4) או עשרוני.</div>`;return}
+  PR.tries++;
+  if(r.ok){
+    PR.ok++;PR.n++;PR.streak++;PR.wrongRow=0;PR.done=true;pracSave();
+    const up=PR.streak>=3&&PR.streak%3===0&&PR.L<4;
+    const steps=it.L<=2?`<div class="psol"><b>ככה פותרים:</b><ol>${pracSteps(it)}</ol></div>`:`<details class="psol"><summary>רוצה לראות את הדרך?</summary><ol>${pracSteps(it)}</ol></details>`;
+    pracDraw(`<div class="pgood">✅ ${PRAISE[Math.floor(Math.random()*PRAISE.length)]}${PR.tries>1?" (בניסיון השני – ככה לומדים!)":""}</div>${steps}${up?`<div class="ptip">🔥 ${PR.streak} ברצף! מוכן לאתגר? <button type="button" class="chip" id="pUp">${Practice.LEVELS[PR.L].e} לרמת ${Practice.LEVELS[PR.L].n}</button></div>`:""}`);
+    if(navigator.vibrate)try{navigator.vibrate(30)}catch(e){}
+    const u=$("pUp");if(u)u.onclick=()=>{PR.L++;PR.streak=0;pracSave();pracNew()};
+    if(it.kind==="choice")document.querySelectorAll(".popt")[choiceIdx]?.classList.add("ok");
+    return;
+  }
+  // טעות: בפעם הראשונה – הסבר לטעות (אם מוכרת) ועוד ניסיון. בפעם השנייה – הפתרון המלא
+  if(PR.tries>=2||it.kind==="choice"&&it.opts.length<=2){pracReveal(false,r.why||"לא בדיוק. בוא נראה את הדרך יחד 👇");if(it.kind==="choice")document.querySelectorAll(".popt")[choiceIdx]?.classList.add("no");return}
+  const f=$("pFb");
+  f.innerHTML=`<div class="pbad">❌ ${r.why?R(r.why):"לא בדיוק."}<br><small>נסה שוב${it.hint?` – 💡 רמז: ${R(it.hint)}`:""}</small></div>`;
+  if(it.kind==="choice"){const b=document.querySelectorAll(".popt")[choiceIdx];if(b){b.classList.add("no");b.disabled=true}}
 }
 function showAll(){
+  const pt=pracLS().t||{};
   $("tAll").innerHTML=`<p class="hint">${Topics.TOPICS.length} נושאים. אפשר גם לחפש בדף הראשי 🔍</p>`+Object.entries(Topics.CATS).map(([c,[ic,n]])=>{
     const ts=Topics.TOPICS.filter(t=>t.cat===c);if(!ts.length)return "";
-    return `<details class="cat" open><summary>${ic} ${n} <small class="hint">(${ts.length})</small></summary><div class="tl">${ts.map(t=>`<a class="tlb" href="#t-${t.id}" style="text-decoration:none"><span>${R(t.t)}</span><small>${escT(t.g)}</small></a>`).join("")}</div></details>`}).join("");
+    return `<details class="cat" open><summary>${ic} ${n} <small class="hint">(${ts.length})</small></summary><div class="tl">${ts.map(t=>`<a class="tlb" href="#t-${t.id}" style="text-decoration:none"><span>${R(t.t)}</span><small>${(pt[t.id]&&pt[t.id].ok)?`🎯 ${pt[t.id].ok} · `:""}${escT(t.g)}</small></a>`).join("")}</div></details>`}).join("");
 }
 sugg();
 
@@ -372,7 +586,8 @@ const KEYS=[["7"],["8"],["9"],["÷","/","op"],["(","(","op"],[")",")","op"],
   ["4"],["5"],["6"],["×","×","op"],["x","x","v"],["y","y","v"],
   ["1"],["2"],["3"],["−","-","op"],["x²","²","op"],["^","^","op"],
   ["0"],["."],["=","=","op"],["+","+","op"],["√","√","op"],["⌫","BS","op"],
-  ["<","<","op"],[">",">","op"],["≤","≤","op"],["≥","≥","op"],["◀","L","op"],["▶","R","op"]];
+  ["<","<","op"],[">",">","op"],["≤","≤","op"],["≥","≥","op"],["◀","L","op"],["▶","R","op"],
+  ["sin","sin(","fn"],["cos","cos(","fn"],["tan","tan(","fn"],["x³","³","op"],["|x|","abs(","fn"],["C","CLR","op"]];
 $("keys").innerHTML=KEYS.map(([l,v,c])=>`<button type="button" class="${c||""}" data-k="${esc(v||l)}" aria-label="${esc(l)}">${l}</button>`).join("");
 let nativeKb=false;
 function setTarget(el){
@@ -387,7 +602,8 @@ $("keys").addEventListener("click",e=>{
   const k=b.dataset.k,el=target;
   let s=el.selectionStart??el.value.length,t=el.selectionEnd??s;
   if(document.activeElement!==el){s=t=el.value.length}
-  if(k==="BS"){if(s===t&&s>0)s--;el.value=el.value.slice(0,s)+el.value.slice(t);t=s}
+  if(k==="CLR"){el.value="";s=t=0}
+  else if(k==="BS"){if(s===t&&s>0)s--;el.value=el.value.slice(0,s)+el.value.slice(t);t=s}
   else if(k==="L"){s=t=Math.max(0,s-1)}
   else if(k==="R"){s=t=Math.min(el.value.length,t+1)}
   else{el.value=el.value.slice(0,s)+k+el.value.slice(t);s=t=s+k.length}
@@ -398,7 +614,7 @@ $("keys").addEventListener("click",e=>{
 $("kbToggle").onclick=()=>{nativeKb=!nativeKb;$("kbToggle").textContent=nativeKb?"🧮 המקלדת של המחשבון":"⌨️ מקלדת רגילה";setTarget(target);if(target){target.blur();setTimeout(()=>target.focus(),50)}};
 document.querySelectorAll("[data-clr]").forEach(b=>b.onclick=()=>{const el=$(b.dataset.clr);el.value="";setTarget(el);onInput(el)});
 // Enter = פתור
-document.querySelectorAll(".mi").forEach(el=>el.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();({solve:solveIt,sys:sysIt,func:funcIt,line:lineIt,tri:triIt})[cur]?.()}}));
+document.querySelectorAll(".mi").forEach(el=>el.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();({solve:solveIt,sys:sysIt,func:funcIt,line:lineIt,tri:triIt,der:()=>$("dGo").click(),seq:()=>$("qGo2").click(),bin:()=>$("bGo").click()})[cur]?.()}}));
 
 // ---- תצוגה חיה: "כך הבנתי" ----
 let pvT=null;

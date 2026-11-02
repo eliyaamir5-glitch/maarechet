@@ -337,14 +337,16 @@ function mathHTML(src) {
       else { const m = s.slice(j).match(/^(-?\d+|[a-zA-Z]|[α-ω∞])/); inner = m ? m[0] : ""; j += inner.length; }
       out.push(`<${tag}>${mathHTML(inner)}</${tag}>`); i = j; continue;
     }
-    const w = s.slice(i).match(/^(alpha|beta|gamma|sigma|mu|pi|Delta|int|sum|inf)\b/);
+    const w = s.slice(i).match(/^(alpha|beta|gamma|sigma|mu|pi|Delta|int|sum|inf)(?![a-zA-Z])/);
     if (w) { out.push({ alpha: "α", beta: "β", gamma: "γ", sigma: "σ", mu: "μ", pi: "π", Delta: "Δ", int: "∫", sum: "Σ", inf: "∞" }[w[1]]); i += w[1].length; continue; }
     const two = s.slice(i, i + 2);
     if (two === "<=") { out.push("≤"); i += 2; continue; }
+    if (two === "+-") { out.push("±"); i += 2; continue; }
     if (two === ">=") { out.push("≥"); i += 2; continue; }
     if (two === "!=") { out.push("≠"); i += 2; continue; }
     const ch = s[i];
     if (ch === "*") out.push("·");
+    else if (ch === "~") out.push("≈");
     else if (ch === "-") out.push("−");
     else if (/[a-zA-Z]/.test(ch) && !/[a-zA-Z]/.test(s[i - 1] || "") && !/[a-zA-Z]/.test(s[i + 1] || "")) out.push(`<var>${ch}</var>`);
     else out.push(esc(ch));
