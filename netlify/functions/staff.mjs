@@ -803,7 +803,7 @@ async function schoolOverview(S, now, full) {
     suspended: [...Object.entries(obj(ctl.suspN)).map(([p, x]) => ({ person: p, ...x })), ...Object.entries(obj(ctl.susp)).map(([k, x]) => ({ key: k, ...x }))].filter(x => liveUntil(x, now))
       .map(x => ({ ...(x.person ? { person: x.person } : { key: x.key }), until: x.until ?? null, reason: x.reason || "", at: x.at || 0, g: x.g || "" })),
     msgs: arr(v.ownerMsgs).filter(m => m.expiresAt > now && (full || m.from === "principal")).map(m => ({ id: m.id, text: m.text, to: m.to, from: m.from || "owner", names: m.names || [], count: (m.keys || []).length, createdAt: m.createdAt, expiresAt: m.expiresAt })),
-    ai: (() => { const st = obj(v.aiStats); return st.day === israelDay(now) ? { ok: st.ok || 0, fail: st.fail || 0, users: Object.keys(obj(st.users)).length, on: !!aiKey() } : { ok: 0, fail: 0, users: 0, on: !!aiKey() }; })(),
+    ai: (() => { const st = obj(v.aiStats); return st.day === israelDay(now) ? { ok: st.ok || 0, fail: st.fail || 0, users: Object.keys(obj(st.users)).length, on: !!aiKey(), last: st.last || null } : { ok: 0, fail: 0, users: 0, on: !!aiKey() }; })(),
     departures: arr(v.departures).filter(d => d && d.at > now - 30 * 864e5).map(d => ({ name: d.name, cls: d.cls, at: d.at, back: d.back || 0 })),
     staff: arr(v.users).map(u => ({ name: u.name, role: u.role, owner: !!u.owner, createdAt: u.createdAt || 0 })),
     content: {
@@ -1251,7 +1251,8 @@ let aiFetch = (...a) => fetch(...a), aiKeyOverride = null;
 export function __setAiFetch(f) { aiFetch = f; }
 export function __setAiKey(k) { aiKeyOverride = k; }
 const aiKey = () => (aiKeyOverride != null ? aiKeyOverride : (process.env.GEMINI_API_KEY || ""));
-const aiModel = () => process.env.GEMINI_MODEL || "gemini-2.5-flash";
+// גוגל מחליפים שמות של מודלים מדי פעם: מנסים לפי הסדר, וממשיכים לבא בתור אם המודל לא קיים
+const aiModels = () => [...new Set([process.env.GEMINI_MODEL, "gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-lite-latest"].filter(Boolean))];
 const AI_TOPICS = [["order","סדר פעולות חשבון"],["fractions","שברים: חיבור, חיסור, כפל וחילוק"],["powers","חוקי חזקות"],["roots","שורשים"],["expand","פתיחת סוגריים וכינוס איברים"],["special","נוסחאות הכפל המקוצר"],["factor","פירוק לגורמים"],["algfrac","שברים אלגבריים"],["percent","אחוזים"],["ratio","יחס ופרופורציה"],["linear","משוואה ממעלה ראשונה"],["fraceq","משוואה עם שברים"],["lineq","אי-שוויון ממעלה ראשונה"],["system","מערכת משוואות (שני נעלמים)"],["quad","משוואה ריבועית (נוסחת השורשים)"],["quadineq","אי-שוויון ריבועי"],["biquad","משוואה דו-ריבועית והצבת עזר"],["radeq","משוואה עם שורש (אי-רציונלית)"],["linefn","פונקציה קווית (ישר): שיפוע ומשוואת ישר"],["parabola","פרבולה: קודקוד, חיתוכים וגרף"],["domain","תחום הגדרה של פונקציה"],["transform","הזזות ומתיחות של גרפים"],["pyth","משפט פיתגורס"],["areas","שטחים והיקפים"],["angles","זוויות: במשולש, במקבילים ובמצולע"],["congruent","חפיפת משולשים"],["similar","דמיון משולשים"],["circle","מעגל: זוויות, מיתרים ומשיקים"],["analytic","גיאומטריה אנליטית: מרחק, אמצע ומעגל"],["trigright","טריגונומטריה במשולש ישר-זווית"],["sinlaw","משפט הסינוסים"],["coslaw","משפט הקוסינוסים"],["trigarea","שטח משולש בעזרת סינוס"],["trigid","זהויות ומשוואות טריגונומטריות"],["arith","סדרה חשבונית"],["geom","סדרה הנדסית"],["expeq","משוואות מעריכיות"],["log","לוגריתמים"],["growth","גדילה ודעיכה"],["deriv","נגזרת: כללי גזירה"],["tangent","משיק לגרף"],["study","חקירת פונקציה"],["extreme","בעיות קיצון (מקסימום ומינימום)"],["integral","אינטגרל: פונקציה קדומה ושטח"],["expln","נגזרות של ,  וטריגו"],["prob","הסתברות בסיסית"],["tree","עץ הסתברות והסתברות מותנית"],["binom","התפלגות בינומית (ברנולי)"],["stats","סטטיסטיקה: ממוצע, חציון, שכיח וסטיית תקן"],["normal","התפלגות נורמלית"]];
 const AI_ACTIONS = {
   home: "המסך הראשי", profile: "הפרופיל", edit: "עריכת פרטים: כיתה, הקבצות, מגמה, פנימייה, שם", photo: "תמונת פרופיל", theme: "צבע לאפליקציה (arg: purple|ocean|forest|sunset|rose|night)",
@@ -1312,19 +1313,23 @@ async function assist(req, S, ip, headers) {
       responseSchema: { type: "OBJECT", properties: { reply: { type: "STRING" }, action: { type: "STRING" }, arg: { type: "STRING" } }, required: ["reply"] } },
     safetySettings: ["HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH", "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT"].map(category => ({ category, threshold: "BLOCK_LOW_AND_ABOVE" })),
   };
-  let out = null, err = "server";
-  try {
-    const ctrl = new AbortController(), to = setTimeout(() => ctrl.abort(), 15000);
-    const r = await aiFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(aiModel())}:generateContent`, { method: "POST", signal: ctrl.signal, headers: { "Content-Type": "application/json", "x-goog-api-key": aiKey() }, body: JSON.stringify(body) }).finally(() => clearTimeout(to));
-    if (r.status === 429) err = "busy";
-    else if (r.ok) {
+  let out = null, err = "server", code = 0;
+  for (const model of aiModels()) {
+    try {
+      const ctrl = new AbortController(), to = setTimeout(() => ctrl.abort(), 15000);
+      const r = await aiFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, { method: "POST", signal: ctrl.signal, headers: { "Content-Type": "application/json", "x-goog-api-key": aiKey() }, body: JSON.stringify(body) }).finally(() => clearTimeout(to));
+      code = r.status;
+      if (r.status === 404) continue; // המודל לא קיים (יותר) – הבא בתור
+      if (r.status === 429) { err = "busy"; break; }
+      if (!r.ok) { console.error("assist: gemini", model, r.status, (await r.text().catch(() => "")).slice(0, 300)); err = r.status === 400 || r.status === 403 ? "key" : "server"; break; }
       const j = await r.json(), c = j && j.candidates && j.candidates[0], txt = c && c.content && c.content.parts && c.content.parts.map(p => p.text || "").join("");
-      if (c && c.finishReason === "SAFETY") out = { reply: "על זה אני לא יכול לעזור 🙏 אם משהו מטריד אותך – כדאי לדבר עם הרב או עם המחנך.", action: "" };
+      if (c && c.finishReason === "SAFETY" || (j && j.promptFeedback && j.promptFeedback.blockReason)) out = { reply: "על זה אני לא יכול לעזור 🙏 אם משהו מטריד אותך – כדאי לדבר עם הרב או עם המחנך.", action: "" };
       else if (txt) { try { out = JSON.parse(txt); } catch (e) { out = { reply: txt.slice(0, 600), action: "" }; } }
-    } else console.error("assist: gemini", r.status);
-  } catch (e) { err = e && e.name === "AbortError" ? "slow" : "server"; console.error("assist:", e && e.message); }
-  await S.update("aiStats", cur => { const st = cur && cur.day === day ? cur : { day, ok: 0, fail: 0, users: {} }; if (out) st.ok++; else st.fail++; if (out) st.users[k] = 1; return st; }).catch(() => {});
-  if (!out) return reply(200, { ok: false, error: err, left: AI_PER_DEVICE - mine }, headers);
+      break;
+    } catch (e) { err = e && e.name === "AbortError" ? "slow" : "server"; code = 0; console.error("assist:", e && e.message); break; }
+  }
+  await S.update("aiStats", cur => { const st = cur && cur.day === day ? cur : { day, ok: 0, fail: 0, users: {} }; if (out) st.ok++; else { st.fail++; st.last = { err, code, at: now }; } if (out) st.users[k] = 1; return st; }).catch(() => {});
+  if (!out) return reply(200, { ok: false, error: err, code, left: AI_PER_DEVICE - mine }, headers);
   await S.update("aiUse", cur => { const x = cur && cur.day === day ? cur : { day, total: 0, dev: {} }; x.total++; x.dev[k] = (+x.dev[k] || 0) + 1; return x; });
   const id = String(out.action || "").trim(), ok = Object.hasOwn(AI_ACTIONS, id);
   return reply(200, { ok: true, reply: clean(out.reply, 900) || "🙂", action: ok ? { id, arg: aiArg(id, out.arg) } : null, left: Math.max(0, AI_PER_DEVICE - mine - 1) }, headers);

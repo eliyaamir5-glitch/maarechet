@@ -556,7 +556,7 @@ async function handle(text) {
     if (ok) { remember("bot", `[פעולה: ${ai.action.id}]`); await sleep(500); await act(ai.action.id, ai.action.arg, { say: esc(ai.reply || "").slice(0, 120) }); }
     return;
   }
-  const why = !ai || ai.error === "no_ai" ? "" : ai.error === "quota" ? "🧠 נגמרו 20 השאלות למוח החכם להיום – אבל המוח המהיר ממשיך ⚡" : ai.error === "busy" ? "🧠 המוח החכם עמוס כרגע, אז עניתי במוח המהיר ⚡" : ai.error === "network" ? "📶 אין חיבור כרגע – עניתי במוח המהיר ⚡" : "";
+  const why = !ai || ai.error === "no_ai" ? "" : ai.error === "quota" ? "🧠 נגמרו 20 השאלות למוח החכם להיום – אבל המוח המהיר ממשיך ⚡" : ai.error === "busy" ? "🧠 המוח החכם עמוס כרגע, אז עניתי במוח המהיר ⚡" : ai.error === "network" ? "📶 אין חיבור כרגע – עניתי במוח המהיר ⚡" : ai.error === "key" ? `🧠 המוח החכם לא מחובר כמו שצריך (בעיה במפתח${ai.code ? " · " + ai.code : ""}) – עניתי במוח המהיר ⚡` : `🧠 המוח החכם לא הצליח לענות${ai.code ? " (קוד " + ai.code + ")" : ai.error === "slow" ? " (לקח יותר מדי זמן)" : ""} – עניתי במוח המהיר ⚡`;
   if (r.id && r.conf >= 0.5) return local(r, why);
   // לא הבנתי – מציעים
   const opts = (r.alts || []).concat(think(text.split(" ").slice(-2).join(" ")).id ? [{ id: think(text.split(" ").slice(-2).join(" ")).id }] : []).filter((x, i, a) => x.id && ACT[x.id] && a.findIndex(y => y.id === x.id) === i).slice(0, 3);

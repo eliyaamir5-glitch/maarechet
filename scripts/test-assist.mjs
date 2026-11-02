@@ -46,3 +46,12 @@ r = await call({ device: D, q: "" }); ok("empty question rejected", r.ok === fal
 const ot = (await (await H(new Request("http://localhost/api/owner", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "login", code: "OWNERTEST1234567" }) }), { ip: "2.2.2.2" })).json()).token;
 const ov = await (await H(new Request("http://localhost/api/owner", { method: "POST", headers: { "Content-Type": "application/json", authorization: "Bearer " + ot }, body: JSON.stringify({ action: "overview" }) }), { ip: "2.2.2.2" })).json();
 ok("owner sees AI usage today (numbers only)", ov.ai && ov.ai.ok >= 21 && ov.ai.users === 2 && ov.ai.on === true, JSON.stringify(ov.ai));
+// מודל שלא קיים → מנסים את הבא; מפתח לא תקין → "key" עם הקוד
+{ const tried = [];
+  mod.__setAiFetch(async (url) => { const m = url.match(/models\/([^:]+):/)[1]; tried.push(m); if (tried.length < 3) return new Response("{}", { status: 404 }); return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify({ reply: "עובד!", action: "" }) }] } }] }), { status: 200 }); });
+  const r1 = await call({ device: "device-cccc-0003", q: "שאלה" });
+  ok("model not found → tries the next model", r1.ok && r1.reply === "עובד!" && tried.length === 3 && new Set(tried).size === 3, JSON.stringify(tried));
+  mod.__setAiFetch(async () => new Response('{"error":{"message":"API key not valid"}}', { status: 400 }));
+  const r2 = await call({ device: "device-cccc-0003", q: "שאלה" });
+  ok("bad key → clear error with code", r2.ok === false && r2.error === "key" && r2.code === 400, JSON.stringify(r2));
+}

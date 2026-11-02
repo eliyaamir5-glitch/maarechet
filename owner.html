@@ -234,7 +234,7 @@ function draw(){
     <div class="kpi"><b>${week}</b><span>נכנסו השבוע<br><small>(7 ימים)</small></span></div>
     <div class="kpi"><b>${pct(P.filter(p=>p.inst).length)}</b><span>התקינו למסך הבית</span></div>
     <div class="kpi"><b>${pct(P.filter(p=>p.mashov).length)}</b><span>חיברו משוב</span></div>
-    <div class="kpi" title="שאלות למוח החכם של העוזר היום (בלי תוכן ובלי שמות)"><b>${D.ai?D.ai.ok:0}</b><span>🤖 שאלות AI היום<br><small>${D.ai&&D.ai.on?`${D.ai.users} תלמידים${D.ai.fail?` · ${D.ai.fail} נכשלו`:""}`:"⚠️ ה-AI עוד לא מחובר"}</small></span></div>
+    <div class="kpi" title="שאלות למוח החכם של העוזר היום (בלי תוכן ובלי שמות)"><b>${D.ai?D.ai.ok:0}</b><span>🤖 שאלות AI היום<br><small>${D.ai&&D.ai.on?`${D.ai.users} תלמידים${D.ai.fail?` · ${D.ai.fail} נכשלו${D.ai.last?` (${esc(D.ai.last.err)}${D.ai.last.code?" "+D.ai.last.code:""})`:""}`:""}`:"⚠️ ה-AI עוד לא מחובר"}</small></span></div>
   </div>
   <div class="grid2">
     <div class="card ctl"><h2>🚧 מצב עדכון לכל האפליקציה</h2><p class="hint">כל התלמידים רואים פס "האפליקציה בעדכון" עם אנימציה. המערכת שלהם נשארת גלויה, וכל השאר עטוף ב"בעבודה". מגיע אליהם תוך דקה.</p>
