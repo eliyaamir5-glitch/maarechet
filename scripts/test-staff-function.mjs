@@ -300,7 +300,7 @@ await call("/api/staff", { body: { action: "qAnswer", id: qid, answer: "יחיד
 r = await call("/api/feed", { method: "GET" });
 ok("answer published to the class", r.json.answers[0].a === "יחידות 3–4." && r.json.answers[0].cls === "y2");
 // יום הולדת
-const md = new Date(Date.now() + 3 * 3600e3).toISOString().slice(5, 10);
+const md = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem", month: "2-digit", day: "2-digit" }).format(new Date()); // היום בשעון ישראל (חורף/קיץ)
 r = await call("/api/feed", { body: { action: "birthday", device: DEV1, name: "יוסי כהן", cls: "y2", md } });
 r = await call("/api/feed", { method: "GET" });
 ok("birthday today shows (opt-in)", r.json.birthdays.some(x => x.name === "יוסי כהן" && x.inDays === 0));
