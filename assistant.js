@@ -139,7 +139,7 @@ A("exit", { page: "shichrur.html", hash: "", label: "שחרורון – אישו
 A("about", { page: "about.html", hash: "", label: "על האפליקציה ופרטיות" });
 A("staff", { page: "staff.html", hash: "", label: "כניסת צוות" });
 // תשובות על המערכת האישית – מחושבות בטלפון (במסך הראשי)
-for (const id of ["now", "next", "today", "dayinfo", "gear", "end", "brk", "when", "teacher", "abs", "avg", "streak", "tef", "bdays", "time"]) A(id, { page: ix, label: "", answer: true });
+for (const id of ["now", "next", "today", "dayinfo", "gear", "end", "brk", "when", "teacher", "abs", "avg", "streak", "tef", "bdays", "time", "me"]) A(id, { page: ix, label: "", answer: true });
 
 // ===================== המוח המהיר: כוונות =====================
 // p = ביטויים (אחרי norm). w = משקל. need = ישות שחייבת להופיע
@@ -161,6 +161,15 @@ const INT = [
   { id: "tef", p: ["תפילין", "עד מתי אפשר להניח", "מתי השקיעה", "שקיעה", "להניח תפילין", "הנחתי תפילין"] },
   { id: "bdays", p: ["ימי הולדת", "למי יש יום הולדת", "יום הולדת היום", "מי חוגג", "ימי הולדת השבוע"] },
   { id: "time", p: ["מה השעה", "איזה יום היום", "מה התאריך", "תאריך עברי", "איזה תאריך"] },
+  // ---- עליי (מהפרופיל, בטלפון) ----
+  { id: "me", arg: "name", p: ["מה השם שלי", "איך קוראים לי", "מי אני", "אתה יודע מי אני", "מה שמי", "השם שלי"], w: 1.3 },
+  { id: "me", arg: "cls", p: ["באיזה כיתה אני", "באיזו כיתה אני", "מה הכיתה שלי", "הכיתה שלי", "באיזה שכבה אני", "באיזו שכבה אני"], w: 1.3 },
+  { id: "me", arg: "rav", p: ["מי המחנך שלי", "מי הרב שלי", "מי המחנך", "מי הר\"מ שלי", "מי הרם שלי", "רב הכיתה", "מחנך הכיתה"], w: 1.3 },
+  { id: "me", arg: "groups", p: ["באיזה הקבצה אני", "באיזו הקבצה אני", "כמה יחידות אני", "ההקבצה שלי", "כמה יחידות מתמטיקה אני", "כמה יחידות אנגלית אני", "באיזו רמה אני במתמטיקה", "באיזו קבוצה אני"], w: 1.35 },
+  { id: "me", arg: "major", p: ["באיזה מגמה אני", "באיזו מגמה אני", "מה המגמה שלי", "המגמה שלי"], w: 1.35 },
+  { id: "me", arg: "dorm", p: ["אני בפנימייה", "האם אני בפנימייה", "אני גר בפנימייה"], w: 1.1 },
+  { id: "me", arg: "bday", p: ["מתי יום ההולדת שלי", "מתי נולדתי", "מתי היום הולדת שלי"], w: 1.4 },
+  { id: "me", arg: "all", p: ["מה אתה יודע עליי", "מה אתה יודע עלי", "ספר לי עליי", "מה הפרטים שלי", "תגיד לי מה הפרטים שלי"], w: 1.2 },
   // ---- פרופיל והגדרות ----
   { id: "bday", p: ["לשנות יום הולדת", "יום הולדת שלי", "תאריך לידה", "לשנות תאריך יום הולדת", "להוסיף יום הולדת", "יום ההולדת שלי", "לתקן יום הולדת", "לא להציג יום הולדת", "להחליף יום הולדת", "מחליפים יום הולדת", "לעדכן יום הולדת", "לעדכן את יום ההולדת", "טעיתי ביום הולדת", "משנים יום הולדת"], w: 1.3 },
   { id: "edit", p: ["לשנות הקבצה", "לשנות כיתה", "להחליף קבוצה", "עריכת פרטים", "לשנות מגמה", "לשנות פנימייה", "אני לא בפנימייה", "אני בפנימייה", "לשנות שם", "להחליף שם", "לשנות שכבה", "לשנות את הפרטים", "לשנות קבוצה", "הקבצה", "להחליף הקבצה", "לשנות מורה", "ניצנים", "להחליף מגמה", "מגמה", "להחליף כיתה", "עברתי כיתה", "עברתי הקבצה"], w: 1.1 },
@@ -309,6 +318,25 @@ function answer(id, arg) {
   const prof = g("profile");
   if (!prof || !prof.cls) return "קודם צריך להירשם באפליקציה – ואז אוכל לענות על המערכת שלך 🙂";
   const now = new Date(), nm = nowMin();
+  if (id === "me") {
+    const C = g("CLASSES"), c = C && C[prof.cls], G = g("groupsOf"), gr = G ? G(prof.cls) : null, nm = `${prof.first || ""} ${prof.last || ""}`.trim();
+    const eng = gr && gr.ENG && gr.ENG[prof.eng], math = gr && gr.MATH && gr.MATH[prof.math], mj = gr && gr.MAJORS && gr.MAJORS[prof.major];
+    let bd = null; try { bd = JSON.parse(localStorage.getItem("bday") || "null"); } catch (e) {}
+    const M = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
+    const parts = {
+      name: `קוראים לך <b>${esc(nm || "…")}</b> 😊`,
+      cls: c ? `אתה בכיתה <b>${esc(c.label)}</b>` : "",
+      rav: c && c.rav ? `המחנך שלך: <b>${esc(c.rav)}</b>` : "",
+      groups: [math ? `מתמטיקה: <b>${esc(math)}</b>` : "", eng ? `אנגלית: <b>${esc(eng)}</b>` : ""].filter(Boolean).join(" · "),
+      major: mj ? `מגמה: <b>${esc(mj.n)}</b>${mj.w ? " (" + esc(mj.w) + ")" : ""}` : "",
+      dorm: prof.dorm === "yes" ? "כן, אתה בפנימייה 🛏️" : prof.dorm === "no" ? "לא – אתה גר בבית 🏠" : "",
+      bday: bd && bd.d && bd.m ? `יום ההולדת שלך: <b>${bd.d} ב${M[bd.m - 1]}</b> 🎂` : "עוד לא הכנסת יום הולדת. כתוב לי \"לשנות יום הולדת\" 🎂",
+    };
+    const key = arg && parts[arg] != null ? arg : "all";
+    if (key === "all") return [parts.name, parts.cls + (c && c.rav ? ` · ${parts.rav}` : ""), parts.groups, parts.major, parts.dorm, parts.bday].filter(Boolean).join("<br>") + "<br><small>🔒 הפרטים נשמרים רק בטלפון שלך. לשינוי: \"עריכת פרטים\"</small>";
+    // "מה השם שלי" – גם קצת אישיות
+    return (parts[key] || "לא מצאתי את זה בפרופיל שלך.") + (key === "name" && prof.first ? ` נעים להכיר, ${esc(prof.first)}! 🤝` : "");
+  }
   if (id === "time") { const hd = document.getElementById("hDate"); return `השעה <b>${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}</b>, יום ${DAYS_HE[now.getDay()]} ${now.getDate()}.${now.getMonth() + 1}${hd && hd.textContent ? ` · ${esc(hd.textContent)}` : ""}`; }
   if (id === "now" || id === "next") {
     const t = todayLessons(now); if (!t) return "לא הצלחתי לקרוא את המערכת 😕";

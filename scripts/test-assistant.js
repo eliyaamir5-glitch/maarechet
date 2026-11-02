@@ -86,3 +86,8 @@ const C2 = [
 ];
 { let b3 = 0; for (const [q, w] of C2) { const r = A.think(q, { Topics: global.Topics }); if (r.id !== w) { b3++; console.log("❌", q, "→", r.id, "(want", w + ")"); } }
   if (b3) process.exitCode = 1; console.log(b3 ? `❌ ${b3}/${C2.length} more sentences` : `✅ ${C2.length} more sentences understood`); }
+// שאלות עליי (מהפרופיל)
+{ let b4 = 0; for (const [q, a] of [["מה השם שלי", "name"], ["איך קוראים לי?", "name"], ["באיזו כיתה אני", "cls"], ["מי המחנך שלי", "rav"], ["באיזו הקבצה אני במתמטיקה", "groups"], ["כמה יחידות אנגלית אני", "groups"], ["באיזו מגמה אני", "major"], ["אני בפנימייה?", "dorm"], ["מתי יום ההולדת שלי", "bday"], ["מה אתה יודע עליי", "all"]]) {
+    const r = A.think(q, { Topics: global.Topics }); if (r.id !== "me" || r.arg !== a) { b4++; console.log("❌", q, "→", r.id, r.arg, "(want me/" + a + ")"); } }
+  for (const [q, w] of [["לשנות יום הולדת", "bday"], ["מי המורה שלי באנגלית", "teacher"]]) { const r = A.think(q, { Topics: global.Topics }); if (r.id !== w) { b4++; console.log("❌", q, "→", r.id); } }
+  if (b4) process.exitCode = 1; console.log(b4 ? `❌ ${b4} "about me" problems` : "✅ 'about me' questions understood"); }
