@@ -1479,14 +1479,14 @@ async function holSetOp(S, b) {
 export async function holidayTick(now = Date.now()) {
   const S = await store(), { ymd, hour } = HC.ilNow(now), c = holCfgOf(await S.get("holCfg"));
   if (c.off || c.push === false) return { skipped: "off" };
-  const due = HC.list(HC.add(ymd, -1), 10).filter(h => { const at = HC.sendAt(h); return at && at.day === ymd && hour >= at.hour && hour < 17 && !(c.offKeys || {})[h.key]; });
+  const due = HC.list(HC.add(ymd, -1), 10).filter(h => { const at = HC.sendAt(h); return at && at.day === ymd && HC.dow(ymd) !== 6 && hour >= at.hour && hour < 17 && !(c.offKeys || {})[h.key]; });
   const out = [];
   for (const h of due) {
     const id = h.key + ":" + h.start; let first = false;
     await S.update("holSent", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; if (o[id]) return undefined; o[id] = now;
       for (const k of Object.keys(o)) if (now - o[k] > 400 * 864e5) delete o[k]; first = true; return o; });
     if (!first) { out.push({ id, skipped: "done" }); continue; }
-    const sent = await sendPush(S, () => true, { title: `${h.em || "🎉"} ${h.name}`, body: holText(c, h), tag: "hol-" + id }, { pref: "holiday", ttl: 8 * 3600 });
+    const sent = await sendPush(S, () => true, { title: `${h.em || "🎉"} ${h.name}`, body: holText(c, h), tag: "hol-" + id }, { pref: "holiday", ttl: 8 * 3600, force: true }); // השעה כבר נבדקה כאן (09:00–17:00, אף פעם לא בשבת)
     await olog(S, "holidayPush", `🎉 נשלחה ברכה ל${h.name} ל-${sent} טלפונים`);
     out.push({ id, sent });
   }
