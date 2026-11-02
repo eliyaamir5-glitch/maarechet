@@ -1283,6 +1283,7 @@ const AI_ACTIONS = {
   start: "מתי מתחילים (arg: +1 למחר)", changes: "שינויים/ביטולים במערכת", vac: "חופשות וחגים (arg: שם החג)", parsha: "פרשת השבוע", zmanim: "זמני היום, כניסת/יציאת שבת (arg: מה מחפשים)",
   news: "עדכונים והודעות מהצוות", polls: "סקרים פתוחים", events: "אירועים קרובים בישיבה", qanswers: "תשובות הצוות לשאלות של התלמיד", wishes: "מי איחל לו מזל טוב",
   lates: "כמה איחורים", praise: "כמה צל\"שים", left30: "כמה עוד מותר להחסיר עד 30% (arg: מקצוע)", best: "המקצוע הכי חזק/חלש לפי ציונים", teachers: "כל המורים שלו", subjects: "כל המקצועות שלו", weekly: "כמה שיעורים בשבוע במקצוע (arg: מקצוע)", mashovAge: "מתי משוב עודכן",
+  mates: "מי מהכיתה שלו רשום באפליקציה (arg: withRav = גם המחנך)", bdayOf: "מתי יום ההולדת של חבר (arg: שם החבר)",
   me: "פרטים על התלמיד מהפרופיל שלו (arg: name|cls|rav|groups|major|dorm|bday|all) – למשל \"מה השם שלי\", \"באיזו כיתה אני\", \"מי המחנך שלי\"",
 };
 function aiPrompt(page, grade) {
@@ -1290,7 +1291,7 @@ function aiPrompt(page, grade) {
 כללים:
 - עונים בעברית, קצר וברור (עד 70 מילים), בגובה העיניים, בחום ובכבוד. אימוג'י אחד-שניים זה בסדר.
 - שאלה בלימודים: מסבירים ומדריכים צעד-צעד, נותנים רמז או דוגמה דומה – אבל לא פותרים שיעורי בית במקום התלמיד. אפשר להציע פעולה topic/practice/solve.
-- אין לך מידע אישי על התלמיד (מערכת, ציונים, חיסורים, שמות). לשאלה כזו (כולל "מה השם שלי", "באיזו כיתה אני", עדכונים, שינויים, חופשות, איחורים) בוחרים את הפעולה המתאימה (me/now/next/today/dayinfo/start/changes/gear/end/brk/when/teacher/teachers/subjects/weekly/abs/left30/lates/praise/avg/best/streak/tef/zmanim/parsha/vac/news/polls/events/qanswers/wishes/bdays/time/mashovAge) והאפליקציה תענה בעצמה – אל תמציא תשובה.
+- אין לך מידע אישי על התלמיד (מערכת, ציונים, חיסורים, שמות). לשאלה כזו (כולל "מה השם שלי", "באיזו כיתה אני", עדכונים, שינויים, חופשות, איחורים) בוחרים את הפעולה המתאימה (me/mates/bdayOf/now/next/today/dayinfo/start/changes/gear/end/brk/when/teacher/teachers/subjects/weekly/abs/left30/lates/praise/avg/best/streak/tef/zmanim/parsha/vac/news/polls/events/qanswers/wishes/bdays/time/mashovAge) והאפליקציה תענה בעצמה – אל תמציא תשובה.
 - כשהתלמיד מבקש להגיע למקום / לשנות הגדרה – בוחרים פעולה מהרשימה, ו-reply קצר שאומר מה עושים.
 - לא עוזרים במשהו לא מתאים (אלימות, פגיעה, תוכן לא צנוע, עקיפת כללי הישיבה). מפנים בעדינות לצוות או לרב.
 - אם לא בטוחים – שואלים שאלה קצרה בחזרה, בלי פעולה.
@@ -1311,6 +1312,8 @@ function aiArg(id, a) {
   if (id === "feedback") return a === "bug" ? "bug" : "idea";
   if (id === "start") return /^\+?[0-2]$/.test(a) ? { rel: +a } : undefined;
   if (id === "vac" || id === "zmanim") return a.replace(/[<>"'`]/g, "").slice(0, 60);
+  if (id === "mates") return a === "withRav" ? "withRav" : undefined;
+  if (id === "bdayOf") return a.replace(/[<>"'`]/g, "").slice(0, 40) || undefined;
   if (id === "me") return ["name", "cls", "rav", "groups", "major", "dorm", "bday", "all"].includes(a) ? a : "all";
   if (["solve", "der"].includes(id)) return /^[0-9xX+\-*/^().=²³√<>≤≥ ]{1,60}$/.test(a) ? a.replace(/\s+/g, "") : undefined;
   return a.replace(/[<>"'`]/g, "");
