@@ -49,12 +49,12 @@ header .clock{font-size:34px;font-weight:900;font-variant-numeric:tabular-nums;l
 .bl{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px;line-height:1.45}
 .bl .bd{min-width:64px;font-weight:700;color:var(--accent);font-size:13px;padding-top:2px}.bl .bx{color:var(--muted);font-size:13px}
 .gear-tmrw{margin-top:12px;padding-top:12px;border-top:1.5px dashed var(--line);font-size:15px}
-#calBtn,#relBtn,#cardsBtn,#absBtn,#calcBtn,#phonesBtn{min-width:0;overflow:hidden;text-overflow:ellipsis;text-decoration:none;text-align:center;white-space:nowrap;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px)}
+#calBtn,#relBtn,#cardsBtn,#absBtn,#calcBtn,#roboBtn,#phonesBtn{min-width:0;overflow:hidden;text-overflow:ellipsis;text-decoration:none;text-align:center;white-space:nowrap;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px)}
 .actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
 .actions>:last-child:nth-child(odd){grid-column:1/-1}
 /* בטלפון: שורה אחת שגוללים הצידה – כדי שהמערכת עצמה תתחיל גבוה */
 @media (max-width:520px){.actions{display:flex;overflow-x:auto;scrollbar-width:none;margin:12px -18px 0;padding:0 18px;scroll-padding:0 18px}.actions::-webkit-scrollbar{display:none}
-  #calBtn,#relBtn,#cardsBtn,#absBtn,#calcBtn,#phonesBtn{flex:0 0 auto;padding:7px 12px;font-size:13.5px;overflow:visible}}
+  #calBtn,#relBtn,#cardsBtn,#absBtn,#calcBtn,#roboBtn,#phonesBtn{flex:0 0 auto;padding:7px 12px;font-size:13.5px;overflow:visible}}
 #calBtn.added{order:9;background:rgba(46,204,113,.28);border-color:rgba(255,255,255,.55)}
 .tabs{display:flex;gap:6px;padding:14px 0 0;overflow-x:auto;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
@@ -71,7 +71,7 @@ body.maint #hero{order:2}body.maint #content{order:3}body.maint :is(#updates,#ex
 @media (min-width:1000px){
   .top{padding-left:32px;padding-right:32px}
   .top>*{max-width:1240px;margin-left:auto;margin-right:auto}
-  .actions{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .actions{grid-template-columns:repeat(7,minmax(0,1fr))}.actions>:last-child:nth-child(odd){grid-column:auto}
   main{max-width:1240px;padding:24px 32px 48px;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:24px;align-items:start}
   .col-main,.col-side{display:block;min-width:0}
   .col-side{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto;scrollbar-width:thin}
@@ -540,12 +540,12 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
   <div><div class="clock" id="clock">--:--</div><div class="hdate" id="hDate"></div></div>
 </header>
 <div class="actions">
-  <button id="roboBtn" type="button" onclick="window.Robo&&Robo.open('wear')">🤖 הרובוט שלי</button>
   <button id="calBtn">📅 ליומן</button>
   <a id="relBtn" href="shichrur.html">🏃 שחרורון</a>
   <a id="cardsBtn" href="cards.html">🃏 כרטיסיות</a>
   <a id="absBtn" href="absences.html">📊 נוכחות וציונים</a>
   <a id="calcBtn" href="calc.html">🧮 מחשבון חכם</a>
+  <button id="roboBtn" type="button" onclick="window.Robo&&Robo.open('wear')">🤖 הרובוט שלי</button>
   <a id="phonesBtn" href="phones.html">📞 ספר טלפונים</a>
 </div>
 <div class="tabs" id="tabs"></div>

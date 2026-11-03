@@ -219,9 +219,9 @@ ${hat}${sk.over ? sk.over(u) : ""}${heldEm ? `<text class="rheld" x="55" y="56" 
 .ro-mute,.rw-mute{position:absolute;z-index:3;border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:99px;font-size:16px;cursor:pointer;width:36px;height:36px}
 .ro-mute{top:calc(16px + env(safe-area-inset-top));left:84px}.rw-mute{top:calc(10px + env(safe-area-inset-top));left:52px}
 .abot{overflow:visible}
-#roboBtn{position:relative;background:linear-gradient(135deg,#facc15,#f97316)!important;color:#1a1040!important;font-weight:900!important;border:0!important}
-#roboBtn .rb-badge{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:#dc2626;color:#fff;font-size:11px;margin-inline-start:4px;text-align:center}
-#roboBtn.rb-glow{animation:rbGlow 1.6s ease-in-out infinite}@keyframes rbGlow{50%{box-shadow:0 0 0 4px rgba(250,204,21,.45),0 0 18px rgba(249,115,22,.7)}}
+#roboBtn{position:relative;white-space:nowrap}
+#roboBtn .rb-badge{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:#f43f5e;color:#fff;font-size:11px;font-weight:900;margin-inline-start:4px;text-align:center;vertical-align:1px}
+#roboBtn.rb-glow{animation:rbGlow 1.8s ease-in-out infinite}@keyframes rbGlow{50%{box-shadow:0 0 0 3px rgba(250,204,21,.5)}}
 .pf-sec.pf-robo{background:linear-gradient(135deg,#1a1040 0%,#3b1d7a 60%,#6d28d9 100%)!important;color:#fff!important;border-color:#7c3aed!important;box-shadow:0 8px 24px rgba(91,33,182,.35)}
 .pf-sec.pf-robo summary,.pf-sec.pf-robo summary em{color:#fff!important}.pf-sec.pf-robo .ghost{background:rgba(255,255,255,.14)!important;color:#fff!important}
 #asstBtn{background:var(--robo-bg,radial-gradient(circle at 35% 30%,#8f9bff,#5b6cff 45%,#a259ff 80%,#ff6bd6))!important}#asstBtn::after{border-color:var(--robo-ring,rgba(162,89,255,.55))!important}
