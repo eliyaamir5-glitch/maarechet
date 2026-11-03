@@ -977,13 +977,14 @@ async function owner(req, S, ip, headers) {
 async function feed(req, S, ip, headers) {
   if (req.method === "GET") {
     const now = Date.now(), today = israelDay(now);
-    const [ups, polls, events, qs, bd, rx, chg, ctl, om, hc, rr, rn] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions", "changes", "control", "ownerMsgs", "holCfg", "roboRare", "roboNews"].map(k => S.get(k)));
+    const [ups, polls, events, qs, bd, rx, chg, ctl, om, hc, rr, rn, hi] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions", "changes", "control", "ownerMsgs", "holCfg", "roboRare", "roboNews", "roboInvHint"].map(k => S.get(k)));
     return reply(200, {
       ok: true, now,
       // 🎉 מצב חג: האם מנהל המערכת כיבה (הכל / חג מסוים). התאריכים עצמם מחושבים בטלפון
       hol: holPublic(hc),
       robo: roboCounts(rr), // 🤖 כמה נשארו מכל אביזר אולטרה אגדי
-      roboNews: (Array.isArray(rn) ? rn : []).filter(x => now - x.at < 2 * 864e5).slice(0, 5), // 👑 מי זכה באולטרה (שם, כיתה, כמה נשארו)
+      roboNews: (Array.isArray(rn) ? rn : []).filter(x => now - x.at < 2 * 864e5).slice(0, 5),
+      ti: Object.entries(hi && typeof hi === "object" ? hi : {}).filter(([, t]) => now - t < 10 * 60e3).map(([p]) => p).slice(0, 50), // 🔄 למי מחכה הזמנה לטרייד (מזהה ציבורי בלבד) – כדי שתגיע מהר // 👑 מי זכה באולטרה (שם, כיתה, כמה נשארו)
       updates: activeUpdates(ups, now).map(u => ({ ...publicUpdate(u), reacts: reactCounts(reactsOf(rx, u.id)) })),
       polls: (polls || []).filter(p => p.endsAt > now).sort((a, b) => b.createdAt - a.createdAt).map(publicPoll),
       events: (events || []).filter(e => e.date >= today).sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || ""))).slice(0, 30)
@@ -1517,8 +1518,8 @@ export async function holidayTick(now = Date.now()) {
 }
 
 // ---- 🤖 "הרובוט שלי": אביזרי אולטרה אגדי – כמות מוגבלת לכל הישיבה (חייב להתאים ל-robo-core.js) ----
-const ROBO_CAPS = { "skin:gold": 3, "skin:diamond": 5, "skin:phoenix": 2, "skin:cosmic": 2, "skin:crystal": 3 };
-const ROBO_NAMES = { "skin:gold": "חליפת זהב טהור", "skin:diamond": "חליפת יהלומים", "skin:phoenix": "עוף החול", "skin:cosmic": "השומר הקוסמי", "skin:crystal": "קריסטל קשת" };
+const ROBO_CAPS = { "skin:gold": 3, "skin:diamond": 5, "skin:phoenix": 2, "skin:cosmic": 2, "skin:crystal": 3, "skin:infinity": 1 };
+const ROBO_NAMES = { "skin:gold": "חליפת זהב טהור", "skin:diamond": "חליפת יהלומים", "skin:phoenix": "עוף החול", "skin:cosmic": "השומר הקוסמי", "skin:crystal": "קריסטל קשת", "skin:infinity": "האינסוף ♾️ – היחיד בכל הישיבה" };
 function roboCounts(rr) { const o = {}; for (const [id, cap] of Object.entries(ROBO_CAPS)) { const x = rr && rr[id]; o[id] = { n: x && Array.isArray(x.keys) ? x.keys.length : 0, cap }; } return o; }
 
 // ---- 🎟️ קודים לפרסים, 👑 הטלפון של מנהל המערכת, 🔥 תזכורת לפני שהרצף נשבר ----
@@ -1720,18 +1721,20 @@ async function roboSocial(S, b, device, ip, now) {
     await inboxPush(S, to, { t: "bolts", n, from: clean(me.name, MAX_NAME), at: now });
     return { ok: true, left };
   }
-  if (b.op === "inbox") { let box = []; await S.update("roboInbox", cur => { if (!cur || !cur[pid] || !cur[pid].length) return undefined; box = cur[pid]; const o = { ...cur }; delete o[pid]; return o; }); return { ok: true, inbox: box }; }
+  if (b.op === "inbox") { await S.update("roboInvHint", cur => { if (!cur || !cur[pid]) return undefined; const o = { ...cur }; delete o[pid]; return o; }); let box = []; await S.update("roboInbox", cur => { if (!cur || !cur[pid] || !cur[pid].length) return undefined; box = cur[pid]; const o = { ...cur }; delete o[pid]; return o; }); return { ok: true, inbox: box }; }
   // ---- 🔄 טרייד: הזמנה → כל צד מציע → שניהם מאשרים → 3 שניות שאפשר לבטל → בוצע ----
   const TR = id => /^[0-9a-f]{10}$/.test(String(id || "")) ? String(id) : "";
-  const view = (t, mine) => { const side = t.a === pid ? "a" : "b", other = side === "a" ? "b" : "a"; return { ok: true, id: t.id, side, status: t.status, lockAt: t.lockAt || 0, now, me: { offer: t[side + "Offer"], ok: !!t[side + "Ok"], kid: t[side + "Kid"] }, them: { offer: t[other + "Offer"], ok: !!t[other + "Ok"], kid: t[other + "Kid"], done: !!t[other + "Done"] }, doneMe: !!t[side + "Done"] }; };
+  const view = (t, mine) => { const side = t.a === pid ? "a" : "b", other = side === "a" ? "b" : "a"; return { ok: true, id: t.id, side, status: t.status, lockAt: t.lockAt || 0, now, me: { offer: t[side + "Offer"], ok: !!t[side + "Ok"], kid: t[side + "Kid"], eq: t[side + "Eq"] || {}, rn: t[side + "Rn"] || "" }, them: { offer: t[other + "Offer"], ok: !!t[other + "Ok"], kid: t[other + "Kid"], eq: t[other + "Eq"] || {}, rn: t[other + "Rn"] || "", done: !!t[other + "Done"] }, doneMe: !!t[side + "Done"] }; };
   const settle = t => { if (t.status === "lock" && now - t.lockAt >= 3000) t.status = "done"; if (t.status !== "done" && t.status !== "cancel" && now - t.at > 15 * 60e3) t.status = "cancel"; return t; };
   if (b.op === "tradeNew") {
     const to = String(b.to || ""); if (!/^[0-9a-f]{12}$/.test(to) || to === pid) return { ok: false, error: "bad_request" };
     const t = await findPid(to); if (!t || !t.who || gradeOfCls(t.who.cls) !== gradeOfCls(me.cls)) return { ok: false, error: "not_found" };
     const id = crypto.randomBytes(5).toString("hex"), E = { items: [], boxes: [], bolts: 0 };
-    const tr = { id, a: pid, b: to, aKid: clean(me.name, MAX_NAME), bKid: clean(t.who.name, MAX_NAME), aOffer: E, bOffer: E, aOk: false, bOk: false, status: "open", at: now };
+    const pubAll = (await S.get("roboPub")) || {}, myPub = pubAll[k] || {};
+    const tr = { id, a: pid, b: to, aKid: clean(me.name, MAX_NAME), bKid: clean(t.who.name, MAX_NAME), aEq: myPub.eq || {}, bEq: t.p.eq || {}, aRn: myPub.rn || "", bRn: t.p.rn || "", aOffer: E, bOffer: E, aOk: false, bOk: false, status: "open", at: now };
     await S.update("roboTrades", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; for (const [x, v] of Object.entries(o)) if (now - v.at > 864e5) delete o[x]; o[id] = tr; return o; });
     await inboxPush(S, to, { t: "trade", id, from: tr.aKid, at: now });
+    await S.update("roboInvHint", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; for (const [x, t] of Object.entries(o)) if (now - t > 10 * 60e3) delete o[x]; o[to] = now; return o; });
     return view(tr);
   }
   const id = TR(b.id); if (!id) return { ok: false, error: "bad_request" };

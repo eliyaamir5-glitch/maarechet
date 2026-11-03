@@ -67,6 +67,12 @@
     "skin:phoenix": { head: "u:h", ear: "u:e", scr: "#3b0a0a", eye: "#fff7ed", defs: u => lg(u, "h", [[0, "#fef08a"], [.4, "#f97316"], [1, "#b91c1c"]], 0, 1) + lg(u, "e", [[0, "#fde047"], [1, "#dc2626"]]),
       under: () => `<g class="rwing"><path d="M8 30Q-10 20-6 2Q2 18 12 22Z" fill="#f97316"/><path d="M8 34Q-12 34-10 18Q0 30 12 28Z" fill="#fde047" opacity=".9"/></g><g class="rwing r"><path d="M56 30Q74 20 70 2Q62 18 52 22Z" fill="#f97316"/><path d="M56 34Q76 34 74 18Q64 30 52 28Z" fill="#fde047" opacity=".9"/></g><g class="rflame"><path d="M22 16q-3-8 3-12 0 5 4 6 0-5 5-8 0 6 4 8 2-4 5-5-1 5 1 11z" fill="#fde047"/></g>`,
       top: u => shine(u) + twinkles([[15, 18, 2.6], [50, 20, 2.2], [48, 47, 2.8]], "#fffbe6"), cls: "rgold", bg: "radial-gradient(circle at 35% 30%,#fef08a,#f97316 45%,#7f1d1d)", ring: "#f97316" },
+    // ♾️ האינסוף – רק אחד בכל הישיבה: חור שחור עם דיסקת זהב מסתובבת סביב הראש
+    "skin:infinity": { head: "u:h", ear: "#1c1917", scr: "#000", eye: "#fde047", stroke: "#fbbf24", glow: "#f59e0b", defs: u => `<radialGradient id="${u}h" cx="50%" cy="50%" r="70%"><stop offset="0" stop-color="#000"/><stop offset=".55" stop-color="#0c0a09"/><stop offset=".8" stop-color="#4c1d95"/><stop offset="1" stop-color="#f59e0b"/></radialGradient>` + lg(u, "dk", [[0, "#fde047"], [.5, "#f97316"], [1, "#a855f7"]], 1, 0),
+      under: u => `<g class="rinf1" style="transform-origin:32px 33px"><ellipse cx="32" cy="33" rx="31" ry="9" fill="none" stroke="url(#${u}dk)" stroke-width="3.2" opacity=".9"/></g>`,
+      top: u => `<g clip-path="url(#${u}c)">${Array.from({ length: 12 }, (_, i) => `<circle class="rtw" style="animation-delay:${(i * .19) % 2}s" cx="${13 + (i * 29) % 38}" cy="${17 + (i * 17) % 32}" r=".7" fill="#fde68a"/>`).join("")}</g>` + shine(u),
+      over: u => `<g class="rinf2" style="transform-origin:32px 33px"><path d="M2 33a30 9 0 0 0 60 0" fill="none" stroke="url(#${u}dk)" stroke-width="3.2"/></g><text x="32" y="1" font-size="13" font-weight="900" text-anchor="middle" fill="#fde047" style="filter:drop-shadow(0 0 3px #f59e0b)">∞</text>` + twinkles([[4, 20, 2.6], [60, 46, 2.8], [58, 16, 2]], "#fde68a"),
+      cls: "rgold", bg: "radial-gradient(circle at 50% 50%,#000 30%,#4c1d95 60%,#f59e0b 85%,#fde047)", ring: "#fbbf24" },
     "skin:crystal": { head: "u:h", ear: "u:e", scr: "#1e1b4b", eye: "#ffffff", defs: u => lg(u, "h", [[0, "#fef9c3"], [.2, "#fbcfe8"], [.4, "#a5f3fc"], [.6, "#c4b5fd"], [.8, "#bbf7d0"], [1, "#fde68a"]]) + lg(u, "e", [[0, "#e0f2fe"], [1, "#f0abfc"]]),
       top: u => `<g clip-path="url(#${u}c)" opacity=".6"><path d="M11 15l12 12-12 10M53 15l-12 12 12 10M23 27h18M23 27l9 24 9-24M32 15v12" stroke="#fff" stroke-width=".9" fill="none"/></g>` + shine(u) + twinkles([[14, 16, 3.2], [51, 18, 2.6], [50, 49, 3.2], [13, 47, 2.4], [32, 12, 2]], "#fff"), cls: "rdia rrain", bg: "conic-gradient(from 0deg,#fde68a,#fbcfe8,#a5f3fc,#c4b5fd,#bbf7d0,#fde68a)", ring: "#f0abfc" },
     // 🦸 גיבורים
@@ -243,6 +249,7 @@ ${hat}${sk.over ? sk.over(u) : ""}${heldEm ? `<text class="rheld" x="55" y="56" 
 .abot .rsnow{animation:rSnow 3.2s linear infinite}@keyframes rSnow{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(62px) translateX(4px);opacity:0}}
 .abot .rspin{animation:rSpin 1.6s linear infinite}
 .abot.rshadow .body{filter:drop-shadow(0 0 5px #a855f7)}.abot.rpix{image-rendering:pixelated}
+.abot .rinf1,.abot .rinf2{animation:rInf 3s linear infinite}@keyframes rInf{0%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}100%{transform:rotate(-8deg)}}
 .abot .rcape{transform-box:fill-box;transform-origin:50% 0;animation:rCape 1.6s ease-in-out infinite alternate}@keyframes rCape{to{transform:skewX(4deg) scaleY(1.04)}}
 .abot.still *,.abot.still{animation:none!important}
 .rv-trail{font-size:20px;gap:2px;flex-wrap:wrap}.rv-trail span{animation:rTw 1.6s ease-in-out infinite}
@@ -300,7 +307,18 @@ dialog.robo.fr .frc{height:100%;overflow-y:auto;padding-bottom:calc(20px + env(s
 .ach div b{display:block;font-size:26px;line-height:1.1}@keyframes achIn{from{transform:scale(0) rotate(-20deg)}}
 .frc-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.frc-btns .rbtn{flex:1;min-width:100px}
 /* טרייד */
-.tr{height:100%;display:flex;flex-direction:column;overflow:hidden}.tr-top{padding:calc(12px + env(safe-area-inset-top)) 14px 8px;text-align:center;background:linear-gradient(135deg,#1e3a8a,#5b21b6)}
+.tr{height:100%;display:flex;flex-direction:column;overflow:hidden}
+.tr2{background:linear-gradient(160deg,#1e1b4b,#3b0764 40%,#7f1d1d 100%);background-size:200% 200%;animation:trBg 8s ease-in-out infinite alternate}@keyframes trBg{to{background-position:100% 100%}}
+.tr-vs{display:flex;align-items:center;justify-content:space-between;padding:calc(12px + env(safe-area-inset-top)) 12px 8px;position:relative}
+.vs-side{position:relative;width:38%;text-align:center;border-radius:18px;padding:8px 4px;background:rgba(0,0,0,.28);border:2px solid rgba(255,255,255,.12);transition:border-color .3s,box-shadow .3s}
+.vs-side.ok{border-color:#22c55e;box-shadow:0 0 22px rgba(34,197,94,.55)}.vs-side i{position:absolute;top:-8px;left:-6px;font-style:normal;font-size:22px;animation:rTierPop .5s}
+.vs-side.me{animation:vsL .7s cubic-bezier(.2,1.4,.4,1) both}.vs-side.them{animation:vsR .7s cubic-bezier(.2,1.4,.4,1) both}@keyframes vsL{from{transform:translateX(60px);opacity:0}}@keyframes vsR{from{transform:translateX(-60px);opacity:0}}
+.vs-bot{width:84px;height:84px;margin:0 auto}.vs-bot .abot{width:100%;height:100%}.vs-side.them .vs-bot{transform:scaleX(-1)}
+.vs-side b{display:block;font-size:14px;font-weight:900}.vs-side small{font-size:11px;opacity:.8}
+.vs-mid{position:relative;flex:1;text-align:center}.vs-mid b{font-size:34px;font-weight:900;font-style:italic;background:linear-gradient(180deg,#fde047,#f97316);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 10px #f97316);animation:rBeat 1.2s ease-in-out infinite;display:inline-block}
+.vs-bolt{position:absolute;top:-8px;right:8px;font-size:20px;animation:rZap 1.2s steps(1) infinite}.vs-bolt.b2{top:auto;bottom:-6px;right:auto;left:8px;animation-delay:.6s}
+.tr2 .tr-side{background:rgba(0,0,0,.25);border-color:rgba(255,255,255,.14);box-shadow:inset 0 0 20px rgba(0,0,0,.25)}.tr2 .tr-it{box-shadow:0 0 12px var(--c);animation:rTierPop .4s}
+.tr2 .tr-foot{background:rgba(0,0,0,.35)}.tr-top{padding:calc(12px + env(safe-area-inset-top)) 14px 8px;text-align:center;background:linear-gradient(135deg,#1e3a8a,#5b21b6)}
 .tr-body{flex:1;overflow-y:auto;padding:10px 12px}.tr-side{border-radius:16px;padding:10px;margin-bottom:10px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12)}
 .tr-side h4{margin:0 0 6px;font-size:14px;display:flex;justify-content:space-between;align-items:center}.tr-side h4 em{font-style:normal;font-size:12px;opacity:.8}
 .tr-items{display:flex;gap:6px;flex-wrap:wrap;min-height:58px}.tr-it{width:62px;border-radius:12px;padding:4px;text-align:center;font-size:10px;font-weight:800;background:var(--c);color:#fff;position:relative}
@@ -388,6 +406,13 @@ dialog.robo.open{background:#05020f}
 .ro-up{position:absolute;top:18%;left:0;right:0;font-size:46px;font-weight:900;color:#fff;text-shadow:0 0 24px var(--rc),0 0 8px var(--rc),0 4px 10px #000;animation:rUpTxt 1.1s cubic-bezier(.2,1.4,.4,1) forwards;pointer-events:none}
 @keyframes rUpTxt{0%{transform:scale(.3) translateY(30px);opacity:0}30%{transform:scale(1.25);opacity:1}75%{transform:scale(1) translateY(-10px);opacity:1}100%{transform:translateY(-40px);opacity:0}}
 .ro-ring{position:absolute;left:50%;top:48%;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;border:6px solid var(--rc);box-shadow:0 0 30px var(--rc);animation:rRing .85s ease-out forwards;pointer-events:none}@keyframes rRing{to{transform:scale(9);opacity:0}}
+.ro-go{display:inline-block;font-size:26px;font-weight:900;color:#fff;text-shadow:0 0 18px var(--rc);animation:rGo .7s ease-in-out infinite alternate}@keyframes rGo{to{transform:scale(1.15)}}
+.ro-chest.ready .chest{animation:rReady .5s ease-in-out infinite alternate}@keyframes rReady{from{transform:scale(1) rotate(-2deg)}to{transform:scale(1.08) rotate(2deg)}}
+.rare-pre .rp-sil{width:190px;height:190px;filter:brightness(0) drop-shadow(0 0 18px var(--rc)) drop-shadow(0 0 40px var(--rc));animation:rpSpin 2.2s ease-in-out infinite}.rare-pre .rp-sil>*{width:100%;height:100%}
+@keyframes rpSpin{0%{transform:rotateY(0) scale(1)}50%{transform:rotateY(180deg) scale(1.08)}100%{transform:rotateY(360deg) scale(1)}}
+.rare-pre .rp-glow{position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,var(--rc),transparent 65%);opacity:.55;animation:rPulse 1s ease-in-out infinite}
+.rare-pre .rp-t{font-size:24px;font-weight:900;margin-top:14px;text-shadow:0 0 16px var(--rc);animation:rPulseT 1s ease-in-out infinite}
+.rare-pre.burst .rp-sil{animation:rpBurst .5s ease-in forwards}@keyframes rpBurst{to{transform:scale(2.6);opacity:0;filter:brightness(3) drop-shadow(0 0 40px #fff)}}
 .ro-main{display:inline-block;font-size:13px;font-weight:900;background:#fff;color:#1a1040;border-radius:99px;padding:3px 12px;margin-bottom:6px}
 .ro-box{position:relative;font-size:130px;line-height:1;cursor:pointer;filter:drop-shadow(0 0 30px var(--rc,#38bdf8)) drop-shadow(0 20px 20px rgba(0,0,0,.5));animation:rBoxIdle 1.6s ease-in-out infinite;transition:filter .3s}
 @keyframes rBoxIdle{50%{transform:translateY(-10px) rotate(-3deg)}}
@@ -569,7 +594,7 @@ dialog.robo.open{background:#05020f}
     const rare = rareCounts();
     return `<div class="rw-sec">👑 אולטרה אגדי <small>הכי נדיר שיש – כמות מוגבלת לכל הישיבה!</small></div>` + R.LIST.filter(x => x.r === "u").map(x => {
       const c = rare[x.id] || { n: 0, cap: x.cap }, left = Math.max(0, (c.cap || x.cap) - (c.n || 0));
-      return `<div class="rbx" style="--c:#facc15"><div style="width:58px;height:58px">${svg("", Object.assign({}, S.eq, { skin: x.id }), { still: false, noHoli: true })}</div><div class="t"><b>${esc(x.n)}</b><small>${left ? `נשארו רק ${left} מתוך ${c.cap || x.cap} בכל הישיבה 😱` : "אזלו! כולן נלקחו 🔒"}</small></div>${S.own[x.id] ? "✅" : ""}</div>`;
+      return `<div class="rbx" style="--c:#facc15"><div style="width:58px;height:58px">${svg("", Object.assign({}, S.eq, { skin: x.id }), { still: false, noHoli: true })}</div><div class="t"><b>${esc(x.n)}</b><small>${x.one ? (left ? "♾️ רק אחד בכל הישיבה! עוד לא נלקח 😱" : "♾️ נלקח! יש לו בעלים אחד בלבד 🔒") : left ? `נשארו רק ${left} מתוך ${c.cap || x.cap} בכל הישיבה 😱` : "אזלו! כולן נלקחו 🔒"}</small></div>${S.own[x.id] ? "✅" : ""}</div>`;
     }).join("");
   }
   const rareCounts = () => { try { return JSON.parse(LS.get("roboRare", "{}")) || {}; } catch (e) { return {}; } };
@@ -659,7 +684,10 @@ dialog.robo.open{background:#05020f}
       const leftT = R.TAPS - i - 1; hint.textContent = leftT ? `עוד ${leftT} ${leftT === 1 ? "לחיצה" : "לחיצות"}…` : "";
     }
     if (skipped) return true;
-    await sleep(350); ch.classList.add("open"); ro.classList.add("opened"); vib([30, 30, 80]); SFX.open();
+    // 👆 הילד פותח בעצמו
+    hint.innerHTML = `<span class="ro-go">💥 לחץ לפתוח!</span>`; ch.classList.add("ready");
+    await waitTap(ro); if (skipped) return true; ch.classList.remove("ready");
+    ch.classList.add("open"); ro.classList.add("opened"); vib([30, 30, 80]); SFX.open();
     d.querySelector(".ro-flash").classList.remove("go"); void ro.offsetWidth; d.querySelector(".ro-flash").classList.add("go"); particles(ro, RC(cur), 36); await sleep(900);
     for (let i = 0; i < got.length; i++) {
       const g = got[i]; if (await revealOne(d, g, got.length - i - 1)) return true;
@@ -668,6 +696,13 @@ dialog.robo.open{background:#05020f}
   }
   async function revealOne(d, g, more) {
     const r = g.t === "item" ? g.r : null, col = r ? RC(r) : g.t === "box" ? R.BOX[g.box].col : "#94a3b8";
+    // ✨ משהו נדיר (אפי ומעלה, ולא כפול): מסך כהה, צללית זוהרת שמסתובבת, ולחיצה לחשוף
+    if (r && R.RAR[r].o >= 3 && r !== "u" && !g.dup) {
+      const lv = R.RAR[r].o;
+      d.innerHTML = `<div class="ro rare-pre" style="--rc:${col}"><div class="ro-rays"></div><div class="rp-glow"></div><div class="rp-sil">${preview(g.id, true)}</div><div class="rp-t">${lv >= 5 ? "⭐ משהו אגדי מגיע…" : lv >= 4 ? "🔥 משהו מיתי מגיע…" : "✨ משהו נדיר מגיע…"}</div><div class="ro-hint">לחץ לחשוף!</div></div>`;
+      const ro0 = d.querySelector(".ro"); ro0.classList.add("lit"); SFX.up(lv); vib(lv >= 5 ? [60, 40, 60, 40, 140] : [40, 30, 80]);
+      await waitTap(ro0); ro0.classList.add("burst"); SFX.open(); particles(ro0, col, lv >= 5 ? 70 : 45, lv >= 5 ? ["⭐", "✨", "💛"] : null); await sleep(lv >= 5 ? 650 : 450);
+    }
     // אולטרה אגדי: מסך שחור, דופק, ואז הפיצוץ הגדול
     if (r === "u") {
       d.innerHTML = `<div class="ro"><div class="ro-ultra"><div style="font-size:70px;animation:rBeat .5s infinite">⚡</div><b>אולטרה אגדי!!!</b></div></div>`; vib([80, 60, 80, 60, 200]); SFX.ultra(); await sleep(1900);
@@ -886,7 +921,10 @@ dialog.robo.open{background:#05020f}
   const myStats = () => { const pr = R.progress(S); return { n: S.st.n, best: S.st.best, have: pr.have, all: pr.all, opened: S.opened || 0 }; };
   const topRare = () => R.LIST.filter(x => S.own[x.id] && S.own[x.id] !== -1 && !x.free).sort((a, b) => R.RAR[b.r].o - R.RAR[a.r].o).slice(0, 3).map(x => x.id);
   let pubT = 0, myLikes = +LS.get("roboMyLikes", "0") || 0;
-  async function publish() { if (!online()) return; try { await api({ op: "pub", rn: S.name || "", eq: S.eq, st: myStats(), rare: topRare(), ach: R.achievements(S, myLikes), hide: !!S.hide }); LS.set("roboPubAt", String(Date.now())); } catch (e) {} }
+  async function publish() { if (!online()) return; try { const pj = await api({ op: "pub", rn: S.name || "", eq: S.eq, st: myStats(), rare: topRare(), ach: R.achievements(S, myLikes), hide: !!S.hide }); if (pj && pj.pid) LS.set("roboPid", pj.pid); LS.set("roboPubAt", String(Date.now())); } catch (e) {} }
+  // ⚡ הזמנה לטרייד מגיעה מהר: הפיד (שנבדק כל 20 שניות) אומר אם מחכה לי משהו
+  let hintAt = 0;
+  function inviteHint(list) { const me = LS.get("roboPid", ""); if (!me || !list.includes(me) || Date.now() - hintAt < 8000) return; hintAt = Date.now(); checkInbox(); }
   function publishSoon() { clearTimeout(pubT); pubT = setTimeout(publish, 2500); }
   async function loadClass(cls) {
     if (!online()) return { ok: false, error: "offline" };
@@ -966,7 +1004,10 @@ dialog.robo.open{background:#05020f}
     const give = R.offerValue(v.me.offer), get = R.offerValue(v.them.offer), diff = get - give, tilt = Math.max(-14, Math.min(14, diff / Math.max(40, give + get) * 30));
     const verd = !give && !get ? "⚖️ עוד אין הצעות" : Math.abs(diff) <= Math.max(20, (give + get) * 0.1) ? "⚖️ טרייד הוגן לשניכם" : diff > 0 ? "👍 שווה לך – אתה מקבל יותר" : "⚠️ שים לב: אתה נותן יותר ממה שאתה מקבל";
     if (v.status === "lock") return trCountdown();
-    d.innerHTML = `<div class="tr"><div class="tr-top"><b>🔄 טרייד עם ${esc(v.them.kid)}</b></div><div class="tr-body">
+    const me = profile() || {}, botMe = svg("", Object.assign({ skin: "skin:classic" }, Object.keys(v.me.eq || {}).length ? v.me.eq : S.eq), { noHoli: true }), botThem = svg("", Object.assign({ skin: "skin:classic" }, v.them.eq || {}), { noHoli: true });
+    d.innerHTML = `<div class="tr tr2"><div class="tr-vs"><div class="vs-side me${v.me.ok ? " ok" : ""}"><div class="vs-bot">${botMe}</div><b>${esc(v.me.rn || "הרובוט שלי")}</b><small>${esc(me.first || "אני")}</small>${v.me.ok ? `<i>✅</i>` : ""}</div>
+      <div class="vs-mid"><span class="vs-bolt">⚡</span><b>VS</b><span class="vs-bolt b2">⚡</span></div>
+      <div class="vs-side them${v.them.ok ? " ok" : ""}"><div class="vs-bot">${botThem}</div><b>${esc(v.them.rn || "רובוט")}</b><small>${esc(v.them.kid)}</small>${v.them.ok ? `<i>✅</i>` : ""}</div></div><div class="tr-body">
       <div class="tr-side"><h4>📤 אתה נותן <em>שווי: ${give}</em></h4><div class="tr-items">${offerHtml(v.me.offer, true)}<button type="button" class="tr-add" id="trAdd" aria-label="להוסיף">＋</button></div></div>
       <div class="scale"><div class="beam" style="transform:rotate(${-tilt}deg)"><div class="pan l"><i>📤</i>${give}</div><div class="pan r"><i>📥</i>${get}</div></div><div class="post"></div><div class="base"></div></div>
       <div class="tr-verd">${verd}</div>
@@ -1055,7 +1096,7 @@ dialog.robo.open{background:#05020f}
 
   // ---------- הפעלה ----------
   window.Robo = {
-    svg, open, hub, share, subjectMile, daily, openBoxes, redeem, earn, sfx: SFX, mini, friendCard, tradeOpen, checkNews, publish, state: () => S, owns: id => !!S.own[id],
+    svg, open, hub, share, subjectMile, daily, openBoxes, redeem, earn, sfx: SFX, mini, friendCard, tradeOpen, checkNews, publish, inviteHint, state: () => S, owns: id => !!S.own[id],
     give(p) { const x = R.grant(S, p); save(); hubRefresh(); return x; }, // דמו / בדיקות
     reload() { S = load(); applyBubble(); try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {} },
     status: () => `🔥 ${S.st.n} · 🔩 ${bl()}${S.boxes.length ? ` · 🎁 ${S.boxes.length}` : ""}`,
@@ -1068,6 +1109,10 @@ dialog.robo.open{background:#05020f}
     // 👥 מפרסמים את הרובוט (פעם ב-6 שעות), בודקים הודעות כל דקה וחצי, והכרזות אולטרה
     if (online() && Date.now() - (+LS.get("roboPubAt", "0") || 0) > 6 * 3600e3) setTimeout(publish, 6000);
     setTimeout(checkInbox, 7000); setInterval(() => { if (!document.hidden) checkInbox(); }, 90000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) setTimeout(checkInbox, 800); });
+    if (!LS.get("roboPid", "") && online()) setTimeout(publish, 4000);
+    // 🎁 מתנת פתיחה: 1000 ברגים לכל תלמיד (פעם אחת)
+    if (!S.g1000 && profile()) { S.g1000 = 1; S.bolts += 1000; save(); setTimeout(() => { toast("🎁 <b>מתנה מהמערכת: 1000 ברגים!</b> 🔩 לך לחנות ותפתח תיבות", ["לחנות", () => open("shop")], 9000); SFX.coin(); }, 5000); }
     setTimeout(checkNews, 9000); setInterval(() => { if (!document.hidden) checkNews(); }, 30000);
     const pc = () => { if (!LS.get("roboPendingCode", "")) return; if (!profile() || !LS.get("introSeen", "") || document.querySelector("dialog[open]")) { setTimeout(pc, 3000); return; } pendingCode(); }; setTimeout(pc, 2500);
     // רצף כניסות: בפתיחה הראשונה של היום, כשלא באמצע משהו (אשף, חלון, אנימציה)

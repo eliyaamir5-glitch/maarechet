@@ -143,6 +143,7 @@
         // 🤖 כמה נשארו מאביזרי אולטרה אגדי (מוצג בתיבות)
         if (j && j.ok && j.robo && typeof j.robo === "object") try { localStorage.setItem("roboRare", JSON.stringify(j.robo)); } catch (e) {}
         if (j && j.ok && Array.isArray(j.roboNews)) try { localStorage.setItem("roboNews", JSON.stringify(j.roboNews.slice(0, 5))); } catch (e) {}
+        if (j && j.ok && Array.isArray(j.ti) && window.Robo && window.Robo.inviteHint) try { window.Robo.inviteHint(j.ti); } catch (e) {}
         if (!(j && j.ok && Array.isArray(j.updates))) { const r = await fetch(this.url(), { cache: "no-store" }); j = await r.json(); }
         if (j && j.ok && Array.isArray(j.updates)) { save(KEY, { at: Date.now(), list: j.updates }); if (this.onFeed) try { this.onFeed(); } catch (e) {} return true; }
       } catch (e) {}

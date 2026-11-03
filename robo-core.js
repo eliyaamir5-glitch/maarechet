@@ -5,13 +5,13 @@
   // ---- דרגות נדירות (כמו בבראול סטארס) ----
   // dup = כמה ברגים מקבלים על אביזר שכבר יש לך · price = מחיר בחנות (רק עד אפי)
   const RAR = {
-    c: { n: "רגיל", col: "#a3b1c2", dup: 10, price: 40, o: 0 },
-    r: { n: "נדיר", col: "#2ecc71", dup: 25, price: 90, o: 1 },
-    s: { n: "סופר נדיר", col: "#3b82f6", dup: 50, price: 200, o: 2 },
-    e: { n: "אפי", col: "#a855f7", dup: 100, price: 450, o: 3 },
-    m: { n: "מיתי", col: "#ef4444", dup: 250, o: 4 },
-    l: { n: "אגדי", col: "#facc15", dup: 400, o: 5 },
-    u: { n: "אולטרה אגדי", col: "#ffd700", dup: 1000, o: 6 },
+    c: { n: "רגיל", col: "#a3b1c2", dup: 20, price: 40, o: 0 },
+    r: { n: "נדיר", col: "#2ecc71", dup: 50, price: 90, o: 1 },
+    s: { n: "סופר נדיר", col: "#3b82f6", dup: 100, price: 200, o: 2 },
+    e: { n: "אפי", col: "#a855f7", dup: 200, price: 450, o: 3 },
+    m: { n: "מיתי", col: "#ef4444", dup: 500, o: 4 },
+    l: { n: "אגדי", col: "#facc15", dup: 1000, o: 5 },
+    u: { n: "אולטרה אגדי", col: "#ffd700", dup: 2500, o: 6 },
   };
   const RK = ["c", "r", "s", "e", "m", "l", "u"];
 
@@ -111,6 +111,7 @@
     ["skin:sapphire", "skin", "ספיר", "e", { sk: ["#dbeafe", "#2563eb", "#1e3a8a"], e: "#eff6ff", shine: 1, tw: 1 }], ["skin:amethyst", "skin", "אחלמה", "m", { sk: ["#f5d0fe", "#a21caf", "#4a044e"], e: "#fdf4ff", shine: 1, tw: 1 }],
     ["skin:obsidian", "skin", "אובסידיאן", "m", { sk: ["#4b5563", "#111827", "#000000"], e: "#a78bfa", shine: 1 }], ["skin:volcano", "skin", "הר געש", "m", { sk: ["#fde047", "#ea580c", "#1c1917"], e: "#fde68a" }],
     ["skin:aurora", "skin", "זוהר צפוני", "l", { sk: ["#5eead4", "#6366f1", "#ec4899"], e: "#ffffff", shine: 1, tw: 1 }], ["skin:crystal", "skin", "קריסטל קשת", "u", { cap: 3 }],
+    ["skin:infinity", "skin", "האינסוף ♾️", "u", { cap: 1, one: 1 }], // 👑 רק אחד בכל הישיבה!
     // כובעים חדשים
     ["hat:sprout", "hat", "נבט על הראש 🌱", "c", { em: "🌱" }], ["hat:backcap", "hat", "כובע הפוך", "c"], ["hat:antennas", "hat", "אנטנות כפולות", "c"],
     ["hat:cloud", "hat", "ענן גשם ☁️", "r", { em: "🌧️" }], ["hat:catears", "hat", "אוזני חתול", "r"], ["hat:flowers", "hat", "זר פרחים 🌸", "r", { em: "🌸🌼🌸" }],
@@ -148,10 +149,10 @@
 
   // ---- תיבות: כמה פרסים בכל תיבה, וסיכוי לכל דרגה (באחוזים, לכל פרס) ----
   const BOX = {
-    box: { n: "תיבה", em: "📦", rolls: 2, kind: { item: 57, bolts: 40, box: 3 }, odds: { c: 58, r: 26, s: 11, e: 4, m: 0.85, l: 0.145, u: 0.005 }, bolts: [20, 45], price: 40, col: "#38bdf8" },
-    big: { n: "תיבה גדולה", em: "🎁", rolls: 3, kind: { item: 65, bolts: 30, box: 5 }, odds: { c: 35, r: 32, s: 20, e: 9, m: 3.2, l: 0.78, u: 0.02 }, bolts: [35, 80], price: 130, col: "#a855f7" },
-    mega: { n: "תיבת מגה", em: "💠", rolls: 6, kind: { item: 74, bolts: 20, box: 6 }, odds: { c: 10, r: 30, s: 30, e: 20, m: 7.5, l: 2.45, u: 0.05 }, bolts: [70, 160], price: 380, col: "#f43f5e", hero: 0.02 },
-    giant: { n: "תיבת ענק", em: "💎", rolls: 9, kind: { item: 82, bolts: 12, box: 6 }, odds: { c: 0, r: 8, s: 24, e: 36, m: 22, l: 9.9, u: 0.1 }, bolts: [150, 320], price: 1200, col: "#06b6d4", hero: 0.3 },
+    box: { n: "תיבה", em: "📦", rolls: 2, kind: { item: 57, bolts: 40, box: 3 }, odds: { c: 58, r: 26, s: 11, e: 4, m: 0.85, l: 0.145, u: 0.005 }, bolts: [40, 90], price: 40, col: "#38bdf8" },
+    big: { n: "תיבה גדולה", em: "🎁", rolls: 3, kind: { item: 65, bolts: 30, box: 5 }, odds: { c: 35, r: 32, s: 20, e: 9, m: 3.2, l: 0.78, u: 0.02 }, bolts: [70, 160], price: 130, col: "#a855f7" },
+    mega: { n: "תיבת מגה", em: "💠", rolls: 6, kind: { item: 74, bolts: 20, box: 6 }, odds: { c: 10, r: 30, s: 30, e: 20, m: 7.5, l: 2.45, u: 0.05 }, bolts: [140, 320], price: 380, col: "#f43f5e", hero: 0.02 },
+    giant: { n: "תיבת ענק", em: "💎", rolls: 9, kind: { item: 82, bolts: 12, box: 6 }, odds: { c: 0, r: 8, s: 24, e: 36, m: 22, l: 9.9, u: 0.1 }, bolts: [300, 640], price: 1200, col: "#06b6d4", hero: 0.3 },
   };
   const EXTRA = { box: "box", big: "box", mega: "big", giant: "mega" }; // תיבה בתוך תיבה
   // ⭐ שדרוג בכל לחיצה (כמו בבראול): התיבה מתחילה בדרגה מסוימת, ובכל אחת מ-4 הלחיצות יכולה לעלות דרגה.
@@ -233,18 +234,19 @@
 
   // ---- רצף כניסות: מתנה כל יום, ככל שהרצף ארוך יותר – יותר שווה ----
   const LADDER = {
-    1: [{ t: "box", box: "box" }], 2: [{ t: "bolts", n: 60 }], 3: [{ t: "box", box: "box" }], 4: [{ t: "bolts", n: 80 }], 5: [{ t: "box", box: "big" }],
-    7: [{ t: "box", box: "big" }, { t: "item", id: "theme:neon" }], 10: [{ t: "box", box: "mega" }], 14: [{ t: "box", box: "big" }, { t: "item", id: "page:calc:galaxy" }],
-    21: [{ t: "box", box: "mega" }], 30: [{ t: "box", box: "mega" }, { t: "item", id: "hat:streak" }], 50: [{ t: "box", box: "mega" }, { t: "guar", r: "l" }],
-    75: [{ t: "box", box: "mega" }, { t: "box", box: "mega" }], 100: [{ t: "item", id: "aura:streak" }, { t: "box", box: "mega" }, { t: "guar", r: "l" }],
-    150: [{ t: "box", box: "mega" }, { t: "guar", r: "l" }], 200: [{ t: "box", box: "mega" }, { t: "box", box: "mega" }, { t: "guar", r: "l" }],
+    1: [{ t: "box", box: "big" }], 2: [{ t: "bolts", n: 150 }], 3: [{ t: "box", box: "big" }], 4: [{ t: "bolts", n: 200 }], 5: [{ t: "box", box: "mega" }],
+    7: [{ t: "box", box: "mega" }, { t: "item", id: "theme:neon" }, { t: "bolts", n: 300 }], 10: [{ t: "box", box: "mega" }, { t: "box", box: "big" }], 14: [{ t: "box", box: "mega" }, { t: "item", id: "page:calc:galaxy" }],
+    21: [{ t: "box", box: "giant" }], 30: [{ t: "box", box: "giant" }, { t: "item", id: "hat:streak" }], 50: [{ t: "box", box: "giant" }, { t: "guar", r: "l" }],
+    75: [{ t: "box", box: "giant" }, { t: "box", box: "mega" }], 100: [{ t: "item", id: "aura:streak" }, { t: "box", box: "giant" }, { t: "guar", r: "l" }],
+    150: [{ t: "box", box: "giant" }, { t: "guar", r: "l" }], 200: [{ t: "box", box: "giant" }, { t: "box", box: "giant" }, { t: "guar", r: "l" }],
   };
+  // מתנה בכל יום ברצף – ככל שהרצף ארוך יותר, יותר שווה: תיבת מגה כל שבוע, תיבת ענק כל 3 שבועות
   function dayGift(n) {
     if (LADDER[n]) return LADDER[n];
-    if (n > 60 && n % 10 === 0) return [{ t: "box", box: "mega" }];
-    if (n % 5 === 0) return [{ t: "box", box: "big" }];
-    if (n % 2 === 1) return [{ t: "box", box: n > 30 ? "big" : "box" }];
-    return [{ t: "bolts", n: Math.min(300, 40 + n * 6) }];
+    if (n % 21 === 0) return [{ t: "box", box: "giant" }];
+    if (n % 7 === 0) return [{ t: "box", box: "mega" }, { t: "bolts", n: 300 }];
+    if (n % 2 === 1) return [{ t: "box", box: n > 10 ? "mega" : "big" }];
+    return [{ t: "bolts", n: Math.min(800, 150 + n * 15) }];
   }
   // מחיר שמירת רצף שנשבר (בברגים) – ככל שהרצף ארוך יותר, יקר יותר
   const saveCost = n => Math.min(400, 30 + n * 4);
@@ -337,7 +339,7 @@
   // ---- ⚔️ קרב כיתות: מזהה השבוע (מתחיל ביום ראשון) ----
   const weekId = (now = Date.now()) => { const d = ymd(now); return add(d, -dow(d)); };
   // 🔩 בונוס על תרגול (מחשבון / כרטיסיות): עד 60 ברגים ביום
-  const EARN_CAP = 60;
+  const EARN_CAP = 150;
   function earn(S, n, now = Date.now()) {
     const d = ymd(now); if (!S.earn || S.earn.d !== d) S.earn = { d, n: 0 };
     const g = Math.max(0, Math.min(n, EARN_CAP - S.earn.n)); S.earn.n += g; S.bolts += g; return g;

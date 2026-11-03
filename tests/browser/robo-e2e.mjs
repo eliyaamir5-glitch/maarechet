@@ -22,6 +22,8 @@ log(await p.evaluate(() => /יום 1/.test(document.getElementById("roboDay").in
 await p.click("#rdGo"); await sleep(900);
 log(await p.evaluate(() => !!document.querySelector("#roboOpen[open] .ro-chest")), "gift box opens (tap the box)");
 for (let i = 0; i < 4; i++) { await p.click("#roboOpen .ro"); await sleep(450); }
+log(await p.evaluate(() => /לחץ לפתוח/.test(document.querySelector("#roboOpen .ro-hint").textContent)), "after the upgrade taps: the kid opens it himself");
+await p.click("#roboOpen .ro"); await sleep(400);
 log(await p.evaluate(() => !!document.querySelector("#roboOpen .ro-chest.open")), "4 taps (it can upgrade on each) → the chest opens");
 await sleep(1300);
 log(await p.evaluate(() => !!document.querySelector("#roboOpen .ro-card .ro-in .ro-nm")), "prize card appears");
@@ -61,8 +63,8 @@ await sleep(400);
 log(await p.evaluate(() => { const q = document.querySelector(".robo-say"); return !!q && /בום/.test(q.textContent); }), "tap the robot → it says its quote");
 await p.evaluate(() => { const x = document.getElementById("asstP"); if (x && !x.hidden) { const c = x.querySelector(".ax"); c && c.click(); } });
 const e0 = await p.evaluate(() => Robo.state().bolts);
-const got = await p.evaluate(() => { let g = 0; for (let i = 0; i < 40; i++) g += Robo.earn(3); return g; });
-log(got === 60 && await p.evaluate(b0 => Robo.state().bolts === b0 + 60, e0), "practice bonus: +bolts, capped at 60 a day", got);
+const got = await p.evaluate(() => { let g = 0; for (let i = 0; i < 60; i++) g += Robo.earn(6); return g; });
+log(got === 150 && await p.evaluate(b0 => Robo.state().bolts === b0 + 150, e0), "practice bonus: +bolts, capped at 150 a day", got);
 log(await p.evaluate(() => { try { Robo.sfx.tap(); Robo.sfx.up(3); Robo.sfx.reveal(5); Robo.sfx.coin(); return true; } catch (e) { return String(e); } }) === true, "sounds play without errors");
 await p.evaluate(() => { localStorage.setItem("roboMute", "1"); });
 log(await p.evaluate(() => Robo.sfx.muted()), "mute is remembered");

@@ -11,7 +11,7 @@ const seeded = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s 
 const ids = R.LIST.map(x => x.id);
 ok("catalog: 150+ items, unique ids", ids.length >= 150 && new Set(ids).size === ids.length, ids.length);
 ok("every item has a known category and rarity", R.LIST.every(x => R.CATS[x.cat] && R.RAR[x.r]));
-ok("ultra legendary: 5 suits, each with a cap", R.LIST.filter(x => x.r === "u").length === 5 && R.LIST.filter(x => x.r === "u").every(x => x.cap > 0));
+ok("ultra legendary: 6 suits, each with a cap (♾️ infinity = only 1)", R.LIST.filter(x => x.r === "u").length === 6 && R.ITEMS["skin:infinity"].cap === 1 && R.LIST.filter(x => x.r === "u").every(x => x.cap > 0));
 ok("heroes: never in normal boxes, only giant (and 2% mega)", R.LIST.filter(x => x.hero).length >= 10 && R.BOX.giant.hero > 0 && R.BOX.box.hero === undefined);
 { const S = R.fresh(); let h = 0, n = 0; for (let i = 0; i < 3000; i++) for (const p of R.roll(S, "box")) { if (p.t === "item") { n++; if (R.ITEMS[p.id] && R.ITEMS[p.id].hero) h++; } } ok("no heroes from small boxes", h === 0, h + "/" + n); }
 { const S = R.fresh(); let h = 0; for (let i = 0; i < 2000; i++) for (const p of R.roll(S, "giant")) if (p.t === "item" && R.ITEMS[p.id] && R.ITEMS[p.id].hero) h++; ok("heroes do come from giant boxes", h > 100, h); }
@@ -43,14 +43,14 @@ for (const b of ["box", "big", "mega"]) {
 // ---- קבלת פרסים ----
 { const S = R.fresh(); R.grant(S, { t: "item", id: "hat:crown" }); const d = R.grant(S, { t: "item", id: "hat:crown" });
   ok("new item → owned + marked new", S.own["hat:crown"] && S.news.includes("hat:crown"));
-  ok("duplicate → bolts (epic = 100)", d.dup === 100 && S.bolts === 100);
+  ok("duplicate → bolts (epic = 200)", d.dup === 200 && S.bolts === 200);
   R.grant(S, { t: "box", box: "big" }); ok("box prize goes to my boxes", S.boxes.join() === "big");
   ok("equip owned item", R.equip(S, "hat:crown") && S.eq.hat === "hat:crown"); ok("can't equip what you don't own", !R.equip(S, "skin:gold"));
   R.equip(S, "hat:crown"); ok("tap again = take it off", !S.eq.hat); }
 
 // ---- רצף כניסות ----
 { const S = R.fresh();
-  let c = R.checkIn(S, at("2026-11-01T08:00:00+02:00")); ok("first day: streak 1 + a box", c.n === 1 && c.gift[0].box === "box");
+  let c = R.checkIn(S, at("2026-11-01T08:00:00+02:00")); ok("first day: streak 1 + a big box", c.n === 1 && c.gift[0].box === "big");
   ok("second open the same day: not counted again", R.checkIn(S, at("2026-11-01T21:00:00+02:00")) === null);
   c = R.checkIn(S, at("2026-11-02T07:30:00+02:00")); ok("next day: 2", c.n === 2);
   R.checkIn(S, at("2026-11-03T10:00:00+02:00")); R.checkIn(S, at("2026-11-04T10:00:00+02:00")); R.checkIn(S, at("2026-11-05T10:00:00+02:00"));
@@ -64,7 +64,7 @@ for (const b of ["box", "big", "mega"]) {
 { const S = R.fresh(); R.checkIn(S, at("2027-04-20T10:00:00+03:00")); R.checkIn(S, at("2027-04-21T10:00:00+03:00"));
   const c = R.checkIn(S, at("2027-04-23T10:00:00+03:00")); ok("Pesach (Yom Tov) without the app does not break", c.n === 3 && !c.broken);
   const S2 = R.fresh(); R.checkIn(S2, at("2027-10-01T10:00:00+03:00")); const c2 = R.checkIn(S2, at("2027-10-04T10:00:00+03:00")); ok("Rosh Hashana (2 days) + Shabbat: not broken", c2.n === 2 && !c2.broken); }
-ok("bigger streak = better gifts", R.dayGift(31)[0].box === "big" && R.dayGift(3)[0].box === "box" && R.dayGift(70)[0].box === "mega" && R.dayGift(100).some(g => g.id === "aura:streak"));
+ok("bigger streak = better gifts", R.dayGift(31)[0].box === "mega" && R.dayGift(9)[0].box === "big" && R.dayGift(63)[0].box === "giant" && R.dayGift(28)[0].box === "mega" && R.dayGift(100).some(g => g.id === "aura:streak") && R.dayGift(12)[0].n === 330);
 ok("every day has a gift (1..400)", Array.from({ length: 400 }, (_, i) => R.dayGift(i + 1)).every(g => g.length > 0));
 ok("saving costs more for a longer streak, max 400", R.saveCost(5) < R.saveCost(50) && R.saveCost(1000) === 400);
 
@@ -81,5 +81,5 @@ ok("saving costs more for a longer streak, max 400", R.saveCost(5) < R.saveCost(
   ok("can't buy gold in the shop", !R.buy(S, "skin:gold", "dev1").ok); }
 // ---- מצב שבור/ישן נטען בבטחה ----
 { const S = R.norm({ bolts: "abc", own: { "hat:fake": 1 }, eq: { hat: "skin:gold" }, boxes: ["box", "nope"] }); ok("bad saved state is cleaned", S.bolts === 0 && !S.eq.hat && S.boxes.join() === "box" && S.eq.skin === "skin:classic"); }
-{ const S = R.fresh(); const t = at("2026-11-03T10:00:00+02:00"); let g = 0; for (let i = 0; i < 40; i++) g += R.earn(S, 3, t); ok("practice bonus: capped at 60 bolts a day", g === 60 && S.bolts === 60); ok("new day → bonus again", R.earn(S, 3, at("2026-11-04T10:00:00+02:00")) === 3); }
+{ const S = R.fresh(); const t = at("2026-11-03T10:00:00+02:00"); let g = 0; for (let i = 0; i < 40; i++) g += R.earn(S, 6, t); ok("practice bonus: capped at 150 bolts a day", g === 150 && S.bolts === 150); ok("new day → bonus again", R.earn(S, 6, at("2026-11-04T10:00:00+02:00")) === 6); }
 console.log(bad ? `❌ ${bad} problems` : "all robo tests passed");

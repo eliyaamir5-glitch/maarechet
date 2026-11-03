@@ -40,7 +40,10 @@ r = await R(2, { op: "inbox" }); ok("friend's inbox: 2 likes + bolts from Dani",
 r = await R(2, { op: "inbox" }); ok("inbox is emptied after reading", r.inbox.length === 0);
 // טרייד
 const t = await R(1, { op: "tradeNew", to: pids[3] }); ok("invite to trade", t.ok && t.status === "open" && t.them.kid === "רון גל");
+{ const f = await feed(null, "GET"); ok("feed hints the invite fast (public id only)", Array.isArray(f.ti) && f.ti.includes(pids[3])); }
+ok("trade shows both robots' outfits", t.me.eq.skin === "skin:space" && t.them.eq.skin === "skin:space");
 r = await R(3, { op: "inbox" }); ok("friend gets the invite", r.inbox.some(x => x.t === "trade" && x.id === t.id));
+{ const f = await feed(null, "GET"); ok("hint cleared once read", !f.ti.includes(pids[3])); }
 await R(1, { op: "tradeSet", id: t.id, offer: { items: ["hat:crown"], boxes: ["mega"], bolts: 10 } });
 await R(3, { op: "tradeSet", id: t.id, offer: { items: ["skin:dragon"] } });
 r = await R(3, { op: "tradeGet", id: t.id }); ok("both see both offers", r.them.offer.items[0] === "hat:crown" && r.them.offer.boxes[0] === "mega" && r.me.offer.items[0] === "skin:dragon");
