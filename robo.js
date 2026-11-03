@@ -744,11 +744,32 @@ dialog.robo.open{background:#05020f}
     hubRefresh(); return { ok: true, msg: "🎉 הקוד מומש! " + msg };
   }
   // קישור / ברקוד: ?code=XXXX (פרס) או ?own=OWN-XXXX (חיבור הטלפון של מנהל המערכת)
+  // בטלפון ברקוד תמיד נפתח בדפדפן (לא באפליקציה שבמסך הבית – כך עובדים אייפון ואנדרואיד).
+  // אם בדפדפן הזה אין משתמש רשום → מראים את הקוד בגדול + "להעתיק" + איך מדביקים למערכתי באפליקציה
+  const standalone = () => { try { return matchMedia("(display-mode: standalone)").matches || navigator.standalone === true; } catch (e) { return false; } };
   function urlCodes() {
     try {
-      const q = new URLSearchParams(location.search), c = q.get("code") || q.get("own");
-      if (c) { LS.set("roboPendingCode", c); q.delete("code"); q.delete("own"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash); }
+      const q = new URLSearchParams(location.search), c = q.get("code") || q.get("own"), own = !q.get("code") && !!q.get("own");
+      if (!c) return;
+      q.delete("code"); q.delete("own"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash);
+      if (profile() || standalone()) { LS.set("roboPendingCode", c); return; }
+      const show = () => landing(String(c).toUpperCase().replace(/[^A-Z0-9-]/g, ""), own);
+      if (document.body) show(); else document.addEventListener("DOMContentLoaded", show);
     } catch (e) {}
+  }
+  function landing(code, own) {
+    const el = document.createElement("div"); el.id = "roboLand";
+    el.innerHTML = `<div class="rl-box"><div class="rl-em">${own ? "👑" : "🎁"}</div><div class="rl-t">${own ? "קוד החיבור לטלפון שלך" : "קיבלת קוד מתנה!"}</div>
+      <div class="rl-code" dir="ltr">${esc(code)}</div><button type="button" class="rbtn" id="rlCopy">📋 להעתיק את הקוד</button>
+      <ol class="rl-steps"><li>פתח את <b>המערכת</b> מהמסך הבית של הטלפון</li><li>לחץ על הרובוט <b>מערכתי</b> 🤖</li><li>הדבק לו את הקוד (לחיצה ארוכה ← הדבק) ושלח${own ? "" : " – והפרס אצלך! 🎉"}</li></ol>
+      <button type="button" class="rlink" id="rlHere">אין לי עדיין את האפליקציה – להירשם כאן</button></div>`;
+    document.body.appendChild(el);
+    const st = document.createElement("style"); st.textContent = `#roboLand{position:fixed;inset:0;z-index:100000;background:radial-gradient(circle at 50% 30%,#3b1d7a,#0b0820 70%);color:#fff;display:flex;align-items:center;justify-content:center;padding:20px;direction:rtl;font-family:inherit}
+.rl-box{max-width:380px;width:100%;text-align:center}.rl-em{font-size:76px;animation:rBob 2s ease-in-out infinite}.rl-t{font-size:24px;font-weight:900;margin:6px 0 12px}
+.rl-code{font:900 30px/1.2 ui-monospace,Menlo,monospace;letter-spacing:2px;background:rgba(255,255,255,.1);border:2px dashed #facc15;border-radius:16px;padding:14px;margin-bottom:12px;user-select:all;-webkit-user-select:all}
+#roboLand .rbtn{width:100%;font-size:17px;padding:14px}.rl-steps{text-align:right;margin:16px 0;padding-inline-start:22px;line-height:1.8;font-size:15px}`; document.head.appendChild(st);
+    el.querySelector("#rlCopy").onclick = async e => { let ok = false; try { await navigator.clipboard.writeText(code); ok = true; } catch (x) {} if (!ok) { const r = document.createRange(); r.selectNodeContents(el.querySelector(".rl-code")); const s2 = getSelection(); s2.removeAllRanges(); s2.addRange(r); try { ok = document.execCommand("copy"); } catch (x) {} } e.target.textContent = ok ? "✅ הועתק! עכשיו פתח את האפליקציה" : "סמן את הקוד והעתק ידנית"; };
+    el.querySelector("#rlHere").onclick = () => { LS.set("roboPendingCode", code); el.remove(); };
   }
   async function pendingCode() {
     const c = LS.get("roboPendingCode", ""); if (!c || !profile() || !LS.get("introSeen", "")) return;

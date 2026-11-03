@@ -245,7 +245,7 @@ function codesWire(){
     const r=await go({action:"codeCreate",prize,max:$("cMax").value||null,count:+$("cCnt").value||1,code:$("cOwn").value.trim(),note:prizeTxt(prize).replace(/^\S+\s/,"")},e.target);if(r){CODES_NEW=r.codes;load()}};
   if($("cCopyAll"))$("cCopyAll").onclick=async()=>{const a=L.filter(c=>c.on&&(c.max==null||c.used<c.max));if(await copyTxt(a.map(c=>`${c.code} – ${prizeTxt(c.prize)}${c.max!=null?` (ל-${c.max} הראשונים)`:""}`).join("\n")))alert(`📋 הועתקו ${a.length} קודים`)};
   document.querySelectorAll("[data-ccp]").forEach(b=>b.onclick=async()=>{if(await copyTxt(shareTxt(byRaw(b.dataset.ccp)))){b.textContent="✓";setTimeout(()=>b.textContent="📋",1500)}});
-  document.querySelectorAll("[data-cqr]").forEach(b=>b.onclick=()=>{const c=byRaw(b.dataset.cqr);qrDialog(`🔳 ${c.code} – ${prizeTxt(c.prize)}`,codeLink(c.raw),"סורקים במצלמה של הטלפון → האפליקציה נפתחת והפרס מתקבל (כל ילד פעם אחת)")});
+  document.querySelectorAll("[data-cqr]").forEach(b=>b.onclick=()=>{const c=byRaw(b.dataset.cqr);qrDialog(`🔳 ${c.code} – ${prizeTxt(c.prize)}`,codeLink(c.raw),"סורקים במצלמה → נפתח דף עם הקוד ← \"להעתיק\" ← פותחים את האפליקציה ומדביקים למערכתי 🤖 (כל ילד פעם אחת)")});
   document.querySelectorAll("[data-con]").forEach(b=>b.onclick=async()=>{if(await go({action:"codeSet",code:b.dataset.con,on:b.dataset.v==="1"},b))load()});
   document.querySelectorAll("[data-cdel]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את הקוד? מי שעוד לא מימש – כבר לא יוכל."))return;if(await go({action:"codeSet",code:b.dataset.cdel,del:true},b))load()});
   // 👑 הטלפון שלי
