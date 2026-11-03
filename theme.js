@@ -8,7 +8,17 @@
     sunset: { name: "שקיעה", grad: "linear-gradient(135deg,#f59e0b 0%,#f97316 50%,#ef4444 100%)", dark: "#fb923c", light: "#c2410c", meta: "#f97316" },
     rose: { name: "ורוד", grad: "linear-gradient(135deg,#ec4899 0%,#d946ef 55%,#8b5cf6 100%)", dark: "#f472b6", light: "#be185d", meta: "#d946ef" },
     night: { name: "לילה", grad: "linear-gradient(135deg,#1e293b 0%,#334155 55%,#b45309 100%)", dark: "#fbbf24", light: "#b45309", meta: "#1e293b" },
+    // 🤖 עיצובים שזוכים בהם ב"הרובוט שלי" (lock = האביזר שצריך כדי לבחור אותם)
+    neon: { name: "ניאון", grad: "linear-gradient(135deg,#0f172a 0%,#06b6d4 55%,#d946ef 100%)", dark: "#22d3ee", light: "#0891b2", meta: "#0f172a", lock: "theme:neon" },
+    candy: { name: "סוכרייה", grad: "linear-gradient(135deg,#f472b6 0%,#c084fc 50%,#38bdf8 100%)", dark: "#f472b6", light: "#db2777", meta: "#f472b6", lock: "theme:candy" },
+    galaxy: { name: "גלקסיה", grad: "linear-gradient(135deg,#1e1b4b 0%,#6d28d9 50%,#db2777 100%)", dark: "#c084fc", light: "#7c3aed", meta: "#1e1b4b", lock: "theme:galaxy" },
+    lava: { name: "לבה", grad: "linear-gradient(135deg,#1c1917 0%,#b91c1c 50%,#f97316 100%)", dark: "#fb923c", light: "#c2410c", meta: "#1c1917", lock: "theme:lava" },
+    aurora: { name: "זוהר צפוני", grad: "linear-gradient(135deg,#022c22 0%,#059669 40%,#6366f1 75%,#ec4899 100%)", dark: "#34d399", light: "#047857", meta: "#022c22", lock: "theme:aurora" },
+    gold: { name: "זהב", grad: "linear-gradient(135deg,#78350f 0%,#d97706 40%,#facc15 70%,#a16207 100%)", dark: "#facc15", light: "#a16207", meta: "#78350f", lock: "theme:gold" },
   };
+  // עיצוב לעמוד אחד (מ"הרובוט שלי"): { calc: { id, grad } }
+  const PG = (location.pathname.split("/").pop() || "index").replace(/\.html$/, "") || "index";
+  const pageGrad = () => { try { const m = JSON.parse(localStorage.getItem("roboPage") || "{}"); const g = m && m[PG] && m[PG].grad; return typeof g === "string" && /^linear-gradient\([#0-9a-z%,. ()-]+\)$/i.test(g) ? g : ""; } catch (e) { return ""; } };
   const BIG = 1.15; // כמה מגדילים בטקסט גדול
   const get = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch (e) { return d; } };
   const set = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
@@ -16,8 +26,9 @@
   function apply() {
     const t = THEMES[get("uiTheme", "purple")] || THEMES.purple, big = get("uiBig", "") === "1";
     // :root:root גובר על ה-:root של כל עמוד, בלי קשר לסדר
+    const pg = pageGrad();
     st.textContent = (t === THEMES.purple ? "" : `:root:root{--grad:${t.grad};--accent:${t.dark}}
-@media (prefers-color-scheme: light){:root:root{--accent:${t.light}}}`) + (big ? `html{zoom:${BIG}}` : "");
+@media (prefers-color-scheme: light){:root:root{--accent:${t.light}}}`) + (pg ? `:root:root{--grad:${pg}}` : "") + (big ? `html{zoom:${BIG}}` : "");
     if (!st.isConnected) (document.head || document.documentElement).appendChild(st);
     const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = t.meta;
   }
@@ -94,7 +105,7 @@
   window.addEventListener("unhandledrejection", e => { try { const r = e && e.reason; report(r && (r.name === "AbortError" || r.name === "NotAllowedError" ? "" : r.message || String(r)), r && r.stack ? String(r.stack).split("\n")[1] || "" : "promise"); } catch (x) {} });
   window.reportError2 = report; // לבדיקות
   // 🎉 מצב חג: לוח החגים + העיצוב של כל חג (holidays.js). נטען בסדר, בלי לעכב את העמוד
-  try { for (const src of ["holidays-core.js", "holidays.js"]) { const s = document.createElement("script"); s.src = src; s.async = false; (document.head || document.documentElement).appendChild(s); } } catch (e) {}
+  try { for (const src of ["holidays-core.js", "holidays.js", "robo-core.js", "robo.js"]) { const s = document.createElement("script"); s.src = src; s.async = false; (document.head || document.documentElement).appendChild(s); } } catch (e) {}
   // 🔄 עדכון שקט: בודקים גרסה חדשה בכל פתיחה, כל 2 דקות ובכל חזרה לאפליקציה.
   // כשהיא מוכנה – מחליפים בלי שירגישו: כשהאפליקציה ברקע, או אחרי 30 שניות בלי מגע (לא באמצע כתיבה/חלון),
   // וחוזרים לאותו מקום במסך

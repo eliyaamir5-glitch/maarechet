@@ -100,6 +100,11 @@ input,select{width:100%;border:1.5px solid var(--line);border-radius:10px;paddin
         <p class="note" style="margin:8px 0 0">אצל תלמיד אמיתי זה מופיע לבד, פעם אחת, כשמגיע רצף (כל 10 שיעורים) או כשהרצף נשבר.</p>
       </div>
 
+      <div class="box"><h2>🤖 הרובוט שלי (הדגמה)</h2>
+        <div class="seg" id="roboBtns"><button type="button" data-rb="day">🔥 מתנת רצף יומית</button><button type="button" data-rb="box">📦 תיבה</button><button type="button" data-rb="mega">💠 תיבת מגה</button><button type="button" data-rb="ultra">👑 תיבה עם אולטרה אגדי</button><button type="button" data-rb="bolts">🔩 +500 ברגים</button><button type="button" data-rb="wear">👕 הארון</button></div>
+        <p class="note" style="margin:8px 0 0">אצל תלמיד אמיתי: מתנה בכל יום ברצף, תיבות על רצף במקצוע, וחליפת זהב – רק 3 בכל הישיבה.</p>
+      </div>
+
       <div class="box"><h2>🎉 מצב חג (הדגמה)</h2>
         <div class="seg" id="holBtns"></div>
         <div class="row" style="margin-top:8px;align-items:center;gap:6px"><span class="note" style="margin:0">🕎 לילה בחנוכה:</span><div class="seg" id="holNight"></div></div>
@@ -424,6 +429,14 @@ document.querySelectorAll("#fxBtns [data-fx]").forEach(b=>b.onclick=()=>{const v
   else if(v==="praise"){const d=w.document;d.getElementById("evT").textContent="⭐ קיבלת צל\"ש!";
     d.getElementById("evList").innerHTML=`<div class="ev"><span class="i">⭐</span><span><b>צל"ש באנגלית</b><small>היום · שיעור 3</small><small>אלוף! המורה שם לב אליך 🌟</small></span></div>`;d.getElementById("evDlg").showModal()}
   else w.celebrate("גמרא",+v);
+})});
+// 🤖 הרובוט שלי: מפעילים בתוך הטלפון של הדמו
+document.querySelectorAll("#roboBtns [data-rb]").forEach(b=>b.onclick=()=>{const v=b.dataset.rb;fxDemo(w=>{const R=w.Robo;if(!R)return;
+  if(v==="day"){const s=R.state();s.st.last="";R.daily(true)}
+  else if(v==="bolts")R.give({t:"bolts",n:500});
+  else if(v==="wear")R.open("wear");
+  else if(v==="ultra"){R.give({t:"box",box:"mega"});R.openBoxes(["mega"],{rig:"u"})}
+  else{R.give({t:"box",box:v});R.openBoxes([v])}
 })});
 // 🎉 מצב חג: טוענים את האפליקציה בדמו עם החג שנבחר (נשמר בדמו גם במעבר בין עמודים, עד "בלי חג")
 const HOLS=[["hanukkah","🕎 חנוכה"],["purim","🎭 פורים"],["atzmaut","🇮🇱 יום העצמאות"],["zikaron","🕯️ יום הזיכרון"],["shoah","🕯️ יום השואה"],["lagbaomer","🔥 ל\"ג בעומר"],["rosh","🍎 ראש השנה"],["kippur","🤍 יום כיפור"],["sukkot","🌿 סוכות"],["simchat","📜 שמחת תורה"],["tubishvat","🌳 ט\"ו בשבט"],["pesach","🍷 פסח"],["yerushalayim","✨ יום ירושלים"],["shavuot","🌾 שבועות"],["tishabav","🕯️ תשעה באב"]];

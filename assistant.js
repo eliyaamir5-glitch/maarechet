@@ -810,6 +810,7 @@ body.asst-hide #asstBtn,body:has(#suspWall) #asstBtn,body:has(#wiz:not([hidden])
 }
 // הרובוט: ראש עם מסך, עיניים זוהרות, אנטנה, אוזניים
 function robotSVG(cls = "") {
+  if (window.Robo && Robo.svg) try { return Robo.svg(cls); } catch (e) {}
   return `<svg class="abot ${cls}" viewBox="0 0 64 64" aria-hidden="true"><g class="body">
     <line x1="32" y1="9" x2="32" y2="16" stroke="#e8ebff" stroke-width="2.5" stroke-linecap="round"/><circle class="ant" cx="32" cy="7.5" r="3.6" fill="#7cf5ff"/>
     <rect class="ear l" x="6.5" y="27" width="6" height="12" rx="3" fill="#dfe4ff"/><rect class="ear r" x="51.5" y="27" width="6" height="12" rx="3" fill="#dfe4ff"/>
@@ -820,7 +821,9 @@ function robotSVG(cls = "") {
     <ellipse class="mo" cx="32" cy="38.5" rx="3" ry="2" fill="#7cf5ff"/>
     <circle cx="19.5" cy="38" r="2.2" fill="#ff6bd6" opacity=".55"/><circle cx="44.5" cy="38" r="2.2" fill="#ff6bd6" opacity=".55"/></g></svg>`;
 }
-const bots = () => document.querySelectorAll(".abot");
+const bots = () => document.querySelectorAll("#asstBtn .abot,#asstP .abot");
+// 🤖 התלבושת השתנתה (ארון / תיבה / חג) – מציירים מחדש
+if (typeof addEventListener === "function") addEventListener("robo:change", () => { try { const b = document.getElementById("asstBtn"); if (b) b.innerHTML = robotSVG(); const h = panel && panel.querySelector(".hb"); if (h) h.innerHTML = robotSVG(); } catch (e) {} });
 function mood(m, ms) { bots().forEach(b => { b.classList.remove("think", "talk", "happy", "wave"); if (m) b.classList.add(m); }); clearTimeout(mood.t); if (m && ms) mood.t = setTimeout(() => mood(null), ms); }
 function sparks(el) { const r = el.getBoundingClientRect(); for (let i = 0; i < 8; i++) { const s = document.createElement("span"); s.className = "asst-spark"; s.textContent = ["✨", "⭐", "💜"][i % 3]; s.style.left = r.left + r.width / 2 - 8 + "px"; s.style.top = r.top + r.height / 2 - 8 + "px"; const a = Math.PI * 2 * i / 8; s.style.setProperty("--sx", Math.cos(a) * 48 + "px"); s.style.setProperty("--sy", Math.sin(a) * 48 + "px"); document.body.appendChild(s); setTimeout(() => s.remove(), 850); } }
 // מיקום: צד (ימין/שמאל) + גובה, נשמר. גוררים → נצמד לקצה הקרוב

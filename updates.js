@@ -140,6 +140,8 @@
         if (j && j.ok && Array.isArray(j.updates)) save("feedCache", { at: Date.now(), msgs: Array.isArray(j.msgs) ? j.msgs : [], polls: j.polls || [], events: j.events || [], answers: j.answers || [], birthdays: j.birthdays || [], changes: j.changes || [], maint: j.maint && typeof j.maint === "object" ? j.maint : null });
         // 🎉 מצב חג: הכיבוי של מנהל המערכת (כללי / חג מסוים) נשמר בטלפון לכל העמודים
         if (j && j.ok && j.hol && window.Holidays) try { window.Holidays.ctl(j.hol); } catch (e) {}
+        // 🤖 כמה נשארו מאביזרי אולטרה אגדי (מוצג בתיבות)
+        if (j && j.ok && j.robo && typeof j.robo === "object") try { localStorage.setItem("roboRare", JSON.stringify(j.robo)); } catch (e) {}
         if (!(j && j.ok && Array.isArray(j.updates))) { const r = await fetch(this.url(), { cache: "no-store" }); j = await r.json(); }
         if (j && j.ok && Array.isArray(j.updates)) { save(KEY, { at: Date.now(), list: j.updates }); if (this.onFeed) try { this.onFeed(); } catch (e) {} return true; }
       } catch (e) {}

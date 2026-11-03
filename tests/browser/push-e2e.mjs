@@ -48,7 +48,7 @@ log(/פועלות/.test(await p.$eval("#pushBox", e => e.innerText)), "card conf
 await sleep(4300);
 log(!(await vis(p, "#pushBox")), "card disappears afterwards");
 // פרופיל: העדפות
-await p.evaluate(() => openProfile()); await sleep(400);
+await p.evaluate(() => { openProfile(); const d = document.querySelector('#profBody [data-sec="push"]'); if (d) d.open = true; d && d.scrollIntoView({ block: "center" }); }); await sleep(400); // ההתראות במגירה
 log(await p.$eval("#ppOn", e => e.checked) && await p.$eval("#ppTef", e => e.checked), "profile shows notifications on with tefillin on");
 p.posts = [];
 await p.click("#ppTef"); await sleep(800);

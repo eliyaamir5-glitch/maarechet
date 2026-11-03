@@ -976,11 +976,12 @@ async function owner(req, S, ip, headers) {
 async function feed(req, S, ip, headers) {
   if (req.method === "GET") {
     const now = Date.now(), today = israelDay(now);
-    const [ups, polls, events, qs, bd, rx, chg, ctl, om, hc] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions", "changes", "control", "ownerMsgs", "holCfg"].map(k => S.get(k)));
+    const [ups, polls, events, qs, bd, rx, chg, ctl, om, hc, rr] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions", "changes", "control", "ownerMsgs", "holCfg", "roboRare"].map(k => S.get(k)));
     return reply(200, {
       ok: true, now,
       // 🎉 מצב חג: האם מנהל המערכת כיבה (הכל / חג מסוים). התאריכים עצמם מחושבים בטלפון
       hol: holPublic(hc),
+      robo: roboCounts(rr), // 🤖 כמה נשארו מכל אביזר אולטרה אגדי
       updates: activeUpdates(ups, now).map(u => ({ ...publicUpdate(u), reacts: reactCounts(reactsOf(rx, u.id)) })),
       polls: (polls || []).filter(p => p.endsAt > now).sort((a, b) => b.createdAt - a.createdAt).map(publicPoll),
       events: (events || []).filter(e => e.date >= today).sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || ""))).slice(0, 30)
@@ -1122,6 +1123,23 @@ async function feed(req, S, ip, headers) {
     mates.sort((a, b) => a.localeCompare(b, "he"));
     const bd = await S.get("birthdays"), bdays = Object.values(bd || {}).filter(x => x && x.name && x.md && grade(x.cls) === grade(me.cls)).map(x => ({ name: x.name, cls: x.cls, md: x.md }));
     return reply(200, { ok: true, cls: me.cls, mates, bdays }, headers);
+  }
+  if (action === "robo") { // 🤖 אביזר "אולטרה אגדי" יצא בתיבה: כמות מוגבלת לכל הישיבה. נשמר רק מונה + קוד מכשיר מוצפן (בלי שם)
+    if (!DEV_RE.test(device) || b.op !== "claim" || !Object.hasOwn(ROBO_CAPS, String(b.item))) return reply(400, { ok: false, error: "bad_request" }, headers);
+    memRate("robo", ip, 3000);
+    const pres = await S.get("presence"), k = devKey(device);
+    if (!pres || !Object.hasOwn(pres, k)) return reply(403, { ok: false, error: "not_registered", counts: roboCounts(await S.get("roboRare")) }, headers);
+    const item = String(b.item), cap = ROBO_CAPS[item];
+    let granted = false, n = 0;
+    await S.update("roboRare", cur => {
+      const m = cur && typeof cur === "object" ? { ...cur } : {}, x = m[item] && Array.isArray(m[item].keys) ? { ...m[item], keys: [...m[item].keys] } : { keys: [] };
+      if (x.keys.includes(k)) { granted = true; n = x.keys.length; return undefined; } // כבר קיבל (למשל אחרי התקנה מחדש)
+      if (x.keys.length >= cap) { n = x.keys.length; return undefined; } // אזל
+      x.keys.push(k); m[item] = x; granted = true; n = x.keys.length; return m;
+    });
+    const counts = roboCounts(await S.get("roboRare"));
+    if (granted) await olog(S, "roboRare", `👑 תלמיד קיבל ${ROBO_NAMES[item]} מתיבה! (${n} מתוך ${cap})`);
+    return reply(200, { ok: true, granted, n, cap, counts }, headers);
   }
   if (action === "leave") { // התלמיד מחק את המשתמש שלו: מוחקים את מה שנשמר עליו בשרת, ומודיעים להנהלה
     if (!DEV_RE.test(device)) return reply(400, { ok: false, error: "bad_request" }, headers);
@@ -1492,3 +1510,8 @@ export async function holidayTick(now = Date.now()) {
   }
   return out.length ? { out } : { skipped: "none" };
 }
+
+// ---- 🤖 "הרובוט שלי": אביזרי אולטרה אגדי – כמות מוגבלת לכל הישיבה (חייב להתאים ל-robo-core.js) ----
+const ROBO_CAPS = { "skin:gold": 3, "skin:diamond": 5 };
+const ROBO_NAMES = { "skin:gold": "חליפת זהב טהור", "skin:diamond": "חליפת יהלומים" };
+function roboCounts(rr) { const o = {}; for (const [id, cap] of Object.entries(ROBO_CAPS)) { const x = rr && rr[id]; o[id] = { n: x && Array.isArray(x.keys) ? x.keys.length : 0, cap }; } return o; }

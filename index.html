@@ -1319,7 +1319,6 @@ function renderProfile(){
       <span>ניצנים</span><span>${profile.nitz==="yes"?"🌱 כן":profile.nitz==="no"?"לא":"—"}</span>`:""}
       <span>במערכת מאז</span><span>${profile.since?new Date(profile.since).toLocaleDateString("he-IL"):"—"}</span>
     </div>
-    <div class="pf-push" id="pfPush"></div>
     ${(()=>{const a=absState();if(!a)return `<div class="pf-stats"><a href="absences.html">📊 נוכחות וציונים ←</a></div><div class="pf-sub" style="margin-top:6px">חבר את משוב כדי לראות כאן רצפים, מצב ה-30%, ציונים וכמה צריך במבחן הבא.</div>`;
       const bag=a.r.subjects.filter(x=>!x.nonBagrut&&x.held>0),worst=bag[0],cnt=k=>bag.filter(x=>x.status===k).length;
       return `<div class="pf-stats">${a.lead&&a.lead[1].current?`<span>🔥 ${a.lead[1].current} ברצף ב${escH(a.lead[0])}</span>`:""}${a.pr.total?`<span>⭐ ${a.pr.total} צל"שים</span>`:""}</div>
@@ -1327,10 +1326,12 @@ function renderProfile(){
       ${worst?`<div class="pf-sub" style="margin-top:6px">הכי קרוב ל-30%: <b>${escH(worst.name)}</b> (${Math.round(worst.pct*100)}%)</div>`:""}
       <div class="pf-stats"><a href="absences.html">📊 נוכחות ←</a><a href="absences.html#grades">📝 הציונים שלי ←</a></div>`})()}
     <div class="pf-acts" style="justify-content:center"><button type="button" class="ghost" id="pfEdit">✎ עריכת פרטים והקבצות</button><button type="button" class="ghost" id="pfFb">💬 רעיון או תקלה</button><button type="button" class="ghost" id="pfNew">✨ מה חדש</button></div></div>
-  ${pfSec("theme","🎨 תצוגה",(Theme.THEMES[Theme.current()]||{}).name||"",false,`<div class="pf-sub">צבע לאפליקציה:</div><div class="th-sw">${Object.entries(Theme.THEMES).map(([k,t])=>`<button type="button" class="sw ${Theme.current()===k?"on":""}" data-th="${k}" style="background:${t.grad}" aria-label="${t.name}" title="${t.name}"></button>`).join("")}</div>
+  ${pfSec("robo","🤖 הרובוט שלי",window.Robo?Robo.status():"",true,`<div id="pfRobo"></div>`,"pf-robo")}
+  ${pfSec("theme","🎨 תצוגה",(Theme.THEMES[Theme.current()]||{}).name||"",false,`<div class="pf-sub">צבע לאפליקציה:</div><div class="th-sw">${Object.entries(Theme.THEMES).filter(([k,t])=>!t.lock||(window.Robo&&Robo.owns(t.lock))).map(([k,t])=>`<button type="button" class="sw ${Theme.current()===k?"on":""}" data-th="${k}" style="background:${t.grad}" aria-label="${t.name}" title="${t.name}"></button>`).join("")}</div>
     <label class="tgl-row"><input type="checkbox" id="pfBig" ${Theme.big()?"checked":""}> 🔍 טקסט גדול</label>
     <label class="tgl-row"><input type="checkbox" id="pfMate" ${(()=>{try{return localStorage.getItem("hideFromClass")!=="1"}catch(e){return true}})()?"checked":""}> 👥 להופיע כשחברים מהכיתה שואלים את העוזר "מי בכיתה שלי"</label>
     <label class="tgl-row"><input type="checkbox" id="pfAsst" ${(()=>{try{return localStorage.getItem("asstOff")!=="1"&&localStorage.getItem("asstHideDay")!==new Date().toDateString()}catch(e){return true}})()?"checked":""}> 🤖 להציג את העוזר "מערכתי"</label>`)}
+  ${pfSec("push","🔔 התראות",(()=>{const p=pushLS();return p.on&&pushSupported()&&Notification.permission==="granted"?"פועלות ✓":"כבויות"})(),false,`<div class="pf-push" id="pfPush"></div>`)}
   ${pfSec("cal","📅 יומן",calAdded()?"✅ הוספת":"לא נוסף",false,`<div class="pf-sub">${calAdded()?"✅ המערכת שלך כבר ביומן של הטלפון, והיא מתעדכנת שם לבד. צריך להוסיף שוב רק אם מחקת אותה מהיומן.":"המערכת שלך ביומן של הטלפון, עם תזכורת 10 דקות לפני כל שיעור. מתעדכן לבד."}</div><div class="pf-acts"><button type="button" class="${calAdded()?"ghost":"primary"}" id="pfCal">${calAdded()?"להוסיף שוב":"📅 הוסף ליומן"}</button></div>`)}
   ${pfSec("parent","👨‍👩‍👦 ההורים","",false,`<div class="pf-sub">קישור שבו ההורים רואים את המערכת שלך: מה יש היום ומה להביא. בלי ציונים ובלי חיסורים.</div><div class="pf-acts"><button type="button" class="primary" id="pfParent">📤 שליחת קישור להורים</button></div>`)}
   ${feedOk()?(()=>{const bd=bdLocal(),has=bd.d&&bd.m;return pfSec("bday","🎂 יום הולדת",has?`${bd.d} ב${MONTHS_HE[bd.m-1]} ✓`:"לא מולא",!has,`<div class="pf-sub">ביום ההולדת שלך כל השכבה תראה "מזל טוב" – רק יום וחודש, בלי שנה.</div>
@@ -1346,6 +1347,7 @@ function renderProfile(){
   ${pfSec("del","🗑️ מחיקת המשתמש","",false,`<div class="pf-sub">מוחק את כל מה שלך מהאפליקציה: השם, ההקבצות, יום ההולדת, ההתראות, משוב, הרצפים והציונים – וחוזרים להרשמה מההתחלה. אי אפשר לבטל.</div><div class="pf-acts"><button type="button" class="danger" id="pfDel">🗑️ מחק את המשתמש שלי</button></div>`,"danger")}`;
   const $=id=>document.getElementById(id);
   renderPushPrefs();
+  if(window.Robo&&$("pfRobo"))Robo.hub($("pfRobo"));
   b.querySelectorAll("details.pf-sec").forEach(d=>d.ontoggle=()=>{d.open?pfOpenSet.add(d.dataset.sec):pfOpenSet.delete(d.dataset.sec)});
   $("pfEdit").onclick=()=>{$("profDlg").close();openOnb(true)};
   renderAvatar($("pfAv"));$("pfAv").onclick=()=>$("pfPh").click();
@@ -2010,7 +2012,7 @@ async function runFx(){
       const prev=S[n]||{cur:0,ms:0,brk:""},brk=x.lastBreak&&x.lastBreak.lost>=5?x.lastBreak.date+"|"+x.lastBreak.lost:"";
       if(!first&&brk&&brk!==prev.brk&&x.current<prev.cur)queue.push(["break",n,x.lastBreak.lost]);
       const m=mileOf(x.current),base=brk&&brk!==prev.brk?0:(prev.ms||0); // אחרי שבירה סופרים מחדש
-      if(!first&&m>=10&&m>base)queue.push(["mile",n,m]);
+      if(!first&&m>=10&&m>base){queue.push(["mile",n,m]);if(window.Robo)try{Robo.subjectMile(n,m)}catch(e){}} // 🤖 תיבה על רצף במקצוע
       S[n]={cur:x.current,ms:first?m:Math.max(base,m),brk};
     }
     fxSave("fxStreak",S);
