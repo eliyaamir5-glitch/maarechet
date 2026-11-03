@@ -2263,7 +2263,8 @@ if(window.Updates){
   setInterval(()=>Updates.retryPop&&Updates.retryPop(),2500);
 }
 // "שלום" לשרת + מצב השעיה/עדכון: בפתיחה, כל 3 דקות, וכשחוזרים לאפליקציה (גם אם updates.js לא נטען)
-if(window.Updates)Updates.onFeed=()=>{if(window.__DEMO)return;renderOwn();ownToastNew(ownMsgs())};
+// מוסיפים להודעות של המנהל – בלי לדרוס את הרענון של המערכת/ימי הולדת/שינויים (באג שהיה: הם לא התעדכנו עד הפתיחה הבאה)
+if(window.Updates){const prevFeed=Updates.onFeed;Updates.onFeed=()=>{if(typeof prevFeed==="function")prevFeed();if(window.__DEMO)return;renderOwn();ownToastNew(ownMsgs())}};
 {const sf=f=>{try{f()}catch(e){console.warn(e)}};sf(applyCtl);sf(renderOwn);setTimeout(()=>hello().catch(()=>{}),1500);setInterval(()=>hello().catch(()=>{}),3*60e3);
   document.addEventListener("visibilitychange",()=>{if(!document.hidden){sf(applyCtl);hello.back=true;hello().catch(()=>{})}})}
 if(location.hash==="#profile"){history.replaceState(null,"",location.pathname);setTimeout(()=>openProfile(),300)}
