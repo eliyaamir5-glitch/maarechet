@@ -12,8 +12,13 @@
   const vib = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
   let S = load();
   function load() { let s = null; try { s = JSON.parse(LS.get("robo", "null")); } catch (e) {} return R.norm(s); }
-  function save() { LS.set("robo", JSON.stringify(S)); try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {} applyBubble(); homeBtn(); }
+  function save() {
+    // 🎭 סט שלם → פרס (פעם אחת)
+    const sets = R.setsCheck(S); for (const st of sets) { for (const p of st.prize) R.grant(S, p); setTimeout(() => { toast(`🎭 <b>השלמת את הסט ${esc(st.n)}!</b> קיבלת ${esc(st.prize.map(giftText).join(" + "))}`, st.prize.some(p => p.t === "box") ? ["לפתוח", () => openBoxes(st.prize.filter(p => p.t === "box").map(p => p.box))] : null, 9000); SFX.gift(); }, 900); }
+    LS.set("robo", JSON.stringify(S)); try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {} applyBubble(); homeBtn(); }
   // כפתור "🤖 הרובוט שלי" במסך הראשי – עם מספר התיבות שמחכות
+  // 🗺️ צעדים במסע (מחזיר כמה תחנות חדשות)
+  function step(n) { const k = R.mapStep(S, n); if (k > 0) setTimeout(() => toast(`🗺️ הגעת לתחנה חדשה במסע! יש שם אוצר 💰`, ["למפה", () => open("fun", "map")], 7000), 1500); return k; }
   function homeBtn() { const b = document.getElementById("roboBtn"); if (!b) return; const n = S.boxes.length; b.innerHTML = `🤖 הרובוט שלי${n ? ` <span class="rb-badge">${n}</span>` : ""}`; b.classList.toggle("rb-glow", n > 0); }
   const profile = () => { try { return JSON.parse(LS.get("profile", "null")) || null; } catch (e) { return null; } };
   const dev = () => LS.get("deviceId", "") || "dev";
@@ -203,7 +208,7 @@ ${sk.under ? sk.under(u) : ""}
 <g class="look"><g class="eyes">${eyesHtml}</g>${EYES[E.eyes] ? EYES[E.eyes](u) : ""}</g>
 <path class="ms" d="M27 37.5 Q32 41.5 37 37.5" fill="none" stroke="${eye}" stroke-width="2.2" stroke-linecap="round"/><ellipse class="mo" cx="32" cy="38.5" rx="3" ry="2" fill="${eye}"/>
 <circle cx="19.5" cy="38" r="2.2" fill="#ff6bd6" opacity=".55"/><circle cx="44.5" cy="38" r="2.2" fill="#ff6bd6" opacity=".55"/>
-${hat}${sk.over ? sk.over(u) : ""}${heldEm ? `<text class="rheld" x="55" y="56" font-size="15" text-anchor="middle">${heldEm}</text>` : ""}</g></svg>`;
+${hat}${sk.over ? sk.over(u) : ""}${(eq ? opt.shiny : S.shiny && Object.values(E).some(id => S.shiny[id])) ? `<g class="rshiny">${twinkles([[8, 14, 3], [56, 12, 2.6], [58, 44, 3], [6, 46, 2.4], [32, 4, 2.2]], "#fde047", "rtw")}</g>` : ""}${heldEm ? `<text class="rheld" x="55" y="56" font-size="15" text-anchor="middle">${heldEm}</text>` : ""}</g></svg>`;
   }
   // תצוגה של אביזר אחד (בכרטיס): הרובוט שלך + האביזר
   function preview(id, still = true) {
@@ -211,7 +216,7 @@ ${hat}${sk.over ? sk.over(u) : ""}${heldEm ? `<text class="rheld" x="55" y="56" 
     if (it.cat === "theme" || it.cat === "page") return `<div class="rv-sw" style="background:${it.grad}"><span>${it.cat === "page" ? pageIcon(it.pg) : "🎨"}</span></div>`;
     if (it.cat === "trail") return `<div class="rv-sw rv-trail" style="background:radial-gradient(circle,#3b1d7a,#1a1040)">${it.em.map((e, i) => `<span style="animation-delay:${i * .25}s">${e}</span>`).join("")}</div>`;
     if (it.cat === "quote") return `<div class="rv-q"><div class="rv-qb">${esc(it.n)}</div><div style="width:46%;margin:2px auto 0">${svg("", S.eq, { still, noHoli: true })}</div></div>`;
-    const eq = Object.assign({}, S.eq, { [it.cat]: id }); return svg("", eq, { still, noHoli: true });
+    const eq = Object.assign({}, S.eq, { [it.cat]: id }); return svg("", eq, { still, noHoli: true, shiny: !!(S.shiny && S.shiny[id]) });
   }
   const pageIcon = pg => ({ calc: "🧮", cards: "🃏", absences: "📊", phones: "📞", index: "🏠" }[pg] || "📄");
 
@@ -345,8 +350,8 @@ dialog.robo.fr .frc{height:100%;overflow-y:auto;padding-bottom:calc(20px + env(s
 .ann>*{position:relative}.ann .t{font-size:30px;font-weight:900;background:linear-gradient(90deg,#fde047,#f472b6,#a5f3fc,#fde047);background-size:300%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:rGrad 1.4s linear infinite}
 .ann .bot{width:190px;height:190px;animation:frIn 1s cubic-bezier(.2,1.3,.4,1) both}.ann .bot .abot{width:100%;height:100%}.ann .w{font-size:19px;font-weight:900;margin-top:6px}.ann .l{font-size:15px;margin-top:8px;color:#fde68a}display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:8px}
 .rw-chips span{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);border-radius:99px;padding:5px 11px;font-size:13px;font-weight:800}
-.rw-tabs{display:flex;gap:4px;padding:8px 10px;background:#120c2e;border-bottom:1px solid rgba(255,255,255,.08)}
-.rw-tabs button{flex:1;border:0;border-radius:12px;padding:9px 4px;font:inherit;font-size:14px;font-weight:800;color:#c7c3ff;background:transparent;cursor:pointer;position:relative}
+.rw-tabs{display:flex;gap:2px;padding:8px 6px;overflow-x:auto;scrollbar-width:none;background:#120c2e;border-bottom:1px solid rgba(255,255,255,.08)}
+.rw-tabs button{flex:1 0 auto;border:0;border-radius:12px;padding:9px 5px;font:inherit;font-size:12.5px;white-space:nowrap;font-weight:800;color:#c7c3ff;background:transparent;cursor:pointer;position:relative}
 .rw-tabs button.on{background:linear-gradient(135deg,#5b6cff,#a259ff);color:#fff;box-shadow:0 4px 14px rgba(91,108,255,.4)}
 .rw-tabs .dot{position:absolute;top:4px;left:8px;min-width:16px;height:16px;border-radius:9px;background:#f43f5e;font-size:11px;line-height:16px;color:#fff}
 .rw-body{flex:1;overflow-y:auto;padding:12px 12px calc(20px + env(safe-area-inset-bottom))}
@@ -368,7 +373,12 @@ dialog.robo.fr .frc{height:100%;overflow-y:auto;padding-bottom:calc(20px + env(s
 .rc.on{outline:3px solid #fff;outline-offset:2px}.rc.on::after{content:"✓";position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#22c55e;color:#fff;font-size:13px;line-height:22px;font-weight:900;box-shadow:0 2px 6px rgba(0,0,0,.4)}
 .rc .new{position:absolute;top:-7px;left:-5px;background:#f43f5e;color:#fff;font-size:10px;font-weight:900;border-radius:7px;padding:2px 6px;transform:rotate(-8deg);animation:rNew 1s ease-in-out infinite alternate}@keyframes rNew{to{transform:rotate(-8deg) scale(1.12)}}
 .rc.leg,.rc.ult{overflow:hidden}.rc.leg::before,.rc.ult::before{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.55) 45%,transparent 60%);animation:rCardShine 2.6s ease-in-out infinite;pointer-events:none}
-.rc.ult{background:linear-gradient(135deg,#fff7c2,#facc15 30%,#f472b6 60%,#a5f3fc 85%,#facc15)}@keyframes rCardShine{0%,40%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+.rc.ult{background:linear-gradient(135deg,#fff7c2,#facc15 30%,#f472b6 60%,#a5f3fc 85%,#facc15)}
+.rc.shiny{box-shadow:0 0 0 2px #fde047,0 0 16px rgba(253,224,71,.7)!important;overflow:hidden}.rc.shiny::after{content:"✨";position:absolute;top:2px;left:4px;font-size:14px;animation:rBeat 1.2s infinite}
+.abot .rshiny{filter:drop-shadow(0 0 2px #fde047)}
+.ro.shiny .ro-in{box-shadow:0 0 0 3px #fde047,0 0 40px #fde047!important}.ro-shiny{color:#fde047;text-shadow:0 0 10px #fde047}
+.rev{margin:0 0 10px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,#0ea5e9,#6366f1,#a855f7);color:#fff;font-size:13px;font-weight:700;box-shadow:0 6px 18px rgba(99,102,241,.4)}.rev b{display:block;font-size:15px}
+.rflash{animation:rFl 1s ease-in-out infinite alternate}@keyframes rFl{to{box-shadow:0 0 0 2px #f43f5e,0 0 22px rgba(244,63,94,.6)}}@keyframes rCardShine{0%,40%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
 .rv-sw{width:86%;aspect-ratio:1;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.4)}
 .rw-sec{font-weight:900;font-size:16px;margin:14px 2px 8px;display:flex;align-items:center;gap:8px}.rw-sec small{font-weight:600;color:#c7c3ff;font-size:12px}
 .rbx{display:flex;align-items:center;gap:12px;border-radius:18px;padding:12px;margin-bottom:9px;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 70%,#000) 0%,#1a1040 100%);border:1.5px solid color-mix(in srgb,var(--c) 70%,#fff 10%)}
@@ -507,14 +517,19 @@ dialog.robo.open{background:#05020f}
     document.body.appendChild(t); if (act) t.querySelector("button").onclick = () => { t.remove(); act[1](); };
     setTimeout(() => t.remove(), ms); return t;
   }
+  // 🎮 נקודה על הלשונית "כיף": גלגל שעוד לא סובב היום + אוצר במפה שמחכה
+  const funDot = () => (S.wheel !== R.ymd(Date.now()) ? 1 : 0) + (Math.min(R.MAP_N, Math.floor(((S.map || {}).p || 0) / R.MAP_STEP)) > ((S.map || {}).c || 0) ? 1 : 0);
+  // 🌍 אירוע עולמי (ימים 1–3 בחודש)
+  const evBanner = () => { const e = R.eventNow(); return e ? `<div class="rev"><b>${e.n}</b> עד ה-${e.until} בחודש: פי ${e.up} סיכוי שהתיבה תשתדרג בכל לחיצה! 🚀</div>` : ""; };
   const rarTag = r => `<span class="rtag ${r === "u" ? "u" : ""}" style="--c:${RC(r)}">${R.RAR[r].n}</span>`;
   const giftIcon = g => g.t === "box" ? R.BOX[g.box].em : g.t === "bolts" ? "🔩" : g.t === "guar" ? "⭐" : g.t === "item" ? (R.ITEMS[g.id].cat === "theme" || R.ITEMS[g.id].cat === "page" ? "🎨" : "👕") : "🎁";
   const giftText = g => g.t === "box" ? R.BOX[g.box].n : g.t === "bolts" ? `${g.n} ברגים` : g.t === "guar" ? `אביזר ${R.RAR[g.r].n} מובטח!` : g.t === "item" ? R.ITEMS[g.id].n : "";
 
   // ---------- הארון / תיבות / חנות / רצף ----------
   let tab = "wear", cat = "skin";
-  function open(t) {
-    if (t) tab = t;
+  let funSub = "";
+  function open(t, sub) {
+    if (t) tab = t; if (sub) funSub = sub;
     const d = dlg("roboUI"); draw(); show(d);
   }
   function topRar() { const b = R.best(S); return b ? b.r : "c"; }
@@ -525,7 +540,7 @@ dialog.robo.open{background:#05020f}
     d.innerHTML = `<div class="rw"><div class="rw-top" style="--rc:${rc}"><button class="rw-x" type="button" aria-label="סגור">✕</button>${muteBtn("rw-mute")}
       <div class="rw-bot" id="rwBot">${svg()}</div><div class="rw-name">${S.name ? esc(S.name) : `הרובוט של ${esc(p.first || "")}`} <button type="button" class="rw-edit" id="rwName" aria-label="שם לרובוט">✏️</button></div>${S.name ? `<div class="rw-sub">של ${esc(p.first || "")}</div>` : ""}
       <div class="rw-chips"><span>🔥 רצף ${S.st.n}</span><span>🔩 ${bl()}</span><span>🏆 ${pr.have}/${pr.all}</span></div></div>
-      <div class="rw-tabs">${[["wear", "👕 ארון"], ["boxes", "🎁 תיבות", nb], ["friends", "👥 חברים", inboxN], ["shop", "🛒 חנות"], ["streak", "🔥 רצף"]].map(([k, l, n]) => `<button type="button" data-t="${k}" class="${tab === k ? "on" : ""}">${l}${n ? `<span class="dot">${n}</span>` : ""}</button>`).join("")}</div>
+      <div class="rw-tabs">${[["wear", "👕 ארון"], ["fun", "🎮 כיף", funDot()], ["boxes", "🎁 תיבות", nb], ["friends", "👥 חברים", inboxN], ["shop", "🛒 חנות"], ["streak", "🔥 רצף"]].map(([k, l, n]) => `<button type="button" data-t="${k}" class="${tab === k ? "on" : ""}">${l}${n ? `<span class="dot">${n}</span>` : ""}</button>`).join("")}</div>
       <div class="rw-body" id="rwBody"></div></div>`;
     d.querySelector(".rw-x").onclick = () => d.close(); wireMute(d);
     d.querySelector("#rwName").onclick = () => { const v = prompt("איך קוראים לרובוט שלך? (עד 14 תווים)", S.name || ""); if (v == null) return; const c = R.cleanName(v); if (v.trim() && !c) { toast("השם הזה לא מתאים 🙈 נסה שם אחר", null, 3000); return; } S.name = c; save(); publishSoon(); draw(); };
@@ -542,9 +557,11 @@ dialog.robo.open{background:#05020f}
       if (S.news.some(id => R.ITEMS[id] && R.ITEMS[id].cat === cat)) { S.news = S.news.filter(id => !R.ITEMS[id] || R.ITEMS[id].cat !== cat); setTimeout(save, 1500); }
     } else if (tab === "friends") {
       friendsTab(body);
+    } else if (tab === "fun") {
+      if (window.RoboPlus) { RoboPlus.tab(body, funSub); funSub = ""; } else body.innerHTML = `<div class="rw-prog" style="text-align:center;padding:30px 0">⏳ טוען…</div>`;
     } else if (tab === "boxes") {
       const cnt = t => S.boxes.filter(b => b === t).length;
-      body.innerHTML = (nb ? "" : `<div class="rw-sec">אין לך תיבות כרגע <small>מקבלים כל יום ברצף, על רצף במקצוע, או קונים בחנות</small></div>`)
+      body.innerHTML = evBanner() + (nb ? "" : `<div class="rw-sec">אין לך תיבות כרגע <small>מקבלים כל יום ברצף, על רצף במקצוע, או קונים בחנות</small></div>`)
         + ["giant", "mega", "big", "box"].filter(t => cnt(t)).map(t => boxRow(t, cnt(t), `<button class="rbtn" type="button" data-open="${t}">לפתוח!</button>`)).join("")
         + (nb > 1 ? `<button class="rbtn alt" type="button" id="rwAll" style="width:100%;margin:4px 0 10px">⚡ לפתוח הכל (${nb})</button>` : "")
         + `<div class="rw-sec">ℹ️ מה יש בתיבות <small>הסיכוי לכל דרגה, בכל פרס</small></div>` + oddsTable() + rareInfo();
@@ -554,7 +571,8 @@ dialog.robo.open{background:#05020f}
       const deals = R.deals(S, dev());
       const ms = (() => { const n = new Date(), t = new Date(n.toLocaleString("en-US", { timeZone: "Asia/Jerusalem" })), m = 24 * 60 - (t.getHours() * 60 + t.getMinutes()); return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`; })();
       const brk = S.brk && S.brk.ymd === R.ymd(Date.now()) ? S.brk : null;
-      body.innerHTML = `<div class="rw-sec">🔩 יש לך ${bl()} ברגים <small>מקבלים על כפולים, ברצף ובתיבות</small></div><button class="rbtn alt" type="button" id="rwCode" style="width:100%;margin-bottom:10px">🎟️ יש לי קוד לפרס</button>`
+      const fl = R.flashNow(S, dev());
+      body.innerHTML = evBanner() + (fl && !fl.bought ? `<div class="rbx rflash" style="--c:#f43f5e"><div class="em">⚡</div><div class="t"><b>תיבת בזק: ${R.BOX[fl.box].n}!</b><small>רק עוד ${fl.left} דק' · במקום ${R.BOX[fl.box].price}</small></div><button class="rbtn" type="button" id="rwFlash" ${S.bolts < fl.price ? "disabled" : ""}>🔩 ${fl.price}</button></div>` : "") + `<div class="rw-sec">🔩 יש לך ${bl()} ברגים <small>מקבלים על כפולים, ברצף ובתיבות</small></div><button class="rbtn alt" type="button" id="rwCode" style="width:100%;margin-bottom:10px">🎟️ יש לי קוד לפרס</button>`
         + (brk ? `<div class="rbx" style="--c:#f43f5e"><div class="em">💔</div><div class="t"><b>להציל את הרצף (${brk.n} ימים)</b><small>רק היום! הרצף חוזר ונמשך</small></div><button class="rbtn" type="button" id="rwSave" ${S.bolts < R.saveCost(brk.n) ? "disabled" : ""}>🔩 ${R.saveCost(brk.n)}</button></div>` : "")
         + ["box", "big", "mega", "giant"].map(t => boxRow(t, 0, `<button class="rbtn" type="button" data-buy="${t}" ${S.bolts < R.BOX[t].price ? "disabled" : ""}>🔩 ${R.BOX[t].price}</button>`)).join("")
         + `<div class="rw-sec">⏰ מבצע יומי <small>מתחלף בעוד ${ms} שעות</small></div><div class="rw-grid">${deals.map(x => card(R.ITEMS[x.id], x.price)).join("") || `<div class="rw-prog">יש לך כבר הכל מהחנות 🤯</div>`}</div>
@@ -562,6 +580,7 @@ dialog.robo.open{background:#05020f}
       body.querySelectorAll("[data-buy]").forEach(b => b.onclick = () => { const r = R.buy(S, b.dataset.buy, dev()); if (!r.ok) return; save(); vib(30); SFX.coin(); toast(`${R.BOX[r.box].em} קנית ${R.BOX[r.box].n}!`, ["לפתוח", () => openBoxes([r.box])]); draw(); });
       body.querySelectorAll(".rc[data-id]").forEach(b => b.onclick = () => { const id = b.dataset.id, x = deals.find(d => d.id === id); if (!x) return; if (S.bolts < x.price) { toast(`חסרים לך ${x.price - S.bolts} ברגים 🔩`); return; } if (!confirm(`לקנות "${R.ITEMS[id].n}" ב-${x.price} ברגים?`)) return; if (R.buy(S, id, dev()).ok) { save(); celebrateItem(id); draw(); } });
       const sv = body.querySelector("#rwSave"); if (sv) sv.onclick = () => doSave();
+      const fb = body.querySelector("#rwFlash"); if (fb) fb.onclick = () => { const r = R.buyFlash(S, dev()); if (!r.ok) { toast(r.error === "bolts" ? "חסרים ברגים 🔩" : "המבצע נגמר ⏰", null, 3000); draw(); return; } save(); SFX.coin(); vib(30); toast(`⚡ קנית ${R.BOX[r.box].n} במחיר בזק!`, ["לפתוח", () => openBoxes([r.box])]); draw(); };
       body.querySelector("#rwCode").onclick = async () => { const c = prompt("מה הקוד? 🎟️ (כל קוד – פעם אחת)"); if (!c) return; const r = await redeem(c); if (!r.ok || !/תיבה/.test(r.msg)) toast(r.msg, null, 4500); draw(); };
     } else {
       const n = S.st.n, from = Math.max(1, n - 2), days = Array.from({ length: 18 }, (_, i) => from + i);
@@ -579,9 +598,9 @@ dialog.robo.open{background:#05020f}
   function doSave() { const r = R.saveStreak(S); if (!r.ok) { toast(r.error === "bolts" ? `חסרים לך ${r.cost - S.bolts} ברגים 🔩` : "אין רצף להציל היום", null, 3000); return; } save(); vib([30, 30, 60]); toast(`🔥 הרצף ניצל! אתה ברצף של ${r.n} ימים`, null, 4000); draw(); hubRefresh(); }
   function card(it, price) {
     const own = !!S.own[it.id], on = Object.values(S.eq).includes(it.id) || (it.cat === "theme" && window.Theme && Theme.current() === it.id.split(":")[1]) || (it.cat === "page" && pageOn(it));
-    const cls = ["rc", own || price ? "" : "lock", on ? "on" : "", it.r === "l" ? "leg" : "", it.r === "u" ? "ult" : ""].join(" ");
+    const sh = own && S.shiny && S.shiny[it.id], cls = ["rc", own || price ? "" : "lock", on ? "on" : "", it.r === "l" ? "leg" : "", it.r === "u" ? "ult" : "", sh ? "shiny" : ""].join(" ");
     return `<button type="button" class="${cls}" data-id="${it.id}" style="--c:${RC(it.r)};--rcol:${RC(it.r)}">${S.news.includes(it.id) ? `<span class="new">חדש!</span>` : ""}<div class="pv">${preview(it.id)}</div>${own || price ? "" : `<span class="q">❓</span>`}
-      <div class="nm">${esc(it.n)}</div><div class="rr">${price ? `🔩 ${price}` : R.RAR[it.r].n}</div></button>`;
+      <div class="nm">${sh ? "✨ " : ""}${esc(it.n)}</div><div class="rr">${price ? `🔩 ${price}` : sh ? "נוצץ · " + R.RAR[it.r].n : R.RAR[it.r].n}</div></button>`;
   }
   function boxRow(t, n, btn) { const B = R.BOX[t]; return `<div class="rbx" style="--c:${B.col}"><div class="em">${B.em}</div><div class="t"><b>${B.n}${n > 1 ? ` ×${n}` : ""}</b><small>${B.rolls} פרסים · מתחילה ב${R.RAR[R.START[t]].n} ומשתדרגת בלחיצות${t === "giant" ? " · 🦸 הכי הרבה סיכוי לגיבורים!" : t === "mega" ? " · שווה!" : ""}</small></div>${btn}</div>`; }
   function oddsTable() {
@@ -628,7 +647,7 @@ dialog.robo.open{background:#05020f}
     try {
       for (let bi = 0; bi < list.length; bi++) {
         const type = list[bi], ix = S.boxes.indexOf(type); if (ix < 0) continue;
-        S.boxes.splice(ix, 1); S.opened = (S.opened || 0) + 1;
+        S.boxes.splice(ix, 1); S.opened = (S.opened || 0) + 1; R.mapStep(S, 1);
         let prizes = R.roll(S, type), taps = prizes.taps.slice();
         if (opt.rig && bi === 0) { const id = R.LIST.filter(x => x.r === opt.rig && !x.x)[0].id; prizes[prizes.length - 1] = { t: "item", id, r: opt.rig, main: 1, ...(opt.rig === "u" ? { need: "claim" } : {}) }; const st = R.TIERS.indexOf(R.START[type]), en = R.TIERS.indexOf(opt.rig); taps = Array.from({ length: R.TAPS + 1 }, (_, i) => R.TIERS[Math.min(en, st + i)]); } // דמו בלבד
         // אולטרה אגדי – השרת מאשר (כמות מוגבלת). לא אושר → אגדי רגיל במקום
@@ -710,13 +729,13 @@ dialog.robo.open{background:#05020f}
     let inner;
     if (g.t === "item") {
       const it = R.ITEMS[g.id];
-      inner = `${g.main ? `<div class="ro-main">⭐ הפרס הראשי</div>` : ""}<div class="ro-rar">${R.RAR[r].n}${r === "u" ? " 👑" : r === "l" ? " ⭐" : ""}</div><div class="ro-pv">${preview(g.id, false)}</div><div class="ro-nm">${esc(it.n)}</div><div class="ro-sub">${g.dup ? `כבר יש לך → <b>+${g.dup} 🔩</b>` : "✨ חדש באוסף!"}</div>`;
+      inner = `${g.main ? `<div class="ro-main">⭐ הפרס הראשי</div>` : ""}<div class="ro-rar">${R.RAR[r].n}${r === "u" ? " 👑" : r === "l" ? " ⭐" : ""}</div><div class="ro-pv">${preview(g.id, false)}</div><div class="ro-nm">${esc(it.n)}</div><div class="ro-sub">${g.shinyNew ? `<b class="ro-shiny">✨ גרסה נוצצת! ✨</b> רק 1% מהאביזרים יוצאים ככה` : g.dup ? `כבר יש לך → <b>+${g.dup} 🔩</b>` : "✨ חדש באוסף!"}</div>`;
     } else if (g.t === "bolts") inner = `<div class="ro-big">🔩</div><div class="ro-nm">+${g.n} ברגים</div><div class="ro-sub">אפשר לקנות בהם תיבות בחנות</div>`;
     else inner = `<div class="ro-big">${R.BOX[g.box].em}</div><div class="ro-nm">עוד תיבה!</div><div class="ro-sub">${R.BOX[g.box].n} – נפתחת מיד אחרי</div>`;
     d.innerHTML = `<div class="ro lit" style="--rc:${col}"><div class="ro-rays"></div><div class="ro-flash go"></div>${more ? `<div class="ro-left">עוד ${more}</div>` : ""}<button class="ro-skip" type="button">דלג ⏭</button>
       <div class="ro-card"><div class="ro-in" style="--c:${col}">${inner}</div></div><div class="ro-tap">לחץ להמשך</div></div>`;
     const ro = d.querySelector(".ro"); let skipped = false;
-    if (g.t === "item") SFX.reveal(g.dup ? 0 : R.RAR[r].o); else if (g.t === "bolts") SFX.coin(); else SFX.gift();
+    if (g.shinyNew) { ro.classList.add("shiny"); particles(ro, "#fde047", 50, ["✨", "⭐", "💛"]); SFX.reveal(5); } else if (g.t === "item") SFX.reveal(g.dup ? 0 : R.RAR[r].o); else if (g.t === "bolts") SFX.coin(); else SFX.gift();
     d.querySelector(".ro-skip").onclick = e => { e.stopPropagation(); skipped = true; ro.click(); };
     if (r && R.RAR[r].o >= 3) { ro.classList.add("shakeS"); particles(ro, col, R.RAR[r].o >= 5 ? 60 : 34, R.RAR[r].o >= 5 ? ["⭐", "✨", "💛", "👑"] : null); vib(R.RAR[r].o >= 5 ? [60, 40, 120] : 40); }
     else particles(ro, col, 14);
@@ -814,7 +833,7 @@ dialog.robo.open{background:#05020f}
   // ---------- רצף כניסות יומי ----------
   async function daily(force) {
     if (!profile()) return;
-    const c = R.checkIn(S); if (!c && !force) return; save();
+    const c = R.checkIn(S); if (!c && !force) return; if (c) step(3); save();
     if (c && !window.__DEMO) api({ op: "day", n: S.st.n }).catch(() => {}); // בשביל התזכורת לפני שהרצף נשבר
     const d = dlg("roboDay"); d.dataset.lock = "1";
     if (c && c.broken) {
@@ -882,9 +901,9 @@ dialog.robo.open{background:#05020f}
     el.innerHTML = `<div style="display:flex;gap:12px;align-items:center"><button type="button" id="rhBot" style="width:86px;height:86px;flex:0 0 86px;border:0;border-radius:24px;cursor:pointer;background:${(SK[S.eq.skin] || {}).bg || DEF_BG};box-shadow:0 8px 20px rgba(0,0,0,.3)">${svg()}</button>
       <div style="flex:1;min-width:0"><div style="display:flex;gap:6px;flex-wrap:wrap;font-size:13px;font-weight:800"><span>🔥 רצף ${S.st.n}</span><span>🔩 ${bl()}</span><span>🏆 ${pr.have}/${pr.all}</span></div>
       ${b && R.RAR[b.r].o >= 2 ? `<div style="font-size:12px;margin-top:4px;opacity:.85">הכי נדיר: ${esc(b.n)} ${rarTag(b.r)}</div>` : `<div style="font-size:12px;margin-top:4px;opacity:.8">פתח תיבות ותלביש את הרובוט שלך!</div>`}</div></div>
-      <div class="pf-acts" style="margin-top:10px"><button type="button" class="primary" id="rhWear">👕 הארון שלי</button><button type="button" class="ghost" id="rhBox" style="${nb ? "background:linear-gradient(135deg,#facc15,#f97316);color:#1a1040;font-weight:900" : ""}">🎁 ${nb ? `לפתוח תיבות (${nb})` : "תיבות"}</button><button type="button" class="ghost" id="rhShop">🛒 חנות</button><button type="button" class="ghost" id="rhShare">📸 לחברים</button></div>`;
+      <div class="pf-acts" style="margin-top:10px"><button type="button" class="primary" id="rhWear">👕 הארון שלי</button><button type="button" class="ghost" id="rhBox" style="${nb ? "background:linear-gradient(135deg,#facc15,#f97316);color:#1a1040;font-weight:900" : ""}">🎁 ${nb ? `לפתוח תיבות (${nb})` : "תיבות"}</button><button type="button" class="ghost" id="rhFun">🎮 כיף${funDot() ? " 🔴" : ""}</button><button type="button" class="ghost" id="rhShop">🛒 חנות</button><button type="button" class="ghost" id="rhShare">📸 לחברים</button></div>`;
     el.querySelector("#rhBot").onclick = () => open("wear"); el.querySelector("#rhWear").onclick = () => open("wear");
-    el.querySelector("#rhBox").onclick = () => nb ? openBoxes(S.boxes.slice()) : open("boxes"); el.querySelector("#rhShop").onclick = () => open("shop"); el.querySelector("#rhShare").onclick = share;
+    el.querySelector("#rhBox").onclick = () => nb ? openBoxes(S.boxes.slice()) : open("boxes"); el.querySelector("#rhShop").onclick = () => open("shop"); el.querySelector("#rhFun").onclick = () => open("fun"); el.querySelector("#rhShare").onclick = share;
   }
 
   // ---------- ✨ עקבות (כשגוררים את הרובוט) ו-💬 קריאות (כשלוחצים עליו) ----------
@@ -1072,6 +1091,7 @@ dialog.robo.open{background:#05020f}
     const likes = j.inbox.filter(x => x.t === "like").length; let ch = false;
     if (likes) { myLikes += likes; LS.set("roboMyLikes", String(myLikes)); toast(`❤️ קיבלת ${likes === 1 ? "לייק" : likes + " לייקים"} לרובוט שלך!`, null, 4500); }
     for (const x of j.inbox.filter(x => x.t === "bolts")) { S.bolts += Math.max(0, Math.min(50, x.n | 0)); ch = true; setTimeout(() => { toast(`🎁 ${esc(x.from)} שלח לך ${x.n} ברגים!`, null, 5000); SFX.coin(); }, 600); }
+    for (const x of j.inbox.filter(x => x.t === "sold")) { const n = Math.max(0, Math.min(20000, x.price | 0)); S.bolts += n; if (S.mkt) delete S.mkt[x.id]; ch = true; setTimeout(() => { toast(`🕵️ ${esc(x.from)} קנה ממך ${esc((R.ITEMS[x.item] || {}).n || "אביזר")}! קיבלת ${n} ברגים 🔩`, null, 7000); SFX.coin(); }, 900); }
     for (const x of j.inbox.filter(x => x.t === "trade").slice(-2)) setTimeout(() => toast(`🔄 ${esc(x.from)} מזמין אותך לטרייד!`, ["לפתוח", () => tradeOpen(x.id)], 15000), 1200);
     if (ch) save();
   }
@@ -1098,6 +1118,8 @@ dialog.robo.open{background:#05020f}
   window.Robo = {
     svg, open, hub, share, subjectMile, daily, openBoxes, redeem, earn, sfx: SFX, mini, friendCard, tradeOpen, checkNews, publish, inviteHint, state: () => S, owns: id => !!S.own[id],
     give(p) { const x = R.grant(S, p); save(); hubRefresh(); return x; }, // דמו / בדיקות
+    // בשביל robo-plus.js (גלגל, מעבדה, שוק, משחק, מפה)
+    _: { get S() { return S; }, save, toast, dlg, show, SFX, openBoxes, svg, preview, RC, rarTag, esc, particles, draw, hubRefresh, api, sleep, vib, card, celebrateItem, online, profile, dev, CLS_L, giftText, giftIcon, bl, step, open, wireMute, muteBtn, REDUCED, page, LS },
     reload() { S = load(); applyBubble(); try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {} },
     status: () => `🔥 ${S.st.n} · 🔩 ${bl()}${S.boxes.length ? ` · 🎁 ${S.boxes.length}` : ""}`,
   };

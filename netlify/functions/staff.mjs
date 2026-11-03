@@ -1129,7 +1129,7 @@ async function feed(req, S, ip, headers) {
   }
   if (action === "robo") { // 🤖 אביזר "אולטרה אגדי" יצא בתיבה: כמות מוגבלת לכל הישיבה. נשמר רק מונה + קוד מכשיר מוצפן (בלי שם)
     if (DEV_RE.test(device) && ["code", "me", "link", "day"].includes(b.op)) return reply(200, await roboOp(S, b, device, ip, now), headers);
-    if (DEV_RE.test(device) && ["pub", "class", "like", "gift", "inbox", "tradeNew", "tradeGet", "tradeSet", "tradeOk", "tradeCancel", "tradeDone"].includes(b.op)) return reply(200, await roboSocial(S, b, device, ip, now), headers);
+    if (DEV_RE.test(device) && ["pub", "class", "like", "gift", "inbox", "tradeNew", "tradeGet", "tradeSet", "tradeOk", "tradeCancel", "tradeDone", "marketList", "marketSell", "marketBuy", "marketCancel"].includes(b.op)) return reply(200, await roboSocial(S, b, device, ip, now), headers);
     if (!DEV_RE.test(device) || b.op !== "claim" || !Object.hasOwn(ROBO_CAPS, String(b.item))) return reply(400, { ok: false, error: "bad_request" }, headers);
     memRate("robo", ip, 3000);
     const pres = await S.get("presence"), k = devKey(device);
@@ -1664,6 +1664,8 @@ export async function streakTick(now = Date.now()) {
 // "roboLikes"  = { pid: { n, wk: {weekId: n} } } · "roboLikeDay" = { d, pairs: ["fromPid>toPid"] } – בלי לשמור מי נתן לייק למי מעבר ליום
 // "roboInbox"  = { pid: [ {t:"bolts"|"trade"|"like", ...} ] } · "roboGiftDay" = { d, m: {pid: n} } · "roboTrades" = { id: {...} } · "roboBattle" = { weekId: { cls: points } }
 const pidOf = k => crypto.createHash("sha256").update("robo|" + k).digest("hex").slice(0, 12);
+// 🕵️ שוק: טווח מחירים לכל דרגה (חייב להיות זהה ל-PRICE ב-robo-core.js – הבדיקה בודקת)
+const MARKET_PRICE = { c: [10, 80], r: [25, 200], s: [50, 400], e: [100, 800], m: [250, 2000], l: [500, 5000], u: [2000, 20000] }, MARKET_MAX = 5;
 const ITEM_RE = /^(skin|hat|eyes|held|aura|trail|quote|theme|page):[a-z0-9:_]{1,30}$/;
 const gradeOfCls = c => (String(c).startsWith("ya") ? "11" : "10");
 const ilWeek = now => { const d = israelDay(now), w = new Date(d + "T12:00:00Z").getUTCDay(); return new Date(Date.parse(d + "T12:00:00Z") - w * 864e5).toISOString().slice(0, 10); };
@@ -1722,6 +1724,42 @@ async function roboSocial(S, b, device, ip, now) {
     return { ok: true, left };
   }
   if (b.op === "inbox") { await S.update("roboInvHint", cur => { if (!cur || !cur[pid]) return undefined; const o = { ...cur }; delete o[pid]; return o; }); let box = []; await S.update("roboInbox", cur => { if (!cur || !cur[pid] || !cur[pid].length) return undefined; box = cur[pid]; const o = { ...cur }; delete o[pid]; return o; }); return { ok: true, inbox: box }; }
+  // ---- 🕵️ שוק: מוכרים אביזר במחיר קבוע (בטווח של הדרגה), עד 5 בבת אחת. רק בתוך השכבה ----
+  if (b.op === "marketList") {
+    const m = (await S.get("roboMarket")) || {}, g = gradeOfCls(me.cls), pub = (await S.get("roboPub")) || {};
+    const kidOf = x => (pres[x.sk] && pres[x.sk].name) || x.kid || "";
+    const list = Object.values(m).filter(x => x.st === "open" && x.g === g && x.s !== pid).sort((a, c) => c.at - a.at).slice(0, 200)
+      .map(x => ({ id: x.id, item: x.item, r: x.r, price: x.price, kid: kidOf(x), cls: x.cls, rn: (pub[x.sk] || {}).rn || "", at: x.at }));
+    const mine = Object.values(m).filter(x => x.s === pid && (x.st === "open" || now - (x.soldAt || x.at) < 3 * 864e5)).sort((a, c) => c.at - a.at).map(x => ({ id: x.id, item: x.item, r: x.r, price: x.price, st: x.st, at: x.at }));
+    return { ok: true, list, mine, max: MARKET_MAX };
+  }
+  if (b.op === "marketSell") {
+    const item = String(b.item || ""), r = String(b.r || ""), price = Math.floor(+b.price || 0);
+    if (!ITEM_RE.test(item) || !MARKET_PRICE[r] || price < MARKET_PRICE[r][0] || price > MARKET_PRICE[r][1]) return { ok: false, error: "bad_request" };
+    const id = crypto.randomBytes(5).toString("hex"); let err = "";
+    await S.update("roboMarket", cur => {
+      const o = cur && typeof cur === "object" ? { ...cur } : {};
+      for (const [x, v] of Object.entries(o)) if (v.st !== "open" && now - (v.soldAt || v.at) > 7 * 864e5) delete o[x];
+      if (Object.values(o).filter(v => v.s === pid && v.st === "open").length >= MARKET_MAX) { err = "max"; return undefined; }
+      if (Object.keys(o).length >= 3000) { err = "full"; return undefined; }
+      o[id] = { id, s: pid, sk: k, kid: clean(me.name, MAX_NAME), cls: me.cls, g: gradeOfCls(me.cls), item, r, price, at: now, st: "open" }; return o;
+    });
+    return err ? { ok: false, error: err } : { ok: true, id };
+  }
+  if (b.op === "marketBuy" || b.op === "marketCancel") {
+    const id = /^[0-9a-f]{10}$/.test(String(b.id || "")) ? String(b.id) : ""; if (!id) return { ok: false, error: "bad_request" };
+    let res = { ok: false, error: "not_found" }, sold = null;
+    await S.update("roboMarket", cur => {
+      const o = cur && typeof cur === "object" ? { ...cur } : {}, x = o[id]; if (!x) return undefined;
+      if (x.st !== "open") { res = { ok: false, error: "gone" }; return undefined; }
+      if (b.op === "marketCancel") { if (x.s !== pid) return undefined; o[id] = { ...x, st: "cancel", soldAt: now }; res = { ok: true, item: x.item }; return o; }
+      if (x.s === pid) { res = { ok: false, error: "mine" }; return undefined; }
+      if (x.g !== gradeOfCls(me.cls)) return undefined;
+      o[id] = { ...x, st: "sold", buyer: pid, soldAt: now }; sold = x; res = { ok: true, item: x.item, r: x.r, price: x.price }; return o;
+    });
+    if (sold) { await inboxPush(S, sold.s, { t: "sold", id, item: sold.item, price: sold.price, from: clean(me.name, MAX_NAME), at: now }); await S.update("roboInvHint", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; o[sold.s] = now; return o; }); }
+    return res;
+  }
   // ---- 🔄 טרייד: הזמנה → כל צד מציע → שניהם מאשרים → 3 שניות שאפשר לבטל → בוצע ----
   const TR = id => /^[0-9a-f]{10}$/.test(String(id || "")) ? String(id) : "";
   const view = (t, mine) => { const side = t.a === pid ? "a" : "b", other = side === "a" ? "b" : "a"; return { ok: true, id: t.id, side, status: t.status, lockAt: t.lockAt || 0, now, me: { offer: t[side + "Offer"], ok: !!t[side + "Ok"], kid: t[side + "Kid"], eq: t[side + "Eq"] || {}, rn: t[side + "Rn"] || "" }, them: { offer: t[other + "Offer"], ok: !!t[other + "Ok"], kid: t[other + "Kid"], eq: t[other + "Eq"] || {}, rn: t[other + "Rn"] || "", done: !!t[other + "Done"] }, doneMe: !!t[side + "Done"] }; };

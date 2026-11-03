@@ -113,7 +113,7 @@
   window.addEventListener("unhandledrejection", e => { try { const r = e && e.reason; report(r && (r.name === "AbortError" || r.name === "NotAllowedError" ? "" : r.message || String(r)), r && r.stack ? String(r.stack).split("\n")[1] || "" : "promise"); } catch (x) {} });
   window.reportError2 = report; // לבדיקות
   // 🎉 מצב חג: לוח החגים + העיצוב של כל חג (holidays.js). נטען בסדר, בלי לעכב את העמוד
-  try { for (const src of ["holidays-core.js", "holidays.js", "robo-core.js", "robo.js"]) { const s = document.createElement("script"); s.src = src; s.async = false; (document.head || document.documentElement).appendChild(s); } } catch (e) {}
+  try { for (const src of ["holidays-core.js", "holidays.js", "robo-core.js", "robo.js", "robo-plus.js"]) { const s = document.createElement("script"); s.src = src; s.async = false; (document.head || document.documentElement).appendChild(s); } } catch (e) {}
   // 🔄 עדכון שקט: בודקים גרסה חדשה בכל פתיחה, כל 2 דקות ובכל חזרה לאפליקציה.
   // כשהיא מוכנה – מחליפים בלי שירגישו: כשהאפליקציה ברקע, או אחרי 30 שניות בלי מגע (לא באמצע כתיבה/חלון),
   // וחוזרים לאותו מקום במסך

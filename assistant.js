@@ -115,7 +115,7 @@ A("bday", { page: ix, label: "יום ההולדת שלי", run: async () => { aw
 A("delete", { page: ix, label: "מחיקת המשתמש", run: async () => { await call("openProfile"); await openSec("del"); await glow("#pfDel"); } });
 A("day", { page: ix, label: "המערכת ביום", run: async a => { if (typeof render === "function" && a != null) { try { sel = a; render(); } catch (e) {} } await glow("#tabs .tab.on"); scrollTo0("#hero"); } });
 // 🤖 הרובוט שלי (עובד בכל עמוד – robo.js)
-A("robo", { page: null, label: "הרובוט שלי", run: async a => { if (root.Robo) Robo.open(a || "wear"); } });
+A("robo", { page: null, label: "הרובוט שלי", run: async a => { if (root.Robo) { const [t, sub] = String(a || "wear").split(":"); Robo.open(t, sub); } } });
 A("roboinfo", { page: null, label: "", answer: true });
 A("code", { page: null, label: "", answer: true });
 A("redeem", { page: null, label: "", answer: true });
@@ -169,6 +169,12 @@ const INT = [
   { id: "robo", arg: "shop", p: ["חנות", "החנות", "לקנות תיבה", "מה אפשר לקנות", "מבצע יומי", "כמה ברגים יש לי", "ברגים", "לקנות בברגים"], w: 1.3 },
   { id: "robo", arg: "streak", p: ["רצף כניסות", "רצף ימים באפליקציה", "המתנה היומית", "מתנה יומית", "איזו מתנה אקבל מחר", "להציל את הרצף", "שברתי את הרצף", "לשמור על הרצף", "כמה ימים אני ברצף באפליקציה"], w: 1.35 },
   { id: "robo", arg: "friends", p: ["הרובוטים של הכיתה", "הרובוטים של החברים", "לראות רובוטים של חברים", "רובוטים של חברים", "טרייד", "להחליף אביזרים", "לעשות טרייד", "קרב כיתות", "מי מנצח בקרב כיתות", "לייק לרובוט", "לתת לייק", "מתנת ברגים", "טבלת מובילים", "מי הכי טוב בכיתה", "שם לרובוט", "לתת שם לרובוט"], w: 1.35 },
+  { id: "robo", arg: "fun:game", p: ["ברגים נופלים", "המשחק של הברגים", "משחק ברגים", "מיני משחק", "משחק בהפסקה", "לשחק בהפסקה", "משחק להפסקה", "לשחק משחק", "משחק עם הרובוט"], w: 1.35 },
+  { id: "robo", arg: "fun:wheel", p: ["גלגל מזל", "לסובב את הגלגל", "גלגל המזל", "סיבוב בגלגל", "הגלגל היומי"], w: 1.4 },
+  { id: "robo", arg: "fun:market", p: ["השוק", "שוק", "למכור אביזר", "לקנות אביזר מחבר", "למכור סקין", "לקנות סקין מחבר"], w: 1.3 },
+  { id: "robo", arg: "fun:lab", p: ["מעבדה", "המעבדה", "לחבר אביזרים", "לאחד אביזרים", "חמישה אביזרים"], w: 1.35 },
+  { id: "robo", arg: "fun:map", p: ["המסע", "מפה", "המפה", "המסע של הרובוט", "תחנה במסע", "אוצר במפה"], w: 1.35 },
+  { id: "robo", arg: "fun:sets", p: ["סטים", "הסטים שלי", "סט שלם", "להשלים סט"], w: 1.35 },
   { id: "roboinfo", p: ["מה זה הרובוט", "איך עובד הרובוט", "מה חדש ברובוט", "מה זה נדירות", "מה זה אולטרה אגדי", "חליפת זהב", "איך משיגים חליפת זהב", "חליפת יהלומים", "מה הכי נדיר", "מה זה ברגים", "איך מקבלים ברגים", "מה עושים עם ברגים", "איך מקבלים תיבות", "מה יש בתיבות", "איך משיגים אביזרים", "מה אתה יכול ללבוש", "איך משתדרגת התיבה", "דרגות נדירות"], w: 1.3 },
   { id: "code", p: ["יש לי קוד", "לממש קוד", "קוד פרס", "קוד מתנה", "איפה מכניסים קוד", "איך מממשים קוד", "קופון", "קיבלתי קוד", "חבר שלח לי קוד", "ברקוד"], w: 1.35 },
   { id: "tef", p: ["תפילין", "לתפילין", "נשאר לתפילין", "זמן לתפילין", "עד מתי אפשר להניח", "מתי השקיעה", "שקיעה", "להניח תפילין", "הנחתי תפילין"] },
@@ -679,7 +685,7 @@ function sayFor(r) {
     case "theme": return r.arg ? "צובע את האפליקציה 🎨" : "בחר צבע 🎨";
     case "bigtext": return r.arg === "off" ? "מחזיר לטקסט רגיל 🔍" : "מגדיל את הטקסט 🔍";
     case "bday": return "פותח לך את יום ההולדת בפרופיל – שם משנים 🎂";
-    case "robo": return r.arg === "friends" ? "פותח את הרובוטים של השכבה 👥 – לוחצים על רובוט של חבר כדי לראות אותו, לתת לייק ❤️, לשלוח ברגים 🎁 או להציע טרייד 🔄" : r.arg === "boxes" ? "פותח את התיבות שלך 🎁 – תלחץ על התיבה כמה פעמים, היא יכולה להשתדרג!" : r.arg === "shop" ? "פותח את החנות 🛒 (קונים בברגים 🔩)" : r.arg === "streak" ? "הנה הרצף שלך והמתנות הבאות 🔥" : "פותח את הארון שלי 👕 תבחר מה אני לובש!";
+    case "robo": return r.arg === "friends" ? "פותח את הרובוטים של השכבה 👥 – לוחצים על רובוט של חבר כדי לראות אותו, לתת לייק ❤️, לשלוח ברגים 🎁 או להציע טרייד 🔄" : r.arg === "boxes" ? "פותח את התיבות שלך 🎁 – תלחץ על התיבה כמה פעמים, היא יכולה להשתדרג!" : r.arg === "shop" ? "פותח את החנות 🛒 (קונים בברגים 🔩)" : r.arg === "streak" ? "הנה הרצף שלך והמתנות הבאות 🔥" : r.arg === "fun:game" ? "פותח את \"ברגים נופלים\" 🔩 – פתוח רק בהפסקות (ואחרי 16:15). תיזהר מהפצצות 💣!" : r.arg === "fun:wheel" ? "פותח את גלגל המזל 🎰 – סיבוב חינם אחד ביום!" : r.arg === "fun:market" ? "פותח את השוק 🕵️ – קונים ומוכרים אביזרים בברגים" : r.arg === "fun:lab" ? "פותח את המעבדה 🔨 – 5 אביזרים מאותה דרגה = 1 נדיר יותר" : r.arg === "fun:map" ? "פותח את המסע 🗺️ – כל 10 צעדים יש אוצר!" : r.arg === "fun:sets" ? "פותח את הסטים 🎭 – משלימים סדרה ומקבלים פרס" : "פותח את הארון שלי 👕 תבחר מה אני לובש!";
     case "delete": return "מחיקת המשתמש נמצאת כאן 👇 (אני לא מוחק בשבילך – זה רק אתה, עם אישורים 😉)";
     case "mashovOff": return "הניתוק נמצא כאן 👇 – תצטרך לאשר כמה פעמים.";
     case "phones": return r.arg ? `מחפש את ${esc(r.arg)} בספר הטלפונים 📞` : "פותח את ספר הטלפונים 📞";
@@ -986,7 +992,7 @@ function wire() { log.querySelectorAll("button.go:not([data-w])").forEach(b => {
 async function withDots(f) { const d = document.createElement("div"); d.className = "dots"; d.innerHTML = "<i></i><i></i><i></i>"; log.appendChild(d); log.scrollTop = log.scrollHeight; mood("think"); try { return await f(); } finally { d.remove(); mood(null); } }
 
 // ===================== הפעלה =====================
-const api = { think, canon, norm, answerAsync, ACT, INT, mathExpr, equation, findSubject, findDay, findLevel, findColor, answer, act };
+const api = { think, canon, norm, answerAsync, ACT, INT, todayLessons, mathExpr, equation, findSubject, findDay, findLevel, findColor, answer, act };
 if (typeof module !== "undefined" && module.exports) { module.exports = api; return; }
 root.Asst = api;
 api.show = () => { try { localStorage.removeItem("asstOff"); localStorage.removeItem("asstHideDay"); } catch (e) {} if (!document.getElementById("asstBtn")) { if (panel) { panel.remove(); panel = null; } build(); } };

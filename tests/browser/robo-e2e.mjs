@@ -27,7 +27,7 @@ await p.click("#roboOpen .ro"); await sleep(400);
 log(await p.evaluate(() => !!document.querySelector("#roboOpen .ro-chest.open")), "4 taps (it can upgrade on each) → the chest opens");
 await sleep(1300);
 log(await p.evaluate(() => !!document.querySelector("#roboOpen .ro-card .ro-in .ro-nm")), "prize card appears");
-for (let i = 0; i < 6 && await p.evaluate(() => !!document.querySelector("#roboOpen .ro-card")); i++) { await p.click("#roboOpen .ro"); await sleep(700); }
+for (let i = 0; i < 25 && !(await p.evaluate(() => !!document.querySelector("#roboOpen #roDone"))); i++) { await p.evaluate(() => { const r = document.querySelector("#roboOpen .ro"); r && r.click(); }); await sleep(700); } // כולל מסך "משהו נדיר מגיע" ותיבות נוספות
 log(await p.evaluate(() => !!document.querySelector("#roboOpen #roDone")), "summary of what you got");
 await p.click("#roboOpen #roDone"); await sleep(600);
 const st = await p.evaluate(() => Robo.state());

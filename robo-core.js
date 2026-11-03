@@ -160,7 +160,7 @@
   const TIERS = ["r", "s", "e", "m", "l", "u"], TAPS = 4;
   const START = { box: "r", big: "s", mega: "e", giant: "m" }, EXTRA_N = { box: 1, big: 2, mega: 5, giant: 8 };
   const UP = { r: 0.30, s: 0.15, e: 0.10, m: 0.07, l: 0.02, u: 0 }; // סיכוי לעלות דרגה בכל לחיצה
-  function upgrades(type, rnd = Math.random) { let t = START[type]; const out = [t]; for (let i = 0; i < TAPS; i++) { if (rnd() < UP[t]) t = TIERS[TIERS.indexOf(t) + 1]; out.push(t); } return out; }
+  function upgrades(type, rnd = Math.random, mult = 1) { let t = START[type]; const out = [t]; for (let i = 0; i < TAPS; i++) { if (rnd() < Math.min(0.9, UP[t] * mult)) t = TIERS[TIERS.indexOf(t) + 1]; out.push(t); } return out; }
   // הסיכוי המדויק לכל דרגה סופית (לטבלה שמוצגת לילדים)
   function finalOdds(type) { let d = { [START[type]]: 1 }; for (let i = 0; i < TAPS; i++) { const n = {}; for (const [t, p] of Object.entries(d)) { const up = UP[t]; n[t] = (n[t] || 0) + p * (1 - up); if (up) { const nx = TIERS[TIERS.indexOf(t) + 1]; n[nx] = (n[nx] || 0) + p * up; } } d = n; } const o = {}; for (const t of TIERS) o[t] = 100 * (d[t] || 0); return o; }
 
@@ -199,7 +199,7 @@
   }
   // פותחים תיבה: רשימת פרסים (עוד לא נכנסים למצב – grant עושה את זה). אולטרה אגדי מסומן need:"claim" (שרת)
   function roll(S, type, rnd = Math.random) {
-    const B = BOX[type], out = [], taps = upgrades(type, rnd), top = taps[taps.length - 1];
+    const ev = typeof Date !== "undefined" && eventNow(), B = BOX[type], out = [], taps = upgrades(type, rnd, ev && rnd !== Math.random ? 1 : ev ? ev.up : 1), top = taps[taps.length - 1];
     for (let i = 0; i < EXTRA_N[type]; i++) {
       const k = pickW(B.kind, rnd);
       if (k === "bolts") out.push({ t: "bolts", n: Math.round(B.bolts[0] + rnd() * (B.bolts[1] - B.bolts[0])) });
@@ -207,14 +207,14 @@
       else {
         let r = pickW(B.odds, rnd), id = pickItem(S, r, rnd, B.hero || 0);
         while (!id && r !== "c") { r = RK[RK.indexOf(r) - 1]; id = pickItem(S, r, rnd); }
-        out.push({ t: "item", id, r, ...(r === "u" ? { need: "claim" } : {}) });
+        out.push({ t: "item", id, r, ...(r === "u" ? { need: "claim" } : {}), ...(rnd() < SHINY ? { shiny: 1 } : {}) });
       }
     }
     // הכי נדיר בסוף (מתח!) – והפרס הראשי (הדרגה שהתיבה הגיעה אליה) תמיד אחרון
     const rank = p => p.t === "item" ? RAR[p.r].o + 2 : p.t === "box" ? 1.5 : 0;
     out.sort((a, b) => rank(a) - rank(b));
     let r = top, id = pickItem(S, r, rnd, B.hero ? Math.min(1, B.hero * 1.5) : 0); while (!id && r !== "c") { r = RK[RK.indexOf(r) - 1]; id = pickItem(S, r, rnd); }
-    out.push({ t: "item", id, r, main: 1, ...(r === "u" ? { need: "claim" } : {}) });
+    out.push({ t: "item", id, r, main: 1, ...(r === "u" ? { need: "claim" } : {}), ...(rnd() < SHINY ? { shiny: 1 } : {}) });
     out.taps = taps; return out;
   }
   // הגרלה מדרגה מובטחת (פרסי רצף גדולים)
@@ -226,6 +226,7 @@
     if (p.t === "box") { S.boxes.push(p.box); return p; }
     if (p.t === "item") {
       if (!ITEMS[p.id]) return { t: "bolts", n: 0 };
+      if (p.shiny) { S.shiny = S.shiny || {}; if (!S.shiny[p.id]) { const had = !!S.own[p.id]; S.shiny[p.id] = 1; if (!S.own[p.id]) { S.own[p.id] = Date.now(); S.got++; } S.news.push(p.id); return Object.assign({}, p, { shinyNew: 1, had }); } }
       if (S.own[p.id]) { const n = RAR[ITEMS[p.id].r].dup; S.bolts += n; return Object.assign({}, p, { dup: n }); }
       S.own[p.id] = Date.now(); S.news.push(p.id); S.got++; return p;
     }
@@ -303,6 +304,67 @@
   // האביזר הכי נדיר שיש לך
   const best = S => LIST.filter(x => S.own[x.id]).sort((a, b) => RAR[b.r].o - RAR[a.r].o)[0];
 
+  // ================= עונה 4: גלגל, תיבת בזק, מעבדה, נוצץ, סטים, אירוע עולמי, שוק, מפה =================
+  const SHINY = 0.01; // ✨ 1% שהאביזר יוצא "נוצץ"
+  // 🎰 גלגל מזל יומי (סיבוב חינם אחד ביום)
+  const WHEEL = [{ t: "bolts", n: 50, w: 22 }, { t: "bolts", n: 100, w: 20 }, { t: "box", box: "box", w: 16 }, { t: "bolts", n: 200, w: 14 }, { t: "box", box: "big", w: 12 }, { t: "bolts", n: 500, w: 8 }, { t: "box", box: "mega", w: 6 }, { t: "box", box: "giant", w: 2 }];
+  function spinWheel(S, now = Date.now(), rnd = Math.random) {
+    const d = ymd(now); if (S.wheel === d) return null;
+    let x = rnd() * WHEEL.reduce((a, w) => a + w.w, 0), i = 0; for (; i < WHEEL.length - 1; i++) { if ((x -= WHEEL[i].w) < 0) break; }
+    S.wheel = d; const p = WHEEL[i]; return { i, prize: p.t === "box" ? { t: "box", box: p.box } : { t: "bolts", n: p.n } };
+  }
+  // ⚡ תיבת בזק: 3 חלונות של 10 דקות ביום (07:30–21:30), מחיר מוזל. אחת לחלון
+  const FLASH = [{ box: "mega", price: 150 }, { box: "giant", price: 600 }, { box: "big", price: 50 }];
+  function flashNow(S, dev, now = Date.now()) {
+    const d = ymd(now), t = new Date(now), il = new Date(t.toLocaleString("en-US", { timeZone: "Asia/Jerusalem" })), m = il.getHours() * 60 + il.getMinutes();
+    for (let k = 0; k < 3; k++) {
+      const h = (str => { let x = 2166136261; for (const c of str) { x ^= c.charCodeAt(0); x = Math.imul(x, 16777619); } return x >>> 0; })(d + "|" + dev + "|f" + k);
+      const start = 450 + k * 280 + (h % 220), offer = FLASH[(h >> 8) % FLASH.length], id = d + "#" + k;
+      if (m >= start && m < start + 10) return Object.assign({ id, left: start + 10 - m, bought: (S.flash || "") === id }, offer);
+    }
+    return null;
+  }
+  function buyFlash(S, dev, now = Date.now()) { const f = flashNow(S, dev, now); if (!f || f.bought) return { ok: false, error: "gone" }; if (S.bolts < f.price) return { ok: false, error: "bolts" }; S.bolts -= f.price; S.boxes.push(f.box); S.flash = f.id; return { ok: true, box: f.box }; }
+  // 🔨 מעבדה: 5 אביזרים מאותה דרגה → אביזר אחד מהדרגה הבאה (עד אגדי)
+  function labCombine(S, ids, rnd = Math.random) {
+    if (!Array.isArray(ids) || ids.length !== 5 || new Set(ids).size !== 5) return { ok: false, error: "five" };
+    const its = ids.map(id => ITEMS[id]); if (its.some(x => !x || !S.own[x.id] || S.own[x.id] === -1 || x.free || x.cat === "theme" || x.cat === "page")) return { ok: false, error: "own" };
+    const r = its[0].r; if (its.some(x => x.r !== r) || RAR[r].o >= 5) return { ok: false, error: "rarity" };
+    const nr = RK[RK.indexOf(r) + 1], id = pickItem(S, nr, rnd, 0.05); if (!id) return { ok: false, error: "none" };
+    for (const x of ids) { delete S.own[x]; for (const k of Object.keys(S.eq)) if (S.eq[k] === x) delete S.eq[k]; if (S.shiny) delete S.shiny[x]; }
+    if (!S.eq.skin) S.eq.skin = "skin:classic";
+    const g = grant(S, { t: "item", id, r: nr }); S.labs = (S.labs || 0) + 1; return { ok: true, got: g };
+  }
+  // 🎭 סטים: אוספים סדרה שלמה → פרס (פעם אחת לכל סט)
+  const SETS = [
+    { id: "heroes", n: "🦸 כל הגיבורים", ids: LIST.filter(x => x.hero && x.r !== "u").map(x => x.id), prize: [{ t: "box", box: "giant" }, { t: "bolts", n: 2000 }] },
+    { id: "gems", n: "💎 אבני חן", ids: ["skin:emerald", "skin:ruby", "skin:sapphire", "skin:amethyst"], prize: [{ t: "box", box: "mega" }, { t: "bolts", n: 800 }] },
+    { id: "space", n: "🚀 חלל", ids: ["skin:space", "hat:spacehelm", "held:planet", "held:ufo", "aura:galaxy"], prize: [{ t: "box", box: "mega" }, { t: "bolts", n: 600 }] },
+    { id: "sport", n: "⚽ ספורט", ids: ["held:ball", "held:basket", "held:football", "held:tennis", "held:pingpong", "held:trophy"], prize: [{ t: "box", box: "big" }, { t: "bolts", n: 400 }] },
+    { id: "food", n: "🍕 אוכל", ids: ["held:pizza", "held:burger", "held:popcorn", "held:cupcake", "held:icecream", "held:melon", "held:cake"], prize: [{ t: "box", box: "big" }, { t: "bolts", n: 400 }] },
+    { id: "crowns", n: "👑 כתרים", ids: ["hat:crown", "hat:diamondcrown", "hat:tiara", "hat:stars", "hat:streak"], prize: [{ t: "box", box: "giant" }, { t: "bolts", n: 1000 }] },
+    { id: "animals", n: "🦊 חיות", ids: ["held:dino", "held:octopus", "held:fox", "held:penguin", "held:butterfly", "held:unicorn", "held:dragon"], prize: [{ t: "box", box: "mega" }, { t: "bolts", n: 600 }] },
+    { id: "eyes", n: "👓 משקפיים", ids: LIST.filter(x => x.cat === "eyes" && ["c", "r", "s"].includes(x.r)).map(x => x.id), prize: [{ t: "box", box: "mega" }, { t: "bolts", n: 500 }] },
+  ].map(x => Object.assign(x, { ids: x.ids.filter(id => ITEMS[id]) }));
+  function setsCheck(S) { S.sets = S.sets || {}; const out = []; for (const st of SETS) { if (S.sets[st.id] || !st.ids.length) continue; if (st.ids.every(id => S.own[id] && S.own[id] !== -1)) { S.sets[st.id] = Date.now(); out.push(st); } } return out; }
+  // 🌍 אירוע עולמי: בימים 1–3 בכל חודש – פי 1.6 סיכוי לשדרוג בכל לחיצה על תיבה
+  const eventNow = (now = Date.now()) => { const d = +ymd(now).slice(8, 10); return d >= 1 && d <= 3 ? { n: "🌍 סופש בונוס!", up: 1.6, until: 3 } : null; };
+  // 🕵️ שוק: טווח מחירים לכל דרגה
+  const PRICE = { c: [10, 80], r: [25, 200], s: [50, 400], e: [100, 800], m: [250, 2000], l: [500, 5000], u: [2000, 20000] };
+  // 🎮 משחק הברגים: עד 300 ברגים ו-2 אביזרים ביום
+  const GAME_CAP = 300, GAME_ITEMS = 2;
+  function gameBank(S, n, items = [], now = Date.now()) {
+    const d = ymd(now); if (!S.game || S.game.d !== d) S.game = { d, n: 0, it: 0 };
+    const g = Math.max(0, Math.min(Math.floor(n), GAME_CAP - S.game.n)); S.game.n += g; S.bolts += g;
+    const got = []; for (const r of items) { if (S.game.it >= GAME_ITEMS) break; const id = pickItem(S, r, Math.random); if (id) { S.game.it++; got.push(grant(S, { t: "item", id, r })); } }
+    return { bolts: g, items: got, left: GAME_CAP - S.game.n };
+  }
+  // 🗺️ מסע על מפה: צעדים על כל דבר שעושים (כניסה יומית +3, תיבה +1, גלגל +1, משחק +1…). כל 10 צעדים = תחנה עם אוצר
+  const WORLDS = [{ n: "🏝️ האי", c: "#22c55e" }, { n: "🌲 היער", c: "#16a34a" }, { n: "🏜️ המדבר", c: "#f59e0b" }, { n: "❄️ הקרח", c: "#38bdf8" }, { n: "🌋 הר הגעש", c: "#ef4444" }];
+  const MAP_N = 40, MAP_STEP = 10;
+  const mapPrize = i => i === MAP_N ? [{ t: "box", box: "giant" }, { t: "bolts", n: 3000 }] : i % 10 === 0 ? [{ t: "box", box: "giant" }] : i % 5 === 0 ? [{ t: "box", box: "mega" }] : i % 2 === 0 ? [{ t: "box", box: i > 20 ? "big" : "box" }] : [{ t: "bolts", n: 100 + i * 10 }];
+  function mapStep(S, n = 1) { S.map = S.map || { p: 0, c: 0 }; const before = Math.floor(S.map.p / MAP_STEP); S.map.p = Math.min(MAP_N * MAP_STEP, S.map.p + Math.max(0, n | 0)); return Math.floor(S.map.p / MAP_STEP) - before; }
+  function mapClaim(S) { S.map = S.map || { p: 0, c: 0 }; const reach = Math.min(MAP_N, Math.floor(S.map.p / MAP_STEP)); if (S.map.c >= reach) return null; const i = ++S.map.c; return { i, prize: mapPrize(i) }; }
   // ---- 🏷️ שם לרובוט (עם סינון מילים לא יפות) ----
   const BAD = ["זונה", "שרמוט", "כוס", "זין", "מזדיין", "חרא", "מניאק", "בן זונה", "אידיוט", "מפגר", "דביל", "מטומטם", "fuck", "shit", "bitch", "dick", "ass", "sex", "porn", "nazi", "נאצי", "היטלר", "hitler"];
   function cleanName(n) { const t = String(n || "").replace(/[<>&"'`\u0000-\u001f]/g, "").replace(/\s+/g, " ").trim().slice(0, 14); const low = t.toLowerCase().replace(/[^a-zא-ת]/g, ""); return BAD.some(w => low.includes(w.replace(/\s/g, ""))) ? "" : t; }
@@ -344,6 +406,6 @@
     const d = ymd(now); if (!S.earn || S.earn.d !== d) S.earn = { d, n: 0 };
     const g = Math.max(0, Math.min(n, EARN_CAP - S.earn.n)); S.earn.n += g; S.bolts += g; return g;
   }
-  const api = { cleanName, achievements, RVAL, BVAL, offerValue, canGive, applyTrade, weekId, HEROES, EARN_CAP, earn, RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
+  const api = { WORLDS, MAP_N, MAP_STEP, mapPrize, mapStep, mapClaim, SHINY, WHEEL, spinWheel, FLASH, flashNow, buyFlash, labCombine, SETS, setsCheck, eventNow, PRICE, GAME_CAP, GAME_ITEMS, gameBank, cleanName, achievements, RVAL, BVAL, offerValue, canGive, applyTrade, weekId, HEROES, EARN_CAP, earn, RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.RoboCore = api;
 })(typeof self !== "undefined" ? self : this);
