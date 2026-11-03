@@ -58,9 +58,9 @@ await p.click("#pIn0"); for (const k of keys) { await p.evaluate(k => [...docume
 await p.click("#pChk"); await sleep(250);
 log(/✅/.test(await txt("#pFb")), "answer typed only with the keypad, as 'x=…, x=…' → correct", await p.$eval("#pIn0", e => e.value).catch(() => ""));
 await p.goto("http://localhost:8787/calc.html#t-trigright", { waitUntil: "domcontentloaded" }); await sleep(800);
-log(/°/.test(await txt("#prac .pkx")) && /π/.test(await txt("#prac .pkx")), "trigonometry: keypad has ° and π");
+log(/°/.test(await txt("#prac .pkp")) && /π/.test(await txt("#prac .pkp")) && /sin/.test(await txt("#prac .pkp")), "trigonometry: keypad has °, π and sin");
 await p.goto("http://localhost:8787/calc.html#t-roots", { waitUntil: "domcontentloaded" }); await sleep(800);
-log(/√/.test(await txt("#prac .pkx")), "roots: keypad has √");
+log(/√/.test(await txt("#prac .pkp")) && /×/.test(await txt("#prac .pkp")) && /\+/.test(await txt("#prac .pkp")), "roots: keypad has √, × and +");
 await p.click("#pKb"); await sleep(200);
 log(await p.$eval("#pIn0", e => e.getAttribute("inputmode")) === "text" && await p.$eval("#prac .pkp", e => e.classList.contains("off")), "'⌨️ מקלדת רגילה' switches to the phone keyboard");
 await p.click("#pKb"); await sleep(200);

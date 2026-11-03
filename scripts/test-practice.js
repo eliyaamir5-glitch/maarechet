@@ -68,3 +68,9 @@ process.exitCode = bad ? 1 : 0;
   }
   if (bk) process.exitCode = 1; console.log(bk ? `❌ ${bk} topics missing keys` : "✅ every topic's keypad has what it needs (checked 1,200 exercises per topic)");
 }
+
+// תשובה שהיא תרגיל שלם (כמו במחשבון) מתקבלת
+{ const Sci = require("../calc-sci.js"); global.root = global; global.Sci = Sci; const P = require("../calc-practice.js");
+  const cases = [["-3*8+5*4-12+6", -10], ["2×3+4", 10], ["√16+1", 5], ["10-3", 7], ["25%", 25], ["2^3", 8]];
+  const bad = cases.filter(([x, v]) => { const n = P.nums(x); return n.length !== 1 || Math.abs(n[0] - v) > 1e-9; });
+  console.log(bad.length ? "❌" : "✅", "a whole exercise as the answer is calculated (" + cases.length + " cases)", bad.length ? JSON.stringify(bad) : ""); if (bad.length) process.exitCode = 1; }

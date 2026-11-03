@@ -82,6 +82,11 @@ main{padding:16px 14px 40px;max-width:560px;margin:0 auto}
 .pkp{margin-top:8px;direction:ltr}.pkp.off{display:none}
 .pkx{display:flex;gap:6px;margin-bottom:6px}.pkx button{flex:1}
 .pkd{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.pkd .zero{grid-column:span 3}
+.pks{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:6px}.pks[hidden]{display:none}
+.pkp button.sc{height:38px;font-size:15px;background:var(--next);color:var(--accent);font-weight:800}
+.pkd button.op[data-pk="*"],.pkd button.op[data-pk="+"],.pkd button.op[data-pk="-"],.pkd button.op[data-pk="/"]{font-size:24px;color:var(--accent)}
+.pklive{min-height:22px;margin-top:6px;text-align:center;font-size:18px;font-weight:800;color:var(--accent)}
+.pkb .kbt+.kbt{margin-inline-start:8px}
 .pkp button{border:none;border-radius:11px;height:44px;font:inherit;font-size:20px;font-weight:600;cursor:pointer;background:var(--key);color:var(--ink);touch-action:manipulation}
 .pkp button.op{background:var(--key2);font-weight:800}.pkp button.ex{background:var(--next);color:var(--accent);font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:800;font-size:21px}
 .pkp button:active{transform:scale(.95)}
@@ -563,11 +568,23 @@ function tplDraw(t){
 }
 // 🎹 מקלדת לתרגול – לפי הנושא: x, שורש, π, חזקה, מעלות… (בלי המקלדת של הטלפון, שאין בה את כל אלה)
 let pracNative=load("pracNative",false),pracTarget="pIn0";
+// 🎹 מקלדת התרגול: כל הפעולות תמיד (+ − × ÷), שורת מקשים לנושא, ו"🔬 עוד" עם כל הפונקציות. מתחת – תוצאה חיה של מה שהקלדת
+const SCI_KEYS=[["√(","√"],["^2","x²"],["^","xⁿ"],["(","("],[")",")"],["π","π"],["sin(","sin"],["cos(","cos"],["tan(","tan"],["log(","log"],["ln(","ln"],["e","e"],["abs(","|x|"],["!","n!"],["%","%"],["°","°"],["±","±"],["=","="]];
+let pracMore=load("pracMore",true);
 function pracPad(cat,it){
-  const ex=Practice.pad(PR.id,cat),K=(k,l,c="")=>`<button type="button" class="${c}" data-pk="${escT(k)}" aria-label="${escT(l||k)}">${l||k}</button>`;
-  return `<div class="pkp${pracNative?" off":""}"><div class="pkx">${ex.map(([k,l])=>K(k,l,"ex")).join("")}</div>
-    <div class="pkd">${["7","8","9"].map(d=>K(d)).join("")}${K("/","÷","op")}${K("BS","⌫","op")}${["4","5","6"].map(d=>K(d)).join("")}${K("-","−","op")}${K("CLR","C","op")}${["1","2","3"].map(d=>K(d)).join("")}${K(".")}${K(", ",",","op")}${K("0","0","zero")}${K("L","◀","op")}${K("R","▶","op")}</div></div>
-    <div class="pkb"><button type="button" id="pKb" class="kbt">${pracNative?"🎹 המקלדת של המחשבון":"⌨️ מקלדת רגילה"}</button><small>${it.kind==="set"?"כמה תשובות? מפרידים בפסיק · ":""}x² / xⁿ = חזקה</small></div>`;
+  const K=(k,l,c="")=>`<button type="button" class="${c}" data-pk="${escT(k)}" aria-label="${escT(l||k)}">${l||k}</button>`;
+  const sciK=new Set(SCI_KEYS.map(x=>x[0])),ex=Practice.pad(PR.id,cat).filter(([k])=>!(pracMore&&sciK.has(k)));
+  return `<div class="pkp${pracNative?" off":""}">${ex.length?`<div class="pkx">${ex.map(([k,l])=>K(k,l,"ex")).join("")}</div>`:""}
+    <div class="pks"${pracMore?"":" hidden"}>${SCI_KEYS.map(([k,l])=>K(k,l,"sc")).join("")}</div>
+    <div class="pkd">${["7","8","9"].map(d=>K(d)).join("")}${K("/","÷","op")}${K("BS","⌫","op")}${["4","5","6"].map(d=>K(d)).join("")}${K("*","×","op")}${K("CLR","C","op")}${["1","2","3"].map(d=>K(d)).join("")}${K("-","−","op")}${K("+","+","op")}${K("0")}${K(".")}${K(", ",",","op")}${K("L","◀","op")}${K("R","▶","op")}</div>
+    <div class="pklive" id="pLive" dir="ltr"></div></div>
+    <div class="pkb"><button type="button" id="pKb" class="kbt">${pracNative?"🎹 המקלדת של המחשבון":"⌨️ מקלדת רגילה"}</button><button type="button" id="pMore" class="kbt"${pracNative?" hidden":""}>${pracMore?"🔬 פחות מקשים":"🔬 עוד מקשים (sin, log, √ …)"}</button><small>${it.kind==="set"?"כמה תשובות? מפרידים בפסיק · ":""}אפשר לכתוב גם תרגיל – נחשב לבד</small></div>`;
+}
+// מראה מה יוצא מהתרגיל שהקלדת (כמו מחשבון) – רק כשיש בו פעולה
+function pracLive(){
+  const el=$(pracTarget)||$("pIn0"),out=$("pLive");if(!el||!out)return;
+  const v=el.value.trim();if(!v||!/[+\-*/×÷^√!%()]|sin|cos|tan|log|ln|abs|π/.test(v.replace(/^-/,""))||/[,;]/.test(v)){out.textContent="";return}
+  try{const r=Sci.evaluate(v.replace(/×/g,"*").replace(/÷/g,"/").replace(/−/g,"-"),{deg:true});out.textContent=isFinite(r)?"= "+Sci.fmt(r):""}catch(e){out.textContent=""}
 }
 function pracKey(k){
   const el=$(pracTarget)||$("pIn0");if(!el)return;
@@ -579,6 +596,7 @@ function pracKey(k){
   else{el.value=el.value.slice(0,s)+k+el.value.slice(t);s=t=s+k.length}
   el.focus({preventScroll:true});try{el.setSelectionRange(s,t)}catch(e){}
   if(navigator.vibrate)try{navigator.vibrate(8)}catch(e){}
+  pracLive();
 }
 function pracSteps(it,all){return it.steps.filter(x=>!x.startsWith("~")||it.L<=2||all).map(x=>x.startsWith("~")?`<li class="kid">💬 ${R(x.slice(1))}</li>`:`<li>${R(x)}</li>`).join("")}
 function pracNew(){PR.it=Practice.make(PR.id,PR.L);PR.tries=0;PR.done=false;pracDraw()}
@@ -600,7 +618,8 @@ function pracDraw(fb){
     </div>`;
   box.querySelector("#pL").oninput=e=>{PR.L=+e.target.value;PR.streak=PR.wrongRow=0;pracSave();pracNew()};
   box.querySelectorAll(".lvn [data-l]").forEach(x=>x.onclick=()=>{PR.L=+x.dataset.l;PR.streak=PR.wrongRow=0;pracSave();pracNew()});
-  box.querySelectorAll(".pin").forEach(el=>el.addEventListener("focus",()=>{pracTarget=el.id}));
+  box.querySelectorAll(".pin").forEach(el=>{el.addEventListener("focus",()=>{pracTarget=el.id;pracLive()});el.addEventListener("input",pracLive)});
+  const pm=box.querySelector("#pMore");if(pm)pm.onclick=()=>{pracMore=!pracMore;save("pracMore",pracMore);const keep=($(pracTarget)||{}).value;pracDraw();const el=$(pracTarget);if(el&&keep!=null){el.value=keep;pracLive()}};
   box.querySelectorAll("[data-pk]").forEach(b=>{b.onpointerdown=e=>e.preventDefault();b.onclick=()=>pracKey(b.dataset.pk)});
   const kt=box.querySelector("#pKb");if(kt)kt.onclick=()=>{pracNative=!pracNative;save("pracNative",pracNative);const keep=[...box.querySelectorAll(".pin")].map(x=>x.value);pracDraw($("pFb")&&$("pFb").innerHTML);box.querySelectorAll(".pin").forEach((x,i)=>x.value=keep[i]||"");const t=$(pracTarget)||$("pIn0");if(t)t.focus()};
   box.querySelectorAll(".popt").forEach(b=>b.onclick=()=>pracAnswer(+b.dataset.i));

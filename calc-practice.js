@@ -476,7 +476,8 @@ function nums(s) {
   const out = [];
   for (const p of parts) {
     if (SIMPLE.test(p)) { const [a, b] = p.split("/").map(Number); if (b !== 0) out.push(b === undefined ? a : a / b); continue; }
-    if (Sci && /[√π^()*e]/.test(p) && !/[a-df-zA-Z]/.test(p.replace(/sqrt|pi/g, ""))) { try { const v = Sci.evaluate(p, { deg: true }); if (isFinite(v)) { out.push(v); continue; } } catch (e) {} }
+    // תרגיל שלם (2*3+4, √16, sin(30), 5!, 50%…) – מחשבים אותו כמו מחשבון
+    if (Sci && (/[√π^()*e!]|sin|cos|tan|log|ln|abs/.test(p) || /\d\s*[+\-]\s*[\d(√π]/.test(p)) && !/[a-df-zA-Z]/.test(p.replace(/sqrt|pi|sin|cos|tan|log|ln|abs/g, ""))) { try { const v = Sci.evaluate(p, { deg: true }); if (isFinite(v)) { out.push(v); continue; } } catch (e) {} }
     // לא הצלחנו לקרוא כביטוי – לוקחים את המספרים שבתוכו (כמו קודם)
     const re = /-?\d+(?:\.\d+)?(?:\s*\/\s*-?\d+(?:\.\d+)?)?/g; let m;
     while ((m = re.exec(p))) { const [a, b] = m[0].split("/").map(Number); if (b === 0) continue; out.push(b === undefined ? a : a / b); }
