@@ -12,10 +12,13 @@
   const vib = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
   let S = load();
   function load() { let s = null; try { s = JSON.parse(LS.get("robo", "null")); } catch (e) {} return R.norm(s); }
-  function save() { LS.set("robo", JSON.stringify(S)); try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {} applyBubble(); }
+  function save() { LS.set("robo", JSON.stringify(S)); try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {} applyBubble(); homeBtn(); }
+  // כפתור "🤖 הרובוט שלי" במסך הראשי – עם מספר התיבות שמחכות
+  function homeBtn() { const b = document.getElementById("roboBtn"); if (!b) return; const n = S.boxes.length; b.innerHTML = `🤖 הרובוט שלי${n ? ` <span class="rb-badge">${n}</span>` : ""}`; b.classList.toggle("rb-glow", n > 0); }
   const profile = () => { try { return JSON.parse(LS.get("profile", "null")) || null; } catch (e) { return null; } };
   const dev = () => LS.get("deviceId", "") || "dev";
   const RC = r => R.RAR[r].col;
+  const bl = () => S.bolts >= 999999 ? "∞" : S.bolts; // ∞ = ברגים לאין סוף (רק בטלפון של מנהל המערכת)
 
   // =============== ציור הרובוט ===============
   // חליפות: צבע ראש/אוזניים/מסך/עיניים + שכבות מיוחדות. bg = הבועה של העוזר
@@ -161,6 +164,9 @@ ${hat}${sk.over ? sk.over(u) : ""}${heldEm ? `<text class="rheld" x="55" y="56" 
 .abot.rgold .body{filter:drop-shadow(0 0 4px rgba(250,204,21,.7))}.abot.rdia .body{filter:drop-shadow(0 0 4px rgba(165,243,252,.8))}
 .abot.still *,.abot.still{animation:none!important}
 .abot{overflow:visible}
+#roboBtn{position:relative;background:linear-gradient(135deg,#facc15,#f97316)!important;color:#1a1040!important;font-weight:900!important;border:0!important}
+#roboBtn .rb-badge{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:#dc2626;color:#fff;font-size:11px;margin-inline-start:4px;text-align:center}
+#roboBtn.rb-glow{animation:rbGlow 1.6s ease-in-out infinite}@keyframes rbGlow{50%{box-shadow:0 0 0 4px rgba(250,204,21,.45),0 0 18px rgba(249,115,22,.7)}}
 .pf-sec.pf-robo{background:linear-gradient(135deg,#1a1040 0%,#3b1d7a 60%,#6d28d9 100%)!important;color:#fff!important;border-color:#7c3aed!important;box-shadow:0 8px 24px rgba(91,33,182,.35)}
 .pf-sec.pf-robo summary,.pf-sec.pf-robo summary em{color:#fff!important}.pf-sec.pf-robo .ghost{background:rgba(255,255,255,.14)!important;color:#fff!important}
 #asstBtn{background:var(--robo-bg,radial-gradient(circle at 35% 30%,#8f9bff,#5b6cff 45%,#a259ff 80%,#ff6bd6))!important}#asstBtn::after{border-color:var(--robo-ring,rgba(162,89,255,.55))!important}
@@ -227,12 +233,28 @@ dialog.robo.open{background:#05020f}
 .ro{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;text-align:center;user-select:none;-webkit-user-select:none}
 .ro-rays{position:absolute;width:220vmax;height:220vmax;left:50%;top:45%;margin:-110vmax 0 0 -110vmax;background:repeating-conic-gradient(from 0deg,var(--rc,#38bdf8) 0 8deg,transparent 8deg 20deg);opacity:0;transition:opacity .4s;animation:rSpinB 18s linear infinite;mask:radial-gradient(circle,#000 0,transparent 40%);-webkit-mask:radial-gradient(circle,#000 0,transparent 40%)}
 .ro.lit .ro-rays{opacity:.45}
+.ro-chest{position:relative;width:230px;max-width:62vw;cursor:pointer;--sz:1;transform:scale(var(--sz));transition:transform .4s cubic-bezier(.2,1.6,.4,1);filter:drop-shadow(0 0 26px var(--rc)) drop-shadow(0 16px 18px rgba(0,0,0,.5))}
+.ro-chest .chest{width:100%;display:block;overflow:visible;animation:rBoxIdle 1.6s ease-in-out infinite}
+.ro-chest.tap .chest{animation:rTap .3s ease-out}@keyframes rTap{30%{transform:scale(1.12,.86)}65%{transform:scale(.94,1.08)}}
+.ro-chest.up .chest{animation:rUp .75s cubic-bezier(.2,1.6,.4,1)}@keyframes rUp{0%{transform:scale(1)}25%{transform:scale(1.4) rotate(-8deg)}55%{transform:scale(1.1) rotate(6deg)}100%{transform:scale(1)}}
+.ro-chest .clid{transform-box:fill-box;transform-origin:20% 100%;transition:transform .55s cubic-bezier(.3,1.4,.5,1),opacity .55s}
+.ro-chest.open .clid{transform:translate(-30px,-150px) rotate(-35deg);opacity:0}.ro-chest.open .chest{animation:none}
+.ro-chest .stop{transition:stop-color .3s}
+.ro-beam{position:absolute;left:50%;bottom:42%;width:150px;margin-left:-75px;height:80vh;background:linear-gradient(to top,var(--rc),transparent 85%);opacity:0;filter:blur(6px);transform-origin:50% 100%;transform:scaleY(0)}
+.ro.opened .ro-beam{animation:rBeam 1s ease-out forwards}@keyframes rBeam{0%{opacity:0;transform:scaleY(0)}40%{opacity:.95;transform:scaleY(1)}100%{opacity:.6;transform:scaleY(1)}}
+.ro-type{font-size:15px;font-weight:800;opacity:.8;margin-bottom:6px}
+.ro-tier{margin-top:12px;font-size:22px;font-weight:900;padding:6px 20px;border-radius:99px;background:var(--rc);color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.45);box-shadow:0 0 26px var(--rc);transition:background .3s}
+.ro-tier.pop{animation:rTierPop .6s cubic-bezier(.2,1.8,.4,1)}@keyframes rTierPop{0%{transform:scale(.4)}60%{transform:scale(1.35)}100%{transform:scale(1)}}
+.ro-up{position:absolute;top:18%;left:0;right:0;font-size:46px;font-weight:900;color:#fff;text-shadow:0 0 24px var(--rc),0 0 8px var(--rc),0 4px 10px #000;animation:rUpTxt 1.1s cubic-bezier(.2,1.4,.4,1) forwards;pointer-events:none}
+@keyframes rUpTxt{0%{transform:scale(.3) translateY(30px);opacity:0}30%{transform:scale(1.25);opacity:1}75%{transform:scale(1) translateY(-10px);opacity:1}100%{transform:translateY(-40px);opacity:0}}
+.ro-ring{position:absolute;left:50%;top:48%;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;border:6px solid var(--rc);box-shadow:0 0 30px var(--rc);animation:rRing .85s ease-out forwards;pointer-events:none}@keyframes rRing{to{transform:scale(9);opacity:0}}
+.ro-main{display:inline-block;font-size:13px;font-weight:900;background:#fff;color:#1a1040;border-radius:99px;padding:3px 12px;margin-bottom:6px}
 .ro-box{position:relative;font-size:130px;line-height:1;cursor:pointer;filter:drop-shadow(0 0 30px var(--rc,#38bdf8)) drop-shadow(0 20px 20px rgba(0,0,0,.5));animation:rBoxIdle 1.6s ease-in-out infinite;transition:filter .3s}
 @keyframes rBoxIdle{50%{transform:translateY(-10px) rotate(-3deg)}}
 .ro-box.shake{animation:rShake .45s cubic-bezier(.36,.07,.19,.97)}@keyframes rShake{10%,90%{transform:translateX(-4px) rotate(-4deg) scale(1.05)}20%,80%{transform:translateX(8px) rotate(6deg) scale(1.1)}30%,50%,70%{transform:translateX(-12px) rotate(-8deg) scale(1.15)}40%,60%{transform:translateX(12px) rotate(8deg) scale(1.15)}}
 .ro-box.boom{animation:rBoom .5s ease-in forwards}@keyframes rBoom{40%{transform:scale(1.4)}100%{transform:scale(3);opacity:0}}
 .ro-hint{margin-top:22px;font-size:20px;font-weight:900;letter-spacing:.5px;animation:rPulseT 1s ease-in-out infinite}@keyframes rPulseT{50%{opacity:.4;transform:scale(.95)}}
-.ro-taps{display:flex;gap:6px;justify-content:center;margin-top:10px}.ro-taps i{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.2)}.ro-taps i.on{background:var(--rc);box-shadow:0 0 10px var(--rc)}
+.ro-taps{display:flex;gap:6px;justify-content:center;margin-top:10px}.ro-taps i{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.2)}.ro-taps i.on{background:var(--rc);box-shadow:0 0 10px var(--rc)}.ro-taps i{width:14px;height:14px;transition:background .3s}
 .ro-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}.ro-flash.go{animation:rFlash .6s ease-out}@keyframes rFlash{0%{opacity:.95}100%{opacity:0}}
 .ro-card{position:relative;width:min(78vw,300px);perspective:900px;cursor:pointer}
 .ro-in{position:relative;border-radius:24px;padding:18px 14px 16px;transform-style:preserve-3d;animation:rFlip .8s cubic-bezier(.2,1.2,.4,1) both;
@@ -296,7 +318,7 @@ dialog.robo.open{background:#05020f}
     const newIn = c => S.news.some(id => R.ITEMS[id] && R.ITEMS[id].cat === c);
     d.innerHTML = `<div class="rw"><div class="rw-top" style="--rc:${rc}"><button class="rw-x" type="button" aria-label="סגור">✕</button>
       <div class="rw-bot" id="rwBot">${svg()}</div><div class="rw-name">הרובוט של ${esc(p.first || "")}</div>
-      <div class="rw-chips"><span>🔥 רצף ${S.st.n}</span><span>🔩 ${S.bolts}</span><span>🏆 ${pr.have}/${pr.all}</span></div></div>
+      <div class="rw-chips"><span>🔥 רצף ${S.st.n}</span><span>🔩 ${bl()}</span><span>🏆 ${pr.have}/${pr.all}</span></div></div>
       <div class="rw-tabs">${[["wear", "👕 ארון"], ["boxes", "🎁 תיבות", nb], ["shop", "🛒 חנות"], ["streak", "🔥 רצף"]].map(([k, l, n]) => `<button type="button" data-t="${k}" class="${tab === k ? "on" : ""}">${l}${n ? `<span class="dot">${n}</span>` : ""}</button>`).join("")}</div>
       <div class="rw-body" id="rwBody"></div></div>`;
     d.querySelector(".rw-x").onclick = () => d.close();
@@ -323,7 +345,7 @@ dialog.robo.open{background:#05020f}
       const deals = R.deals(S, dev());
       const ms = (() => { const n = new Date(), t = new Date(n.toLocaleString("en-US", { timeZone: "Asia/Jerusalem" })), m = 24 * 60 - (t.getHours() * 60 + t.getMinutes()); return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`; })();
       const brk = S.brk && S.brk.ymd === R.ymd(Date.now()) ? S.brk : null;
-      body.innerHTML = `<div class="rw-sec">🔩 יש לך ${S.bolts} ברגים <small>מקבלים על כפולים, ברצף ובתיבות</small></div>`
+      body.innerHTML = `<div class="rw-sec">🔩 יש לך ${bl()} ברגים <small>מקבלים על כפולים, ברצף ובתיבות</small></div><button class="rbtn alt" type="button" id="rwCode" style="width:100%;margin-bottom:10px">🎟️ יש לי קוד לפרס</button>`
         + (brk ? `<div class="rbx" style="--c:#f43f5e"><div class="em">💔</div><div class="t"><b>להציל את הרצף (${brk.n} ימים)</b><small>רק היום! הרצף חוזר ונמשך</small></div><button class="rbtn" type="button" id="rwSave" ${S.bolts < R.saveCost(brk.n) ? "disabled" : ""}>🔩 ${R.saveCost(brk.n)}</button></div>` : "")
         + ["box", "big", "mega"].map(t => boxRow(t, 0, `<button class="rbtn" type="button" data-buy="${t}" ${S.bolts < R.BOX[t].price ? "disabled" : ""}>🔩 ${R.BOX[t].price}</button>`)).join("")
         + `<div class="rw-sec">⏰ מבצע יומי <small>מתחלף בעוד ${ms} שעות</small></div><div class="rw-grid">${deals.map(x => card(R.ITEMS[x.id], x.price)).join("") || `<div class="rw-prog">יש לך כבר הכל מהחנות 🤯</div>`}</div>
@@ -331,6 +353,7 @@ dialog.robo.open{background:#05020f}
       body.querySelectorAll("[data-buy]").forEach(b => b.onclick = () => { const r = R.buy(S, b.dataset.buy, dev()); if (!r.ok) return; save(); vib(30); toast(`${R.BOX[r.box].em} קנית ${R.BOX[r.box].n}!`, ["לפתוח", () => openBoxes([r.box])]); draw(); });
       body.querySelectorAll(".rc[data-id]").forEach(b => b.onclick = () => { const id = b.dataset.id, x = deals.find(d => d.id === id); if (!x) return; if (S.bolts < x.price) { toast(`חסרים לך ${x.price - S.bolts} ברגים 🔩`); return; } if (!confirm(`לקנות "${R.ITEMS[id].n}" ב-${x.price} ברגים?`)) return; if (R.buy(S, id, dev()).ok) { save(); celebrateItem(id); draw(); } });
       const sv = body.querySelector("#rwSave"); if (sv) sv.onclick = () => doSave();
+      body.querySelector("#rwCode").onclick = async () => { const c = prompt("מה הקוד? 🎟️ (כל קוד – פעם אחת)"); if (!c) return; const r = await redeem(c); if (!r.ok || !/תיבה/.test(r.msg)) toast(r.msg, null, 4500); draw(); };
     } else {
       const n = S.st.n, from = Math.max(1, n - 2), days = Array.from({ length: 18 }, (_, i) => from + i);
       const miles = [7, 10, 14, 21, 30, 50, 75, 100, 150, 200].filter(m => m > n).slice(0, 4);
@@ -343,17 +366,21 @@ dialog.robo.open{background:#05020f}
       body.querySelector("#rwShare").onclick = share;
     }
   }
+  // הצלת רצף שנשבר היום (מהחנות)
+  function doSave() { const r = R.saveStreak(S); if (!r.ok) { toast(r.error === "bolts" ? `חסרים לך ${r.cost - S.bolts} ברגים 🔩` : "אין רצף להציל היום", null, 3000); return; } save(); vib([30, 30, 60]); toast(`🔥 הרצף ניצל! אתה ברצף של ${r.n} ימים`, null, 4000); draw(); hubRefresh(); }
   function card(it, price) {
     const own = !!S.own[it.id], on = Object.values(S.eq).includes(it.id) || (it.cat === "theme" && window.Theme && Theme.current() === it.id.split(":")[1]) || (it.cat === "page" && pageOn(it));
     const cls = ["rc", own || price ? "" : "lock", on ? "on" : "", it.r === "l" ? "leg" : "", it.r === "u" ? "ult" : ""].join(" ");
     return `<button type="button" class="${cls}" data-id="${it.id}" style="--c:${RC(it.r)};--rcol:${RC(it.r)}">${S.news.includes(it.id) ? `<span class="new">חדש!</span>` : ""}<div class="pv">${preview(it.id)}</div>${own || price ? "" : `<span class="q">❓</span>`}
       <div class="nm">${esc(it.n)}</div><div class="rr">${price ? `🔩 ${price}` : R.RAR[it.r].n}</div></button>`;
   }
-  function boxRow(t, n, btn) { const B = R.BOX[t]; return `<div class="rbx" style="--c:${B.col}"><div class="em">${B.em}</div><div class="t"><b>${B.n}${n > 1 ? ` ×${n}` : ""}</b><small>${B.rolls} ${B.rolls === 1 ? "פרס" : "פרסים"} · ${t === "mega" ? "הכי שווה! סיכוי גבוה לאפי ומעלה" : t === "big" ? "פי 7 יותר סיכוי לאגדי" : "יכול לצאת כל דבר"}</small></div>${btn}</div>`; }
+  function boxRow(t, n, btn) { const B = R.BOX[t]; return `<div class="rbx" style="--c:${B.col}"><div class="em">${B.em}</div><div class="t"><b>${B.n}${n > 1 ? ` ×${n}` : ""}</b><small>${B.rolls} פרסים · מתחילה ב${R.RAR[R.START[t]].n} ומשתדרגת בלחיצות${t === "mega" ? " · הכי שווה!" : ""}</small></div>${btn}</div>`; }
   function oddsTable() {
-    return `<table class="rodds"><tr><td></td>${["box", "big", "mega"].map(t => `<td style="text-align:center">${R.BOX[t].em}</td>`).join("")}</tr>${R.RK.map(r => `<tr><td>${rarTag(r)}</td>${["box", "big", "mega"].map(t => `<td style="text-align:center">${fmtPct(R.BOX[t].odds[r])}</td>`).join("")}</tr>`).join("")}</table>`;
+    const F = { box: R.finalOdds("box"), big: R.finalOdds("big"), mega: R.finalOdds("mega") };
+    return `<div class="rw-prog" style="margin-top:4px">⭐ <b>הפרס הראשי</b> – לפי הדרגה שהתיבה מגיעה אליה אחרי ${R.TAPS} לחיצות (בכל לחיצה היא יכולה להשתדרג):</div><table class="rodds"><tr><td></td>${["box", "big", "mega"].map(t => `<td style="text-align:center">${R.BOX[t].em}</td>`).join("")}</tr>${R.TIERS.map(r => `<tr><td>${rarTag(r)}</td>${["box", "big", "mega"].map(t => `<td style="text-align:center">${F[t][r] ? fmtPct(F[t][r]) : "–"}</td>`).join("")}</tr>`).join("")}</table>
+    <div class="rw-prog" style="margin-top:12px">➕ <b>עוד פרסים בתיבה</b> (📦 1 · 🎁 2 · 💠 5) – ברגים, תיבה נוספת, או אביזר לפי הסיכויים:</div><table class="rodds"><tr><td></td>${["box", "big", "mega"].map(t => `<td style="text-align:center">${R.BOX[t].em}</td>`).join("")}</tr>${R.RK.map(r => `<tr><td>${rarTag(r)}</td>${["box", "big", "mega"].map(t => `<td style="text-align:center">${fmtPct(R.BOX[t].odds[r])}</td>`).join("")}</tr>`).join("")}</table>`;
   }
-  const fmtPct = p => (p >= 1 ? p.toFixed(p % 1 ? 1 : 0) : p.toFixed(2).replace(/0$/, "")) + "%";
+  const fmtPct = p => (p >= 1 ? p.toFixed(p % 1 ? 1 : 0) : p >= 0.01 ? p.toFixed(2).replace(/0$/, "") : p.toFixed(3).replace(/0+$/, "")) + "%";
   function rareInfo() {
     const rare = rareCounts();
     return `<div class="rw-sec">👑 אולטרה אגדי <small>הכי נדיר שיש – כמות מוגבלת לכל הישיבה!</small></div>` + R.LIST.filter(x => x.r === "u").map(x => {
@@ -392,13 +419,13 @@ dialog.robo.open{background:#05020f}
       for (let bi = 0; bi < list.length; bi++) {
         const type = list[bi], ix = S.boxes.indexOf(type); if (ix < 0) continue;
         S.boxes.splice(ix, 1);
-        let prizes = R.roll(S, type);
-        if (opt.rig && bi === 0) { const id = R.LIST.filter(x => x.r === opt.rig && !x.x)[0].id; prizes[prizes.length - 1] = { t: "item", id, r: opt.rig, ...(opt.rig === "u" ? { need: "claim" } : {}) }; } // דמו בלבד
+        let prizes = R.roll(S, type), taps = prizes.taps.slice();
+        if (opt.rig && bi === 0) { const id = R.LIST.filter(x => x.r === opt.rig && !x.x)[0].id; prizes[prizes.length - 1] = { t: "item", id, r: opt.rig, main: 1, ...(opt.rig === "u" ? { need: "claim" } : {}) }; const st = R.TIERS.indexOf(R.START[type]), en = R.TIERS.indexOf(opt.rig); taps = Array.from({ length: R.TAPS + 1 }, (_, i) => R.TIERS[Math.min(en, st + i)]); } // דמו בלבד
         // אולטרה אגדי – השרת מאשר (כמות מוגבלת). לא אושר → אגדי רגיל במקום
-        for (const p of prizes) if (p.need === "claim") { const ok = await claim(p.id); if (!ok) Object.assign(p, R.guaranteed(S, "l"), { need: undefined }); }
+        for (const p of prizes) if (p.need === "claim") { const ok = await claim(p.id); if (!ok) { Object.assign(p, R.guaranteed(S, "l"), { need: undefined }); if (p.main) taps = taps.map(t => t === "u" ? "l" : t); } }
         const got = prizes.map(p => R.grant(S, p)); save();
         all.push(...got);
-        const skip = await boxScene(d, type, got, list.length - bi - 1);
+        const skip = await boxScene(d, type, got, list.length - bi - 1, taps);
         if (skip) { for (let j = bi + 1; j < list.length; j++) { const t = list[j], k = S.boxes.indexOf(t); if (k < 0) continue; S.boxes.splice(k, 1); let pz = R.roll(S, t); for (const p of pz) if (p.need === "claim") { const ok = await claim(p.id); if (!ok) Object.assign(p, R.guaranteed(S, "l"), { need: undefined }); } all.push(...pz.map(p => R.grant(S, p))); } save(); break; }
         // תיבה שיצאה מתיבה – נפתחת מיד אחרי
         const extra = got.filter(g => g.t === "box").map(g => g.box); if (extra.length) list.splice(bi + 1, 0, ...extra);
@@ -413,22 +440,42 @@ dialog.robo.open{background:#05020f}
       host.appendChild(p); setTimeout(() => p.remove(), 1400); }
   }
   const waitTap = (el, ms) => new Promise(res => { let done = false; const go = () => { if (done) return; done = true; el.removeEventListener("click", go); res(); }; el.addEventListener("click", go); if (ms) setTimeout(go, ms); });
-  // סצנה של תיבה אחת: 3 לחיצות (הצבע "עולה דרגה" לפי הפרס הכי נדיר), פיצוץ, ואז כרטיס לכל פרס. מחזיר true אם דילגו
-  async function boxScene(d, type, got, left) {
-    const B = R.BOX[type], top = got.filter(g => g.t === "item").reduce((m, g) => Math.max(m, R.RAR[g.r].o), -1);
-    const steps = [B.col, top >= 2 ? RC(R.RK[Math.min(top, 3)]) : B.col, top >= 0 ? RC(R.RK[top]) : B.col];
-    d.innerHTML = `<div class="ro" style="--rc:${B.col}"><div class="ro-rays"></div><div class="ro-flash"></div>${left ? `<div class="ro-left">עוד ${left} 📦</div>` : ""}<button class="ro-skip" type="button">דלג ⏭</button>
-      <div class="ro-box">${B.em}</div><div class="ro-hint">לחץ על התיבה!</div><div class="ro-taps"><i></i><i></i><i></i></div></div>`;
-    const ro = d.querySelector(".ro"), box = d.querySelector(".ro-box"), taps = d.querySelectorAll(".ro-taps i");
+  // 🎁 התיבה (מצוירת): הצבע לפי הדרגה הנוכחית
+  const shade = (hex, f) => { const n = parseInt(hex.slice(1), 16), c = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.round(f > 0 ? v + (255 - v) * f : v * (1 + f))); return "#" + c.map(v => v.toString(16).padStart(2, "0")).join(""); };
+  const chestSVG = em => `<svg class="chest" viewBox="0 0 200 190" aria-hidden="true"><defs><linearGradient id="cgB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--c1)"/><stop offset="1" style="stop-color:var(--c2)"/></linearGradient><linearGradient id="cgL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--c0)"/><stop offset="1" style="stop-color:var(--c1)"/></linearGradient></defs>
+<ellipse cx="100" cy="179" rx="72" ry="9" fill="rgba(0,0,0,.4)"/>
+<g class="cbody"><rect x="22" y="86" width="156" height="84" rx="14" fill="url(#cgB)" stroke="rgba(0,0,0,.4)" stroke-width="3"/><rect x="44" y="86" width="16" height="84" fill="#fcd34d"/><rect x="140" y="86" width="16" height="84" fill="#fcd34d"/><rect x="22" y="152" width="156" height="7" fill="rgba(0,0,0,.18)"/><text x="100" y="146" font-size="30" text-anchor="middle">${em}</text></g>
+<g class="clid"><path d="M18 92V64Q18 26 100 26Q182 26 182 64V92Z" fill="url(#cgL)" stroke="rgba(0,0,0,.4)" stroke-width="3"/><rect x="44" y="32" width="16" height="60" fill="#fcd34d"/><rect x="140" y="32" width="16" height="60" fill="#fcd34d"/><path d="M32 52Q100 30 168 52" stroke="#fff" stroke-opacity=".5" stroke-width="5" fill="none" stroke-linecap="round"/>
+<g class="clock"><rect x="84" y="74" width="32" height="36" rx="8" fill="#fde047" stroke="#a16207" stroke-width="3"/><circle cx="100" cy="88" r="5" fill="#713f12"/><rect x="98" y="90" width="4" height="10" fill="#713f12"/></g></g></svg>`;
+  function paint(el, t) { const c = RC(t); el.style.setProperty("--rc", c); el.style.setProperty("--c0", shade(c, .45)); el.style.setProperty("--c1", c); el.style.setProperty("--c2", shade(c, -.45)); }
+  // סצנה של תיבה: 4 לחיצות – בכל אחת התיבה יכולה להשתדרג (כמו בבראול). הדרגה בסוף = הפרס הראשי. מחזיר true אם דילגו
+  async function boxScene(d, type, got, left, taps) {
+    const B = R.BOX[type]; let cur = taps[0];
+    d.innerHTML = `<div class="ro"><div class="ro-rays"></div><div class="ro-flash"></div><div class="ro-beam"></div>${left ? `<div class="ro-left">עוד ${left} 📦</div>` : ""}<button class="ro-skip" type="button">דלג ⏭</button>
+      <div class="ro-type">${esc(B.n)}</div><div class="ro-chest">${chestSVG(B.em)}</div><div class="ro-tier">${R.RAR[cur].n}</div>
+      <div class="ro-hint">לחץ על התיבה! היא יכולה להשתדרג 💥</div><div class="ro-taps">${"<i></i>".repeat(R.TAPS)}</div></div>`;
+    const ro = d.querySelector(".ro"), ch = d.querySelector(".ro-chest"), tier = d.querySelector(".ro-tier"), dots = d.querySelectorAll(".ro-taps i"), hint = d.querySelector(".ro-hint");
+    paint(ro, cur); ro.classList.add("lit");
     let skipped = false; d.querySelector(".ro-skip").onclick = e => { e.stopPropagation(); skipped = true; ro.click(); };
-    for (let i = 0; i < 3 && !skipped; i++) {
+    for (let i = 0; i < R.TAPS && !skipped; i++) {
       await waitTap(ro); if (skipped) break;
-      ro.style.setProperty("--rc", steps[i]); taps[i].classList.add("on"); box.classList.remove("shake"); void box.offsetWidth; box.classList.add("shake"); vib(i === 2 ? [30, 40, 60] : 25);
-      if (i === 2) ro.classList.add("lit");
-      d.querySelector(".ro-hint").textContent = i === 0 ? "עוד!" : i === 1 ? "עוד אחד!!" : "";
+      const nx = taps[i + 1];
+      dots[i].classList.add("on");
+      if (nx !== cur) { // ⬆️ שדרוג!
+        cur = nx; paint(ro, cur); dots[i].style.background = RC(cur);
+        ch.classList.remove("tap", "up"); void ch.offsetWidth; ch.classList.add("up"); ch.style.setProperty("--sz", 1 + R.TIERS.indexOf(cur) * 0.06);
+        tier.textContent = R.RAR[cur].n + (cur === "u" ? " 👑" : cur === "l" ? " ⭐" : ""); tier.classList.remove("pop"); void tier.offsetWidth; tier.classList.add("pop");
+        const up = document.createElement("div"); up.className = "ro-up"; up.textContent = cur === "u" ? "!!!אולטרה" : cur === "l" ? "!!אגדי" : "שדרוג!"; ro.appendChild(up); setTimeout(() => up.remove(), 1100);
+        const ring = document.createElement("div"); ring.className = "ro-ring"; ro.appendChild(ring); setTimeout(() => ring.remove(), 900);
+        d.querySelector(".ro-flash").classList.remove("go"); void ro.offsetWidth; d.querySelector(".ro-flash").classList.add("go");
+        ro.classList.remove("shakeS"); void ro.offsetWidth; ro.classList.add("shakeS");
+        particles(ro, RC(cur), R.TIERS.indexOf(cur) >= 3 ? 40 : 24, R.TIERS.indexOf(cur) >= 4 ? ["⭐", "✨", "💛"] : null); vib(R.TIERS.indexOf(cur) >= 3 ? [50, 30, 90] : 45);
+      } else { ch.classList.remove("tap", "up"); void ch.offsetWidth; ch.classList.add("tap"); particles(ro, RC(cur), 8); vib(18); }
+      const leftT = R.TAPS - i - 1; hint.textContent = leftT ? `עוד ${leftT} ${leftT === 1 ? "לחיצה" : "לחיצות"}…` : "";
     }
     if (skipped) return true;
-    box.classList.add("boom"); d.querySelector(".ro-flash").classList.add("go"); particles(ro, steps[2], 30); await sleep(480);
+    await sleep(350); ch.classList.add("open"); ro.classList.add("opened"); vib([30, 30, 80]);
+    d.querySelector(".ro-flash").classList.remove("go"); void ro.offsetWidth; d.querySelector(".ro-flash").classList.add("go"); particles(ro, RC(cur), 36); await sleep(900);
     for (let i = 0; i < got.length; i++) {
       const g = got[i]; if (await revealOne(d, g, got.length - i - 1)) return true;
     }
@@ -443,7 +490,7 @@ dialog.robo.open{background:#05020f}
     let inner;
     if (g.t === "item") {
       const it = R.ITEMS[g.id];
-      inner = `<div class="ro-rar">${R.RAR[r].n}${r === "u" ? " 👑" : r === "l" ? " ⭐" : ""}</div><div class="ro-pv">${preview(g.id, false)}</div><div class="ro-nm">${esc(it.n)}</div><div class="ro-sub">${g.dup ? `כבר יש לך → <b>+${g.dup} 🔩</b>` : "✨ חדש באוסף!"}</div>`;
+      inner = `${g.main ? `<div class="ro-main">⭐ הפרס הראשי</div>` : ""}<div class="ro-rar">${R.RAR[r].n}${r === "u" ? " 👑" : r === "l" ? " ⭐" : ""}</div><div class="ro-pv">${preview(g.id, false)}</div><div class="ro-nm">${esc(it.n)}</div><div class="ro-sub">${g.dup ? `כבר יש לך → <b>+${g.dup} 🔩</b>` : "✨ חדש באוסף!"}</div>`;
     } else if (g.t === "bolts") inner = `<div class="ro-big">🔩</div><div class="ro-nm">+${g.n} ברגים</div><div class="ro-sub">אפשר לקנות בהם תיבות בחנות</div>`;
     else inner = `<div class="ro-big">${R.BOX[g.box].em}</div><div class="ro-nm">עוד תיבה!</div><div class="ro-sub">${R.BOX[g.box].n} – נפתחת מיד אחרי</div>`;
     d.innerHTML = `<div class="ro lit" style="--rc:${col}"><div class="ro-rays"></div><div class="ro-flash go"></div>${more ? `<div class="ro-left">עוד ${more}</div>` : ""}<button class="ro-skip" type="button">דלג ⏭</button>
@@ -477,10 +524,56 @@ dialog.robo.open{background:#05020f}
     } catch (e) { return false; }
   }
 
+  // ---------- שרת: קודים, הטלפון של מנהל המערכת, דיווח רצף ----------
+  const api = async body => { const base = (typeof SERVER_BASE !== "undefined" && SERVER_BASE) || ""; const r = await fetch(base + "/api/feed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.assign({ action: "robo", device: dev() }, body)) }); return r.json(); };
+  // 👑 כוחות של מנהל המערכת (מופעלים מדף הניהול): ברגים לאין סוף / כל האביזרים. רק בטלפון שחובר
+  function powers() { try { return JSON.parse(LS.get("roboOwner", "null")) || {}; } catch (e) { return {}; } }
+  function applyPowers() {
+    const P = powers(); let ch = false;
+    if (P.owner && P.inf) { if (S.realBolts == null) { S.realBolts = S.bolts; ch = true; } if (S.bolts < 999999) { S.bolts = 999999; ch = true; } }
+    else if (S.realBolts != null) { S.bolts = S.realBolts; delete S.realBolts; ch = true; }
+    if (P.owner && P.all) { for (const it of R.LIST) if (!S.own[it.id]) { S.own[it.id] = -1; ch = true; } }
+    else for (const k of Object.keys(S.own)) if (S.own[k] === -1) { delete S.own[k]; ch = true; }
+    if (ch) { S = R.norm(S); save(); }
+  }
+  async function checkPowers(force) {
+    if (window.__DEMO || !profile()) return;
+    const P = powers(); if (!force && P.at && Date.now() - P.at < 10 * 60e3 && !P.owner) return;
+    try { const j = await api({ op: "me" }); if (j && j.ok) { LS.set("roboOwner", JSON.stringify({ owner: !!j.owner, inf: !!j.inf, all: !!j.all, at: Date.now() })); applyPowers(); hubRefresh(); } } catch (e) {}
+  }
+  // 🎟️ מממשים קוד (מהעוזר, מברקוד או מהארון). כל קוד – פעם אחת לכל ילד
+  const CODE_ERR = { bad_code: "הקוד הזה לא נכון 🤔 תבדוק שהקלדת נכון", used: "כבר מימשת את הקוד הזה 😉 כל קוד – פעם אחת", full: "אוי, הקוד נגמר – כל הפרסים שלו כבר נלקחו 😅", off: "הקוד הזה כבר לא פעיל", not_registered: "צריך קודם להירשם לאפליקציה (ולפתוח אותה פעם אחת)", bad_token: "קוד החיבור לא נכון או שפג תוקפו – צור חדש בדף הניהול" };
+  async function redeem(raw) {
+    const code = String(raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (code.length < 4) return { ok: false, msg: "זה לא נראה כמו קוד 🤔" };
+    if (!profile()) { LS.set("roboPendingCode", code); return { ok: false, msg: "שמרתי את הקוד – הוא ימומש אחרי שתסיים להירשם 🙂" }; }
+    if (window.__DEMO) return { ok: false, msg: "בדמו אין מימוש קודים" };
+    let j; try { j = await api(code.startsWith("OWN") ? { op: "link", token: code } : { op: "code", code }); } catch (e) { return { ok: false, msg: "אין חיבור לאינטרנט כרגע – נסה שוב עוד רגע" }; }
+    if (!j || !j.ok) return { ok: false, msg: CODE_ERR[j && j.error] || "משהו השתבש, נסה שוב" };
+    if (j.owner) { await checkPowers(true); toast("👑 הטלפון שלך מחובר לניהול! מדף הניהול אפשר להפעיל ברגים לאין סוף וכל האביזרים", null, 6000); return { ok: true, msg: "👑 הטלפון שלך חובר לניהול!" }; }
+    const p = j.prize; let msg = "";
+    if (p.t === "box") { S.boxes.push(p.box); save(); msg = `🎁 קיבלת ${R.BOX[p.box].n}!`; setTimeout(() => openBoxes([p.box]), 400); }
+    else if (p.t === "bolts") { R.grant(S, p); save(); msg = `🔩 קיבלת ${p.n} ברגים!`; toast(msg, null, 3500); }
+    else if (p.t === "item" && R.ITEMS[p.id]) { const x = R.grant(S, p); save(); msg = x.dup ? `כבר היה לך ${R.ITEMS[p.id].n} – קיבלת ${x.dup} ברגים 🔩` : `✨ קיבלת ${R.ITEMS[p.id].n}!`; if (!x.dup) { celebrateItem(p.id); setTimeout(() => open("wear"), 900); } else toast(msg, null, 3500); }
+    hubRefresh(); return { ok: true, msg: "🎉 הקוד מומש! " + msg };
+  }
+  // קישור / ברקוד: ?code=XXXX (פרס) או ?own=OWN-XXXX (חיבור הטלפון של מנהל המערכת)
+  function urlCodes() {
+    try {
+      const q = new URLSearchParams(location.search), c = q.get("code") || q.get("own");
+      if (c) { LS.set("roboPendingCode", c); q.delete("code"); q.delete("own"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash); }
+    } catch (e) {}
+  }
+  async function pendingCode() {
+    const c = LS.get("roboPendingCode", ""); if (!c || !profile() || !LS.get("introSeen", "")) return;
+    LS.set("roboPendingCode", null); const r = await redeem(c); if (!r.ok || !/תיבה/.test(r.msg)) toast(r.msg, null, 5000);
+  }
+
   // ---------- רצף כניסות יומי ----------
   async function daily(force) {
     if (!profile()) return;
     const c = R.checkIn(S); if (!c && !force) return; save();
+    if (c && !window.__DEMO) api({ op: "day", n: S.st.n }).catch(() => {}); // בשביל התזכורת לפני שהרצף נשבר
     const d = dlg("roboDay"); d.dataset.lock = "1";
     if (c && c.broken) {
       const cost = R.saveCost(c.broken.n), can = S.bolts >= cost;
@@ -545,7 +638,7 @@ dialog.robo.open{background:#05020f}
     const el = hubEl; if (!el || !el.isConnected) return;
     const pr = R.progress(S), nb = S.boxes.length, b = R.best(S);
     el.innerHTML = `<div style="display:flex;gap:12px;align-items:center"><button type="button" id="rhBot" style="width:86px;height:86px;flex:0 0 86px;border:0;border-radius:24px;cursor:pointer;background:${(SK[S.eq.skin] || {}).bg || DEF_BG};box-shadow:0 8px 20px rgba(0,0,0,.3)">${svg()}</button>
-      <div style="flex:1;min-width:0"><div style="display:flex;gap:6px;flex-wrap:wrap;font-size:13px;font-weight:800"><span>🔥 רצף ${S.st.n}</span><span>🔩 ${S.bolts}</span><span>🏆 ${pr.have}/${pr.all}</span></div>
+      <div style="flex:1;min-width:0"><div style="display:flex;gap:6px;flex-wrap:wrap;font-size:13px;font-weight:800"><span>🔥 רצף ${S.st.n}</span><span>🔩 ${bl()}</span><span>🏆 ${pr.have}/${pr.all}</span></div>
       ${b && R.RAR[b.r].o >= 2 ? `<div style="font-size:12px;margin-top:4px;opacity:.85">הכי נדיר: ${esc(b.n)} ${rarTag(b.r)}</div>` : `<div style="font-size:12px;margin-top:4px;opacity:.8">פתח תיבות ותלביש את הרובוט שלך!</div>`}</div></div>
       <div class="pf-acts" style="margin-top:10px"><button type="button" class="primary" id="rhWear">👕 הארון שלי</button><button type="button" class="ghost" id="rhBox" style="${nb ? "background:linear-gradient(135deg,#facc15,#f97316);color:#1a1040;font-weight:900" : ""}">🎁 ${nb ? `לפתוח תיבות (${nb})` : "תיבות"}</button><button type="button" class="ghost" id="rhShop">🛒 חנות</button><button type="button" class="ghost" id="rhShare">📸 לחברים</button></div>`;
     el.querySelector("#rhBot").onclick = () => open("wear"); el.querySelector("#rhWear").onclick = () => open("wear");
@@ -554,20 +647,26 @@ dialog.robo.open{background:#05020f}
 
   // ---------- הפעלה ----------
   window.Robo = {
-    svg, open, hub, share, subjectMile, daily, openBoxes, state: () => S, owns: id => !!S.own[id],
+    svg, open, hub, share, subjectMile, daily, openBoxes, redeem, state: () => S, owns: id => !!S.own[id],
     give(p) { const x = R.grant(S, p); save(); hubRefresh(); return x; }, // דמו / בדיקות
     reload() { S = load(); applyBubble(); try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {} },
-    status: () => `🔥 ${S.st.n} · 🔩 ${S.bolts}${S.boxes.length ? ` · 🎁 ${S.boxes.length}` : ""}`,
+    status: () => `🔥 ${S.st.n} · 🔩 ${bl()}${S.boxes.length ? ` · 🎁 ${S.boxes.length}` : ""}`,
   };
   try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {}
+  urlCodes();
   const boot = () => {
-    applyBubble(); setTimeout(applyBubble, 1500);
+    applyBubble(); setTimeout(applyBubble, 1500); homeBtn();
+    applyPowers(); setTimeout(() => checkPowers(), 3000);
+    const pc = () => { if (!LS.get("roboPendingCode", "")) return; if (!profile() || !LS.get("introSeen", "") || document.querySelector("dialog[open]")) { setTimeout(pc, 3000); return; } pendingCode(); }; setTimeout(pc, 2500);
     // רצף כניסות: בפתיחה הראשונה של היום, כשלא באמצע משהו (אשף, חלון, אנימציה)
     tries = 0;
     // לא בפעם הראשונה (אשף + היכרות), לא באמצע שיחה עם העוזר / כתיבה / לחיצות, ולא אצל הרובוטים של הבדיקות (חוץ מהבדיקה של הרובוט)
     if (navigator.webdriver && !LS.get("roboTest", "")) return;
     const busy = () => !profile() || !LS.get("introSeen", "") || Date.now() - lastTouch < 3500 || (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) || !!document.querySelector("dialog[open],#fx,#recap,.upd-pop,#suspWall,#asstP:not([hidden]),.asst-finger") || (document.getElementById("wiz") && !document.getElementById("wiz").hidden) || (document.getElementById("intro") && !document.getElementById("intro").hidden) || (document.getElementById("build") && !document.getElementById("build").hidden) || document.documentElement.classList.contains("susp-pre");
     let calm = 0; // צריך שתי בדיקות רצופות "פנוי" (כדי לא לקפוץ רגע לפני "מה חדש" וכו')
+    // 👋 פעם אחת: "חדש! אפשר להלביש אותי" – אחרי שהכל נרגע
+    const intro = () => { if (LS.get("roboIntro", "") || page !== "index") return; if (busy() || S.st.last !== R.ymd(Date.now())) { setTimeout(intro, 4000); return; } LS.set("roboIntro", "1"); toast("🤖 <b>חדש!</b> אפשר להלביש אותי 👕 יש לי ארון, תיבות וחנות. אפשר גם לכתוב לי \"תלביש אותך\"", ["לארון", () => open("wear")], 9000); };
+    if (!(navigator.webdriver && !LS.get("roboTest", ""))) setTimeout(intro, 9000);
     tick = () => { if (S.st.last === R.ymd(Date.now())) return; if (busy()) { calm = 0; if (++tries < 120) setTimeout(tick, 2000); return; } if (++calm < 2) { setTimeout(tick, 1500); return; } daily(); };
     setTimeout(tick, page === "index" ? 3500 : 2000);
   };

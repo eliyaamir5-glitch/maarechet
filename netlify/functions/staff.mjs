@@ -969,6 +969,7 @@ async function owner(req, S, ip, headers) {
   if (b.action === "msgDelete") return reply(200, await msgDeleteOp(S, b, ""), headers);
   if (b.action === "holGet") return reply(200, await holOverview(S, now), { ...headers, "Cache-Control": "no-store" });
   if (b.action === "holSet") return reply(200, await holSetOp(S, b), headers);
+  if (["codeList", "codeCreate", "codeSet", "ownLink", "ownPowers", "ownUnlink"].includes(b.action)) return reply(200, await roboOwnerOp(S, b, now), { ...headers, "Cache-Control": "no-store" });
   if (b.action !== "overview") return reply(400, { ok: false, error: "bad_action" }, headers);
   return reply(200, await schoolOverview(S, now, true), { ...headers, "Cache-Control": "no-store" });
 }
@@ -1125,6 +1126,7 @@ async function feed(req, S, ip, headers) {
     return reply(200, { ok: true, cls: me.cls, mates, bdays }, headers);
   }
   if (action === "robo") { // 🤖 אביזר "אולטרה אגדי" יצא בתיבה: כמות מוגבלת לכל הישיבה. נשמר רק מונה + קוד מכשיר מוצפן (בלי שם)
+    if (DEV_RE.test(device) && ["code", "me", "link", "day"].includes(b.op)) return reply(200, await roboOp(S, b, device, ip, now), headers);
     if (!DEV_RE.test(device) || b.op !== "claim" || !Object.hasOwn(ROBO_CAPS, String(b.item))) return reply(400, { ok: false, error: "bad_request" }, headers);
     memRate("robo", ip, 3000);
     const pres = await S.get("presence"), k = devKey(device);
@@ -1270,7 +1272,7 @@ async function contacts(req, S, ip, headers) {
 // ===== 🔔 התראות לטלפון (Web Push) =====
 // המפתחות (VAPID) נוצרים לבד בפעם הראשונה ונשמרים באחסון – אין מה להגדיר בנטליפיי.
 // "push" = { [devKey]: { sub:{endpoint,keys}, cls, prefs:{tef,urgent}, at, last } }. בלי שם ובלי מזהה המכשיר עצמו.
-const PUSH_MAX = 4000, PUSH_PREFS = ["tef", "urgent", "holiday"];
+const PUSH_MAX = 4000, PUSH_PREFS = ["tef", "urgent", "holiday", "streak"];
 const PUSH_HOSTS = /^https:\/\/([a-z0-9-]+\.)*(googleapis\.com|mozilla\.com|mozaws\.net|push\.apple\.com|windows\.com|microsoft\.com|notify\.windows\.com)\//i;
 let pushSender = (sub, payload, opts) => webpush.sendNotification(sub, payload, opts);
 export function __setPushSender(f) { pushSender = f; }
@@ -1515,3 +1517,139 @@ export async function holidayTick(now = Date.now()) {
 const ROBO_CAPS = { "skin:gold": 3, "skin:diamond": 5 };
 const ROBO_NAMES = { "skin:gold": "חליפת זהב טהור", "skin:diamond": "חליפת יהלומים" };
 function roboCounts(rr) { const o = {}; for (const [id, cap] of Object.entries(ROBO_CAPS)) { const x = rr && rr[id]; o[id] = { n: x && Array.isArray(x.keys) ? x.keys.length : 0, cap }; } return o; }
+
+// ---- 🎟️ קודים לפרסים, 👑 הטלפון של מנהל המערכת, 🔥 תזכורת לפני שהרצף נשבר ----
+// "roboCodes" = { codes: { CODE: { prize, max (null = בלי הגבלה), used: [devKey], on, note, at } }, seeded }
+// "roboOwn"   = { key: devKey של הטלפון של מנהל המערכת, inf, all, link: { token, exp } }
+// "roboDay"   = { devKey: { d: יום אחרון שנכנס, n: אורך הרצף } } – רק בשביל התזכורת, בלי שם
+const CODE_ABC = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // בלי 0/O/1/I שמתבלבלים
+const normCode = c => String(c || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 16);
+const showCode = c => c.length > 4 ? c.slice(0, 4) + "-" + c.slice(4) : c;
+const newPromo = (pre = "") => { let s = normCode(pre).slice(0, 4); while (s.length < 8) s += CODE_ABC[crypto.randomInt(CODE_ABC.length)]; return s; };
+const BOXES = ["box", "big", "mega"];
+function cleanPrize(p) {
+  if (!p || typeof p !== "object") return null;
+  if (p.t === "box" && BOXES.includes(p.box)) return { t: "box", box: p.box };
+  if (p.t === "bolts" && Number.isInteger(+p.n) && +p.n >= 1 && +p.n <= 5000) return { t: "bolts", n: +p.n };
+  if (p.t === "item" && /^(skin|hat|eyes|held|aura|theme|page):[a-z0-9:]{1,30}$/.test(String(p.id)) && !Object.hasOwn(ROBO_CAPS, p.id)) return { t: "item", id: String(p.id) };
+  return null;
+}
+// הקודים המוכנים: נוצרים בפעם הראשונה שמנהל המערכת פותח את הכרטיס (אקראיים – לא כתובים בשום מקום בקוד)
+const SEED_CODES = [
+  ...Array.from({ length: 10 }, () => ({ pre: "BOX", prize: { t: "box", box: "box" }, max: null, note: "תיבה חינם" })),
+  ...Array.from({ length: 6 }, () => ({ pre: "BIG", prize: { t: "box", box: "big" }, max: 30, note: "תיבה גדולה" })),
+  ...Array.from({ length: 4 }, () => ({ pre: "MEGA", prize: { t: "box", box: "mega" }, max: 10, note: "תיבת מגה" })),
+  ...Array.from({ length: 6 }, () => ({ pre: "BOLT", prize: { t: "bolts", n: 200 }, max: null, note: "200 ברגים" })),
+  { pre: "VIP", prize: { t: "bolts", n: 1000 }, max: 5, note: "1000 ברגים" },
+  { pre: "HAT", prize: { t: "item", id: "hat:propeller" }, max: 20, note: "כובע פרופלור" },
+  { pre: "SUN", prize: { t: "item", id: "eyes:sun" }, max: null, note: "משקפי שמש" },
+  { pre: "NEON", prize: { t: "item", id: "skin:neon" }, max: 15, note: "חליפת ניאון" },
+  { pre: "WIZ", prize: { t: "item", id: "hat:wizard" }, max: 8, note: "כובע קוסם" },
+  { pre: "SPCE", prize: { t: "item", id: "skin:space" }, max: 3, note: "חליפת חלל (מיתי!)" },
+];
+async function roboCodesGet(S, now) {
+  let c = await S.get("roboCodes");
+  if (!c || !c.seeded) {
+    await S.update("roboCodes", cur => {
+      const o = cur && typeof cur === "object" ? { ...cur, codes: { ...(cur.codes || {}) } } : { codes: {} };
+      if (o.seeded) return undefined;
+      for (const x of SEED_CODES) { let k; do k = newPromo(x.pre); while (o.codes[k]); o.codes[k] = { prize: x.prize, max: x.max, used: [], on: true, note: x.note, at: now }; }
+      o.seeded = now; return o;
+    });
+    c = await S.get("roboCodes");
+  }
+  return c;
+}
+async function roboOp(S, b, device, ip, now) {
+  const k = devKey(device);
+  if (b.op === "me") { // האם זה הטלפון של מנהל המערכת (ומה הוא הפעיל לעצמו)
+    const o = await S.get("roboOwn");
+    return o && o.key === k ? { ok: true, owner: true, inf: !!o.inf, all: !!o.all } : { ok: true, owner: false };
+  }
+  if (b.op === "link") { // מחברים את הטלפון של מנהל המערכת: קוד חד-פעמי מדף הניהול. הטלפון הראשון שמשתמש בו – הוא שלך
+    memRate("roboLink", ip, 5);
+    const tok = normCode(b.token);
+    let ok = false;
+    await S.update("roboOwn", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; if (!o.link || o.link.token !== tok || o.link.exp < now || tok.length < 10) return undefined; o.key = k; o.link = null; o.at = now; ok = true; return o; });
+    if (ok) await olog(S, "roboOwn", "👑 הטלפון שלך חובר לניהול (ברגים וסקינים)");
+    return ok ? { ok: true, owner: true } : { ok: false, error: "bad_token" };
+  }
+  if (b.op === "day") { // הרצף של היום (בשביל התזכורת לפני שהוא נשבר)
+    const n = Math.max(0, Math.min(5000, Math.floor(+b.n || 0))), d = israelDay(now);
+    await S.update("roboDay", cur => { const m = cur && typeof cur === "object" ? { ...cur } : {}; if (!m[k] && Object.keys(m).length >= 4000) return undefined; m[k] = { d, n }; return m; });
+    return { ok: true };
+  }
+  // op === "code": מממשים קוד – כל ילד פעם אחת, ועד הכמות שנקבעה לקוד
+  memRate("roboCode", ip, 20);
+  await rateLimit(S, "codeRate", ip, 60);
+  const code = normCode(b.code);
+  if (code.length < 4) return { ok: false, error: "bad_code" };
+  const pres = await S.get("presence");
+  if (!pres || !Object.hasOwn(pres, k)) return { ok: false, error: "not_registered" };
+  await roboCodesGet(S, now);
+  let out = { ok: false, error: "bad_code" };
+  await S.update("roboCodes", cur => {
+    const x = cur && cur.codes && cur.codes[code]; if (!x) { out = { ok: false, error: "bad_code" }; return undefined; }
+    if (!x.on) { out = { ok: false, error: "off" }; return undefined; }
+    if (x.used.includes(k)) { out = { ok: false, error: "used" }; return undefined; }
+    if (x.max != null && x.used.length >= x.max) { out = { ok: false, error: "full" }; return undefined; }
+    const o = { ...cur, codes: { ...cur.codes, [code]: { ...x, used: [...x.used, k] } } };
+    out = { ok: true, prize: x.prize, note: x.note || "" }; return o;
+  });
+  return out;
+}
+async function roboOwnerOp(S, b, now) {
+  if (b.action === "codeList") {
+    const c = await roboCodesGet(S, now);
+    const list = Object.entries(c.codes || {}).map(([code, x]) => ({ code: showCode(code), raw: code, prize: x.prize, max: x.max, used: x.used.length, on: x.on, note: x.note || "", at: x.at })).sort((a, b) => b.at - a.at || a.code.localeCompare(b.code));
+    const o = await S.get("roboOwn") || {};
+    return { ok: true, list, own: { linked: !!o.key, inf: !!o.inf, all: !!o.all } };
+  }
+  if (b.action === "codeCreate") {
+    const prize = cleanPrize(b.prize), count = Math.max(1, Math.min(50, Math.floor(+b.count || 1))), max = b.max == null || b.max === "" ? null : Math.max(1, Math.min(10000, Math.floor(+b.max)));
+    if (!prize || (b.max != null && b.max !== "" && !Number.isFinite(+b.max))) return { ok: false, error: "bad_request" };
+    const custom = normCode(b.code), made = [];
+    await S.update("roboCodes", cur => {
+      const o = cur && typeof cur === "object" ? { ...cur, codes: { ...(cur.codes || {}) } } : { codes: {} };
+      if (custom) { if (custom.length < 4 || o.codes[custom]) throw new Fail(409, "exists"); o.codes[custom] = { prize, max, used: [], on: true, note: clean(b.note, 60), at: now }; made.push(custom); return o; }
+      if (Object.keys(o.codes).length + count > 2000) throw new Fail(413, "too_many");
+      for (let i = 0; i < count; i++) { let k; do k = newPromo(b.pre || ""); while (o.codes[k]); o.codes[k] = { prize, max, used: [], on: true, note: clean(b.note, 60), at: now }; made.push(k); }
+      return o;
+    });
+    await olog(S, "codeCreate", `🎟️ נוצרו ${made.length} קודים`);
+    return { ok: true, codes: made.map(showCode) };
+  }
+  if (b.action === "codeSet") {
+    const code = normCode(b.code); let found = false;
+    await S.update("roboCodes", cur => { const x = cur && cur.codes && cur.codes[code]; if (!x) return undefined; found = true; const o = { ...cur, codes: { ...cur.codes } };
+      if (b.del) delete o.codes[code]; else o.codes[code] = { ...x, on: !!b.on }; return o; });
+    return found ? { ok: true } : { ok: false, error: "not_found" };
+  }
+  if (b.action === "ownLink") { // קוד חד-פעמי לחבר את הטלפון שלך (30 דקות)
+    let token = "OWN"; while (token.length < 12) token += CODE_ABC[crypto.randomInt(CODE_ABC.length)];
+    await S.update("roboOwn", cur => ({ ...(cur && typeof cur === "object" ? cur : {}), link: { token, exp: now + 30 * 60e3 } }));
+    return { ok: true, token: showCode(token) };
+  }
+  if (b.action === "ownUnlink") { await S.update("roboOwn", () => ({})); await olog(S, "roboOwn", "👑 הטלפון נותק מהניהול"); return { ok: true }; }
+  // ownPowers: ברגים לאין סוף / כל הסקינים – רק בטלפון המחובר
+  await S.update("roboOwn", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; if (typeof b.inf === "boolean") o.inf = b.inf; if (typeof b.all === "boolean") o.all = b.all; return o; });
+  return { ok: true };
+}
+// 🔥 תזכורת: מי שיש לו רצף (2+) ועוד לא נכנס היום – פעם אחת. בדרך כלל ב-20:00; בשישי ובערב חג ב-12:00 (לפני שבת/חג)
+function restDayS(d) {
+  const w = new Date(d + "T12:00:00Z").getUTCDay(); if (w === 6) return true;
+  return HC.list(HC.add(d, -8), 10).some(h => (h.key === "rosh" && (d === h.start || d === h.end)) || (h.key === "pesach" && (d === h.start || d === h.end)) || (["kippur", "sukkot", "simchat", "shavuot"].includes(h.key) && d === h.start));
+}
+function prevWorkDay(d) { let x = HC.add(d, -1); for (let i = 0; i < 10 && restDayS(x); i++) x = HC.add(x, -1); return x; }
+export async function streakTick(now = Date.now()) {
+  const S = await store(), { ymd, hour } = HC.ilNow(now);
+  if (restDayS(ymd)) return { skipped: "rest" };
+  const early = new Date(ymd + "T12:00:00Z").getUTCDay() === 5 || restDayS(HC.add(ymd, 1));
+  if (early ? !(hour >= 12 && hour < 15) : !(hour >= 20 && hour < 22)) return { skipped: "time" };
+  let first = false;
+  await S.update("pushStreak", cur => { if (cur && cur.day === ymd) return undefined; first = true; return { day: ymd, at: now }; });
+  if (!first) return { skipped: "done" };
+  const days = (await S.get("roboDay")) || {}, prev = prevWorkDay(ymd);
+  const sent = await sendPush(S, (x, k) => { const r = days[k]; return !!r && r.n >= 2 && r.d === prev; }, { title: "🔥 הרצף שלך עומד להישבר!", body: "עוד לא נכנסת היום – תיכנס לאפליקציה לשמור על הרצף ולקבל את המתנה של היום 🎁", tag: "streak-" + ymd }, { pref: "streak", ttl: 3 * 3600, force: true });
+  return { sent };
+}

@@ -19,14 +19,18 @@ ok("streak/subject rewards point to real items", Object.values(R.LADDER).flat().
 // ---- סיכויים בפועל (200,000 פרסים מכל סוג תיבה) ----
 for (const b of ["box", "big", "mega"]) {
   const S = R.fresh(), rnd = seeded(7), cnt = {}; let items = 0, bolts = 0, boxes = 0;
-  const N = 200000 / R.BOX[b].rolls;
-  for (let i = 0; i < N; i++) for (const p of R.roll(S, b, rnd)) { if (p.t === "item") { items++; cnt[p.r] = (cnt[p.r] || 0) + 1; } else if (p.t === "bolts") bolts++; else boxes++; }
+  const N = Math.round(200000 / R.EXTRA_N[b]);
+  const fin = {}; let nb = 0;
+  for (let i = 0; i < N; i++) { const pz = R.roll(S, b, rnd); nb++; fin[pz.taps[pz.taps.length - 1]] = (fin[pz.taps[pz.taps.length - 1]] || 0) + 1; for (const p of pz) { if (p.main) continue; if (p.t === "item") { items++; cnt[p.r] = (cnt[p.r] || 0) + 1; } else if (p.t === "bolts") bolts++; else boxes++; } }
+  const fo = R.finalOdds(b); ok(`${b}: tap-upgrade results match the published chances`, R.TIERS.every(t => Math.abs(100 * (fin[t] || 0) / nb - fo[t]) < Math.max(0.5, fo[t] * 0.1)), R.TIERS.map(t => t + ":" + (100 * (fin[t] || 0) / nb).toFixed(2) + "/" + fo[t].toFixed(2)).join(" "));
   const pct = r => 100 * (cnt[r] || 0) / items, odds = R.BOX[b].odds;
   ok(`${b}: real chances match the published ones`, ["c", "r", "s", "e", "m", "l"].every(r => Math.abs(pct(r) - odds[r]) < Math.max(0.6, odds[r] * 0.12)), ["c", "r", "s", "e", "m", "l", "u"].map(r => r + ":" + pct(r).toFixed(2)).join(" "));
 }
-{ const S = R.fresh(), rnd = seeded(3); let got = 0; for (let i = 0; i < 100000; i++) for (const p of R.roll(S, "box", rnd)) if (p.r === "u") got++; ok("ultra legendary from a small box is really rare (≈1 in 17,000)", got < 20, got + " in 100,000 boxes"); }
-{ const p = R.roll(R.fresh(), "mega", seeded(11)); ok("mega box: 6 prizes, rarest last", p.length === 6 && p.every((x, i) => i === 0 || (x.t !== "item" ? 0 : R.RAR[x.r].o + 2) >= (p[i - 1].t !== "item" ? 0 : 0))); }
-{ const S = R.fresh(); const seq = [0, 0.99999, 0.1]; let i = 0; const u = R.roll(S, "box", () => seq[i++ % 3]); ok("ultra prize needs the server (claim)", u.some(x => x.need === "claim")); }
+{ const S = R.fresh(), rnd = seeded(3); let got = 0; for (let i = 0; i < 100000; i++) for (const p of R.roll(S, "box", rnd)) if (p.r === "u") got++; ok("ultra legendary from a small box is really rare", got < 10, got + " in 100,000 boxes"); }
+{ const S = R.fresh(), rnd = seeded(5); let got = 0; for (let i = 0; i < 20000; i++) for (const p of R.roll(S, "mega", rnd)) if (p.r === "u") got++; ok("ultra legendary from mega boxes: rare (< 0.5%)", got < 100, got + " in 20,000 mega boxes"); }
+{ const p = R.roll(R.fresh(), "mega", seeded(11)); ok("mega box: 6 prizes, main prize (tier reached) last", p.length === 6 && p[5].main && p[5].r === p.taps[4] && p.taps.length === 5); }
+{ const t = R.upgrades("box", () => 0); ok("lucky taps upgrade every time: r→s→e→m→l", t.join() === "r,s,e,m,l"); ok("unlucky taps: stays", R.upgrades("big", () => 0.99).join() === "s,s,s,s,s"); }
+{ const S = R.fresh(); const u = R.roll(S, "mega", () => 0); ok("ultra prize needs the server (claim)", u.some(x => x.need === "claim") || R.roll(S, "box", (() => { const q = [0.5, 0, 0.99999, 0.1, 0, 0, 0, 0]; let i = 0; return () => q[i++ % q.length]; })()).some(x => x.need === "claim")); }
 
 // ---- קבלת פרסים ----
 { const S = R.fresh(); R.grant(S, { t: "item", id: "hat:crown" }); const d = R.grant(S, { t: "item", id: "hat:crown" });

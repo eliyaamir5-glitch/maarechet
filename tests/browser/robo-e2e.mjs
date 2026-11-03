@@ -20,10 +20,11 @@ let day = false; for (let i = 0; i < 20 && !day; i++) { await sleep(600); day = 
 log(day, "first open of the day: streak popup with a gift");
 log(await p.evaluate(() => /יום 1/.test(document.getElementById("roboDay").innerText)), "streak = 1");
 await p.click("#rdGo"); await sleep(900);
-log(await p.evaluate(() => !!document.querySelector("#roboOpen[open] .ro-box")), "gift box opens (tap the box)");
-for (let i = 0; i < 3; i++) { await p.click("#roboOpen .ro"); await sleep(450); }
-await sleep(700);
-log(await p.evaluate(() => !!document.querySelector("#roboOpen .ro-card .ro-rar")), "3 taps → prize card with its rarity");
+log(await p.evaluate(() => !!document.querySelector("#roboOpen[open] .ro-chest")), "gift box opens (tap the box)");
+for (let i = 0; i < 4; i++) { await p.click("#roboOpen .ro"); await sleep(450); }
+log(await p.evaluate(() => !!document.querySelector("#roboOpen .ro-chest.open")), "4 taps (it can upgrade on each) → the chest opens");
+await sleep(1300);
+log(await p.evaluate(() => !!document.querySelector("#roboOpen .ro-card .ro-rar")), "prize card with its rarity");
 for (let i = 0; i < 6 && await p.evaluate(() => !!document.querySelector("#roboOpen .ro-card")); i++) { await p.click("#roboOpen .ro"); await sleep(700); }
 log(await p.evaluate(() => !!document.querySelector("#roboOpen #roDone")), "summary of what you got");
 await p.click("#roboOpen #roDone"); await sleep(600);
@@ -52,6 +53,11 @@ await p.evaluate(() => { document.getElementById("profDlg").close(); Robo.give({
 log(await p.evaluate(() => !!document.querySelector('#profBody [data-th="neon"]')), "won theme appears in the profile colors");
 log(await p.evaluate(() => !!document.querySelector('#profBody [data-sec="robo"] #pfRobo button')), "profile: 'my robot' section with buttons");
 log(await p.evaluate(() => { const d = document.querySelector('#profBody [data-sec="push"]'); return !!d && !d.open; }), "profile: notifications are inside a closed drawer");
+// כפתור במסך הראשי + העוזר מכיר את הרובוט
+log(await p.evaluate(() => { const b = document.getElementById("roboBtn"); return !!b && /הרובוט שלי/.test(b.textContent); }), "home screen: '🤖 הרובוט שלי' button");
+await p.evaluate(() => document.getElementById("roboBtn").click()); await sleep(500);
+log(await p.evaluate(() => !!document.querySelector("#roboUI[open]")), "home button opens the closet");
+await p.evaluate(() => document.getElementById("roboUI").close());
 // חג: הרובוט מחזיק משהו של החג
 await p.goto("http://localhost:8797/index.html?hol=hanukkah", { waitUntil: "domcontentloaded" }); await sleep(3000);
 log(await p.evaluate(() => (document.getElementById("asstBtn") || {}).innerHTML.includes("🍩")), "Hanukkah: the robot holds a sufganiya 🍩");

@@ -10,6 +10,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
 <script src="data.js"></script>
+<script src="qrcode.js"></script>
+<script src="robo-core.js"></script>
 <style>
 :root{--bg:#0f1226;--card:#1a1f42;--card2:#21275a;--ink:#f4f5ff;--muted:#9aa0c7;--line:#2b3162;--accent:#7c8cff;--accent-ink:#0b0e24;--red:#ff5d6c;--green:#3ddc97;--amber:#ffc24b;--grad:linear-gradient(135deg,#5b6cff 0%,#a259ff 60%,#ff6bd6 100%)}
 @media (prefers-color-scheme: light){:root{--bg:#f3f2fb;--card:#fff;--card2:#f6f5fe;--ink:#191b33;--muted:#5f6488;--line:#e3e2f2;--accent:#5b6cff;--accent-ink:#fff;--red:#d92d40;--green:#13996a;--amber:#b77900}}
@@ -160,9 +162,9 @@ const nk=n=>String(n||"").replace(/[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u206
 const ST={now:["d-now","מחובר עכשיו"],today:["d-today","נכנס היום"],week:["d-week","נכנס השבוע"],old:["d-old","לא נכנס שבוע+"]};
 const devKind=p=>/iPhone|Android/.test(p)?"טלפון":/iPad/.test(p)?"טאבלט":p?"מחשב":"לא ידוע";
 
-let HOL=null;
+let HOL=null,CODES=null,CODES_NEW=[];
 let D=null,filt={q:"",cls:"",st:"",sort:"last"},timer=null;const sel=new Set();
-const LOGI={logoutAll:"🚪",login:"🔓",loginFail:"⚠️",maintOn:"🚧",maintOff:"✅",suspend:"⛔",unsuspend:"✅",msgSend:"✉️",msgDelete:"🗑️",forget:"🗑️",errClear:"🐞",leave:"🗑️",return:"🔄",holiday:"🎉",holidayPush:"🎉",roboRare:"👑"};
+const LOGI={logoutAll:"🚪",login:"🔓",loginFail:"⚠️",maintOn:"🚧",maintOff:"✅",suspend:"⛔",unsuspend:"✅",msgSend:"✉️",msgDelete:"🗑️",forget:"🗑️",errClear:"🐞",leave:"🗑️",return:"🔄",holiday:"🎉",holidayPush:"🎉",roboRare:"👑",roboOwn:"👑",codeCreate:"🎟️"};
 const SUS_OPTS=[["60","שעה"],["1440","יום"],["4320","3 ימים"],["10080","שבוע"],["","עד שאחזיר"]];
 // רשימת המושעים: שורה לכל השעיה (שם+כיתה והמכשירים שהושעו איתו). "להחזיר" מחזיר את כל השורה
 function susGroups(){
@@ -201,6 +203,61 @@ function people(){
       reacts:Math.max(...d.map(x=>x.reacts||0)),bday:d.map(x=>x.bday).find(Boolean)||"",inst:d.some(x=>x.inst),mashov:d.some(x=>x.mashov),old:CUR&&top.ver&&top.ver<CUR}});
 }
 
+// 🎟️ קודים לפרסים + 👑 הטלפון שלך (ברגים לאין סוף / כל האביזרים)
+const APP_URL="https://eliyaamir5-glitch.github.io/maarechet/";
+const RCx=window.RoboCore;
+const prizeTxt=p=>!p?"?":p.t==="box"?({box:"📦 תיבה",big:"🎁 תיבה גדולה",mega:"💠 תיבת מגה"}[p.box]||p.box):p.t==="bolts"?`🔩 ${p.n} ברגים`:p.t==="item"?`👕 ${RCx&&RCx.ITEMS[p.id]?RCx.ITEMS[p.id].n+" ("+RCx.RAR[RCx.ITEMS[p.id].r].n+")":p.id}`:"?";
+const codeLink=c=>APP_URL+"?code="+encodeURIComponent(c);
+const shareTxt=c=>`🎁 קוד מתנה למערכת: ${c.code}\n${prizeTxt(c.prize)}\nכתוב את הקוד למערכתי (הרובוט באפליקציה) או פתח: ${codeLink(c.raw)}`;
+function qrImg(text,size=6){try{const q=qrcode(0,"M");q.addData(text);q.make();return q.createDataURL(size,12)}catch(e){return""}}
+function ownCard(){
+  if(!CODES)return"";const o=CODES.own||{};
+  return`<div class="card ctl"><h2>👑 הטלפון שלי</h2><p class="hint">הטלפון שמחובר כאן הוא שלך: רק בו אפשר להפעיל ברגים לאין סוף וכל האביזרים. אף אחד אחר לא יכול – גם אם יראה את הקוד.</p>
+    ${o.linked?`<div class="sub" style="margin-bottom:8px">✅ הטלפון שלך מחובר</div>
+      <div class="row"><button class="b2 ${o.inf?"":"ghost"}" id="pwInf">🔩 ברגים לאין סוף: ${o.inf?"פועל ✓":"כבוי"}</button><button class="b2 ${o.all?"":"ghost"}" id="pwAll">👕 כל האביזרים: ${o.all?"פועל ✓":"כבוי"}</button></div>
+      <div class="row" style="margin-top:8px"><button class="b2 ghost sm" id="pwLink">🔁 לחבר טלפון אחר</button><button class="b2 ghost sm" id="pwOff">ניתוק</button></div><p class="hint" style="margin-top:6px">השינוי מגיע לטלפון תוך כמה דקות (או מיד כשפותחים את האפליקציה מחדש).</p>`
+    :`<button class="b2" id="pwLink">🔗 לחבר את הטלפון שלי</button>`}
+    <div id="pwBox"></div></div>`;
+}
+function codesCard(){
+  if(!CODES)return"";const L=CODES.list||[];
+  const items=RCx?RCx.LIST.filter(x=>x.r!=="u"&&!x.free):[];
+  return`<div class="card"><h2>🎟️ קודים לפרסים <span class="pill">${L.length}</span></h2><p class="hint">שולחים לחברים קוד (או ברקוד). הם כותבים אותו למערכתי באפליקציה – ומקבלים את הפרס. כל ילד יכול לממש כל קוד פעם אחת בלבד. "עד" = כמה ילדים יכולים לממש (ריק = בלי הגבלה).</p>
+    <details class="msg1"><summary style="cursor:pointer;font-weight:800">✨ ליצור קודים חדשים</summary>
+      <div class="row" style="margin-top:8px"><select id="cPr" aria-label="פרס"><option value="box:box">📦 תיבה</option><option value="box:big">🎁 תיבה גדולה</option><option value="box:mega">💠 תיבת מגה</option><option value="bolts:100">🔩 100 ברגים</option><option value="bolts:300">🔩 300 ברגים</option><option value="bolts:1000">🔩 1000 ברגים</option>${items.map(x=>`<option value="item:${x.id}">👕 ${esc(x.n)} (${RCx.RAR[x.r].n})</option>`).join("")}</select></div>
+      <div class="row" style="margin-top:6px"><input id="cMax" type="number" min="1" placeholder="עד כמה ילדים (ריק = כולם)"><input id="cCnt" type="number" min="1" max="50" value="1" placeholder="כמה קודים"></div>
+      <div class="row" style="margin-top:6px"><input id="cOwn" maxlength="16" placeholder="קוד משלך (לא חובה), למשל CHAG-SAMEACH" dir="ltr"><button class="b2" id="cGo">✨ ליצור</button></div></details>
+    ${CODES_NEW.length?`<div class="msg1" style="border-color:#22c55e"><b>✅ נוצרו:</b> <span dir="ltr" style="font-family:monospace">${CODES_NEW.map(esc).join(" · ")}</span></div>`:""}
+    <div class="row" style="margin:8px 0"><button class="b2 ghost sm" id="cCopyAll">📋 להעתיק את כל הקודים הפעילים</button></div>
+    <div class="tablewrap"><table><thead><tr><th>קוד</th><th>פרס</th><th>מימשו</th><th></th></tr></thead><tbody>${L.map(c=>`<tr${c.on?"":' style="opacity:.5"'}><td dir="ltr" style="font-family:monospace;font-weight:800;white-space:nowrap">${esc(c.code)}</td><td>${esc(prizeTxt(c.prize))}${c.note?`<div class="sub">${esc(c.note)}</div>`:""}</td><td style="white-space:nowrap">${c.used}${c.max!=null?" / "+c.max:""}${c.max!=null&&c.used>=c.max?" 🔒":""}</td>
+      <td style="white-space:nowrap"><button class="b2 ghost sm" data-cqr="${esc(c.raw)}" title="ברקוד">🔳</button> <button class="b2 ghost sm" data-ccp="${esc(c.raw)}" title="להעתיק">📋</button> <button class="b2 ghost sm" data-con="${esc(c.raw)}" data-v="${c.on?0:1}" title="${c.on?"לכבות":"להפעיל"}">${c.on?"⏸":"▶️"}</button> <button class="b2 ghost sm" data-cdel="${esc(c.raw)}" title="למחוק">🗑️</button></td></tr>`).join("")}</tbody></table></div></div>`;
+}
+const copyTxt=async t=>{try{await navigator.clipboard.writeText(t);return true}catch(e){prompt("להעתיק:",t);return false}};
+function qrDialog(title,text,sub){
+  $("dlgBody").innerHTML=`<h3>${esc(title)}</h3><div style="text-align:center;margin:12px 0"><img src="${qrImg(text)}" alt="ברקוד" style="width:240px;max-width:80%;image-rendering:pixelated;background:#fff;padding:8px;border-radius:12px"></div>
+    <p class="sub" style="text-align:center">${sub}</p><div class="row" style="margin-top:12px"><a class="b2" download="barcode.gif" href="${qrImg(text,10)}" style="text-decoration:none;text-align:center">⬇️ להוריד</a><button class="b2 ghost" id="qClose">סגור</button></div>`;
+  $("qClose").onclick=()=>$("dlg").close();if(!$("dlg").open)$("dlg").showModal();
+}
+function codesWire(){
+  if(!CODES)return;const L=CODES.list||[],byRaw=r=>L.find(c=>c.raw===r);
+  const go=async(body,btn)=>{if(btn)btn.disabled=true;const r=await api(body);if(!r.ok){if(btn)btn.disabled=false;alert(ERR[r.error]||(r.error==="exists"?"הקוד הזה כבר קיים":"לא הצלחנו."));return null}return r};
+  if($("cGo"))$("cGo").onclick=async e=>{const [t,v]=$("cPr").value.split(/:(.+)/);const prize=t==="box"?{t,box:v}:t==="bolts"?{t,n:+v}:{t,id:v};
+    const r=await go({action:"codeCreate",prize,max:$("cMax").value||null,count:+$("cCnt").value||1,code:$("cOwn").value.trim(),note:prizeTxt(prize).replace(/^\S+\s/,"")},e.target);if(r){CODES_NEW=r.codes;load()}};
+  if($("cCopyAll"))$("cCopyAll").onclick=async()=>{const a=L.filter(c=>c.on&&(c.max==null||c.used<c.max));if(await copyTxt(a.map(c=>`${c.code} – ${prizeTxt(c.prize)}${c.max!=null?` (ל-${c.max} הראשונים)`:""}`).join("\n")))alert(`📋 הועתקו ${a.length} קודים`)};
+  document.querySelectorAll("[data-ccp]").forEach(b=>b.onclick=async()=>{if(await copyTxt(shareTxt(byRaw(b.dataset.ccp)))){b.textContent="✓";setTimeout(()=>b.textContent="📋",1500)}});
+  document.querySelectorAll("[data-cqr]").forEach(b=>b.onclick=()=>{const c=byRaw(b.dataset.cqr);qrDialog(`🔳 ${c.code} – ${prizeTxt(c.prize)}`,codeLink(c.raw),"סורקים במצלמה של הטלפון → האפליקציה נפתחת והפרס מתקבל (כל ילד פעם אחת)")});
+  document.querySelectorAll("[data-con]").forEach(b=>b.onclick=async()=>{if(await go({action:"codeSet",code:b.dataset.con,on:b.dataset.v==="1"},b))load()});
+  document.querySelectorAll("[data-cdel]").forEach(b=>b.onclick=async()=>{if(!confirm("למחוק את הקוד? מי שעוד לא מימש – כבר לא יוכל."))return;if(await go({action:"codeSet",code:b.dataset.cdel,del:true},b))load()});
+  // 👑 הטלפון שלי
+  const o=CODES.own||{};
+  if($("pwInf"))$("pwInf").onclick=async e=>{if(await go({action:"ownPowers",inf:!o.inf},e.target))load()};
+  if($("pwAll"))$("pwAll").onclick=async e=>{if(await go({action:"ownPowers",all:!o.all},e.target))load()};
+  if($("pwOff"))$("pwOff").onclick=async e=>{if(!confirm("לנתק את הטלפון שלך מהניהול? (הברגים והאביזרים של הניהול ייעלמו ממנו)"))return;if(await go({action:"ownUnlink"},e.target))load()};
+  if($("pwLink"))$("pwLink").onclick=async e=>{const r=await go({action:"ownLink"},e.target);if(!r)return;e.target.disabled=false;
+    $("pwBox").innerHTML=`<div class="msg1" style="margin-top:10px;text-align:center"><b>בטלפון שלך:</b> סרוק את הברקוד, <u>או</u> פתח את האפליקציה וכתוב למערכתי:<div dir="ltr" style="font-family:monospace;font-size:24px;font-weight:900;margin:8px 0">${esc(r.token)}</div>
+      <img src="${qrImg(APP_URL+"?own="+encodeURIComponent(r.token))}" alt="ברקוד" style="width:200px;background:#fff;padding:8px;border-radius:12px;image-rendering:pixelated"><div class="sub">תקף 30 דקות. הטלפון הראשון שמשתמש בקוד – הוא שלך. אחרי זה תרענן את הדף הזה.</div></div>`};
+}
+
 // 🎉 חגים: מתי כל חג, מה הברכה שתישלח לטלפונים ומתי, כיבוי/הדלקה, נוסח משלך ותצוגה מקדימה
 const HDAYS=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
 const hDate=ymd=>{const d=new Date(ymd+"T12:00:00Z");return`${HDAYS[d.getUTCDay()]} ${d.getUTCDate()}.${d.getUTCMonth()+1}`};
@@ -232,11 +289,11 @@ async function showDash(){
 }
 async function load(manual){
   if(manual)$("upd").textContent="מרענן…";
-  const [r,h]=await Promise.all([api({action:"overview"}),api({action:"holGet"}).catch(()=>null)]);if(!r.ok){if(T.get())$("upd").textContent=ERR[r.error]||"לא הצלחנו לטעון.";return}
-  if(h&&h.ok)HOL=h;D=r;draw();
+  const [r,h,c]=await Promise.all([api({action:"overview"}),api({action:"holGet"}).catch(()=>null),api({action:"codeList"}).catch(()=>null)]);if(!r.ok){if(T.get())$("upd").textContent=ERR[r.error]||"לא הצלחנו לטעון.";return}
+  if(h&&h.ok)HOL=h;if(c&&c.ok)CODES=c;D=r;draw();
 }
 // טיוטות: רענון אוטומטי לא מוחק הודעה שהתחלת לכתוב (או בחירה ברשימות)
-const DRAFT=["oText","oTo","oHrs","mMsg","mMin"];
+const DRAFT=["oText","oTo","oHrs","mMsg","mMin","cPr","cMax","cCnt","cOwn"];
 function draw(){
   const keep={},fid=document.activeElement&&document.activeElement.id;for(const id of DRAFT){const e=$(id);if(e)keep[id]=e.value}
   const now=D.now,P=people(),stOf=p=>status(p.last,now);
@@ -282,6 +339,8 @@ function draw(){
       <div class="row" style="margin-top:10px"><button class="b2 ghost sm" id="outAll">🚪 לנתק את כל המכשירים</button><span class="sub">אם נכנסת ממחשב של מישהו אחר</span></div>
     </div>
   </div>
+  ${ownCard()}
+  ${codesCard()}
   ${holCard()}
   ${(D.suspended||[]).length?`<div class="card"><h2>⛔ מושעים כרגע (${susGroups().length})</h2>${susList()}</div>`:""}
   <div class="grid2">
@@ -328,7 +387,7 @@ function draw(){
   $("selClr").onclick=()=>{sel.clear();drawRows()};
   $("selMsg").onclick=()=>{$("oTo").value="some";$("oText").focus();$("oText").scrollIntoView({behavior:"smooth",block:"center"})};
   $("selSus").onclick=()=>susDialog(chosen());
-  holWire();
+  holWire();codesWire();
   // מצב עדכון
   if($("mGo"))$("mGo").onclick=async()=>{const min=$("mMin").value;if(!confirm(`להפעיל מצב עדכון לכל התלמידים ${min?"ל-"+$("mMin").selectedOptions[0].textContent:"עד שתעצור"}?`))return;
     $("mGo").disabled=true;const r=await api({action:"maint",on:true,minutes:min?+min:null,msg:$("mMsg").value.trim()});if(!r.ok){$("mGo").disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}load()};

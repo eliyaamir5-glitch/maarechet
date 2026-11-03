@@ -72,11 +72,19 @@
 
   // ---- תיבות: כמה פרסים בכל תיבה, וסיכוי לכל דרגה (באחוזים, לכל פרס) ----
   const BOX = {
-    box: { n: "תיבה", em: "📦", rolls: 1, kind: { item: 57, bolts: 40, box: 3 }, odds: { c: 58, r: 26, s: 11, e: 4, m: 0.85, l: 0.14, u: 0.01 }, bolts: [8, 20], price: 60, col: "#38bdf8" },
-    big: { n: "תיבה גדולה", em: "🎁", rolls: 3, kind: { item: 65, bolts: 30, box: 5 }, odds: { c: 35, r: 32, s: 20, e: 9, m: 3.2, l: 0.7, u: 0.1 }, bolts: [15, 40], price: 180, col: "#a855f7" },
-    mega: { n: "תיבת מגה", em: "💠", rolls: 6, kind: { item: 74, bolts: 20, box: 6 }, odds: { c: 10, r: 30, s: 30, e: 20, m: 7.5, l: 2.2, u: 0.3 }, bolts: [30, 80], price: 520, col: "#f43f5e" },
+    box: { n: "תיבה", em: "📦", rolls: 2, kind: { item: 57, bolts: 40, box: 3 }, odds: { c: 58, r: 26, s: 11, e: 4, m: 0.85, l: 0.145, u: 0.005 }, bolts: [8, 20], price: 60, col: "#38bdf8" },
+    big: { n: "תיבה גדולה", em: "🎁", rolls: 3, kind: { item: 65, bolts: 30, box: 5 }, odds: { c: 35, r: 32, s: 20, e: 9, m: 3.2, l: 0.78, u: 0.02 }, bolts: [15, 40], price: 180, col: "#a855f7" },
+    mega: { n: "תיבת מגה", em: "💠", rolls: 6, kind: { item: 74, bolts: 20, box: 6 }, odds: { c: 10, r: 30, s: 30, e: 20, m: 7.5, l: 2.45, u: 0.05 }, bolts: [30, 80], price: 520, col: "#f43f5e" },
   };
   const EXTRA = { box: "box", big: "box", mega: "big" }; // תיבה בתוך תיבה
+  // ⭐ שדרוג בכל לחיצה (כמו בבראול): התיבה מתחילה בדרגה מסוימת, ובכל אחת מ-4 הלחיצות יכולה לעלות דרגה.
+  // הדרגה שבסוף = הפרס הראשי (אביזר מהדרגה הזו, מובטח). ועוד פרסים רגילים (extra) לפי הטבלה של התיבה.
+  const TIERS = ["r", "s", "e", "m", "l", "u"], TAPS = 4;
+  const START = { box: "r", big: "s", mega: "e" }, EXTRA_N = { box: 1, big: 2, mega: 5 };
+  const UP = { r: 0.30, s: 0.15, e: 0.10, m: 0.07, l: 0.02, u: 0 }; // סיכוי לעלות דרגה בכל לחיצה
+  function upgrades(type, rnd = Math.random) { let t = START[type]; const out = [t]; for (let i = 0; i < TAPS; i++) { if (rnd() < UP[t]) t = TIERS[TIERS.indexOf(t) + 1]; out.push(t); } return out; }
+  // הסיכוי המדויק לכל דרגה סופית (לטבלה שמוצגת לילדים)
+  function finalOdds(type) { let d = { [START[type]]: 1 }; for (let i = 0; i < TAPS; i++) { const n = {}; for (const [t, p] of Object.entries(d)) { const up = UP[t]; n[t] = (n[t] || 0) + p * (1 - up); if (up) { const nx = TIERS[TIERS.indexOf(t) + 1]; n[nx] = (n[nx] || 0) + p * up; } } d = n; } const o = {}; for (const t of TIERS) o[t] = 100 * (d[t] || 0); return o; }
 
   // ---- תאריכים (שעון ישראל) ----
   const ymd = t => { const p = {}; for (const x of new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(t))) p[x.type] = x.value; return `${p.year}-${p.month}-${p.day}`; };
@@ -113,8 +121,8 @@
   }
   // פותחים תיבה: רשימת פרסים (עוד לא נכנסים למצב – grant עושה את זה). אולטרה אגדי מסומן need:"claim" (שרת)
   function roll(S, type, rnd = Math.random) {
-    const B = BOX[type], out = [];
-    for (let i = 0; i < B.rolls; i++) {
+    const B = BOX[type], out = [], taps = upgrades(type, rnd), top = taps[taps.length - 1];
+    for (let i = 0; i < EXTRA_N[type]; i++) {
       const k = pickW(B.kind, rnd);
       if (k === "bolts") out.push({ t: "bolts", n: Math.round(B.bolts[0] + rnd() * (B.bolts[1] - B.bolts[0])) });
       else if (k === "box") out.push({ t: "box", box: EXTRA[type] });
@@ -124,9 +132,12 @@
         out.push({ t: "item", id, r, ...(r === "u" ? { need: "claim" } : {}) });
       }
     }
-    // הכי נדיר בסוף (מתח!)
+    // הכי נדיר בסוף (מתח!) – והפרס הראשי (הדרגה שהתיבה הגיעה אליה) תמיד אחרון
     const rank = p => p.t === "item" ? RAR[p.r].o + 2 : p.t === "box" ? 1.5 : 0;
-    return out.sort((a, b) => rank(a) - rank(b));
+    out.sort((a, b) => rank(a) - rank(b));
+    let r = top, id = pickItem(S, r, rnd); while (!id && r !== "c") { r = RK[RK.indexOf(r) - 1]; id = pickItem(S, r, rnd); }
+    out.push({ t: "item", id, r, main: 1, ...(r === "u" ? { need: "claim" } : {}) });
+    out.taps = taps; return out;
   }
   // הגרלה מדרגה מובטחת (פרסי רצף גדולים)
   const guaranteed = (S, r, rnd = Math.random) => ({ t: "item", id: pickItem(S, r, rnd), r });
@@ -213,6 +224,6 @@
   // האביזר הכי נדיר שיש לך
   const best = S => LIST.filter(x => S.own[x.id]).sort((a, b) => RAR[b.r].o - RAR[a.r].o)[0];
 
-  const api = { RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
+  const api = { RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.RoboCore = api;
 })(typeof self !== "undefined" ? self : this);
