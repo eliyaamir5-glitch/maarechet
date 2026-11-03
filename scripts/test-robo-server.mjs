@@ -24,6 +24,6 @@ ok("gold suit: first 3 get it, then sold out", res.join() === "true,true,true,fa
 r = await call({ action: "robo", op: "claim", item: "skin:gold", device: dev(2) }, "POST", "5.5.5.5");
 ok("same device again (reinstall) keeps it, no extra count", r.json.granted === true && r.json.n === 3);
 r = await call(null, "GET");
-ok("feed shows how many are left", r.json.robo["skin:gold"].n === 3 && r.json.robo["skin:gold"].cap === 3 && r.json.robo["skin:diamond"].n === 0);
+ok("feed shows how many are left", r.json.robo["skin:gold"].n === 3 && r.json.robo["skin:gold"].cap === 3 && r.json.robo["skin:diamond"].n === 0 && r.json.robo["skin:phoenix"].cap === 2);
 ok("no names / device ids stored", !raw.get("roboRare").includes("device-robo") && !raw.get("roboRare").includes("תלמיד"));
-ok("caps match the app catalog", RC.ITEMS["skin:gold"].cap === 3 && RC.ITEMS["skin:diamond"].cap === 5);
+ok("caps match the app catalog", RC.ITEMS["skin:gold"].cap === 3 && RC.ITEMS["skin:diamond"].cap === 5 && RC.ITEMS["skin:phoenix"].cap === 2 && RC.LIST.filter(x => x.r === "u").length === 3);

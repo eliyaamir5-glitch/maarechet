@@ -24,7 +24,7 @@ log(await p.evaluate(() => !!document.querySelector("#roboOpen[open] .ro-chest")
 for (let i = 0; i < 4; i++) { await p.click("#roboOpen .ro"); await sleep(450); }
 log(await p.evaluate(() => !!document.querySelector("#roboOpen .ro-chest.open")), "4 taps (it can upgrade on each) → the chest opens");
 await sleep(1300);
-log(await p.evaluate(() => !!document.querySelector("#roboOpen .ro-card .ro-rar")), "prize card with its rarity");
+log(await p.evaluate(() => !!document.querySelector("#roboOpen .ro-card .ro-in .ro-nm")), "prize card appears");
 for (let i = 0; i < 6 && await p.evaluate(() => !!document.querySelector("#roboOpen .ro-card")); i++) { await p.click("#roboOpen .ro"); await sleep(700); }
 log(await p.evaluate(() => !!document.querySelector("#roboOpen #roDone")), "summary of what you got");
 await p.click("#roboOpen #roDone"); await sleep(600);
@@ -44,7 +44,7 @@ log(await p.evaluate(() => Robo.state().eq.hat === "hat:crown" && !!document.que
 await p.evaluate(() => { Robo.give({ t: "bolts", n: 300 }); document.querySelector('#roboUI [data-t="shop"]').click(); }); await sleep(400);
 const before = await p.evaluate(() => Robo.state().bolts);
 await p.evaluate(() => document.querySelector('#roboUI [data-buy="big"]').click()); await sleep(400);
-log(await p.evaluate(b0 => Robo.state().bolts === b0 - 180 && Robo.state().boxes.includes("big"), before), "shop: buy a big box with bolts");
+log(await p.evaluate(b0 => Robo.state().bolts === b0 - 130 && Robo.state().boxes.includes("big"), before), "shop: buy a big box with bolts");
 await p.evaluate(() => document.getElementById("roboUI").close());
 // עיצוב לאפליקציה: מופיע בבחירת הצבע רק אחרי שזכו בו
 await p.evaluate(() => openProfile()); await sleep(400);
@@ -53,6 +53,19 @@ await p.evaluate(() => { document.getElementById("profDlg").close(); Robo.give({
 log(await p.evaluate(() => !!document.querySelector('#profBody [data-th="neon"]')), "won theme appears in the profile colors");
 log(await p.evaluate(() => !!document.querySelector('#profBody [data-sec="robo"] #pfRobo button')), "profile: 'my robot' section with buttons");
 log(await p.evaluate(() => { const d = document.querySelector('#profBody [data-sec="push"]'); return !!d && !d.open; }), "profile: notifications are inside a closed drawer");
+// 💬 קריאה כשלוחצים על הרובוט · 🔩 בונוס תרגול · 🔊 צלילים לא שוברים כלום
+await p.evaluate(() => { Robo.give({ t: "item", id: "quote:boom" }); const s = Robo.state(); s.eq.quote = "quote:boom"; Robo.give({ t: "bolts", n: 0 }); });
+await sleep(300);
+await p.evaluate(() => { const b = document.getElementById("asstBtn"), r = b.getBoundingClientRect(), o = { bubbles: true, clientX: r.left + 20, clientY: r.top + 20, pointerId: 1 }; b.dispatchEvent(new PointerEvent("pointerdown", o)); b.dispatchEvent(new PointerEvent("pointerup", o)); });
+await sleep(400);
+log(await p.evaluate(() => { const q = document.querySelector(".robo-say"); return !!q && /בום/.test(q.textContent); }), "tap the robot → it says its quote");
+await p.evaluate(() => { const x = document.getElementById("asstP"); if (x && !x.hidden) { const c = x.querySelector(".ax"); c && c.click(); } });
+const e0 = await p.evaluate(() => Robo.state().bolts);
+const got = await p.evaluate(() => { let g = 0; for (let i = 0; i < 40; i++) g += Robo.earn(3); return g; });
+log(got === 60 && await p.evaluate(b0 => Robo.state().bolts === b0 + 60, e0), "practice bonus: +bolts, capped at 60 a day", got);
+log(await p.evaluate(() => { try { Robo.sfx.tap(); Robo.sfx.up(3); Robo.sfx.reveal(5); Robo.sfx.coin(); return true; } catch (e) { return String(e); } }) === true, "sounds play without errors");
+await p.evaluate(() => { localStorage.setItem("roboMute", "1"); });
+log(await p.evaluate(() => Robo.sfx.muted()), "mute is remembered");
 // כפתור במסך הראשי + העוזר מכיר את הרובוט
 log(await p.evaluate(() => { const b = document.getElementById("roboBtn"); return !!b && /הרובוט שלי/.test(b.textContent); }), "home screen: '🤖 הרובוט שלי' button");
 await p.evaluate(() => document.getElementById("roboBtn").click()); await sleep(500);

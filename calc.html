@@ -626,7 +626,7 @@ function pracAnswer(choiceIdx){
   if(r.empty){const f=$("pFb");f.innerHTML=`<div class="pbad">✏️ כתוב תשובה${it.kind==="pair"?" בשני השדות":""} – מספר, שבר (3/4) או עשרוני.</div>`;return}
   PR.tries++;
   if(r.ok){
-    PR.ok++;PR.n++;PR.streak++;PR.wrongRow=0;PR.done=true;pracSave();
+    PR.ok++;PR.n++;PR.streak++;PR.wrongRow=0;PR.done=true;pracSave();if(window.Robo&&PR.tries===1)try{Robo.earn(PR.L>=3?4:3)}catch(e){} // 🔩 בונוס תרגול (עד 60 ביום)
     const up=PR.streak>=3&&PR.streak%3===0&&PR.L<4;
     const steps=it.L<=2?`<div class="psol"><b>ככה פותרים:</b><ol>${pracSteps(it)}</ol></div>`:`<details class="psol"><summary>רוצה לראות את הדרך?</summary><ol>${pracSteps(it)}</ol></details>`;
     pracDraw(`<div class="pgood">✅ ${PRAISE[Math.floor(Math.random()*PRAISE.length)]}${PR.tries>1?" (בניסיון השני – ככה לומדים!)":""}</div>${steps}${up?`<div class="ptip">🔥 ${PR.streak} ברצף! מוכן לאתגר? <button type="button" class="chip" id="pUp">${Practice.LEVELS[PR.L].e} לרמת ${Practice.LEVELS[PR.L].n}</button></div>`:""}`);

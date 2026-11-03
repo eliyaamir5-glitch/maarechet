@@ -50,6 +50,23 @@
     "skin:holo": { head: "rgba(34,211,238,.28)", ear: "rgba(34,211,238,.35)", scr: "rgba(8,47,73,.6)", eye: "#a5f3fc", stroke: "#67e8f9", glow: "#22d3ee", cls: "rholo", top: u => `<g clip-path="url(#${u}c)" opacity=".5">${Array.from({ length: 12 }, (_, i) => `<rect x="11" y="${15 + i * 3}" width="42" height=".8" fill="#a5f3fc"/>`).join("")}</g>`, bg: "radial-gradient(circle at 35% 30%,#67e8f9,#0e7490 55%,#083344)", ring: "#67e8f9" },
     "skin:diamond": { head: "u:h", ear: "u:e", scr: "#0c1a3a", eye: "#e0f2fe", defs: u => lg(u, "h", [[0, "#ffffff"], [.3, "#a5f3fc"], [.55, "#e0e7ff"], [.75, "#c4b5fd"], [1, "#e0f2fe"]]) + lg(u, "e", [[0, "#e0f2fe"], [1, "#a5b4fc"]]),
       top: u => `<g clip-path="url(#${u}c)" opacity=".55"><path d="M11 15l14 14-14 8M53 15l-14 14 14 8M25 29h14M25 29l7 22 7-22" stroke="#fff" stroke-width=".8" fill="none"/></g>` + shine(u) + twinkles([[15, 17, 3], [50, 19, 2.4], [48, 48, 3], [13, 46, 2]], "#fff"), cls: "rdia", bg: "radial-gradient(circle at 35% 30%,#ffffff,#a5f3fc 40%,#818cf8 75%,#1e1b4b)", ring: "#a5f3fc" },
+    "skin:cookie": { head: "#d6a46a", ear: "#b07d43", eye: "#fde68a", top: u => `<g clip-path="url(#${u}c)">${[[16, 19], [44, 18], [14, 46], [49, 45], [30, 48], [24, 17]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="2.4" ry="1.8" fill="#4a2c12"/>`).join("")}</g>`, bg: "radial-gradient(circle at 35% 30%,#f5d0a0,#b07d43 60%,#5c3a17)" },
+    "skin:panda": { head: "#ffffff", ear: "#111827", scr: "#111827", eye: "#ffffff", top: u => `<g clip-path="url(#${u}c)"><ellipse cx="13" cy="18" rx="7" ry="6" fill="#111827"/><ellipse cx="51" cy="18" rx="7" ry="6" fill="#111827"/></g>`, bg: "radial-gradient(circle at 35% 30%,#ffffff,#d1d5db 55%,#111827)" },
+    "skin:melon": { head: "#22c55e", ear: "#15803d", scr: "#fb7185", eye: "#1f2937", stroke: "#15803d", top: u => `<g clip-path="url(#${u}c)" opacity=".5"><path d="M11 22h42M11 30h42M11 38h42M11 46h42" stroke="#86efac" stroke-width="1.6"/></g>`, bg: "radial-gradient(circle at 35% 30%,#fda4af,#22c55e 55%,#14532d)" },
+    "skin:pixel": { head: "#60a5fa", ear: "#2563eb", scr: "#0f172a", eye: "#facc15", top: u => `<g clip-path="url(#${u}c)" shape-rendering="crispEdges">${Array.from({ length: 30 }, (_, i) => { const x = 11 + (i % 6) * 7, y = 15 + Math.floor(i / 6) * 7; return (i * 7) % 3 === 0 ? `<rect x="${x}" y="${y}" width="7" height="7" fill="#93c5fd"/>` : ""; }).join("")}</g>`, cls: "rpix", bg: "radial-gradient(circle at 35% 30%,#93c5fd,#2563eb 55%,#1e3a8a)" },
+    "skin:tiger": { head: "#fb923c", ear: "#ea580c", eye: "#fef08a", top: u => `<g clip-path="url(#${u}c)"><path d="M11 20l8 3-8 3M53 20l-8 3 8 3M11 42l7 2-7 3M53 42l-7 2 7 3M28 15l4 4 4-4" stroke="#1c1917" stroke-width="2.2" fill="none" stroke-linejoin="round"/></g>`, bg: "radial-gradient(circle at 35% 30%,#fed7aa,#f97316 55%,#7c2d12)" },
+    "skin:sakura": { head: "#fdf2f8", ear: "#fbcfe8", eye: "#ec4899", top: u => [[16, 20, 0], [47, 18, 40], [14, 46, 80], [49, 46, 120], [32, 48, 20]].map(([x, y, r]) => `<g transform="translate(${x} ${y}) rotate(${r})"><ellipse rx="2.6" ry="1.5" fill="#f9a8d4"/><ellipse rx="1.5" ry="2.6" fill="#f472b6" opacity=".8"/></g>`).join(""), bg: "radial-gradient(circle at 35% 30%,#fce7f3,#f472b6 55%,#9d174d)" },
+    "skin:ocean": { head: "u:h", ear: "#0284c7", scr: "#082f49", eye: "#7dd3fc", defs: u => lg(u, "h", [[0, "#7dd3fc"], [.5, "#0ea5e9"], [1, "#1e3a8a"]], 0, 1), top: u => `<g clip-path="url(#${u}c)"><g class="rwave"><path d="M5 46q5-4 10 0t10 0 10 0 10 0 10 0 10 0" stroke="#e0f2fe" stroke-width="1.8" fill="none"/><path d="M5 50q5-4 10 0t10 0 10 0 10 0 10 0 10 0" stroke="#bae6fd" stroke-width="1.4" fill="none"/></g></g>`, bg: "radial-gradient(circle at 35% 30%,#7dd3fc,#0369a1 55%,#082f49)" },
+    "skin:robocat": { head: "#9ca3af", ear: "#6b7280", eye: "#a3e635", under: () => `<path d="M14 20L16 4 28 16Z" fill="#6b7280"/><path d="M50 20L48 4 36 16Z" fill="#6b7280"/><path d="M17 16L18 8 24 15Z" fill="#f9a8d4"/><path d="M47 16L46 8 40 15Z" fill="#f9a8d4"/>`, top: () => `<path d="M8 36h9M8 40h9M47 36h9M47 40h9" stroke="#374151" stroke-width="1.2"/>`, bg: "radial-gradient(circle at 35% 30%,#d1d5db,#6b7280 55%,#1f2937)" },
+    "skin:chrome": { head: "u:h", ear: "u:e", scr: "#020617", eye: "#e0f2fe", defs: u => lg(u, "h", [[0, "#f8fafc"], [.25, "#64748b"], [.45, "#f1f5f9"], [.7, "#334155"], [1, "#cbd5e1"]]) + lg(u, "e", [[0, "#e2e8f0"], [1, "#475569"]]), top: shine, bg: "radial-gradient(circle at 35% 30%,#ffffff,#94a3b8 40%,#1e293b)", ring: "#e2e8f0" },
+    "skin:circuit": { head: "#064e3b", ear: "#065f46", scr: "#022c22", eye: "#4ade80", top: u => `<g clip-path="url(#${u}c)"><path class="rcirc" d="M11 22h8v6h6M53 24h-7v8h-5M14 48v-4h9v3M50 48v-5h-8M32 15v4" stroke="#4ade80" stroke-width="1.4" fill="none"/><circle cx="25" cy="28" r="1.4" fill="#4ade80"/><circle cx="41" cy="32" r="1.4" fill="#4ade80"/><circle cx="23" cy="47" r="1.4" fill="#4ade80"/></g>`, bg: "radial-gradient(circle at 35% 30%,#34d399,#065f46 55%,#022c22)", ring: "#4ade80" },
+    "skin:zombie": { head: "#86efac", ear: "#4ade80", scr: "#14532d", eye: "#fef08a", top: () => `<path d="M17 17v6M15 19h4M15 21h4M46 46l4-4M46 42l4 4M45 44h6" stroke="#166534" stroke-width="1.3"/><circle cx="48" cy="19" r="2" fill="#4ade80" stroke="#166534" stroke-width=".8"/>`, bg: "radial-gradient(circle at 35% 30%,#bbf7d0,#22c55e 55%,#14532d)" },
+    "skin:dragon": { head: "u:h", ear: "#047857", scr: "#052e16", eye: "#fde047", defs: u => lg(u, "h", [[0, "#4ade80"], [.5, "#16a34a"], [1, "#064e3b"]], 0, 1), under: () => `<path d="M16 18Q10 8 14 2Q18 10 22 15Z" fill="#fde68a"/><path d="M48 18Q54 8 50 2Q46 10 42 15Z" fill="#fde68a"/>`, top: u => `<g clip-path="url(#${u}c)" opacity=".55">${[14, 22, 30, 38, 46].map(x => `<path d="M${x} 50q4-5 8 0" stroke="#bbf7d0" stroke-width="1.3" fill="none"/>`).join("")}</g>`, bg: "radial-gradient(circle at 35% 30%,#86efac,#15803d 55%,#022c22)", ring: "#4ade80" },
+    "skin:shadow": { head: "#1e1b4b", ear: "#312e81", scr: "#020617", eye: "#c084fc", glow: "#a855f7", stroke: "#7c3aed", top: () => twinkles([[15, 18, 1.8], [48, 46, 2]], "#c084fc"), cls: "rshadow", bg: "radial-gradient(circle at 35% 30%,#7c3aed,#1e1b4b 60%,#000)", ring: "#a855f7" },
+    "skin:storm": { head: "u:h", ear: "#1e40af", scr: "#0b1026", eye: "#fde047", defs: u => lg(u, "h", [[0, "#1e3a8a"], [.6, "#3b82f6"], [1, "#facc15"]], 0, 1), top: u => `<g clip-path="url(#${u}c)"><path class="rzap" d="M18 15l-4 9h5l-3 9M46 16l-4 8h5l-3 9" stroke="#fde047" stroke-width="1.8" fill="none"/></g>` + shine(u), glow: "#facc15", bg: "radial-gradient(circle at 35% 30%,#fde047,#2563eb 50%,#0b1026)", ring: "#facc15" },
+    "skin:phoenix": { head: "u:h", ear: "u:e", scr: "#3b0a0a", eye: "#fff7ed", defs: u => lg(u, "h", [[0, "#fef08a"], [.4, "#f97316"], [1, "#b91c1c"]], 0, 1) + lg(u, "e", [[0, "#fde047"], [1, "#dc2626"]]),
+      under: () => `<g class="rwing"><path d="M8 30Q-10 20-6 2Q2 18 12 22Z" fill="#f97316"/><path d="M8 34Q-12 34-10 18Q0 30 12 28Z" fill="#fde047" opacity=".9"/></g><g class="rwing r"><path d="M56 30Q74 20 70 2Q62 18 52 22Z" fill="#f97316"/><path d="M56 34Q76 34 74 18Q64 30 52 28Z" fill="#fde047" opacity=".9"/></g><g class="rflame"><path d="M22 16q-3-8 3-12 0 5 4 6 0-5 5-8 0 6 4 8 2-4 5-5-1 5 1 11z" fill="#fde047"/></g>`,
+      top: u => shine(u) + twinkles([[15, 18, 2.6], [50, 20, 2.2], [48, 47, 2.8]], "#fffbe6"), cls: "rgold", bg: "radial-gradient(circle at 35% 30%,#fef08a,#f97316 45%,#7f1d1d)", ring: "#f97316" },
     "skin:gold": { head: "u:h", ear: "u:e", scr: "#3b2300", eye: "#fef08a", defs: u => lg(u, "h", [[0, "#fff7c2"], [.35, "#facc15"], [.65, "#ca8a04"], [1, "#fde68a"]]) + lg(u, "e", [[0, "#fde047"], [1, "#a16207"]]),
       top: u => shine(u) + twinkles([[15, 17, 3], [50, 20, 2.4], [49, 48, 3.2], [13, 45, 2]], "#fffbe6"), cls: "rgold", bg: "radial-gradient(circle at 35% 30%,#fff7c2,#facc15 40%,#ca8a04 75%,#713f12)", ring: "#facc15" },
   };
@@ -70,6 +87,16 @@
     "hat:flame": () => `<g class="rflame"><path d="M14 20q-6-12 3-20 0 8 5 10-2-9 7-14 0 9 6 12 3-7 10-8-3 7 0 12 4-2 6-8 5 9-2 16z" fill="#f97316"/><path d="M20 19q-3-8 3-13 0 6 5 7 0-6 6-9 0 7 5 9 3-4 6-5-1 6 1 10z" fill="#fde047"/></g>`,
     "hat:halo": () => `<ellipse class="rhalo" cx="32" cy="3" rx="15" ry="4" fill="none" stroke="#fde047" stroke-width="3"/>`,
     "hat:diamondcrown": u => `<defs>${lg(u, "dc", [[0, "#ffffff"], [.5, "#a5f3fc"], [1, "#a78bfa"]], 0, 1)}</defs><path d="M14 19V5l8 7 10-11 10 11 8-7v14Z" fill="url(#${u}dc)" stroke="#67e8f9" stroke-width=".8"/><path d="M27 12l5-6 5 6-5 5Z" fill="#e0f2fe" stroke="#67e8f9" stroke-width=".6"/>${twinkles([[16, 4, 2.6], [48, 3, 3], [32, -3, 2.2]], "#fff")}`,
+    "hat:headphones": () => `<path d="M9 30Q9 6 32 6Q55 6 55 30" stroke="#111827" stroke-width="4" fill="none"/><rect x="4" y="25" width="9" height="15" rx="4" fill="#ef4444"/><rect x="51" y="25" width="9" height="15" rx="4" fill="#ef4444"/>`,
+    "hat:kippahblack": () => `<path d="M20 16Q32 6 44 16Z" fill="#111827"/><path d="M22 15Q32 9 42 15" stroke="#374151" stroke-width=".8" fill="none"/>`,
+    "hat:beret": () => `<ellipse cx="28" cy="14" rx="18" ry="6" fill="#dc2626" transform="rotate(-10 28 14)"/><rect x="27" y="5" width="2" height="4" fill="#991b1b"/>`,
+    "hat:cowboy": () => `<ellipse cx="32" cy="17" rx="29" ry="5" fill="#92400e"/><path d="M19 17Q19 2 26 4Q32 7 38 4Q45 2 45 17Z" fill="#b45309"/><rect x="19" y="12" width="26" height="3" fill="#451a03"/>`,
+    "hat:bunny": () => `<g class="rtail"><ellipse cx="23" cy="2" rx="5" ry="15" fill="#f8fafc" transform="rotate(-12 23 2)"/><ellipse cx="23" cy="3" rx="2.5" ry="11" fill="#f9a8d4" transform="rotate(-12 23 3)"/></g><ellipse cx="41" cy="2" rx="5" ry="15" fill="#f8fafc" transform="rotate(14 41 2)"/><ellipse cx="41" cy="3" rx="2.5" ry="11" fill="#f9a8d4" transform="rotate(14 41 3)"/>`,
+    "hat:sombrero": () => `<ellipse cx="32" cy="16" rx="33" ry="6" fill="#facc15"/><path d="M22 16Q22 0 32 0Q42 0 42 16Z" fill="#eab308"/><path d="M-1 16Q32 24 65 16" stroke="#dc2626" stroke-width="1.6" fill="none"/><rect x="22" y="11" width="20" height="3" fill="#16a34a"/>`,
+    "hat:jester": () => `<path d="M14 18Q10 4 2 2Q12 6 22 16Z" fill="#a855f7"/><path d="M50 18Q54 4 62 2Q52 6 42 16Z" fill="#22c55e"/><path d="M22 17Q30 -4 34 -6Q34 6 42 17Z" fill="#ef4444"/><circle cx="2" cy="2" r="2.4" fill="#facc15"/><circle cx="62" cy="2" r="2.4" fill="#facc15"/><circle cx="34" cy="-6" r="2.4" fill="#facc15"/><rect x="13" y="15" width="38" height="4" rx="2" fill="#facc15"/>`,
+    "hat:laurel": () => `<g fill="#16a34a">${[-60, -40, -20, 0, 20, 40, 60].map((a, i) => `<ellipse cx="${(32 + 20 * Math.sin(a * Math.PI / 180)).toFixed(1)}" cy="${(17 - 9 * Math.cos(a * Math.PI / 180)).toFixed(1)}" rx="2.2" ry="4.2" transform="rotate(${a} ${(32 + 20 * Math.sin(a * Math.PI / 180)).toFixed(1)} ${(17 - 9 * Math.cos(a * Math.PI / 180)).toFixed(1)})" fill="${i % 2 ? "#22c55e" : "#15803d"}"/>`).join("")}</g>`,
+    "hat:unicorn": u => `<defs>${lg(u, "un", [[0, "#fde68a"], [.5, "#f9a8d4"], [1, "#a5b4fc"]], 0, 1)}</defs><path d="M27 17L33 -9L37 17Z" fill="url(#${u}un)" stroke="#e9d5ff" stroke-width=".6"/><path d="M29 10l7-2M30 4l5-1.5M28 15l8-2" stroke="#fff" stroke-width="1"/>${twinkles([[44, 0, 2.4], [22, 4, 2]], "#fff")}`,
+    "hat:stars": () => `<g class="rhalo">${[-50, -25, 0, 25, 50].map((a, i) => `<text x="${(32 + 18 * Math.sin(a * Math.PI / 180)).toFixed(1)}" y="${(12 - 6 * Math.cos(a * Math.PI / 180)).toFixed(1)}" font-size="${i === 2 ? 11 : 8}" text-anchor="middle" fill="#fde047" style="filter:drop-shadow(0 0 2px #facc15)">★</text>`).join("")}</g>`,
     "hat:streak": u => `<defs>${lg(u, "sc", [[0, "#fde047"], [.6, "#f97316"], [1, "#dc2626"]], 0, 1)}</defs><g class="rflame" opacity=".85"><path d="M16 8q-3-6 1-10 0 4 3 5 0-4 4-7 0 5 3 6" fill="#f97316"/><path d="M48 8q3-6-1-10 0 4-3 5 0-4-4-7 0 5-3 6" fill="#f97316"/></g><path d="M14 19V5l8 7 10-11 10 11 8-7v14Z" fill="url(#${u}sc)" stroke="#b91c1c" stroke-width=".8"/><text x="32" y="16" font-size="8" text-anchor="middle">🔥</text>`,
   };
   // משקפיים (מעל העיניים, זזים יחד איתן)
@@ -80,9 +107,15 @@
     "eyes:3d": () => `<rect x="15" y="24" width="34" height="12" rx="2" fill="#f8fafc"/><rect x="17" y="26" width="13" height="8" rx="1.5" fill="#ef4444" opacity=".85"/><rect x="34" y="26" width="13" height="8" rx="1.5" fill="#06b6d4" opacity=".85"/>`,
     "eyes:ski": u => `<defs>${lg(u, "sk", [[0, "#fde047"], [.5, "#fb923c"], [1, "#db2777"]])}</defs><rect x="10" y="27" width="44" height="5" fill="#111827"/><rect x="15" y="23.5" width="34" height="13" rx="6.5" fill="url(#${u}sk)" stroke="#111827" stroke-width="1.6"/><path d="M20 27q6-2 10 0" stroke="#fff" stroke-width="1.2" fill="none" opacity=".8"/>`,
     "eyes:laser": () => `<rect x="15" y="25" width="34" height="10" rx="3" fill="rgba(239,68,68,.85)"/><rect class="rscan" x="15" y="25" width="3" height="10" fill="#fff" opacity=".9"/>`,
+    "eyes:monocle": () => `<circle cx="39" cy="30" r="6.6" fill="rgba(255,255,255,.12)" stroke="#d4a017" stroke-width="1.6"/><path d="M45 33q4 6 2 14" stroke="#d4a017" stroke-width=".9" fill="none"/>`,
+    "eyes:mask": () => `<path d="M13 26q10-4 19 1 9-5 19-1-1 9-8 9-7 0-11-4-4 4-11 4-7 0-8-9z" fill="#111827"/><ellipse cx="25" cy="30" rx="3.4" ry="2.6" fill="#1b1f45"/><ellipse cx="39" cy="30" rx="3.4" ry="2.6" fill="#1b1f45"/>`,
+    "eyes:visor": () => `<rect x="14" y="25" width="36" height="10" rx="5" fill="rgba(74,222,128,.55)" stroke="#16a34a" stroke-width="1.2"/><path d="M18 28h10" stroke="#fff" stroke-width="1.2" opacity=".7"/>`,
     "eyes:vr": () => `<rect x="12" y="21" width="40" height="18" rx="6" fill="#e5e7eb" stroke="#9ca3af"/><rect x="15" y="24" width="34" height="12" rx="4" fill="#111827"/><circle class="rtw" cx="44" cy="30" r="1.6" fill="#22d3ee"/><rect x="10" y="27" width="3" height="6" fill="#374151"/><rect x="51" y="27" width="3" height="6" fill="#374151"/>`,
   };
   const EYE_SHAPE = {
+    "eyes:dollar": (x) => `<text class="eye" x="${x}" y="34" font-size="11" font-weight="900" text-anchor="middle" fill="#4ade80">$</text>`,
+    "eyes:hypno": (x) => `<g class="rspin" style="transform-origin:${x}px 30px"><circle cx="${x}" cy="30" r="4.6" fill="none" stroke="#f0abfc" stroke-width="1.3"/><circle cx="${x}" cy="30" r="2.6" fill="none" stroke="#a855f7" stroke-width="1.3"/><circle cx="${x}" cy="30" r=".9" fill="#f0abfc"/></g>`,
+    "eyes:fire": (x) => `<path class="eye rflame" d="M${x} 35q-5-1-4-6 1 2 2 2-1-4 2-7 0 3 2 4 1-2 2-2 1 5-4 9z" fill="#f97316"/><path d="M${x} 35q-2 0-2-3 1 1 2 1 0-2 1-3 1 3-1 5z" fill="#fde047"/>`,
     "eyes:heart": (x, c) => `<path class="eye" d="M${x} 34.5l-4.6-4.6a2.8 2.8 0 0 1 4.6-3.4 2.8 2.8 0 0 1 4.6 3.4Z" fill="#f43f5e"/>`,
     "eyes:star": (x) => `<path class="eye" d="M${x} 24.5l1.7 3.6 3.9.4-2.9 2.6.9 3.9-3.6-2-3.6 2 .9-3.9-2.9-2.6 3.9-.4Z" fill="#facc15"/>`,
     "eyes:rainbow": (x, c, u) => `<ellipse class="eye rrain" cx="${x}" cy="30" rx="4" ry="4.8" fill="url(#${u}rb)"/>`,
@@ -94,6 +127,12 @@
     "aura:flames": () => `<g class="rflame">${[[6, 52], [16, 58], [28, 61], [40, 60], [52, 56], [60, 48]].map(([x, y], i) => `<path d="M${x} ${y}q-4-7 0-12q1 4 3 4q0-5 3-8q1 7-2 12z" fill="${i % 2 ? "#fde047" : "#f97316"}"/>`).join("")}</g>`,
     "aura:stars": () => `<g class="rorbit">${[0, 72, 144, 216, 288].map(a => { const r = 31, x = 32 + r * Math.cos(a * Math.PI / 180), y = 32 + r * Math.sin(a * Math.PI / 180); return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="7" text-anchor="middle" dominant-baseline="middle" fill="#fde047">★</text>`; }).join("")}</g>`,
     "aura:rays": () => `<g class="rrays" opacity=".75">${Array.from({ length: 12 }, (_, i) => `<path d="M32 32L${(32 + 40 * Math.cos(i * Math.PI / 6 - .1)).toFixed(1)} ${(32 + 40 * Math.sin(i * Math.PI / 6 - .1)).toFixed(1)}L${(32 + 40 * Math.cos(i * Math.PI / 6 + .1)).toFixed(1)} ${(32 + 40 * Math.sin(i * Math.PI / 6 + .1)).toFixed(1)}Z" fill="#fde047"/>`).join("")}</g>`,
+    "aura:hearts": () => [[8, 52, 0], [56, 48, .8], [12, 28, 1.6], [54, 22, 2.2]].map(([x, y, d]) => `<text class="rbub" style="animation-delay:${d}s" x="${x}" y="${y}" font-size="7" text-anchor="middle">💖</text>`).join(""),
+    "aura:notes": () => [[7, 50, 0, "♪"], [57, 44, .7, "♫"], [10, 26, 1.4, "♫"], [55, 20, 2.1, "♪"]].map(([x, y, d, t]) => `<text class="rbub" style="animation-delay:${d}s" x="${x}" y="${y}" font-size="9" font-weight="900" text-anchor="middle" fill="#a78bfa">${t}</text>`).join(""),
+    "aura:snow": () => [[6, 4, 0], [20, 0, 1], [44, 2, .5], [58, 6, 1.5], [32, -2, 2]].map(([x, y, d]) => `<text class="rsnow" style="animation-delay:${d}s" x="${x}" y="${y}" font-size="6" fill="#e0f2fe" text-anchor="middle">❄</text>`).join(""),
+    "aura:petals": () => [[6, 2, 0], [22, -2, .9], [46, 0, .4], [60, 4, 1.4], [34, -4, 1.9]].map(([x, y, d]) => `<ellipse class="rsnow" style="animation-delay:${d}s" cx="${x}" cy="${y}" rx="2.2" ry="1.3" fill="#f9a8d4"/>`).join(""),
+    "aura:galaxy": () => `<g class="rorbit">${Array.from({ length: 14 }, (_, i) => { const a = i * 0.9, r = 22 + i * 0.9; return `<circle cx="${(32 + r * Math.cos(a)).toFixed(1)}" cy="${(32 + r * Math.sin(a)).toFixed(1)}" r="${(1.6 - i * 0.06).toFixed(2)}" fill="${i % 3 ? "#c084fc" : "#f0abfc"}"/>`; }).join("")}</g>`,
+    "aura:rainbow": () => `<g class="rorbit">${["#ef4444", "#f59e0b", "#facc15", "#22c55e", "#3b82f6", "#a855f7"].map((c, i) => `<path d="M${(32 + 31 * Math.cos(i * Math.PI / 3)).toFixed(1)} ${(32 + 31 * Math.sin(i * Math.PI / 3)).toFixed(1)}A31 31 0 0 1 ${(32 + 31 * Math.cos((i + 1) * Math.PI / 3)).toFixed(1)} ${(32 + 31 * Math.sin((i + 1) * Math.PI / 3)).toFixed(1)}" stroke="${c}" stroke-width="3.4" fill="none" stroke-linecap="round"/>`).join("")}</g>`,
     "aura:streak": u => `<defs><radialGradient id="${u}st"><stop offset=".6" stop-color="#f97316" stop-opacity="0"/><stop offset=".85" stop-color="#f97316" stop-opacity=".7"/><stop offset="1" stop-color="#dc2626" stop-opacity="0"/></radialGradient></defs><circle class="rpulse" cx="32" cy="32" r="34" fill="url(#${u}st)"/><g class="rorbit">${[0, 90, 180, 270].map(a => `<text x="${(32 + 31 * Math.cos(a * Math.PI / 180)).toFixed(1)}" y="${(32 + 31 * Math.sin(a * Math.PI / 180)).toFixed(1)}" font-size="8" text-anchor="middle" dominant-baseline="middle">🔥</text>`).join("")}</g>`,
   };
   // 🎉 בחגים הרובוט מחזיק משהו של החג (לא משנה את מה שבחרת – רק בזמן החג)
@@ -112,7 +151,7 @@
     const strokeA = sk.stroke ? ` stroke="${sk.stroke}" stroke-width="1.6"` : "";
     const glow = sk.glow ? ` style="filter:drop-shadow(0 0 3px ${sk.glow})"` : "";
     const eyeSh = EYE_SHAPE[E.eyes];
-    const eyesHtml = eyeSh ? eyeSh(25, eye, u) + eyeSh(39, eye, u) : `<ellipse class="eye" cx="25" cy="30" rx="3.8" ry="4.6" fill="${eye}"/><ellipse class="eye" cx="39" cy="30" rx="3.8" ry="4.6" fill="${eye}"/><circle cx="26.3" cy="28.3" r="1.2" fill="#fff"/><circle cx="40.3" cy="28.3" r="1.2" fill="#fff"/>`;
+    const eyesHtml = E.eyes === "eyes:cyclops" ? `<ellipse class="eye" cx="32" cy="31" rx="8" ry="8" fill="#fff"/><circle cx="32" cy="31" r="4.4" fill="${eye}"/><circle cx="32" cy="31" r="2" fill="#0b0b12"/><circle cx="34" cy="29" r="1.2" fill="#fff"/>` : eyeSh ? eyeSh(25, eye, u) + eyeSh(39, eye, u) : `<ellipse class="eye" cx="25" cy="30" rx="3.8" ry="4.6" fill="${eye}"/><ellipse class="eye" cx="39" cy="30" rx="3.8" ry="4.6" fill="${eye}"/><circle cx="26.3" cy="28.3" r="1.2" fill="#fff"/><circle cx="40.3" cy="28.3" r="1.2" fill="#fff"/>`;
     const defs = (sk.defs ? sk.defs(u) : "") + `<clipPath id="${u}c"><rect x="11" y="15" width="42" height="36" rx="14"/></clipPath>` + (E.eyes === "eyes:rainbow" ? lg(u, "rb", [[0, "#f87171"], [.33, "#facc15"], [.66, "#22d3ee"], [1, "#a855f7"]], 0, 1) : "");
     const hat = HAT[E.hat] ? HAT[E.hat](u) : "";
     return `<svg class="abot ${cls}${opt.still ? " still" : ""}${sk.cls ? " " + sk.cls : ""}" viewBox="0 0 64 64" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs>
@@ -130,6 +169,8 @@ ${hat}${sk.over ? sk.over(u) : ""}${heldEm ? `<text class="rheld" x="55" y="56" 
   function preview(id, still = true) {
     const it = R.ITEMS[id];
     if (it.cat === "theme" || it.cat === "page") return `<div class="rv-sw" style="background:${it.grad}"><span>${it.cat === "page" ? pageIcon(it.pg) : "🎨"}</span></div>`;
+    if (it.cat === "trail") return `<div class="rv-sw rv-trail" style="background:radial-gradient(circle,#3b1d7a,#1a1040)">${it.em.map((e, i) => `<span style="animation-delay:${i * .25}s">${e}</span>`).join("")}</div>`;
+    if (it.cat === "quote") return `<div class="rv-q"><div class="rv-qb">${esc(it.n)}</div><div style="width:46%;margin:2px auto 0">${svg("", S.eq, { still, noHoli: true })}</div></div>`;
     const eq = Object.assign({}, S.eq, { [it.cat]: id }); return svg("", eq, { still, noHoli: true });
   }
   const pageIcon = pg => ({ calc: "🧮", cards: "🃏", absences: "📊", phones: "📞", index: "🏠" }[pg] || "📄");
@@ -162,7 +203,21 @@ ${hat}${sk.over ? sk.over(u) : ""}${heldEm ? `<text class="rheld" x="55" y="56" 
 .abot.rrain .body,.abot .rrain{animation:rHue 4s linear infinite}@keyframes rHue{to{filter:hue-rotate(360deg)}}
 .abot.rholo .body{animation:rHolo 3s steps(1) infinite}@keyframes rHolo{0%,92%{opacity:.95}93%{opacity:.4}95%{opacity:.9}97%{opacity:.5}}
 .abot.rgold .body{filter:drop-shadow(0 0 4px rgba(250,204,21,.7))}.abot.rdia .body{filter:drop-shadow(0 0 4px rgba(165,243,252,.8))}
+.abot .rwave{animation:rWave 2.4s linear infinite}@keyframes rWave{to{transform:translateX(-20px)}}
+.abot .rcirc{stroke-dasharray:4 3;animation:rCirc 1.2s linear infinite}@keyframes rCirc{to{stroke-dashoffset:-14}}
+.abot .rwing{transform-box:fill-box;transform-origin:100% 80%;animation:rWing .7s ease-in-out infinite alternate}.abot .rwing.r{transform-origin:0 80%;animation-direction:alternate-reverse}@keyframes rWing{to{transform:rotate(-14deg)}}
+.abot .rsnow{animation:rSnow 3.2s linear infinite}@keyframes rSnow{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(62px) translateX(4px);opacity:0}}
+.abot .rspin{animation:rSpin 1.6s linear infinite}
+.abot.rshadow .body{filter:drop-shadow(0 0 5px #a855f7)}.abot.rpix{image-rendering:pixelated}
 .abot.still *,.abot.still{animation:none!important}
+.rv-trail{font-size:20px;gap:2px;flex-wrap:wrap}.rv-trail span{animation:rTw 1.6s ease-in-out infinite}
+.rv-q{width:100%;display:flex;flex-direction:column;align-items:center}.rv-qb{background:#fff;color:#1a1040;border-radius:10px;padding:4px 6px;font-size:10px;font-weight:900;line-height:1.2;position:relative;max-width:96%}
+.rv-qb::after{content:"";position:absolute;bottom:-5px;left:50%;margin-left:-5px;border:5px solid transparent;border-top-color:#fff;border-bottom:0}
+.robo-trail{position:fixed;z-index:8999;pointer-events:none;font-size:18px;animation:rTrail .9s ease-out forwards}@keyframes rTrail{to{transform:translate(var(--tx),var(--ty)) scale(.3) rotate(var(--tr));opacity:0}}
+.robo-say{position:fixed;z-index:9100;background:#fff;color:#1a1040;border-radius:16px;padding:8px 12px;font-size:15px;font-weight:900;box-shadow:0 10px 26px rgba(0,0,0,.3);pointer-events:none;animation:rSay 2.4s cubic-bezier(.2,1.5,.4,1) forwards;direction:rtl;white-space:nowrap}
+@keyframes rSay{0%{transform:scale(.3) translateY(10px);opacity:0}12%{transform:scale(1.08);opacity:1}20%{transform:scale(1)}85%{opacity:1}100%{opacity:0;transform:translateY(-12px)}}
+.ro-mute,.rw-mute{position:absolute;z-index:3;border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:99px;font-size:16px;cursor:pointer;width:36px;height:36px}
+.ro-mute{top:calc(16px + env(safe-area-inset-top));left:84px}.rw-mute{top:calc(10px + env(safe-area-inset-top));left:52px}
 .abot{overflow:visible}
 #roboBtn{position:relative;background:linear-gradient(135deg,#facc15,#f97316)!important;color:#1a1040!important;font-weight:900!important;border:0!important}
 #roboBtn .rb-badge{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:#dc2626;color:#fff;font-size:11px;margin-inline-start:4px;text-align:center}
@@ -289,6 +344,47 @@ dialog.robo.open{background:#05020f}
   function addCss() { if (document.getElementById("roboCss")) return; const s = document.createElement("style"); s.id = "roboCss"; s.textContent = CSS; (document.head || document.documentElement).appendChild(s); }
   addCss();
 
+  // =============== 🔊 צלילים (נוצרים בדפדפן – בלי קבצים) ===============
+  // רק בתיבות, בפרסים, במתנת הרצף ובחנות. כפתור 🔊/🔇 משתיק (נשמר). באייפון – מצב שקט של הטלפון משתיק לבד
+  const SFX = (() => {
+    let ac = null;
+    const muted = () => LS.get("roboMute", "") === "1";
+    const ctx = () => { if (muted()) return null; try { if (!ac) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; ac = new A(); } if (ac.state === "suspended") ac.resume(); return ac; } catch (e) { return null; } };
+    function tone(f, t, dur, { type = "sine", vol = 0.18, to = 0, at = 0.01 } = {}) {
+      const c = ctx(); if (!c) return; const o = c.createOscillator(), g = c.createGain(), t0 = c.currentTime + t;
+      o.type = type; o.frequency.setValueAtTime(f, t0); if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + at); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g).connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+    }
+    function noise(t, dur, { vol = 0.15, from = 400, to = 4000 } = {}) {
+      const c = ctx(); if (!c) return; const n = Math.floor(c.sampleRate * dur), b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+      const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(), t0 = c.currentTime + t;
+      s.buffer = b; f.type = "bandpass"; f.frequency.setValueAtTime(from, t0); f.frequency.exponentialRampToValueAtTime(to, t0 + dur); f.Q.value = 0.8;
+      g.gain.setValueAtTime(vol, t0); s.connect(f).connect(g).connect(c.destination); s.start(t0);
+    }
+    const NOTES = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.5, 1567.98];
+    return {
+      muted, toggle() { LS.set("roboMute", muted() ? null : "1"); if (!muted()) this.coin(); return !muted(); },
+      tap() { tone(160, 0, 0.14, { type: "sine", vol: 0.3, to: 60 }); noise(0, 0.08, { vol: 0.08, from: 900, to: 300 }); },
+      up(lv) { const base = 2 + lv; [0, 2, 4].forEach((k, i) => tone(NOTES[Math.min(8, base + k)] * (lv >= 4 ? 1 : 0.5), i * 0.07, 0.3, { type: "triangle", vol: 0.16 })); noise(0, 0.35, { vol: 0.07, from: 1500, to: 8000 }); if (lv >= 4) tone(110, 0, 0.6, { type: "sawtooth", vol: 0.06 }); },
+      open() { noise(0, 0.45, { vol: 0.16, from: 200, to: 6000 }); tone(90, 0.35, 0.6, { type: "sine", vol: 0.4, to: 40 }); [0, 1, 2, 3].forEach(i => tone(NOTES[4 + i], 0.4 + i * 0.05, 0.25, { type: "triangle", vol: 0.08 })); },
+      reveal(o) { // o = דרגה 0..6
+        if (o <= 1) { tone(NOTES[o ? 4 : 2], 0, 0.3, { type: "triangle", vol: 0.16 }); tone(NOTES[o ? 6 : 4], 0.09, 0.35, { type: "triangle", vol: 0.14 }); return; }
+        const seq = o >= 5 ? [0, 2, 4, 5, 7, 8] : o >= 4 ? [0, 2, 4, 6, 7] : o >= 3 ? [0, 2, 4, 7] : [1, 3, 5];
+        seq.forEach((k, i) => tone(NOTES[k], i * 0.09, 0.45, { type: o >= 5 ? "square" : "triangle", vol: o >= 5 ? 0.07 : 0.14 }));
+        if (o >= 4) { tone(130.8, 0, 0.9, { type: "sawtooth", vol: 0.07 }); tone(196, 0.05, 0.9, { type: "sawtooth", vol: 0.05 }); }
+        if (o >= 5) { noise(0.5, 0.6, { vol: 0.06, from: 3000, to: 9000 }); [0, 4, 7].forEach(k => tone(NOTES[k] * 2, 0.6, 1.1, { type: "triangle", vol: 0.07 })); }
+      },
+      ultra() { tone(55, 0, 1.6, { type: "sawtooth", vol: 0.12, to: 110 }); [0, 0.4, 0.8, 1.2].forEach(t => tone(70, t, 0.18, { type: "sine", vol: 0.45, to: 35 })); },
+      coin() { tone(988, 0, 0.08, { type: "square", vol: 0.07 }); tone(1319, 0.07, 0.22, { type: "square", vol: 0.07 }); },
+      gift() { [0, 2, 4, 7, 8].forEach((k, i) => tone(NOTES[k], i * 0.06, 0.3, { type: "triangle", vol: 0.12 })); noise(0.1, 0.4, { vol: 0.05, from: 4000, to: 9000 }); },
+      sad() { [5, 3, 1].forEach((k, i) => tone(NOTES[k] / 2, i * 0.18, 0.35, { type: "triangle", vol: 0.12 })); },
+    };
+  })();
+  const muteBtn = cls => `<button type="button" class="${cls}" aria-label="צלילים">${SFX.muted() ? "🔇" : "🔊"}</button>`;
+  function wireMute(root) { const b = root.querySelector(".ro-mute,.rw-mute"); if (b) b.onclick = e => { e.stopPropagation(); b.textContent = SFX.toggle() ? "🔊" : "🔇"; }; }
+
   // =============== דיאלוגים ===============
   function dlg(id, cls = "") {
     let d = document.getElementById(id);
@@ -316,12 +412,12 @@ dialog.robo.open{background:#05020f}
     const d = document.getElementById("roboUI"); if (!d) return;
     const p = profile() || {}, pr = R.progress(S), nb = S.boxes.length, rc = RC(topRar());
     const newIn = c => S.news.some(id => R.ITEMS[id] && R.ITEMS[id].cat === c);
-    d.innerHTML = `<div class="rw"><div class="rw-top" style="--rc:${rc}"><button class="rw-x" type="button" aria-label="סגור">✕</button>
+    d.innerHTML = `<div class="rw"><div class="rw-top" style="--rc:${rc}"><button class="rw-x" type="button" aria-label="סגור">✕</button>${muteBtn("rw-mute")}
       <div class="rw-bot" id="rwBot">${svg()}</div><div class="rw-name">הרובוט של ${esc(p.first || "")}</div>
       <div class="rw-chips"><span>🔥 רצף ${S.st.n}</span><span>🔩 ${bl()}</span><span>🏆 ${pr.have}/${pr.all}</span></div></div>
       <div class="rw-tabs">${[["wear", "👕 ארון"], ["boxes", "🎁 תיבות", nb], ["shop", "🛒 חנות"], ["streak", "🔥 רצף"]].map(([k, l, n]) => `<button type="button" data-t="${k}" class="${tab === k ? "on" : ""}">${l}${n ? `<span class="dot">${n}</span>` : ""}</button>`).join("")}</div>
       <div class="rw-body" id="rwBody"></div></div>`;
-    d.querySelector(".rw-x").onclick = () => d.close();
+    d.querySelector(".rw-x").onclick = () => d.close(); wireMute(d);
     d.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); });
     const body = d.querySelector("#rwBody");
     if (tab === "wear") {
@@ -350,7 +446,7 @@ dialog.robo.open{background:#05020f}
         + ["box", "big", "mega"].map(t => boxRow(t, 0, `<button class="rbtn" type="button" data-buy="${t}" ${S.bolts < R.BOX[t].price ? "disabled" : ""}>🔩 ${R.BOX[t].price}</button>`)).join("")
         + `<div class="rw-sec">⏰ מבצע יומי <small>מתחלף בעוד ${ms} שעות</small></div><div class="rw-grid">${deals.map(x => card(R.ITEMS[x.id], x.price)).join("") || `<div class="rw-prog">יש לך כבר הכל מהחנות 🤯</div>`}</div>
         <p class="rw-prog" style="margin-top:12px">אביזרים מיתיים, אגדיים ואולטרה לא נמכרים בחנות – רק בתיבות 😉</p>`;
-      body.querySelectorAll("[data-buy]").forEach(b => b.onclick = () => { const r = R.buy(S, b.dataset.buy, dev()); if (!r.ok) return; save(); vib(30); toast(`${R.BOX[r.box].em} קנית ${R.BOX[r.box].n}!`, ["לפתוח", () => openBoxes([r.box])]); draw(); });
+      body.querySelectorAll("[data-buy]").forEach(b => b.onclick = () => { const r = R.buy(S, b.dataset.buy, dev()); if (!r.ok) return; save(); vib(30); SFX.coin(); toast(`${R.BOX[r.box].em} קנית ${R.BOX[r.box].n}!`, ["לפתוח", () => openBoxes([r.box])]); draw(); });
       body.querySelectorAll(".rc[data-id]").forEach(b => b.onclick = () => { const id = b.dataset.id, x = deals.find(d => d.id === id); if (!x) return; if (S.bolts < x.price) { toast(`חסרים לך ${x.price - S.bolts} ברגים 🔩`); return; } if (!confirm(`לקנות "${R.ITEMS[id].n}" ב-${x.price} ברגים?`)) return; if (R.buy(S, id, dev()).ok) { save(); celebrateItem(id); draw(); } });
       const sv = body.querySelector("#rwSave"); if (sv) sv.onclick = () => doSave();
       body.querySelector("#rwCode").onclick = async () => { const c = prompt("מה הקוד? 🎟️ (כל קוד – פעם אחת)"); if (!c) return; const r = await redeem(c); if (!r.ok || !/תיבה/.test(r.msg)) toast(r.msg, null, 4500); draw(); };
@@ -451,11 +547,11 @@ dialog.robo.open{background:#05020f}
   // סצנה של תיבה: 4 לחיצות – בכל אחת התיבה יכולה להשתדרג (כמו בבראול). הדרגה בסוף = הפרס הראשי. מחזיר true אם דילגו
   async function boxScene(d, type, got, left, taps) {
     const B = R.BOX[type]; let cur = taps[0];
-    d.innerHTML = `<div class="ro"><div class="ro-rays"></div><div class="ro-flash"></div><div class="ro-beam"></div>${left ? `<div class="ro-left">עוד ${left} 📦</div>` : ""}<button class="ro-skip" type="button">דלג ⏭</button>
+    d.innerHTML = `<div class="ro"><div class="ro-rays"></div><div class="ro-flash"></div><div class="ro-beam"></div>${left ? `<div class="ro-left">עוד ${left} 📦</div>` : ""}<button class="ro-skip" type="button">דלג ⏭</button>${muteBtn("ro-mute")}
       <div class="ro-type">${esc(B.n)}</div><div class="ro-chest">${chestSVG(B.em)}</div><div class="ro-tier">${R.RAR[cur].n}</div>
       <div class="ro-hint">לחץ על התיבה! היא יכולה להשתדרג 💥</div><div class="ro-taps">${"<i></i>".repeat(R.TAPS)}</div></div>`;
     const ro = d.querySelector(".ro"), ch = d.querySelector(".ro-chest"), tier = d.querySelector(".ro-tier"), dots = d.querySelectorAll(".ro-taps i"), hint = d.querySelector(".ro-hint");
-    paint(ro, cur); ro.classList.add("lit");
+    paint(ro, cur); ro.classList.add("lit"); wireMute(ro);
     let skipped = false; d.querySelector(".ro-skip").onclick = e => { e.stopPropagation(); skipped = true; ro.click(); };
     for (let i = 0; i < R.TAPS && !skipped; i++) {
       await waitTap(ro); if (skipped) break;
@@ -469,12 +565,12 @@ dialog.robo.open{background:#05020f}
         const ring = document.createElement("div"); ring.className = "ro-ring"; ro.appendChild(ring); setTimeout(() => ring.remove(), 900);
         d.querySelector(".ro-flash").classList.remove("go"); void ro.offsetWidth; d.querySelector(".ro-flash").classList.add("go");
         ro.classList.remove("shakeS"); void ro.offsetWidth; ro.classList.add("shakeS");
-        particles(ro, RC(cur), R.TIERS.indexOf(cur) >= 3 ? 40 : 24, R.TIERS.indexOf(cur) >= 4 ? ["⭐", "✨", "💛"] : null); vib(R.TIERS.indexOf(cur) >= 3 ? [50, 30, 90] : 45);
-      } else { ch.classList.remove("tap", "up"); void ch.offsetWidth; ch.classList.add("tap"); particles(ro, RC(cur), 8); vib(18); }
+        particles(ro, RC(cur), R.TIERS.indexOf(cur) >= 3 ? 40 : 24, R.TIERS.indexOf(cur) >= 4 ? ["⭐", "✨", "💛"] : null); vib(R.TIERS.indexOf(cur) >= 3 ? [50, 30, 90] : 45); SFX.up(R.TIERS.indexOf(cur));
+      } else { ch.classList.remove("tap", "up"); void ch.offsetWidth; ch.classList.add("tap"); particles(ro, RC(cur), 8); vib(18); SFX.tap(); }
       const leftT = R.TAPS - i - 1; hint.textContent = leftT ? `עוד ${leftT} ${leftT === 1 ? "לחיצה" : "לחיצות"}…` : "";
     }
     if (skipped) return true;
-    await sleep(350); ch.classList.add("open"); ro.classList.add("opened"); vib([30, 30, 80]);
+    await sleep(350); ch.classList.add("open"); ro.classList.add("opened"); vib([30, 30, 80]); SFX.open();
     d.querySelector(".ro-flash").classList.remove("go"); void ro.offsetWidth; d.querySelector(".ro-flash").classList.add("go"); particles(ro, RC(cur), 36); await sleep(900);
     for (let i = 0; i < got.length; i++) {
       const g = got[i]; if (await revealOne(d, g, got.length - i - 1)) return true;
@@ -485,7 +581,7 @@ dialog.robo.open{background:#05020f}
     const r = g.t === "item" ? g.r : null, col = r ? RC(r) : g.t === "box" ? R.BOX[g.box].col : "#94a3b8";
     // אולטרה אגדי: מסך שחור, דופק, ואז הפיצוץ הגדול
     if (r === "u") {
-      d.innerHTML = `<div class="ro"><div class="ro-ultra"><div style="font-size:70px;animation:rBeat .5s infinite">⚡</div><b>אולטרה אגדי!!!</b></div></div>`; vib([80, 60, 80, 60, 200]); await sleep(1900);
+      d.innerHTML = `<div class="ro"><div class="ro-ultra"><div style="font-size:70px;animation:rBeat .5s infinite">⚡</div><b>אולטרה אגדי!!!</b></div></div>`; vib([80, 60, 80, 60, 200]); SFX.ultra(); await sleep(1900);
     }
     let inner;
     if (g.t === "item") {
@@ -496,6 +592,7 @@ dialog.robo.open{background:#05020f}
     d.innerHTML = `<div class="ro lit" style="--rc:${col}"><div class="ro-rays"></div><div class="ro-flash go"></div>${more ? `<div class="ro-left">עוד ${more}</div>` : ""}<button class="ro-skip" type="button">דלג ⏭</button>
       <div class="ro-card"><div class="ro-in" style="--c:${col}">${inner}</div></div><div class="ro-tap">לחץ להמשך</div></div>`;
     const ro = d.querySelector(".ro"); let skipped = false;
+    if (g.t === "item") SFX.reveal(g.dup ? 0 : R.RAR[r].o); else if (g.t === "bolts") SFX.coin(); else SFX.gift();
     d.querySelector(".ro-skip").onclick = e => { e.stopPropagation(); skipped = true; ro.click(); };
     if (r && R.RAR[r].o >= 3) { ro.classList.add("shakeS"); particles(ro, col, R.RAR[r].o >= 5 ? 60 : 34, R.RAR[r].o >= 5 ? ["⭐", "✨", "💛", "👑"] : null); vib(R.RAR[r].o >= 5 ? [60, 40, 120] : 40); }
     else particles(ro, col, 14);
@@ -579,7 +676,7 @@ dialog.robo.open{background:#05020f}
       const cost = R.saveCost(c.broken.n), can = S.bolts >= cost;
       d.innerHTML = `<div class="rd brk"><div class="rd-fl">🔥</div><div class="rd-t">💔 הרצף של ${c.broken.n} ימים נשבר</div><div class="rd-s">לא נכנסת ביום חול אחד או יותר.<br>${can ? `אפשר להציל אותו עכשיו ב-${cost} ברגים 🔩 (יש לך ${S.bolts})` : `כדי להציל צריך ${cost} ברגים 🔩 – יש לך ${S.bolts}. מתחילים מחדש, בפעם הבאה יותר!`}</div>
         <div class="rd-btns" style="margin-top:22px">${can ? `<button class="rbtn" type="button" id="rdSave">🔩 להציל את הרצף (${cost})</button>` : ""}<button class="rbtn alt" type="button" id="rdNew">להתחיל רצף חדש</button></div></div>`;
-      show(d);
+      show(d); SFX.sad();
       const choice = await new Promise(res => { const s = d.querySelector("#rdSave"); if (s) s.onclick = () => res("save"); d.querySelector("#rdNew").onclick = () => res("new"); });
       if (choice === "save") { const r = R.saveStreak(S); if (r.ok) { save(); c.n = r.n; c.gift = r.gift; c.saved = true; } }
     }
@@ -590,7 +687,7 @@ dialog.robo.open{background:#05020f}
       <div class="rd-btns"><button class="rbtn" type="button" id="rdGo">🎁 לקבל: ${esc(gift.map(giftText).join(" + "))}</button></div></div>`;
     show(d);
     const nEl = d.querySelector("#rdN"); setTimeout(() => { nEl.textContent = n; nEl.animate && nEl.animate([{ transform: "scale(1.6)" }, { transform: "scale(1)" }], { duration: 500, easing: "cubic-bezier(.2,1.6,.4,1)" }); vib(30); }, 450);
-    await new Promise(res => d.querySelector("#rdGo").onclick = res);
+    await new Promise(res => d.querySelector("#rdGo").onclick = res); SFX.gift();
     const boxes = [];
     for (const g of gift) {
       if (g.t === "box") { S.boxes.push(g.box); boxes.push(g.box); }
@@ -645,9 +742,36 @@ dialog.robo.open{background:#05020f}
     el.querySelector("#rhBox").onclick = () => nb ? openBoxes(S.boxes.slice()) : open("boxes"); el.querySelector("#rhShop").onclick = () => open("shop"); el.querySelector("#rhShare").onclick = share;
   }
 
+  // ---------- ✨ עקבות (כשגוררים את הרובוט) ו-💬 קריאות (כשלוחצים עליו) ----------
+  let lastTrail = 0, downAt = 0, downX = 0, downY = 0;
+  addEventListener("pointermove", e => {
+    const b = document.getElementById("asstBtn"), it = R.ITEMS[S.eq.trail]; if (!b || !it || !b.classList.contains("drag") || REDUCED) return;
+    const now = Date.now(); if (now - lastTrail < 45) return; lastTrail = now;
+    const r = b.getBoundingClientRect(), t = document.createElement("span"); t.className = "robo-trail"; t.textContent = it.em[Math.floor(Math.random() * it.em.length)];
+    t.style.left = r.left + r.width / 2 - 9 + rnd(-8, 8) + "px"; t.style.top = r.top + r.height / 2 - 9 + rnd(-8, 8) + "px";
+    t.style.setProperty("--tx", rnd(-30, 30) + "px"); t.style.setProperty("--ty", rnd(10, 40) + "px"); t.style.setProperty("--tr", rnd(-180, 180) + "deg");
+    document.body.appendChild(t); setTimeout(() => t.remove(), 950);
+  }, { passive: true });
+  addEventListener("pointerdown", e => { if (e.target.closest && e.target.closest("#asstBtn")) { downAt = Date.now(); downX = e.clientX; downY = e.clientY; } }, { passive: true, capture: true });
+  addEventListener("pointerup", e => {
+    if (!downAt || !(e.target.closest && e.target.closest("#asstBtn"))) { downAt = 0; return; }
+    const tap = Date.now() - downAt < 450 && Math.hypot(e.clientX - downX, e.clientY - downY) < 10; downAt = 0;
+    const it = R.ITEMS[S.eq.quote]; if (!tap || !it) return;
+    const b = document.getElementById("asstBtn").getBoundingClientRect(), q = document.createElement("div"); q.className = "robo-say"; q.textContent = it.n;
+    document.body.appendChild(q); const w = q.offsetWidth; q.style.left = Math.max(8, Math.min(innerWidth - w - 8, b.left + b.width / 2 - w / 2)) + "px"; q.style.top = Math.max(8, b.top - 44) + "px";
+    setTimeout(() => q.remove(), 2400);
+  }, { passive: true, capture: true });
+  // 🔩 בונוס על תרגול (מחשבון / כרטיסיות) – עד 60 ביום
+  let earnShown = 0;
+  function earn(n) {
+    const g = R.earn(S, n); if (!g) return 0; save();
+    const now = Date.now(); if (now - earnShown > 1500) { earnShown = now; const t = document.createElement("div"); t.className = "rtoast"; t.style.padding = "6px 12px"; t.style.fontSize = "13px"; t.textContent = `+${g} 🔩 על התרגול!`; document.body.appendChild(t); setTimeout(() => t.remove(), 1400); }
+    return g;
+  }
+
   // ---------- הפעלה ----------
   window.Robo = {
-    svg, open, hub, share, subjectMile, daily, openBoxes, redeem, state: () => S, owns: id => !!S.own[id],
+    svg, open, hub, share, subjectMile, daily, openBoxes, redeem, earn, sfx: SFX, state: () => S, owns: id => !!S.own[id],
     give(p) { const x = R.grant(S, p); save(); hubRefresh(); return x; }, // דמו / בדיקות
     reload() { S = load(); applyBubble(); try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {} },
     status: () => `🔥 ${S.st.n} · 🔩 ${bl()}${S.boxes.length ? ` · 🎁 ${S.boxes.length}` : ""}`,

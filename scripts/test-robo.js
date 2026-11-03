@@ -9,9 +9,9 @@ const seeded = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s 
 
 // ---- קטלוג ----
 const ids = R.LIST.map(x => x.id);
-ok("catalog: 70+ items, unique ids", ids.length >= 70 && new Set(ids).size === ids.length, ids.length);
+ok("catalog: 150+ items, unique ids", ids.length >= 150 && new Set(ids).size === ids.length, ids.length);
 ok("every item has a known category and rarity", R.LIST.every(x => R.CATS[x.cat] && R.RAR[x.r]));
-ok("ultra legendary = only the gold and diamond suits, with a cap", R.LIST.filter(x => x.r === "u").map(x => x.id).sort().join() === "skin:diamond,skin:gold" && R.ITEMS["skin:gold"].cap === 3);
+ok("ultra legendary = gold, diamond, phoenix – each with a cap", R.LIST.filter(x => x.r === "u").map(x => x.id).sort().join() === "skin:diamond,skin:gold,skin:phoenix" && R.LIST.filter(x => x.r === "u").every(x => x.cap > 0));
 ok("every rarity c..u has droppable items", R.RK.every(r => R.LIST.some(x => x.r === r && !x.x && !x.free)));
 for (const b of Object.keys(R.BOX)) { const s = Object.values(R.BOX[b].odds).reduce((a, c) => a + c, 0); ok(`${b}: odds add up to 100%`, Math.abs(s - 100) < 1e-9, s); }
 ok("streak/subject rewards point to real items", Object.values(R.LADDER).flat().every(p => p.t !== "item" || R.ITEMS[p.id]) && R.ITEMS["held:medal"]);
@@ -35,7 +35,7 @@ for (const b of ["box", "big", "mega"]) {
 // ---- קבלת פרסים ----
 { const S = R.fresh(); R.grant(S, { t: "item", id: "hat:crown" }); const d = R.grant(S, { t: "item", id: "hat:crown" });
   ok("new item → owned + marked new", S.own["hat:crown"] && S.news.includes("hat:crown"));
-  ok("duplicate → bolts (epic = 60)", d.dup === 60 && S.bolts === 60);
+  ok("duplicate → bolts (epic = 100)", d.dup === 100 && S.bolts === 100);
   R.grant(S, { t: "box", box: "big" }); ok("box prize goes to my boxes", S.boxes.join() === "big");
   ok("equip owned item", R.equip(S, "hat:crown") && S.eq.hat === "hat:crown"); ok("can't equip what you don't own", !R.equip(S, "skin:gold"));
   R.equip(S, "hat:crown"); ok("tap again = take it off", !S.eq.hat); }
@@ -66,11 +66,12 @@ ok("saving costs more for a longer streak, max 400", R.saveCost(5) < R.saveCost(
 
 // ---- חנות ----
 { const S = R.fresh(); S.bolts = 1000;
-  ok("buy a big box", R.buy(S, "big", "dev1").ok && S.boxes.includes("big") && S.bolts === 820);
+  ok("buy a big box (130)", R.buy(S, "big", "dev1").ok && S.boxes.includes("big") && S.bolts === 870);
   const d = R.deals(S, "dev1", at("2026-11-03T10:00:00+02:00")); ok("2 daily deals, never mythic+", d.length === 2 && d.every(x => R.RAR[R.ITEMS[x.id].r].o <= 3));
   ok("same deals all day, different tomorrow", JSON.stringify(R.deals(S, "dev1", at("2026-11-03T22:00:00+02:00"))) === JSON.stringify(d) && JSON.stringify(R.deals(S, "dev1", at("2026-11-04T10:00:00+02:00"))) !== JSON.stringify(d));
   const b = R.buy(S, d[0].id, "dev1", at("2026-11-03T10:00:00+02:00")); ok("buy the deal", b.ok && S.own[d[0].id]);
   ok("can't buy gold in the shop", !R.buy(S, "skin:gold", "dev1").ok); }
 // ---- מצב שבור/ישן נטען בבטחה ----
 { const S = R.norm({ bolts: "abc", own: { "hat:fake": 1 }, eq: { hat: "skin:gold" }, boxes: ["box", "nope"] }); ok("bad saved state is cleaned", S.bolts === 0 && !S.eq.hat && S.boxes.join() === "box" && S.eq.skin === "skin:classic"); }
+{ const S = R.fresh(); const t = at("2026-11-03T10:00:00+02:00"); let g = 0; for (let i = 0; i < 40; i++) g += R.earn(S, 3, t); ok("practice bonus: capped at 60 bolts a day", g === 60 && S.bolts === 60); ok("new day → bonus again", R.earn(S, 3, at("2026-11-04T10:00:00+02:00")) === 3); }
 console.log(bad ? `❌ ${bad} problems` : "all robo tests passed");

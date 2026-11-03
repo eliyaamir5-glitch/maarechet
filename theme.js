@@ -14,6 +14,10 @@
     galaxy: { name: "גלקסיה", grad: "linear-gradient(135deg,#1e1b4b 0%,#6d28d9 50%,#db2777 100%)", dark: "#c084fc", light: "#7c3aed", meta: "#1e1b4b", lock: "theme:galaxy" },
     lava: { name: "לבה", grad: "linear-gradient(135deg,#1c1917 0%,#b91c1c 50%,#f97316 100%)", dark: "#fb923c", light: "#c2410c", meta: "#1c1917", lock: "theme:lava" },
     aurora: { name: "זוהר צפוני", grad: "linear-gradient(135deg,#022c22 0%,#059669 40%,#6366f1 75%,#ec4899 100%)", dark: "#34d399", light: "#047857", meta: "#022c22", lock: "theme:aurora" },
+    ocean: { name: "אוקיינוס עמוק", grad: "linear-gradient(135deg,#082f49 0%,#0369a1 50%,#06b6d4 100%)", dark: "#22d3ee", light: "#0369a1", meta: "#082f49", lock: "theme:ocean" },
+    pinksun: { name: "שקיעה ורודה", grad: "linear-gradient(135deg,#831843 0%,#db2777 45%,#fb923c 100%)", dark: "#f472b6", light: "#be185d", meta: "#831843", lock: "theme:pinksun" },
+    forest: { name: "יער בלילה", grad: "linear-gradient(135deg,#052e16 0%,#166534 50%,#65a30d 100%)", dark: "#4ade80", light: "#15803d", meta: "#052e16", lock: "theme:forest" },
+    rainbow: { name: "קשת בענן", grad: "linear-gradient(135deg,#dc2626 0%,#f59e0b 25%,#16a34a 50%,#2563eb 75%,#9333ea 100%)", dark: "#a78bfa", light: "#7c3aed", meta: "#2563eb", lock: "theme:rainbow" },
     gold: { name: "זהב", grad: "linear-gradient(135deg,#78350f 0%,#d97706 40%,#facc15 70%,#a16207 100%)", dark: "#facc15", light: "#a16207", meta: "#78350f", lock: "theme:gold" },
   };
   // עיצוב לעמוד אחד (מ"הרובוט שלי"): { calc: { id, grad } }

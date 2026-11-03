@@ -5,11 +5,11 @@
   // ---- דרגות נדירות (כמו בבראול סטארס) ----
   // dup = כמה ברגים מקבלים על אביזר שכבר יש לך · price = מחיר בחנות (רק עד אפי)
   const RAR = {
-    c: { n: "רגיל", col: "#a3b1c2", dup: 5, price: 40, o: 0 },
-    r: { n: "נדיר", col: "#2ecc71", dup: 12, price: 90, o: 1 },
-    s: { n: "סופר נדיר", col: "#3b82f6", dup: 25, price: 200, o: 2 },
-    e: { n: "אפי", col: "#a855f7", dup: 60, price: 450, o: 3 },
-    m: { n: "מיתי", col: "#ef4444", dup: 150, o: 4 },
+    c: { n: "רגיל", col: "#a3b1c2", dup: 10, price: 40, o: 0 },
+    r: { n: "נדיר", col: "#2ecc71", dup: 25, price: 90, o: 1 },
+    s: { n: "סופר נדיר", col: "#3b82f6", dup: 50, price: 200, o: 2 },
+    e: { n: "אפי", col: "#a855f7", dup: 100, price: 450, o: 3 },
+    m: { n: "מיתי", col: "#ef4444", dup: 250, o: 4 },
     l: { n: "אגדי", col: "#facc15", dup: 400, o: 5 },
     u: { n: "אולטרה אגדי", col: "#ffd700", dup: 1000, o: 6 },
   };
@@ -18,7 +18,7 @@
   // ---- האביזרים ----
   // cat: skin חליפה/צבע · hat כובע · eyes משקפיים/עיניים · held ביד · aura הילה · theme עיצוב לאפליקציה · page עיצוב לעמוד
   // x = לא יוצא בתיבות (רק מרצף / מקצוע) · cap = כמה יש בכל הישיבה (נבדק בשרת)
-  const CATS = { skin: "חליפות", hat: "כובעים", eyes: "משקפיים", held: "ביד", aura: "הילות", theme: "עיצובים לאפליקציה", page: "עיצובים לעמוד" };
+  const CATS = { skin: "חליפות", hat: "כובעים", eyes: "משקפיים", held: "ביד", aura: "הילות", trail: "עקבות", quote: "קריאות", theme: "עיצובים לאפליקציה", page: "עיצובים לעמוד" };
   const I = [
     // חליפות
     ["skin:classic", "skin", "קלאסי", "c", { free: 1 }], ["skin:mint", "skin", "מנטה", "c"], ["skin:sky", "skin", "תכלת", "c"], ["skin:pink", "skin", "ורוד", "c"],
@@ -65,6 +65,36 @@
     ["page:calc:galaxy", "page", "מחשבון – גלקסיה", "e", { pg: "calc", grad: "linear-gradient(135deg,#0f0a2e 0%,#4c1d95 50%,#0ea5e9 100%)", x: 1, how: "רצף של 14 ימים" }],
     ["page:calc:matrix", "page", "מחשבון – מטריקס", "e", { pg: "calc", grad: "linear-gradient(135deg,#020617 0%,#14532d 50%,#22c55e 100%)" }],
     ["page:index:fire", "page", "עמוד הבית – בוער", "m", { pg: "index", grad: "linear-gradient(135deg,#450a0a 0%,#dc2626 45%,#f59e0b 100%)" }],
+    // ===== עונה 2: עוד אביזרים =====
+    ["skin:cookie", "skin", "עוגייה", "c"], ["skin:panda", "skin", "פנדה", "r"], ["skin:melon", "skin", "אבטיח", "r"], ["skin:pixel", "skin", "פיקסלים", "s"],
+    ["skin:tiger", "skin", "טיגריס", "s"], ["skin:sakura", "skin", "פריחת דובדבן", "s"], ["skin:ocean", "skin", "גלי ים", "s"],
+    ["skin:robocat", "skin", "רובו-חתול", "e"], ["skin:chrome", "skin", "כרום מראה", "e"], ["skin:circuit", "skin", "מעגלים חשמליים", "e"], ["skin:zombie", "skin", "זומבי", "e"],
+    ["skin:dragon", "skin", "דרקון", "m"], ["skin:shadow", "skin", "צל סגול", "m"], ["skin:storm", "skin", "סערת ברקים", "l"],
+    ["skin:phoenix", "skin", "עוף החול", "u", { cap: 2 }],
+    ["hat:headphones", "hat", "אוזניות", "c"], ["hat:kippahblack", "hat", "כיפה שחורה", "c"], ["hat:beret", "hat", "כומתה", "c"],
+    ["hat:cowboy", "hat", "כובע בוקרים", "r"], ["hat:bunny", "hat", "אוזני ארנב", "r"], ["hat:sombrero", "hat", "סומבררו", "s"], ["hat:jester", "hat", "כובע ליצן", "s"],
+    ["hat:laurel", "hat", "זר דפנה", "e"], ["hat:unicorn", "hat", "קרן חד-קרן", "m"], ["hat:stars", "hat", "כתר כוכבים", "l"],
+    ["eyes:monocle", "eyes", "מונוקל", "r"], ["eyes:dollar", "eyes", "עיני דולר", "r"], ["eyes:mask", "eyes", "מסכת זורו", "s"], ["eyes:visor", "eyes", "ויזור ירוק", "s"],
+    ["eyes:cyclops", "eyes", "עין אחת ענקית", "e"], ["eyes:hypno", "eyes", "עיני היפנוזה", "e"], ["eyes:fire", "eyes", "עיני אש", "m"],
+    ["held:burger", "held", "המבורגר 🍔", "c", { em: "🍔" }], ["held:juice", "held", "שוקו 🧃", "c", { em: "🧃" }], ["held:phone", "held", "טלפון 📱", "c", { em: "📱" }],
+    ["held:skate", "held", "סקייטבורד 🛹", "r", { em: "🛹" }], ["held:kite", "held", "עפיפון 🪁", "r", { em: "🪁" }], ["held:cake", "held", "עוגה 🎂", "r", { em: "🎂" }], ["held:teddy", "held", "דובי 🧸", "r", { em: "🧸" }],
+    ["held:mic", "held", "מיקרופון 🎤", "s", { em: "🎤" }], ["held:alien", "held", "חייזר 👾", "s", { em: "👾" }],
+    ["held:crystal", "held", "כדור בדולח 🔮", "e", { em: "🔮" }], ["held:unicorn", "held", "חד-קרן 🦄", "e", { em: "🦄" }], ["held:dragon", "held", "דרקון 🐉", "m", { em: "🐉" }], ["held:rainbow", "held", "קשת 🌈", "l", { em: "🌈" }],
+    ["aura:hearts", "aura", "לבבות", "r"], ["aura:notes", "aura", "תווים", "s"], ["aura:snow", "aura", "שלג", "s"], ["aura:petals", "aura", "עלי כותרת", "e"], ["aura:galaxy", "aura", "מערבולת גלקסיה", "m"], ["aura:rainbow", "aura", "טבעת קשת", "l"],
+    // עקבות: מה שנשאר מאחורי הרובוט כשגוררים אותו
+    ["trail:sparkle", "trail", "ניצוצות ✨", "c", { em: ["✨", "⭐"] }], ["trail:hearts", "trail", "לבבות 💖", "r", { em: ["💖", "💗", "💕"] }], ["trail:confetti", "trail", "קונפטי 🎉", "r", { em: ["🎉", "🎊", "✨"] }],
+    ["trail:stars", "trail", "כוכבים 🌟", "s", { em: ["🌟", "⭐", "💫"] }], ["trail:fire", "trail", "אש 🔥", "e", { em: ["🔥", "💥"] }], ["trail:rainbow", "trail", "קשת 🌈", "m", { em: ["🌈", "✨", "💜", "💙"] }], ["trail:gems", "trail", "יהלומים 💎", "l", { em: ["💎", "✨", "👑"] }],
+    // קריאות: מה הרובוט אומר כשלוחצים עליו
+    ["quote:yalla", "quote", "יאללה בלגן! 🎉", "c"], ["quote:cool", "quote", "אני הכי מגניב 😎", "c"], ["quote:hello", "quote", "הלו? יש פה מישהו? 👀", "c"],
+    ["quote:five", "quote", "תן לי חמש! ✋", "r"], ["quote:boom", "quote", "בום! 💥", "r"], ["quote:strong", "quote", "מי הכי חזק? 💪", "s"], ["quote:learn", "quote", "לימודים זה כוח 📚", "s"],
+    ["quote:legend", "quote", "אני רובוט אגדי 👑", "e"], ["quote:fire", "quote", "!!!🔥🔥🔥", "m"], ["quote:ultra", "quote", "אולטרה מוד 🚀", "l"],
+    ["theme:ocean", "theme", "אוקיינוס עמוק", "r", { grad: "linear-gradient(135deg,#082f49 0%,#0369a1 50%,#06b6d4 100%)" }],
+    ["theme:pinksun", "theme", "שקיעה ורודה", "s", { grad: "linear-gradient(135deg,#831843 0%,#db2777 45%,#fb923c 100%)" }],
+    ["theme:forest", "theme", "יער בלילה", "e", { grad: "linear-gradient(135deg,#052e16 0%,#166534 50%,#65a30d 100%)" }],
+    ["theme:rainbow", "theme", "קשת בענן", "m", { grad: "linear-gradient(135deg,#dc2626 0%,#f59e0b 25%,#16a34a 50%,#2563eb 75%,#9333ea 100%)" }],
+    ["page:absences:gold", "page", "נוכחות – זהב", "e", { pg: "absences", grad: "linear-gradient(135deg,#713f12 0%,#ca8a04 50%,#fde047 100%)" }],
+    ["page:cards:neon", "page", "כרטיסיות – ניאון", "s", { pg: "cards", grad: "linear-gradient(135deg,#0f172a 0%,#0891b2 50%,#e879f9 100%)" }],
+    ["page:phones:matrix", "page", "ספר טלפונים – מטריקס", "s", { pg: "phones", grad: "linear-gradient(135deg,#020617 0%,#14532d 50%,#22c55e 100%)" }],
   ];
   const ITEMS = {}; I.forEach(([id, cat, n, r, o]) => { ITEMS[id] = Object.assign({ id, cat, n, r }, o || {}); });
   const LIST = Object.values(ITEMS);
@@ -72,9 +102,9 @@
 
   // ---- תיבות: כמה פרסים בכל תיבה, וסיכוי לכל דרגה (באחוזים, לכל פרס) ----
   const BOX = {
-    box: { n: "תיבה", em: "📦", rolls: 2, kind: { item: 57, bolts: 40, box: 3 }, odds: { c: 58, r: 26, s: 11, e: 4, m: 0.85, l: 0.145, u: 0.005 }, bolts: [8, 20], price: 60, col: "#38bdf8" },
-    big: { n: "תיבה גדולה", em: "🎁", rolls: 3, kind: { item: 65, bolts: 30, box: 5 }, odds: { c: 35, r: 32, s: 20, e: 9, m: 3.2, l: 0.78, u: 0.02 }, bolts: [15, 40], price: 180, col: "#a855f7" },
-    mega: { n: "תיבת מגה", em: "💠", rolls: 6, kind: { item: 74, bolts: 20, box: 6 }, odds: { c: 10, r: 30, s: 30, e: 20, m: 7.5, l: 2.45, u: 0.05 }, bolts: [30, 80], price: 520, col: "#f43f5e" },
+    box: { n: "תיבה", em: "📦", rolls: 2, kind: { item: 57, bolts: 40, box: 3 }, odds: { c: 58, r: 26, s: 11, e: 4, m: 0.85, l: 0.145, u: 0.005 }, bolts: [20, 45], price: 40, col: "#38bdf8" },
+    big: { n: "תיבה גדולה", em: "🎁", rolls: 3, kind: { item: 65, bolts: 30, box: 5 }, odds: { c: 35, r: 32, s: 20, e: 9, m: 3.2, l: 0.78, u: 0.02 }, bolts: [35, 80], price: 130, col: "#a855f7" },
+    mega: { n: "תיבת מגה", em: "💠", rolls: 6, kind: { item: 74, bolts: 20, box: 6 }, odds: { c: 10, r: 30, s: 30, e: 20, m: 7.5, l: 2.45, u: 0.05 }, bolts: [70, 160], price: 380, col: "#f43f5e" },
   };
   const EXTRA = { box: "box", big: "box", mega: "big" }; // תיבה בתוך תיבה
   // ⭐ שדרוג בכל לחיצה (כמו בבראול): התיבה מתחילה בדרגה מסוימת, ובכל אחת מ-4 הלחיצות יכולה לעלות דרגה.
@@ -156,7 +186,7 @@
 
   // ---- רצף כניסות: מתנה כל יום, ככל שהרצף ארוך יותר – יותר שווה ----
   const LADDER = {
-    1: [{ t: "box", box: "box" }], 2: [{ t: "bolts", n: 30 }], 3: [{ t: "box", box: "box" }], 4: [{ t: "bolts", n: 40 }], 5: [{ t: "box", box: "big" }],
+    1: [{ t: "box", box: "box" }], 2: [{ t: "bolts", n: 60 }], 3: [{ t: "box", box: "box" }], 4: [{ t: "bolts", n: 80 }], 5: [{ t: "box", box: "big" }],
     7: [{ t: "box", box: "big" }, { t: "item", id: "theme:neon" }], 10: [{ t: "box", box: "mega" }], 14: [{ t: "box", box: "big" }, { t: "item", id: "page:calc:galaxy" }],
     21: [{ t: "box", box: "mega" }], 30: [{ t: "box", box: "mega" }, { t: "item", id: "hat:streak" }], 50: [{ t: "box", box: "mega" }, { t: "guar", r: "l" }],
     75: [{ t: "box", box: "mega" }, { t: "box", box: "mega" }], 100: [{ t: "item", id: "aura:streak" }, { t: "box", box: "mega" }, { t: "guar", r: "l" }],
@@ -167,7 +197,7 @@
     if (n > 60 && n % 10 === 0) return [{ t: "box", box: "mega" }];
     if (n % 5 === 0) return [{ t: "box", box: "big" }];
     if (n % 2 === 1) return [{ t: "box", box: n > 30 ? "big" : "box" }];
-    return [{ t: "bolts", n: Math.min(150, 20 + n * 3) }];
+    return [{ t: "bolts", n: Math.min(300, 40 + n * 6) }];
   }
   // מחיר שמירת רצף שנשבר (בברגים) – ככל שהרצף ארוך יותר, יקר יותר
   const saveCost = n => Math.min(400, 30 + n * 4);
@@ -224,6 +254,12 @@
   // האביזר הכי נדיר שיש לך
   const best = S => LIST.filter(x => S.own[x.id]).sort((a, b) => RAR[b.r].o - RAR[a.r].o)[0];
 
-  const api = { RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
+  // 🔩 בונוס על תרגול (מחשבון / כרטיסיות): עד 60 ברגים ביום
+  const EARN_CAP = 60;
+  function earn(S, n, now = Date.now()) {
+    const d = ymd(now); if (!S.earn || S.earn.d !== d) S.earn = { d, n: 0 };
+    const g = Math.max(0, Math.min(n, EARN_CAP - S.earn.n)); S.earn.n += g; S.bolts += g; return g;
+  }
+  const api = { EARN_CAP, earn, RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.RoboCore = api;
 })(typeof self !== "undefined" ? self : this);

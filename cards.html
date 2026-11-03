@@ -338,6 +338,7 @@ const fixSets=a=>(Array.isArray(a)?a:[]).filter(s=>s&&typeof s==="object"&&s.id!
 const REC=(set,c)=>PG(set).c[ck(c)]||{};
 const saveProg=()=>save("cardsProg",prog);
 function mark(set,c,ok){
+  if(ok&&window.Robo)try{Robo.earn(2)}catch(e){} // 🔩 בונוס תרגול (עד 60 ביום)
   const p=PG(set),r=p.c[ck(c)]||{},b=ok?Math.min(5,(r.b||0)+1):0;
   p.c[ck(c)]={...r,b,due:b?today0()+GAP[b]*DAY:0,seen:Date.now()};saveProg();
 }
