@@ -96,6 +96,17 @@ await p.evaluate(() => { localStorage.setItem("roboGameOpen", "1"); Robo.open("f
 await p.evaluate(() => document.querySelector("#rpPlay").click()); await sleep(400);
 await p.evaluate(() => document.querySelector(".gm-ov button").click()); await sleep(2500);
 log(await p.evaluate(() => !!document.querySelector("#roboGame[open] canvas")), "game: canvas running");
+log(await p.evaluate(() => { const c = document.querySelector("#roboGame canvas"); return c.width > 200 && c.height > 250; }), "game: canvas has a real size (things are visible)");
+// 🦹 גנב לוקח חצי · 🛡️ מגן מציל · ⚡ מהירות עולה
+const th = await p.evaluate(async () => { const G = RoboPlus._game(), H = document.querySelector(".gm-cv").clientHeight; G.obj = []; G.nthief = G.nbomb = 99; G.bolts = 20; G.spawnAt("thief", G.px, H - 75, { v: 30, amp: 0 }); await new Promise(r => setTimeout(r, 900)); return { b: G.bolts, st: G.stolen }; });
+log(th.b === 10 && th.st === 10, "thief caught → takes half of the round (20 → 10)", JSON.stringify(th));
+const sh = await p.evaluate(async () => { const G = RoboPlus._game(), H = document.querySelector(".gm-cv").clientHeight; G.obj = []; G.nthief = G.nbomb = 99; G.spawnAt("pow", G.px, H - 75, { v: 30, p: "shield" }); await new Promise(r => setTimeout(r, 700)); const had = G.shield; G.spawnAt("bomb", G.px, H - 75, { v: 30, vx: 0 }); await new Promise(r => setTimeout(r, 700)); return { had, now: G.shield, dead: G.dead, b: G.bolts }; });
+log(sh.had && !sh.now && !sh.dead && sh.b === 10, "shield power-up saves you from one bomb", JSON.stringify(sh));
+log(await p.evaluate(() => { const G = RoboPlus._game(), t0 = G.t; G.t = 0; const a = G.spawnAt("bomb", 50, -40).v; G.t = 44; const b = G.spawnAt("bomb", 50, -40).v; G.obj = []; G.t = t0; return b > a * 2.5; }), "difficulty grows with time (bombs much faster after 44 s)");
+if (process.env.SHOTS) { await p.evaluate(() => { const G = RoboPlus._game(), W = document.querySelector(".gm-cv").clientWidth, H = document.querySelector(".gm-cv").clientHeight; G.nb = G.nbomb = G.nthief = G.npow = 99; G.obj = []; G.combo = 12; G.shield = true; G.pw.magnet = 5; [["bolt", .2, .3], ["gold", .5, .25], ["bomb", .75, .4], ["thief", .3, .55], ["item", .65, .15], ["pow", .15, .7], ["bolt", .85, .6], ["bolt", .45, .5]].forEach(([k, x, y], i) => G.spawnAt(k, W * x, H * y, { v: 1, vx: 0, amp: 0, ...(k === "pow" ? { p: "double" } : {}) })); }); await sleep(200); await p.screenshot({ path: process.env.SHOTS + "/9b-game-new.png" }); }
+const sb = await p.evaluate(async () => { const G = RoboPlus._game(), H = document.querySelector(".gm-cv").clientHeight; G.obj = []; G.shield = false; G.bolts = 6; G.spawnAt("bomb", G.px, H - 75, { v: 30, vx: 0 }); await new Promise(r => setTimeout(r, 600)); return { dead: G.dead, b: G.bolts }; });
+log(sb.dead && sb.b === 0, "bomb without shield → round lost", JSON.stringify(sb));
+await sleep(900);
 // מזיזים את הרובוט מצד לצד כדי לתפוס
 for (let i = 0; i < 10; i++) { await p.evaluate(i => { const c = document.querySelector(".gm-cv"), r = c.getBoundingClientRect(); c.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: r.left + (i % 2 ? r.width * .25 : r.width * .75), clientY: r.bottom - 40 })); }, i); await sleep(300); }
 if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + "/9-game.png" });
