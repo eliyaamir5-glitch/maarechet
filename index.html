@@ -384,6 +384,13 @@ body.maint :is(#streakPill,#absAlert){display:none!important}
 .tgl-row{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:15px;font-weight:700;cursor:pointer}
 .tgl-row input{width:20px;height:20px;accent-color:var(--accent)}
 dialog form{padding:20px}
+/* 👤 פרופיל: ✕ גדול למעלה שתמיד נשאר בעין, לחיצה מחוץ לחלון סוגרת, ובטלפון – גוררים למטה כדי לסגור */
+.dlg-head{position:sticky;top:-20px;z-index:3;display:flex;align-items:center;gap:10px;margin:-20px -20px 10px;padding:18px 16px 10px 20px;background:var(--card);border-bottom:1px solid var(--line);border-radius:20px 20px 0 0}
+.dlg-head h3{flex:1;margin:0}
+.dlg-x{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:none;background:var(--break,rgba(127,127,127,.18));color:var(--ink);font-size:20px;font-weight:900;cursor:pointer;line-height:1}
+.dlg-x:active{transform:scale(.92)}.dlg-x:focus:not(:focus-visible){outline:none}
+.dlg-grab{position:absolute;top:6px;left:50%;width:42px;height:5px;margin-left:-21px;border-radius:9px;background:var(--line)}
+#profDlg.drag{transition:none}#profDlg{transition:transform .25s ease}
 dialog h3{margin:0 0 4px;font-size:20px;font-weight:900}
 dialog p{margin:0 0 12px;color:var(--muted);font-size:14px}
 dialog textarea{width:100%;min-height:90px;border:1.5px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:16px;background:var(--bg);color:var(--ink);resize:vertical}
@@ -683,7 +690,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
 <div id="delFx" hidden></div>
 <dialog id="profDlg">
   <form method="dialog">
-    <h3>👤 הפרופיל שלי</h3>
+    <div class="dlg-head"><span class="dlg-grab" aria-hidden="true"></span><h3>👤 הפרופיל שלי</h3><button class="dlg-x" value="cancel" aria-label="סגור את הפרופיל">✕</button></div>
     <div id="profBody"></div>
     <div class="btns"><button class="ghost" value="cancel">סגור</button></div>
   </form>
@@ -1299,6 +1306,16 @@ document.getElementById("hSub").onclick=()=>openProfile();
 // ---- פרופיל: עריכת פרטים, אימייל ומשוב (חיבור וניתוק בכל רגע) ----
 function escH(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 function saveProfile(){try{localStorage.setItem("profile",JSON.stringify(profile))}catch(e){}}
+// 👤 סגירת הפרופיל בקלות: לחיצה מחוץ לחלון, או גרירה למטה מהכותרת (או מלמעלה כשהחלון לא גלול)
+(function(){
+  const d=document.getElementById("profDlg");if(!d)return;
+  d.addEventListener("click",e=>{if(e.target!==d)return;const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close()});
+  let y0=null,dy=0;
+  d.addEventListener("touchstart",e=>{const onHead=e.target.closest&&e.target.closest(".dlg-head");if(!onHead&&d.scrollTop>0){y0=null;return}if(e.target.closest&&e.target.closest("input,select,textarea,button:not(.dlg-x)")&&!onHead){y0=null;return}y0=e.touches[0].clientY;dy=0;d.classList.add("drag")},{passive:true});
+  d.addEventListener("touchmove",e=>{if(y0==null)return;dy=Math.max(0,e.touches[0].clientY-y0);if(dy>6&&d.scrollTop<=0)d.style.transform=`translateY(${dy}px)`},{passive:true});
+  d.addEventListener("touchend",()=>{if(y0==null)return;d.classList.remove("drag");if(dy>110){d.style.transform=`translateY(100vh)`;setTimeout(()=>{d.close();d.style.transform=""},200)}else d.style.transform="";y0=null});
+  d.addEventListener("close",()=>{d.style.transform=""});
+})();
 function openProfile(){if(!profile||!profile.major||!profile.dorm||(needsNitz(profile.cls)&&!profile.nitz)||!CLASSES[profile.cls])return openOnb(!!profile);renderProfile();document.getElementById("profDlg").showModal()}
 // חלקים מתקפלים בפרופיל: שורה קצרה עם המצב ("מחובר ✓"), ולחיצה פותחת לשינוי
 const pfOpenSet=new Set();
