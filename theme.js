@@ -18,6 +18,10 @@
     pinksun: { name: "שקיעה ורודה", grad: "linear-gradient(135deg,#831843 0%,#db2777 45%,#fb923c 100%)", dark: "#f472b6", light: "#be185d", meta: "#831843", lock: "theme:pinksun" },
     forest: { name: "יער בלילה", grad: "linear-gradient(135deg,#052e16 0%,#166534 50%,#65a30d 100%)", dark: "#4ade80", light: "#15803d", meta: "#052e16", lock: "theme:forest" },
     rainbow: { name: "קשת בענן", grad: "linear-gradient(135deg,#dc2626 0%,#f59e0b 25%,#16a34a 50%,#2563eb 75%,#9333ea 100%)", dark: "#a78bfa", light: "#7c3aed", meta: "#2563eb", lock: "theme:rainbow" },
+    mint: { name: "מנטה", grad: "linear-gradient(135deg,#065f46 0%,#10b981 50%,#a7f3d0 100%)", dark: "#34d399", light: "#047857", meta: "#065f46", lock: "theme:mint" },
+    cherry: { name: "דובדבן", grad: "linear-gradient(135deg,#4c0519 0%,#be123c 50%,#fb7185 100%)", dark: "#fb7185", light: "#be123c", meta: "#4c0519", lock: "theme:cherry" },
+    space: { name: "חלל עמוק", grad: "linear-gradient(135deg,#020617 0%,#1e1b4b 50%,#7c3aed 100%)", dark: "#a78bfa", light: "#6d28d9", meta: "#020617", lock: "theme:space" },
+    hero: { name: "גיבורים", grad: "linear-gradient(135deg,#7f1d1d 0%,#dc2626 45%,#facc15 100%)", dark: "#facc15", light: "#b91c1c", meta: "#7f1d1d", lock: "theme:hero" },
     gold: { name: "זהב", grad: "linear-gradient(135deg,#78350f 0%,#d97706 40%,#facc15 70%,#a16207 100%)", dark: "#facc15", light: "#a16207", meta: "#78350f", lock: "theme:gold" },
   };
   // עיצוב לעמוד אחד (מ"הרובוט שלי"): { calc: { id, grad } }

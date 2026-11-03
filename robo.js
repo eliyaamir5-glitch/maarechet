@@ -67,9 +67,27 @@
     "skin:phoenix": { head: "u:h", ear: "u:e", scr: "#3b0a0a", eye: "#fff7ed", defs: u => lg(u, "h", [[0, "#fef08a"], [.4, "#f97316"], [1, "#b91c1c"]], 0, 1) + lg(u, "e", [[0, "#fde047"], [1, "#dc2626"]]),
       under: () => `<g class="rwing"><path d="M8 30Q-10 20-6 2Q2 18 12 22Z" fill="#f97316"/><path d="M8 34Q-12 34-10 18Q0 30 12 28Z" fill="#fde047" opacity=".9"/></g><g class="rwing r"><path d="M56 30Q74 20 70 2Q62 18 52 22Z" fill="#f97316"/><path d="M56 34Q76 34 74 18Q64 30 52 28Z" fill="#fde047" opacity=".9"/></g><g class="rflame"><path d="M22 16q-3-8 3-12 0 5 4 6 0-5 5-8 0 6 4 8 2-4 5-5-1 5 1 11z" fill="#fde047"/></g>`,
       top: u => shine(u) + twinkles([[15, 18, 2.6], [50, 20, 2.2], [48, 47, 2.8]], "#fffbe6"), cls: "rgold", bg: "radial-gradient(circle at 35% 30%,#fef08a,#f97316 45%,#7f1d1d)", ring: "#f97316" },
+    "skin:crystal": { head: "u:h", ear: "u:e", scr: "#1e1b4b", eye: "#ffffff", defs: u => lg(u, "h", [[0, "#fef9c3"], [.2, "#fbcfe8"], [.4, "#a5f3fc"], [.6, "#c4b5fd"], [.8, "#bbf7d0"], [1, "#fde68a"]]) + lg(u, "e", [[0, "#e0f2fe"], [1, "#f0abfc"]]),
+      top: u => `<g clip-path="url(#${u}c)" opacity=".6"><path d="M11 15l12 12-12 10M53 15l-12 12 12 10M23 27h18M23 27l9 24 9-24M32 15v12" stroke="#fff" stroke-width=".9" fill="none"/></g>` + shine(u) + twinkles([[14, 16, 3.2], [51, 18, 2.6], [50, 49, 3.2], [13, 47, 2.4], [32, 12, 2]], "#fff"), cls: "rdia rrain", bg: "conic-gradient(from 0deg,#fde68a,#fbcfe8,#a5f3fc,#c4b5fd,#bbf7d0,#fde68a)", ring: "#f0abfc" },
+    // 🦸 גיבורים
+    "skin:nova": { head: "u:h", ear: "#6d28d9", scr: "#1e1b4b", eye: "#fde68a", defs: u => lg(u, "h", [[0, "#c4b5fd"], [.5, "#7c3aed"], [1, "#3b0764"]], 0, 1), top: () => `<path d="M32 15l2.2 4.6 5 .6-3.7 3.4 1 5-4.5-2.6-4.5 2.6 1-5-3.7-3.4 5-.6z" fill="#fde047" transform="translate(0 -3) scale(1)" style="filter:drop-shadow(0 0 2px #fde047)"/>` + twinkles([[15, 46, 2], [49, 45, 2]], "#fde68a"), glow: "#a78bfa", bg: "radial-gradient(circle at 35% 30%,#c4b5fd,#6d28d9 55%,#1e1b4b)", ring: "#c4b5fd" },
+    "skin:blaze": { head: "u:h", ear: "#c2410c", scr: "#1c1917", eye: "#fde047", defs: u => lg(u, "h", [[0, "#fdba74"], [.55, "#ea580c"], [1, "#7c2d12"]], 0, 1), top: () => `<path d="M14 25q9-4 18 1 9-5 18-1-1 4-6 5-6 1-12-2-6 3-12 2-5-1-6-5z" fill="#111827"/>`, under: () => `<g class="rflame"><path d="M16 18q-5-9 1-15 0 6 4 7-1-7 5-11 0 7 5 9 2-5 7-6-2 6 0 10 3-2 5-6 4 8-2 13z" fill="#f97316"/><path d="M22 17q-2-6 2-10 0 4 3 5 0-4 4-7 0 5 3 7 2-3 4-4-1 4 1 7z" fill="#fde047"/></g>`, glow: "#f97316", bg: "radial-gradient(circle at 35% 30%,#fdba74,#ea580c 55%,#431407)", ring: "#f97316" },
+    "skin:bolthero": { head: "u:h", ear: "#b91c1c", scr: "#1c1917", eye: "#fef08a", defs: u => lg(u, "h", [[0, "#fca5a5"], [.5, "#dc2626"], [1, "#7f1d1d"]], 0, 1), top: () => `<path d="M34 14l-5 8h4l-3 7 7-9h-4l3-6z" fill="#facc15" stroke="#a16207" stroke-width=".6" style="filter:drop-shadow(0 0 2px #facc15)"/><path d="M11 46h42" stroke="#facc15" stroke-width="2.4"/>`, bg: "radial-gradient(circle at 35% 30%,#fde047,#dc2626 50%,#450a0a)", ring: "#facc15" },
+    "skin:titan": { head: "u:h", ear: "u:e", scr: "#0b1026", eye: "#7dd3fc", defs: u => lg(u, "h", [[0, "#f1f5f9"], [.35, "#94a3b8"], [.6, "#e2e8f0"], [1, "#334155"]]) + lg(u, "e", [[0, "#cbd5e1"], [1, "#1e3a8a"]]), top: u => shine(u) + `<path d="M11 22h6M47 22h6M11 44h6M47 44h6" stroke="#1e40af" stroke-width="2"/><circle cx="32" cy="48" r="3.2" fill="#7dd3fc" style="filter:drop-shadow(0 0 3px #38bdf8)"/>`, glow: "#38bdf8", bg: "radial-gradient(circle at 35% 30%,#e2e8f0,#3b82f6 50%,#0b1026)", ring: "#7dd3fc" },
+    "skin:captain": { head: "u:h", ear: "#c2410c", scr: "#042f2e", eye: "#99f6e4", defs: u => lg(u, "h", [[0, "#5eead4"], [.55, "#0d9488"], [1, "#134e4a"]], 0, 1), top: () => `<circle cx="32" cy="18" r="3.4" fill="#fb923c" stroke="#7c2d12" stroke-width=".7"/><g stroke="#fb923c" stroke-width="1.4">${[0, 45, 90, 135].map(a => `<line x1="${(32 + 2.4 * Math.cos(a * Math.PI / 180)).toFixed(1)}" y1="${(18 + 2.4 * Math.sin(a * Math.PI / 180)).toFixed(1)}" x2="${(32 + 5 * Math.cos(a * Math.PI / 180)).toFixed(1)}" y2="${(18 + 5 * Math.sin(a * Math.PI / 180)).toFixed(1)}"/><line x1="${(32 - 2.4 * Math.cos(a * Math.PI / 180)).toFixed(1)}" y1="${(18 - 2.4 * Math.sin(a * Math.PI / 180)).toFixed(1)}" x2="${(32 - 5 * Math.cos(a * Math.PI / 180)).toFixed(1)}" y2="${(18 - 5 * Math.sin(a * Math.PI / 180)).toFixed(1)}"/>`).join("")}</g><circle cx="32" cy="18" r="1.3" fill="#134e4a"/>`, bg: "radial-gradient(circle at 35% 30%,#5eead4,#0f766e 55%,#042f2e)", ring: "#fb923c" },
+    "skin:frost": { head: "u:h", ear: "#38bdf8", scr: "#082f49", eye: "#e0f2fe", defs: u => lg(u, "h", [[0, "#ffffff"], [.5, "#bae6fd"], [1, "#0284c7"]], 0, 1), under: () => `<path d="M14 18L17 4 22 15 27 1 32 14 37 1 42 15 47 4 50 18Z" fill="#e0f2fe" stroke="#7dd3fc" stroke-width=".8"/>`, top: u => `<path d="M17 50l2 6 2-6M30 51l2 7 2-7M43 50l2 6 2-6" fill="#e0f2fe" stroke="#7dd3fc" stroke-width=".6"/>` + twinkles([[16, 22, 2.2], [48, 24, 2]], "#fff"), glow: "#7dd3fc", bg: "radial-gradient(circle at 35% 30%,#ffffff,#38bdf8 50%,#082f49)", ring: "#bae6fd" },
+    "skin:cosmic": { head: "u:h", ear: "u:e", scr: "#020617", eye: "#f0abfc", defs: u => `<radialGradient id="${u}h" cx="40%" cy="35%" r="75%"><stop offset="0" stop-color="#6366f1"/><stop offset=".45" stop-color="#312e81"/><stop offset=".8" stop-color="#0f0a2e"/><stop offset="1" stop-color="#000"/></radialGradient>` + lg(u, "e", [[0, "#818cf8"], [1, "#1e1b4b"]]),
+      top: u => `<g clip-path="url(#${u}c)"><g class="rorbit" style="transform-origin:32px 33px"><ellipse cx="32" cy="33" rx="16" ry="5" fill="none" stroke="#f0abfc" stroke-width=".7" opacity=".7"/><circle cx="48" cy="33" r="1.4" fill="#fde047"/></g>${Array.from({ length: 14 }, (_, i) => `<circle class="rtw" style="animation-delay:${(i * .23) % 2}s" cx="${12 + (i * 37) % 40}" cy="${16 + (i * 23) % 34}" r=".8" fill="#fff"/>`).join("")}</g>` + shine(u), over: () => `<circle class="rpulse" cx="32" cy="32" r="31" fill="none" stroke="#a78bfa" stroke-width="1.6" opacity=".7"/>`, cls: "rshadow", glow: "#a78bfa", bg: "radial-gradient(circle at 35% 30%,#818cf8,#1e1b4b 55%,#000)", ring: "#f0abfc" },
     "skin:gold": { head: "u:h", ear: "u:e", scr: "#3b2300", eye: "#fef08a", defs: u => lg(u, "h", [[0, "#fff7c2"], [.35, "#facc15"], [.65, "#ca8a04"], [1, "#fde68a"]]) + lg(u, "e", [[0, "#fde047"], [1, "#a16207"]]),
       top: u => shine(u) + twinkles([[15, 17, 3], [50, 20, 2.4], [49, 48, 3.2], [13, 45, 2]], "#fffbe6"), cls: "rgold", bg: "radial-gradient(circle at 35% 30%,#fff7c2,#facc15 40%,#ca8a04 75%,#713f12)", ring: "#facc15" },
   };
+  // חליפות "פשוטות" מהקטלוג (צבעים + ברק / נצנוצים)
+  const genCache = {};
+  function genSkin(id) {
+    const it = R.ITEMS[id]; if (!it || !it.sk) return null; if (genCache[id]) return genCache[id];
+    const [a, b, c] = it.sk;
+    return (genCache[id] = { head: "u:h", ear: b, eye: it.e || "#fff", scr: it.s || "#1b1f45", defs: u => lg(u, "h", [[0, a], [.55, b], [1, c]], 0, 1), top: u => (it.shine ? shine(u) : "") + (it.tw ? twinkles([[15, 18, 2.4], [49, 46, 2.6]], "#fff") : ""), bg: `radial-gradient(circle at 35% 30%,${a},${b} 55%,${c})`, ring: b });
+  }
   // כובעים (מעל הראש, הראש מתחיל ב-y=15)
   const HAT = {
     "hat:cap": () => `<path d="M13 19Q32 0 51 19Z" fill="#ef4444"/><path d="M40 17h20q3 0 3 3H40z" fill="#b91c1c"/><circle cx="32" cy="7.5" r="1.8" fill="#fff"/>`,
@@ -97,6 +115,14 @@
     "hat:laurel": () => `<g fill="#16a34a">${[-60, -40, -20, 0, 20, 40, 60].map((a, i) => `<ellipse cx="${(32 + 20 * Math.sin(a * Math.PI / 180)).toFixed(1)}" cy="${(17 - 9 * Math.cos(a * Math.PI / 180)).toFixed(1)}" rx="2.2" ry="4.2" transform="rotate(${a} ${(32 + 20 * Math.sin(a * Math.PI / 180)).toFixed(1)} ${(17 - 9 * Math.cos(a * Math.PI / 180)).toFixed(1)})" fill="${i % 2 ? "#22c55e" : "#15803d"}"/>`).join("")}</g>`,
     "hat:unicorn": u => `<defs>${lg(u, "un", [[0, "#fde68a"], [.5, "#f9a8d4"], [1, "#a5b4fc"]], 0, 1)}</defs><path d="M27 17L33 -9L37 17Z" fill="url(#${u}un)" stroke="#e9d5ff" stroke-width=".6"/><path d="M29 10l7-2M30 4l5-1.5M28 15l8-2" stroke="#fff" stroke-width="1"/>${twinkles([[44, 0, 2.4], [22, 4, 2]], "#fff")}`,
     "hat:stars": () => `<g class="rhalo">${[-50, -25, 0, 25, 50].map((a, i) => `<text x="${(32 + 18 * Math.sin(a * Math.PI / 180)).toFixed(1)}" y="${(12 - 6 * Math.cos(a * Math.PI / 180)).toFixed(1)}" font-size="${i === 2 ? 11 : 8}" text-anchor="middle" fill="#fde047" style="filter:drop-shadow(0 0 2px #facc15)">★</text>`).join("")}</g>`,
+    "hat:backcap": () => `<path d="M13 19Q32 0 51 19Z" fill="#2563eb"/><path d="M24 17H4q-3 0-3 3h23z" fill="#1d4ed8"/><circle cx="32" cy="7.5" r="1.8" fill="#fff"/>`,
+    "hat:antennas": () => `<line x1="24" y1="16" x2="18" y2="2" stroke="#e8ebff" stroke-width="2.2" stroke-linecap="round"/><line x1="40" y1="16" x2="46" y2="2" stroke="#e8ebff" stroke-width="2.2" stroke-linecap="round"/><circle class="ant" cx="18" cy="2" r="3.2" fill="#7cf5ff"/><circle class="ant" cx="46" cy="2" r="3.2" fill="#7cf5ff"/>`,
+    "hat:catears": () => `<path d="M13 20L15 3 28 15Z" fill="#374151"/><path d="M51 20L49 3 36 15Z" fill="#374151"/><path d="M16 15L17 7 23 13Z" fill="#f9a8d4"/><path d="M48 15L47 7 41 13Z" fill="#f9a8d4"/>`,
+    "hat:mohawk": () => `<path d="M22 17L24 2 28 12 31 -2 34 12 38 1 41 12 43 4 42 17Z" fill="#ec4899"/><path d="M26 16L28 6 31 13 34 5 37 13 39 8 39 16Z" fill="#a855f7"/>`,
+    "hat:tiara": () => `<path d="M18 16Q32 6 46 16" stroke="#fde68a" stroke-width="2.4" fill="none"/><path d="M27 11L32 3 37 11" fill="#fde68a" stroke="#ca8a04" stroke-width=".6"/><circle cx="32" cy="8" r="2" fill="#ec4899"/><circle cx="22" cy="12" r="1.3" fill="#a5f3fc"/><circle cx="42" cy="12" r="1.3" fill="#a5f3fc"/>`,
+    "hat:samurai": () => `<path d="M10 20Q12 4 32 3Q52 4 54 20Z" fill="#1f2937"/><path d="M8 20h48v3H8z" fill="#7f1d1d"/><path d="M32 4L22 -8Q30 -2 32 -10Q34 -2 42 -8Z" fill="#facc15"/><circle cx="32" cy="10" r="2.6" fill="#dc2626"/>`,
+    "hat:spacehelm": () => `<circle cx="32" cy="32" r="29" fill="rgba(186,230,253,.12)" stroke="#e2e8f0" stroke-width="2.6"/><path d="M14 20a22 22 0 0 1 12-11" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".8"/><rect x="28" y="-1" width="8" height="5" rx="2" fill="#94a3b8"/>`,
+    "hat:herohelm": () => `<path d="M12 22Q12 4 32 4Q52 4 52 22L46 18Q32 12 18 18Z" fill="#dc2626"/><path d="M12 14L2 6 6 18Z" fill="#fde047"/><path d="M52 14L62 6 58 18Z" fill="#fde047"/><path d="M28 6L32 1 36 6" fill="#fde047"/>`,
     "hat:streak": u => `<defs>${lg(u, "sc", [[0, "#fde047"], [.6, "#f97316"], [1, "#dc2626"]], 0, 1)}</defs><g class="rflame" opacity=".85"><path d="M16 8q-3-6 1-10 0 4 3 5 0-4 4-7 0 5 3 6" fill="#f97316"/><path d="M48 8q3-6-1-10 0 4-3 5 0-4-4-7 0 5-3 6" fill="#f97316"/></g><path d="M14 19V5l8 7 10-11 10 11 8-7v14Z" fill="url(#${u}sc)" stroke="#b91c1c" stroke-width=".8"/><text x="32" y="16" font-size="8" text-anchor="middle">🔥</text>`,
   };
   // משקפיים (מעל העיניים, זזים יחד איתן)
@@ -110,9 +136,15 @@
     "eyes:monocle": () => `<circle cx="39" cy="30" r="6.6" fill="rgba(255,255,255,.12)" stroke="#d4a017" stroke-width="1.6"/><path d="M45 33q4 6 2 14" stroke="#d4a017" stroke-width=".9" fill="none"/>`,
     "eyes:mask": () => `<path d="M13 26q10-4 19 1 9-5 19-1-1 9-8 9-7 0-11-4-4 4-11 4-7 0-8-9z" fill="#111827"/><ellipse cx="25" cy="30" rx="3.4" ry="2.6" fill="#1b1f45"/><ellipse cx="39" cy="30" rx="3.4" ry="2.6" fill="#1b1f45"/>`,
     "eyes:visor": () => `<rect x="14" y="25" width="36" height="10" rx="5" fill="rgba(74,222,128,.55)" stroke="#16a34a" stroke-width="1.2"/><path d="M18 28h10" stroke="#fff" stroke-width="1.2" opacity=".7"/>`,
+    "eyes:goggles": () => `<rect x="10" y="27" width="44" height="5" fill="#78350f"/><circle cx="25" cy="30" r="7" fill="rgba(253,230,138,.35)" stroke="#a16207" stroke-width="2.4"/><circle cx="39" cy="30" r="7" fill="rgba(253,230,138,.35)" stroke="#a16207" stroke-width="2.4"/>`,
+    "eyes:goldshades": () => `<path d="M15 26h15l-1 7q-1 3-6 3t-7-3z" fill="#1c1917" stroke="#facc15" stroke-width="1.4"/><path d="M34 26h15l-1 7q-1 3-6 3t-7-3z" fill="#1c1917" stroke="#facc15" stroke-width="1.4"/><path d="M30 27h4" stroke="#facc15" stroke-width="1.4"/>`,
+    "eyes:heromask": () => `<path d="M12 26q10-5 20 0 10-5 20 0-1 8-9 9-7 0-11-4-4 4-11 4-8-1-9-9z" fill="#dc2626"/><ellipse cx="24.5" cy="30" rx="3.6" ry="2.4" fill="#fff"/><ellipse cx="39.5" cy="30" rx="3.6" ry="2.4" fill="#fff"/>`,
     "eyes:vr": () => `<rect x="12" y="21" width="40" height="18" rx="6" fill="#e5e7eb" stroke="#9ca3af"/><rect x="15" y="24" width="34" height="12" rx="4" fill="#111827"/><circle class="rtw" cx="44" cy="30" r="1.6" fill="#22d3ee"/><rect x="10" y="27" width="3" height="6" fill="#374151"/><rect x="51" y="27" width="3" height="6" fill="#374151"/>`,
   };
   const EYE_SHAPE = {
+    "eyes:sleepy": (x, c) => `<path class="eye" d="M${x - 4} 30q4 3 8 0" stroke="${c}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`,
+    "eyes:xx": (x) => `<path class="eye" d="M${x - 3.4} 26.6l6.8 6.8M${x + 3.4} 26.6l-6.8 6.8" stroke="#f87171" stroke-width="2.2" stroke-linecap="round"/>`,
+    "eyes:galaxy": (x, c, u) => `<circle class="eye" cx="${x}" cy="30" r="4.6" fill="url(#${u}gx)"/><circle class="rtw" cx="${x + 1.4}" cy="28.6" r=".9" fill="#fff"/>`,
     "eyes:dollar": (x) => `<text class="eye" x="${x}" y="34" font-size="11" font-weight="900" text-anchor="middle" fill="#4ade80">$</text>`,
     "eyes:hypno": (x) => `<g class="rspin" style="transform-origin:${x}px 30px"><circle cx="${x}" cy="30" r="4.6" fill="none" stroke="#f0abfc" stroke-width="1.3"/><circle cx="${x}" cy="30" r="2.6" fill="none" stroke="#a855f7" stroke-width="1.3"/><circle cx="${x}" cy="30" r=".9" fill="#f0abfc"/></g>`,
     "eyes:fire": (x) => `<path class="eye rflame" d="M${x} 35q-5-1-4-6 1 2 2 2-1-4 2-7 0 3 2 4 1-2 2-2 1 5-4 9z" fill="#f97316"/><path d="M${x} 35q-2 0-2-3 1 1 2 1 0-2 1-3 1 3-1 5z" fill="#fde047"/>`,
@@ -133,6 +165,8 @@
     "aura:petals": () => [[6, 2, 0], [22, -2, .9], [46, 0, .4], [60, 4, 1.4], [34, -4, 1.9]].map(([x, y, d]) => `<ellipse class="rsnow" style="animation-delay:${d}s" cx="${x}" cy="${y}" rx="2.2" ry="1.3" fill="#f9a8d4"/>`).join(""),
     "aura:galaxy": () => `<g class="rorbit">${Array.from({ length: 14 }, (_, i) => { const a = i * 0.9, r = 22 + i * 0.9; return `<circle cx="${(32 + r * Math.cos(a)).toFixed(1)}" cy="${(32 + r * Math.sin(a)).toFixed(1)}" r="${(1.6 - i * 0.06).toFixed(2)}" fill="${i % 3 ? "#c084fc" : "#f0abfc"}"/>`; }).join("")}</g>`,
     "aura:rainbow": () => `<g class="rorbit">${["#ef4444", "#f59e0b", "#facc15", "#22c55e", "#3b82f6", "#a855f7"].map((c, i) => `<path d="M${(32 + 31 * Math.cos(i * Math.PI / 3)).toFixed(1)} ${(32 + 31 * Math.sin(i * Math.PI / 3)).toFixed(1)}A31 31 0 0 1 ${(32 + 31 * Math.cos((i + 1) * Math.PI / 3)).toFixed(1)} ${(32 + 31 * Math.sin((i + 1) * Math.PI / 3)).toFixed(1)}" stroke="${c}" stroke-width="3.4" fill="none" stroke-linecap="round"/>`).join("")}</g>`,
+    "aura:cape": () => `<path class="rcape" d="M10 30Q4 52 12 66Q32 58 52 66Q60 52 54 30Z" fill="#dc2626"/><path d="M12 30Q32 38 52 30" stroke="#991b1b" stroke-width="2" fill="none"/>`,
+    "aura:capegold": u => `<defs>${lg(u, "cg", [[0, "#fde047"], [.6, "#ca8a04"], [1, "#713f12"]], 0, 1)}</defs><path class="rcape" d="M10 30Q4 52 12 66Q32 58 52 66Q60 52 54 30Z" fill="url(#${u}cg)"/>${twinkles([[16, 56, 2.2], [46, 58, 2.4]], "#fff")}`,
     "aura:streak": u => `<defs><radialGradient id="${u}st"><stop offset=".6" stop-color="#f97316" stop-opacity="0"/><stop offset=".85" stop-color="#f97316" stop-opacity=".7"/><stop offset="1" stop-color="#dc2626" stop-opacity="0"/></radialGradient></defs><circle class="rpulse" cx="32" cy="32" r="34" fill="url(#${u}st)"/><g class="rorbit">${[0, 90, 180, 270].map(a => `<text x="${(32 + 31 * Math.cos(a * Math.PI / 180)).toFixed(1)}" y="${(32 + 31 * Math.sin(a * Math.PI / 180)).toFixed(1)}" font-size="8" text-anchor="middle" dominant-baseline="middle">🔥</text>`).join("")}</g>`,
   };
   // 🎉 בחגים הרובוט מחזיק משהו של החג (לא משנה את מה שבחרת – רק בזמן החג)
@@ -142,7 +176,7 @@
   let uid = 0;
   // eq: מה לבוש (ברירת מחדל: מה שבחרת). opt.still = בלי אנימציות (תצוגות קטנות), opt.noHoli = בלי תוספת חג
   function svg(cls = "", eq = null, opt = {}) {
-    const E = Object.assign({}, eq || S.eq), u = "rb" + (++uid) + "_", sk = SK[E.skin] || SK["skin:classic"];
+    const E = Object.assign({}, eq || S.eq), u = "rb" + (++uid) + "_", sk = SK[E.skin] || genSkin(E.skin) || SK["skin:classic"];
     const hol = !opt.noHoli && !eq ? holiday() : null;
     let heldEm = E.held && R.ITEMS[E.held] ? R.ITEMS[E.held].em : "";
     if (hol && hol.type === "sad") delete E.aura; else if (hol && HOLI[hol.key]) heldEm = HOLI[hol.key];
@@ -151,11 +185,11 @@
     const strokeA = sk.stroke ? ` stroke="${sk.stroke}" stroke-width="1.6"` : "";
     const glow = sk.glow ? ` style="filter:drop-shadow(0 0 3px ${sk.glow})"` : "";
     const eyeSh = EYE_SHAPE[E.eyes];
-    const eyesHtml = E.eyes === "eyes:cyclops" ? `<ellipse class="eye" cx="32" cy="31" rx="8" ry="8" fill="#fff"/><circle cx="32" cy="31" r="4.4" fill="${eye}"/><circle cx="32" cy="31" r="2" fill="#0b0b12"/><circle cx="34" cy="29" r="1.2" fill="#fff"/>` : eyeSh ? eyeSh(25, eye, u) + eyeSh(39, eye, u) : `<ellipse class="eye" cx="25" cy="30" rx="3.8" ry="4.6" fill="${eye}"/><ellipse class="eye" cx="39" cy="30" rx="3.8" ry="4.6" fill="${eye}"/><circle cx="26.3" cy="28.3" r="1.2" fill="#fff"/><circle cx="40.3" cy="28.3" r="1.2" fill="#fff"/>`;
-    const defs = (sk.defs ? sk.defs(u) : "") + `<clipPath id="${u}c"><rect x="11" y="15" width="42" height="36" rx="14"/></clipPath>` + (E.eyes === "eyes:rainbow" ? lg(u, "rb", [[0, "#f87171"], [.33, "#facc15"], [.66, "#22d3ee"], [1, "#a855f7"]], 0, 1) : "");
-    const hat = HAT[E.hat] ? HAT[E.hat](u) : "";
+    const eyesHtml = E.eyes === "eyes:wink" ? `<ellipse class="eye" cx="25" cy="30" rx="3.8" ry="4.6" fill="${eye}"/><circle cx="26.3" cy="28.3" r="1.2" fill="#fff"/><path d="M35 31q4-4 8 0" stroke="${eye}" stroke-width="2.2" fill="none" stroke-linecap="round"/>` : E.eyes === "eyes:cyclops" ? `<ellipse class="eye" cx="32" cy="31" rx="8" ry="8" fill="#fff"/><circle cx="32" cy="31" r="4.4" fill="${eye}"/><circle cx="32" cy="31" r="2" fill="#0b0b12"/><circle cx="34" cy="29" r="1.2" fill="#fff"/>` : eyeSh ? eyeSh(25, eye, u) + eyeSh(39, eye, u) : `<ellipse class="eye" cx="25" cy="30" rx="3.8" ry="4.6" fill="${eye}"/><ellipse class="eye" cx="39" cy="30" rx="3.8" ry="4.6" fill="${eye}"/><circle cx="26.3" cy="28.3" r="1.2" fill="#fff"/><circle cx="40.3" cy="28.3" r="1.2" fill="#fff"/>`;
+    const defs = (sk.defs ? sk.defs(u) : "") + `<clipPath id="${u}c"><rect x="11" y="15" width="42" height="36" rx="14"/></clipPath>` + (E.eyes === "eyes:rainbow" ? lg(u, "rb", [[0, "#f87171"], [.33, "#facc15"], [.66, "#22d3ee"], [1, "#a855f7"]], 0, 1) : "") + (E.eyes === "eyes:galaxy" ? `<radialGradient id="${u}gx"><stop offset="0" stop-color="#f0abfc"/><stop offset=".6" stop-color="#7c3aed"/><stop offset="1" stop-color="#1e1b4b"/></radialGradient>` : "");
+    const hatIt = R.ITEMS[E.hat], hat = HAT[E.hat] ? HAT[E.hat](u) : hatIt && hatIt.em ? `<text x="32" y="${hatIt.em.length > 3 ? 12 : 13}" font-size="${hatIt.em.length > 3 ? 9 : 15}" text-anchor="middle">${hatIt.em}</text>` : "";
     return `<svg class="abot ${cls}${opt.still ? " still" : ""}${sk.cls ? " " + sk.cls : ""}" viewBox="0 0 64 64" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs>
-${E.aura && AURA[E.aura] ? `<g class="raura">${AURA[E.aura](u)}</g>` : ""}<g class="body">
+${E.aura && AURA[E.aura] ? `<g class="raura">${AURA[E.aura](u)}</g>` : E.aura && R.ITEMS[E.aura] && R.ITEMS[E.aura].fl ? `<g class="raura">${[[7, 52, 0], [57, 46, .8], [11, 26, 1.6], [55, 20, 2.3]].map(([x, y, d], i) => `<text class="rbub" style="animation-delay:${d}s" x="${x}" y="${y}" font-size="8" text-anchor="middle">${R.ITEMS[E.aura].fl[i % R.ITEMS[E.aura].fl.length]}</text>`).join("")}</g>` : ""}<g class="body">
 ${hat ? "" : `<line x1="32" y1="9" x2="32" y2="16" stroke="${sk.stroke || "#e8ebff"}" stroke-width="2.5" stroke-linecap="round"/><circle class="ant" cx="32" cy="7.5" r="3.6" fill="${sk.stroke || "#7cf5ff"}"/>`}
 ${sk.under ? sk.under(u) : ""}
 <rect class="ear l" x="6.5" y="27" width="6" height="12" rx="3" fill="${ear}"${strokeA}/><rect class="ear r" x="51.5" y="27" width="6" height="12" rx="3" fill="${ear}"${strokeA}/>
@@ -209,6 +243,7 @@ ${hat}${sk.over ? sk.over(u) : ""}${heldEm ? `<text class="rheld" x="55" y="56" 
 .abot .rsnow{animation:rSnow 3.2s linear infinite}@keyframes rSnow{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(62px) translateX(4px);opacity:0}}
 .abot .rspin{animation:rSpin 1.6s linear infinite}
 .abot.rshadow .body{filter:drop-shadow(0 0 5px #a855f7)}.abot.rpix{image-rendering:pixelated}
+.abot .rcape{transform-box:fill-box;transform-origin:50% 0;animation:rCape 1.6s ease-in-out infinite alternate}@keyframes rCape{to{transform:skewX(4deg) scaleY(1.04)}}
 .abot.still *,.abot.still{animation:none!important}
 .rv-trail{font-size:20px;gap:2px;flex-wrap:wrap}.rv-trail span{animation:rTw 1.6s ease-in-out infinite}
 .rv-q{width:100%;display:flex;flex-direction:column;align-items:center}.rv-qb{background:#fff;color:#1a1040;border-radius:10px;padding:4px 6px;font-size:10px;font-weight:900;line-height:1.2;position:relative;max-width:96%}
@@ -240,7 +275,57 @@ dialog.robo[open]{animation:rIn .35s cubic-bezier(.2,1.2,.4,1)}@keyframes rIn{fr
 .rw-bot .abot{animation:rFloat 3s ease-in-out infinite}@keyframes rFloat{50%{transform:translateY(-6px)}}
 .rw-bot.hop .abot{animation:rHop .6s cubic-bezier(.2,1.6,.4,1)}@keyframes rHop{40%{transform:translateY(-22px) rotate(8deg) scale(1.08)}}
 .rw-name{position:relative;font-weight:900;font-size:19px;margin-top:2px}
-.rw-chips{position:relative;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.rw-edit{border:0;background:rgba(255,255,255,.15);color:#fff;border-radius:99px;font-size:12px;width:26px;height:26px;cursor:pointer;vertical-align:3px}
+.rw-sub{position:relative;font-size:12px;opacity:.8;margin-top:-2px}
+.fr-bat{border-radius:18px;padding:12px;margin-bottom:10px;background:linear-gradient(135deg,#1e3a8a,#3b1d7a 50%,#7f1d1d);border:1.5px solid rgba(255,255,255,.15)}
+.fr-bat b{display:block;text-align:center;font-size:15px;margin-bottom:6px}.fr-bar{display:flex;height:26px;border-radius:99px;overflow:hidden;font-weight:900;font-size:13px}
+.fr-bar span{display:flex;align-items:center;justify-content:center;transition:flex .6s;min-width:54px}.fr-bar .a{background:linear-gradient(90deg,#2563eb,#60a5fa)}.fr-bar .b{background:linear-gradient(90deg,#f87171,#dc2626)}
+.fr-bat small{display:block;text-align:center;opacity:.85;font-size:11px;margin-top:6px}
+.fr-row{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}.fr-row button{border:1.5px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;border-radius:99px;padding:6px 12px;font:inherit;font-size:13px;font-weight:800;cursor:pointer}.fr-row button.on{background:#fff;color:#1a1040}
+.fr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(102px,1fr));gap:9px}
+.fc{position:relative;border:0;border-radius:16px;padding:8px 6px;color:#fff;font:inherit;text-align:center;cursor:pointer;background:linear-gradient(170deg,#3b1d7a,#1a1040);border:1.5px solid rgba(255,255,255,.12);animation:fcIn .4s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes fcIn{from{transform:scale(.6) translateY(10px);opacity:0}}.fc.me{border-color:#facc15}.fc .pv{width:78px;height:78px;margin:0 auto}.fc .pv .abot{width:100%;height:100%}
+.fc .rn{font-weight:900;font-size:13px;margin-top:2px;line-height:1.2}.fc .kid{font-size:11px;opacity:.75}.fc .lk{font-size:11px;font-weight:800;margin-top:3px}
+.fc .medal{position:absolute;top:-6px;right:-4px;font-size:20px}
+.fr-tog{display:flex;align-items:center;gap:8px;font-size:13px;margin:10px 2px}
+dialog.robo.fr .frc{height:100%;overflow-y:auto;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.frc-top{position:relative;text-align:center;padding:calc(16px + env(safe-area-inset-top)) 14px 14px;background:radial-gradient(120% 90% at 50% 15%,var(--rc,#7c3aed),#1a1040 60%,#0b0820);overflow:hidden}
+.frc-top::before{content:"";position:absolute;inset:-50%;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.08) 0 9deg,transparent 9deg 18deg);animation:rSpinB 24s linear infinite}
+.frc-bot{position:relative;width:170px;height:170px;margin:4px auto 0;animation:frIn .9s cubic-bezier(.2,1.3,.4,1) both;filter:drop-shadow(0 14px 22px rgba(0,0,0,.5))}
+@keyframes frIn{0%{transform:scale(.2) rotate(-200deg);opacity:0}100%{transform:none;opacity:1}}.frc-bot .abot{animation:rFloat 3s ease-in-out infinite}
+.frc-rn{position:relative;font-size:24px;font-weight:900}.frc-kid{position:relative;font-size:13px;opacity:.85}
+.frc-st{position:relative;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:10px}.frc-st span{background:rgba(0,0,0,.35);border-radius:99px;padding:5px 11px;font-size:13px;font-weight:800}
+.frc-in{padding:12px}.ach{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.ach div{border-radius:14px;padding:10px 6px;text-align:center;background:linear-gradient(160deg,#facc15,#f97316);color:#1a1040;font-weight:900;font-size:12px;animation:achIn .5s cubic-bezier(.2,1.6,.4,1) both;box-shadow:0 4px 0 #9a3412}
+.ach div b{display:block;font-size:26px;line-height:1.1}@keyframes achIn{from{transform:scale(0) rotate(-20deg)}}
+.frc-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.frc-btns .rbtn{flex:1;min-width:100px}
+/* טרייד */
+.tr{height:100%;display:flex;flex-direction:column;overflow:hidden}.tr-top{padding:calc(12px + env(safe-area-inset-top)) 14px 8px;text-align:center;background:linear-gradient(135deg,#1e3a8a,#5b21b6)}
+.tr-body{flex:1;overflow-y:auto;padding:10px 12px}.tr-side{border-radius:16px;padding:10px;margin-bottom:10px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12)}
+.tr-side h4{margin:0 0 6px;font-size:14px;display:flex;justify-content:space-between;align-items:center}.tr-side h4 em{font-style:normal;font-size:12px;opacity:.8}
+.tr-items{display:flex;gap:6px;flex-wrap:wrap;min-height:58px}.tr-it{width:62px;border-radius:12px;padding:4px;text-align:center;font-size:10px;font-weight:800;background:var(--c);color:#fff;position:relative}
+.tr-it .pv{width:52px;height:52px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:28px}.tr-it .pv .abot,.tr-it .pv .rv-sw{width:100%;height:100%}.tr-it .x{position:absolute;top:-6px;left:-6px;width:20px;height:20px;border-radius:50%;border:0;background:#f43f5e;color:#fff;font-size:11px;cursor:pointer}
+.tr-add{width:62px;min-height:62px;border-radius:12px;border:2px dashed rgba(255,255,255,.35);background:none;color:#fff;font-size:26px;cursor:pointer}
+.scale{position:relative;height:96px;margin:6px 0}.scale .beam{position:absolute;left:10%;right:10%;top:24px;height:6px;border-radius:3px;background:#facc15;transform-origin:50% 50%;transition:transform .6s cubic-bezier(.2,1.4,.4,1)}
+.scale .post{position:absolute;left:50%;top:24px;width:6px;margin-left:-3px;height:64px;background:#a16207;border-radius:3px}.scale .base{position:absolute;left:38%;right:38%;bottom:2px;height:8px;border-radius:4px;background:#a16207}
+.scale .pan{position:absolute;top:-6px;width:74px;text-align:center;font-size:12px;font-weight:900}.scale .pan.l{left:-30px}.scale .pan.r{right:-30px}.scale .pan i{display:block;font-style:normal;font-size:22px}
+.tr-verd{text-align:center;font-weight:900;font-size:15px;margin-bottom:6px}
+.tr-foot{padding:10px 12px calc(12px + env(safe-area-inset-bottom));background:#120c2e;display:flex;gap:8px}.tr-foot .rbtn{flex:1}
+.tr-st{text-align:center;font-size:13px;opacity:.85;margin:4px 0}
+.tr-count{position:absolute;inset:0;z-index:5;background:rgba(5,2,15,.88);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.tr-count b{font-size:120px;font-weight:900;color:#facc15;text-shadow:0 0 30px #f97316;animation:rTierPop .5s cubic-bezier(.2,1.8,.4,1)}
+.tr-swap{position:absolute;inset:0;z-index:6;background:radial-gradient(circle,#3b1d7a,#05020f);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.tr-swap .s1,.tr-swap .s2{position:absolute;font-size:46px;display:flex;gap:4px}.tr-swap .s1{animation:swapA 1.4s cubic-bezier(.6,-.3,.4,1.3) forwards}.tr-swap .s2{animation:swapB 1.4s cubic-bezier(.6,-.3,.4,1.3) forwards}
+@keyframes swapA{0%{transform:translate(110px,-70px) scale(1)}50%{transform:translate(0,0) scale(1.4) rotate(180deg)}100%{transform:translate(-110px,70px) scale(1) rotate(360deg)}}
+@keyframes swapB{0%{transform:translate(-110px,70px) scale(1)}50%{transform:translate(0,0) scale(1.4) rotate(-180deg)}100%{transform:translate(110px,-70px) scale(1) rotate(-360deg)}}
+.tr-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px;max-height:46vh;overflow-y:auto;margin:8px 0}
+.tr-pick button{border:2px solid transparent;border-radius:12px;padding:4px;background:var(--c);color:#fff;font:inherit;font-size:10px;font-weight:800;cursor:pointer}.tr-pick button.on{border-color:#fff;box-shadow:0 0 0 2px #facc15}
+.tr-pick .pv{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:30px}.tr-pick .pv .abot,.tr-pick .pv .rv-sw{width:100%;height:100%}
+/* הכרזת אולטרה */
+.ann{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;background:radial-gradient(circle at 50% 40%,#713f12,#1a1040 55%,#05020f);position:relative;overflow:hidden}
+.ann::before{content:"";position:absolute;width:200vmax;height:200vmax;background:repeating-conic-gradient(from 0deg,rgba(250,204,21,.18) 0 8deg,transparent 8deg 18deg);animation:rSpinB 16s linear infinite}
+.ann>*{position:relative}.ann .t{font-size:30px;font-weight:900;background:linear-gradient(90deg,#fde047,#f472b6,#a5f3fc,#fde047);background-size:300%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:rGrad 1.4s linear infinite}
+.ann .bot{width:190px;height:190px;animation:frIn 1s cubic-bezier(.2,1.3,.4,1) both}.ann .bot .abot{width:100%;height:100%}.ann .w{font-size:19px;font-weight:900;margin-top:6px}.ann .l{font-size:15px;margin-top:8px;color:#fde68a}display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:8px}
 .rw-chips span{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);border-radius:99px;padding:5px 11px;font-size:13px;font-weight:800}
 .rw-tabs{display:flex;gap:4px;padding:8px 10px;background:#120c2e;border-bottom:1px solid rgba(255,255,255,.08)}
 .rw-tabs button{flex:1;border:0;border-radius:12px;padding:9px 4px;font:inherit;font-size:14px;font-weight:800;color:#c7c3ff;background:transparent;cursor:pointer;position:relative}
@@ -410,14 +495,15 @@ dialog.robo.open{background:#05020f}
   function topRar() { const b = R.best(S); return b ? b.r : "c"; }
   function draw() {
     const d = document.getElementById("roboUI"); if (!d) return;
-    const p = profile() || {}, pr = R.progress(S), nb = S.boxes.length, rc = RC(topRar());
+    const p = profile() || {}, pr = R.progress(S), nb = S.boxes.length, rc = RC(topRar()), inboxN = 0;
     const newIn = c => S.news.some(id => R.ITEMS[id] && R.ITEMS[id].cat === c);
     d.innerHTML = `<div class="rw"><div class="rw-top" style="--rc:${rc}"><button class="rw-x" type="button" aria-label="סגור">✕</button>${muteBtn("rw-mute")}
-      <div class="rw-bot" id="rwBot">${svg()}</div><div class="rw-name">הרובוט של ${esc(p.first || "")}</div>
+      <div class="rw-bot" id="rwBot">${svg()}</div><div class="rw-name">${S.name ? esc(S.name) : `הרובוט של ${esc(p.first || "")}`} <button type="button" class="rw-edit" id="rwName" aria-label="שם לרובוט">✏️</button></div>${S.name ? `<div class="rw-sub">של ${esc(p.first || "")}</div>` : ""}
       <div class="rw-chips"><span>🔥 רצף ${S.st.n}</span><span>🔩 ${bl()}</span><span>🏆 ${pr.have}/${pr.all}</span></div></div>
-      <div class="rw-tabs">${[["wear", "👕 ארון"], ["boxes", "🎁 תיבות", nb], ["shop", "🛒 חנות"], ["streak", "🔥 רצף"]].map(([k, l, n]) => `<button type="button" data-t="${k}" class="${tab === k ? "on" : ""}">${l}${n ? `<span class="dot">${n}</span>` : ""}</button>`).join("")}</div>
+      <div class="rw-tabs">${[["wear", "👕 ארון"], ["boxes", "🎁 תיבות", nb], ["friends", "👥 חברים", inboxN], ["shop", "🛒 חנות"], ["streak", "🔥 רצף"]].map(([k, l, n]) => `<button type="button" data-t="${k}" class="${tab === k ? "on" : ""}">${l}${n ? `<span class="dot">${n}</span>` : ""}</button>`).join("")}</div>
       <div class="rw-body" id="rwBody"></div></div>`;
     d.querySelector(".rw-x").onclick = () => d.close(); wireMute(d);
+    d.querySelector("#rwName").onclick = () => { const v = prompt("איך קוראים לרובוט שלך? (עד 14 תווים)", S.name || ""); if (v == null) return; const c = R.cleanName(v); if (v.trim() && !c) { toast("השם הזה לא מתאים 🙈 נסה שם אחר", null, 3000); return; } S.name = c; save(); publishSoon(); draw(); };
     d.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); });
     const body = d.querySelector("#rwBody");
     if (tab === "wear") {
@@ -429,10 +515,12 @@ dialog.robo.open{background:#05020f}
       body.querySelectorAll("[data-c]").forEach(b => b.onclick = () => { cat = b.dataset.c; draw(); });
       body.querySelectorAll(".rc[data-id]").forEach(b => b.onclick = () => tapItem(b.dataset.id));
       if (S.news.some(id => R.ITEMS[id] && R.ITEMS[id].cat === cat)) { S.news = S.news.filter(id => !R.ITEMS[id] || R.ITEMS[id].cat !== cat); setTimeout(save, 1500); }
+    } else if (tab === "friends") {
+      friendsTab(body);
     } else if (tab === "boxes") {
       const cnt = t => S.boxes.filter(b => b === t).length;
       body.innerHTML = (nb ? "" : `<div class="rw-sec">אין לך תיבות כרגע <small>מקבלים כל יום ברצף, על רצף במקצוע, או קונים בחנות</small></div>`)
-        + ["mega", "big", "box"].filter(t => cnt(t)).map(t => boxRow(t, cnt(t), `<button class="rbtn" type="button" data-open="${t}">לפתוח!</button>`)).join("")
+        + ["giant", "mega", "big", "box"].filter(t => cnt(t)).map(t => boxRow(t, cnt(t), `<button class="rbtn" type="button" data-open="${t}">לפתוח!</button>`)).join("")
         + (nb > 1 ? `<button class="rbtn alt" type="button" id="rwAll" style="width:100%;margin:4px 0 10px">⚡ לפתוח הכל (${nb})</button>` : "")
         + `<div class="rw-sec">ℹ️ מה יש בתיבות <small>הסיכוי לכל דרגה, בכל פרס</small></div>` + oddsTable() + rareInfo();
       body.querySelectorAll("[data-open]").forEach(b => b.onclick = () => openBoxes([b.dataset.open]));
@@ -443,7 +531,7 @@ dialog.robo.open{background:#05020f}
       const brk = S.brk && S.brk.ymd === R.ymd(Date.now()) ? S.brk : null;
       body.innerHTML = `<div class="rw-sec">🔩 יש לך ${bl()} ברגים <small>מקבלים על כפולים, ברצף ובתיבות</small></div><button class="rbtn alt" type="button" id="rwCode" style="width:100%;margin-bottom:10px">🎟️ יש לי קוד לפרס</button>`
         + (brk ? `<div class="rbx" style="--c:#f43f5e"><div class="em">💔</div><div class="t"><b>להציל את הרצף (${brk.n} ימים)</b><small>רק היום! הרצף חוזר ונמשך</small></div><button class="rbtn" type="button" id="rwSave" ${S.bolts < R.saveCost(brk.n) ? "disabled" : ""}>🔩 ${R.saveCost(brk.n)}</button></div>` : "")
-        + ["box", "big", "mega"].map(t => boxRow(t, 0, `<button class="rbtn" type="button" data-buy="${t}" ${S.bolts < R.BOX[t].price ? "disabled" : ""}>🔩 ${R.BOX[t].price}</button>`)).join("")
+        + ["box", "big", "mega", "giant"].map(t => boxRow(t, 0, `<button class="rbtn" type="button" data-buy="${t}" ${S.bolts < R.BOX[t].price ? "disabled" : ""}>🔩 ${R.BOX[t].price}</button>`)).join("")
         + `<div class="rw-sec">⏰ מבצע יומי <small>מתחלף בעוד ${ms} שעות</small></div><div class="rw-grid">${deals.map(x => card(R.ITEMS[x.id], x.price)).join("") || `<div class="rw-prog">יש לך כבר הכל מהחנות 🤯</div>`}</div>
         <p class="rw-prog" style="margin-top:12px">אביזרים מיתיים, אגדיים ואולטרה לא נמכרים בחנות – רק בתיבות 😉</p>`;
       body.querySelectorAll("[data-buy]").forEach(b => b.onclick = () => { const r = R.buy(S, b.dataset.buy, dev()); if (!r.ok) return; save(); vib(30); SFX.coin(); toast(`${R.BOX[r.box].em} קנית ${R.BOX[r.box].n}!`, ["לפתוח", () => openBoxes([r.box])]); draw(); });
@@ -470,11 +558,11 @@ dialog.robo.open{background:#05020f}
     return `<button type="button" class="${cls}" data-id="${it.id}" style="--c:${RC(it.r)};--rcol:${RC(it.r)}">${S.news.includes(it.id) ? `<span class="new">חדש!</span>` : ""}<div class="pv">${preview(it.id)}</div>${own || price ? "" : `<span class="q">❓</span>`}
       <div class="nm">${esc(it.n)}</div><div class="rr">${price ? `🔩 ${price}` : R.RAR[it.r].n}</div></button>`;
   }
-  function boxRow(t, n, btn) { const B = R.BOX[t]; return `<div class="rbx" style="--c:${B.col}"><div class="em">${B.em}</div><div class="t"><b>${B.n}${n > 1 ? ` ×${n}` : ""}</b><small>${B.rolls} פרסים · מתחילה ב${R.RAR[R.START[t]].n} ומשתדרגת בלחיצות${t === "mega" ? " · הכי שווה!" : ""}</small></div>${btn}</div>`; }
+  function boxRow(t, n, btn) { const B = R.BOX[t]; return `<div class="rbx" style="--c:${B.col}"><div class="em">${B.em}</div><div class="t"><b>${B.n}${n > 1 ? ` ×${n}` : ""}</b><small>${B.rolls} פרסים · מתחילה ב${R.RAR[R.START[t]].n} ומשתדרגת בלחיצות${t === "giant" ? " · 🦸 הכי הרבה סיכוי לגיבורים!" : t === "mega" ? " · שווה!" : ""}</small></div>${btn}</div>`; }
   function oddsTable() {
-    const F = { box: R.finalOdds("box"), big: R.finalOdds("big"), mega: R.finalOdds("mega") };
-    return `<div class="rw-prog" style="margin-top:4px">⭐ <b>הפרס הראשי</b> – לפי הדרגה שהתיבה מגיעה אליה אחרי ${R.TAPS} לחיצות (בכל לחיצה היא יכולה להשתדרג):</div><table class="rodds"><tr><td></td>${["box", "big", "mega"].map(t => `<td style="text-align:center">${R.BOX[t].em}</td>`).join("")}</tr>${R.TIERS.map(r => `<tr><td>${rarTag(r)}</td>${["box", "big", "mega"].map(t => `<td style="text-align:center">${F[t][r] ? fmtPct(F[t][r]) : "–"}</td>`).join("")}</tr>`).join("")}</table>
-    <div class="rw-prog" style="margin-top:12px">➕ <b>עוד פרסים בתיבה</b> (📦 1 · 🎁 2 · 💠 5) – ברגים, תיבה נוספת, או אביזר לפי הסיכויים:</div><table class="rodds"><tr><td></td>${["box", "big", "mega"].map(t => `<td style="text-align:center">${R.BOX[t].em}</td>`).join("")}</tr>${R.RK.map(r => `<tr><td>${rarTag(r)}</td>${["box", "big", "mega"].map(t => `<td style="text-align:center">${fmtPct(R.BOX[t].odds[r])}</td>`).join("")}</tr>`).join("")}</table>`;
+    const F = { box: R.finalOdds("box"), big: R.finalOdds("big"), mega: R.finalOdds("mega"), giant: R.finalOdds("giant") };
+    return `<div class="rw-prog" style="margin-top:4px">⭐ <b>הפרס הראשי</b> – לפי הדרגה שהתיבה מגיעה אליה אחרי ${R.TAPS} לחיצות (בכל לחיצה היא יכולה להשתדרג):</div><table class="rodds"><tr><td></td>${["box", "big", "mega", "giant"].map(t => `<td style="text-align:center">${R.BOX[t].em}</td>`).join("")}</tr>${R.TIERS.map(r => `<tr><td>${rarTag(r)}</td>${["box", "big", "mega", "giant"].map(t => `<td style="text-align:center">${F[t][r] ? fmtPct(F[t][r]) : "–"}</td>`).join("")}</tr>`).join("")}</table>
+    <div class="rw-prog" style="margin-top:12px">➕ <b>עוד פרסים בתיבה</b> (📦 1 · 🎁 2 · 💠 5 · 💎 8) – ברגים, תיבה נוספת, או אביזר לפי הסיכויים:</div><table class="rodds"><tr><td></td>${["box", "big", "mega", "giant"].map(t => `<td style="text-align:center">${R.BOX[t].em}</td>`).join("")}</tr>${R.RK.map(r => `<tr><td>${rarTag(r)}</td>${["box", "big", "mega", "giant"].map(t => `<td style="text-align:center">${fmtPct(R.BOX[t].odds[r])}</td>`).join("")}</tr>`).join("")}</table>`;
   }
   const fmtPct = p => (p >= 1 ? p.toFixed(p % 1 ? 1 : 0) : p >= 0.01 ? p.toFixed(2).replace(/0$/, "") : p.toFixed(3).replace(/0+$/, "")) + "%";
   function rareInfo() {
@@ -496,12 +584,13 @@ dialog.robo.open{background:#05020f}
     if (!S.own[id]) { toast(`❓ <b>${esc(it.n)}</b> ${rarTag(it.r)}<br><small>${esc(howGet(it))}</small>`, null, 4000); return; }
     if (it.cat === "theme") { if (window.Theme) Theme.setTheme(id.split(":")[1]); vib(20); draw(); toast(`🎨 העיצוב "${esc(it.n)}" הופעל בכל האפליקציה!`, null, 2500); return; }
     if (it.cat === "page") { const m = pageMap(); if (pageOn(it)) delete m[it.pg]; else m[it.pg] = { id, grad: it.grad }; LS.set("roboPage", JSON.stringify(m)); draw(); toast(pageOn(it) ? `✨ העמוד מעוצב! תיכנס אליו לראות` : "העיצוב הוסר מהעמוד", null, 2500); return; }
-    R.equip(S, id); save(); vib(15); draw();
+    R.equip(S, id); save(); vib(15); draw(); publishSoon();
     const b = document.getElementById("rwBot"); if (b) { b.classList.add("hop"); setTimeout(() => b.classList.remove("hop"), 650); }
   }
   function howGet(it) {
     if (it.how) return "איך משיגים: " + it.how;
     if (it.r === "u") return "רק בתיבות – והכמות מוגבלת לכל הישיבה!";
+    if (it.hero) return "🦸 סדרת הגיבורים: יוצא רק מתיבת ענק 💎 (ולפעמים, נדיר מאוד, מתיבת מגה)";
     return `יוצא בתיבות (${["box", "big", "mega"].map(t => R.BOX[t].em + " " + fmtPct(R.BOX[t].odds[it.r])).join(" · ")})${R.RAR[it.r].price ? " · לפעמים במבצע היומי בחנות" : ""}`;
   }
 
@@ -514,7 +603,7 @@ dialog.robo.open{background:#05020f}
     try {
       for (let bi = 0; bi < list.length; bi++) {
         const type = list[bi], ix = S.boxes.indexOf(type); if (ix < 0) continue;
-        S.boxes.splice(ix, 1);
+        S.boxes.splice(ix, 1); S.opened = (S.opened || 0) + 1;
         let prizes = R.roll(S, type), taps = prizes.taps.slice();
         if (opt.rig && bi === 0) { const id = R.LIST.filter(x => x.r === opt.rig && !x.x)[0].id; prizes[prizes.length - 1] = { t: "item", id, r: opt.rig, main: 1, ...(opt.rig === "u" ? { need: "claim" } : {}) }; const st = R.TIERS.indexOf(R.START[type]), en = R.TIERS.indexOf(opt.rig); taps = Array.from({ length: R.TAPS + 1 }, (_, i) => R.TIERS[Math.min(en, st + i)]); } // דמו בלבד
         // אולטרה אגדי – השרת מאשר (כמות מוגבלת). לא אושר → אגדי רגיל במקום
@@ -769,9 +858,183 @@ dialog.robo.open{background:#05020f}
     return g;
   }
 
+  // ================= 👥 חברים: הרובוטים של השכבה, לייקים, מתנות, טרייד, קרב כיתות =================
+  const CLS_L = c => ({ y1: "י'1", y2: "י'2", ya1: 'י"א1', ya2: 'י"א2' }[c] || c);
+  const online = () => !window.__DEMO && !!profile();
+  let fCls = "", fSort = "likes", fData = null, fBusy = false;
+  const myStats = () => { const pr = R.progress(S); return { n: S.st.n, best: S.st.best, have: pr.have, all: pr.all, opened: S.opened || 0 }; };
+  const topRare = () => R.LIST.filter(x => S.own[x.id] && S.own[x.id] !== -1 && !x.free).sort((a, b) => R.RAR[b.r].o - R.RAR[a.r].o).slice(0, 3).map(x => x.id);
+  let pubT = 0, myLikes = +LS.get("roboMyLikes", "0") || 0;
+  async function publish() { if (!online()) return; try { await api({ op: "pub", rn: S.name || "", eq: S.eq, st: myStats(), rare: topRare(), ach: R.achievements(S, myLikes), hide: !!S.hide }); LS.set("roboPubAt", String(Date.now())); } catch (e) {} }
+  function publishSoon() { clearTimeout(pubT); pubT = setTimeout(publish, 2500); }
+  async function loadClass(cls) {
+    if (!online()) return { ok: false, error: "offline" };
+    try { const j = await api({ op: "class", cls }); if (j && j.ok && !Array.isArray(j.list)) return { ok: false, error: "old" }; if (j && j.ok) { const me = j.list.find(x => x.me); if (me) { myLikes = me.likes; LS.set("roboMyLikes", String(myLikes)); } try { const c = JSON.parse(LS.get("roboClassCache", "{}")) || {}; c[j.cls] = j.list.map(x => ({ kid: x.kid, eq: x.eq })); LS.set("roboClassCache", JSON.stringify(c)); } catch (e) {} battleReward(j); } return j; } catch (e) { return { ok: false, error: "net" }; }
+  }
+  // ⚔️ הכיתה שניצחה בשבוע שעבר מקבלת תיבה גדולה (פעם אחת)
+  function battleReward(j) {
+    const b = j.battle; if (!b || !Array.isArray(b.last) || S.battleClaim === b.lastWeek) return;
+    const top = b.last.slice().sort((x, y) => y.pts - x.pts); if (!top[0] || !top[0].pts || (top[1] && top[1].pts === top[0].pts)) { S.battleClaim = b.lastWeek; save(); return; }
+    S.battleClaim = b.lastWeek;
+    if (top[0].cls === j.myCls) { S.boxes.push("big"); save(); setTimeout(() => toast(`⚔️ הכיתה שלך (${CLS_L(j.myCls)}) ניצחה בקרב הכיתות! קיבלת 🎁 תיבה גדולה`, ["לפתוח", () => openBoxes(["big"])], 9000), 600); SFX.gift(); } else save();
+  }
+  async function friendsTab(body) {
+    body.innerHTML = `<div class="rw-prog" style="text-align:center;padding:30px 0">⏳ טוען את הרובוטים של הכיתה…</div>`;
+    if (!online()) { body.innerHTML = `<div class="rw-prog" style="text-align:center;padding:30px 0">${window.__DEMO ? "בדמו אין חברים 🙂" : "צריך להירשם קודם"}</div>`; return; }
+    if (!fData || fData.cls !== fCls || Date.now() - fData.at > 30000) { publish(); const j = await loadClass(fCls); if (!j || !j.ok) { body.innerHTML = `<div class="rw-prog" style="text-align:center;padding:30px 0">${j && j.error === "not_registered" ? "עוד רגע… האפליקציה נרשמת בשרת. נסה שוב בעוד דקה 🙂" : "אין חיבור כרגע 📶 נסה שוב"}</div>`; return; } fData = Object.assign(j, { at: Date.now() }); fCls = j.cls; }
+    drawFriends(body);
+  }
+  function drawFriends(body) {
+    const j = fData, bat = (j.battle && Array.isArray(j.battle.now) && j.battle.now.length ? j.battle.now : [{ cls: j.cls, pts: 0 }]), tot = bat.reduce((a, x) => a + x.pts, 0) || 1, A = bat[0], B = bat[1] || { cls: "", pts: 0 };
+    const key = { likes: x => x.likes, streak: x => (x.st || {}).n || 0, have: x => (x.st || {}).have || 0 }[fSort];
+    const list = j.list.slice().sort((a, b) => key(b) - key(a) || a.kid.localeCompare(b.kid, "he"));
+    const medal = i => key(list[i]) > 0 ? ["🥇", "🥈", "🥉"][i] || "" : "";
+    body.innerHTML = `<div class="fr-bat"><b>⚔️ קרב הכיתות השבוע</b><div class="fr-bar"><span class="a" style="flex:${Math.max(A.pts, tot * .15)}">${CLS_L(A.cls)} · ${A.pts}</span><span class="b" style="flex:${Math.max(B.pts, tot * .15)}">${B.pts} · ${CLS_L(B.cls)}</span></div><small>כל כניסה יומית ❤️ וכל לייק = נקודה לכיתה. המנצחת מקבלת 🎁 תיבה גדולה במוצאי שבת</small></div>
+      <div class="fr-row">${bat.map(x => `<button type="button" data-cls="${x.cls}" class="${x.cls === j.cls ? "on" : ""}">${CLS_L(x.cls)}${x.cls === j.myCls ? " (שלי)" : ""}</button>`).join("")}<span style="flex:1"></span>${[["likes", "❤️"], ["streak", "🔥"], ["have", "🏆"]].map(([k, l]) => `<button type="button" data-so="${k}" class="${fSort === k ? "on" : ""}">${l}</button>`).join("")}</div>
+      ${list.length ? `<div class="fr-grid">${list.map((x, i) => `<button type="button" class="fc${x.me ? " me" : ""}" data-pid="${x.pid}" style="animation-delay:${Math.min(i, 20) * 40}ms">${medal(i) ? `<span class="medal">${medal(i)}</span>` : ""}<div class="pv">${svg("", Object.assign({ skin: "skin:classic" }, x.eq), { still: true, noHoli: true })}</div><div class="rn">${esc(x.rn || "רובוט")}</div><div class="kid">${esc(x.kid)}${x.me ? " (אני)" : ""}</div><div class="lk">❤️ ${x.likes} · 🔥 ${(x.st || {}).n || 0}</div></button>`).join("")}</div>` : `<div class="rw-prog" style="text-align:center;padding:20px 0">עוד אין כאן רובוטים 🤖 תגיד לחברים להיכנס!</div>`}
+      <label class="fr-tog"><input type="checkbox" id="frHide" ${S.hide ? "" : "checked"}> להציג את הרובוט שלי לשכבה</label>`;
+    body.querySelectorAll("[data-cls]").forEach(b => b.onclick = () => { fCls = b.dataset.cls; fData = null; friendsTab(body); });
+    body.querySelectorAll("[data-so]").forEach(b => b.onclick = () => { fSort = b.dataset.so; drawFriends(body); });
+    body.querySelectorAll(".fc[data-pid]").forEach(b => b.onclick = () => friendCard(j.list.find(x => x.pid === b.dataset.pid)));
+    body.querySelector("#frHide").onchange = e => { S.hide = !e.target.checked; save(); publish().then(() => { fData = null; }); };
+  }
+  // 🔍 הכרטיס של חבר
+  function friendCard(x) {
+    if (!x) return;
+    const d = dlg("roboFriend", "fr"), best = (x.rare || []).filter(id => R.ITEMS[id]), rc = best[0] ? RC(R.ITEMS[best[0]].r) : "#7c3aed", st = x.st || {};
+    d.innerHTML = `<div class="frc"><div class="frc-top" style="--rc:${rc}"><button class="rw-x" type="button" aria-label="סגור">✕</button>
+      <div class="frc-bot">${svg("", Object.assign({ skin: "skin:classic" }, x.eq), { noHoli: true })}</div><div class="frc-rn">${esc(x.rn || "רובוט")}</div><div class="frc-kid">של ${esc(x.kid)}</div>
+      <div class="frc-st"><span>❤️ ${x.likes}</span><span>🔥 רצף ${st.n || 0}</span><span>🏆 ${st.have || 0}/${st.all || R.LIST.length}</span><span>📦 ${st.opened || 0} תיבות</span></div></div>
+      <div class="frc-in"><div class="rw-sec">🏅 ההישגים</div>${(x.ach || []).length ? `<div class="ach">${x.ach.map((a, i) => `<div style="animation-delay:${200 + i * 90}ms"><b>${esc(a.e)}</b>${esc(a.n)}</div>`).join("")}</div>` : `<div class="rw-prog">עוד אין הישגים – הכל לפניו 💪</div>`}
+      ${best.length ? `<div class="rw-sec">⭐ הכי נדירים שלו</div><div class="rw-grid">${best.map(id => { const it = R.ITEMS[id]; return `<div class="rc ${it.r === "l" ? "leg" : ""} ${it.r === "u" ? "ult" : ""}" style="--c:${RC(it.r)};cursor:default"><div class="pv">${it.cat === "theme" || it.cat === "page" || it.cat === "trail" || it.cat === "quote" ? preview(id) : svg("", Object.assign({ skin: "skin:classic" }, { [it.cat]: id }), { still: true, noHoli: true })}</div><div class="nm">${esc(it.n)}</div><div class="rr">${R.RAR[it.r].n}</div></div>`; }).join("")}</div>` : ""}
+      ${x.me ? `<p class="rw-prog" style="text-align:center;margin-top:14px">ככה החברים רואים את הרובוט שלך 😎</p>` : `<div class="frc-btns"><button class="rbtn" type="button" id="frLike" ${x.liked ? "disabled" : ""}>${x.liked ? "❤️ נתת היום" : "❤️ לייק"}</button><button class="rbtn alt" type="button" id="frGift">🎁 ברגים</button><button class="rbtn alt" type="button" id="frTrade">🔄 טרייד</button></div>`}</div></div>`;
+    show(d); d.querySelector(".rw-x").onclick = () => d.close();
+    if (!REDUCED) setTimeout(() => particles(d.querySelector(".frc-top"), rc, 18, ["✨", "⭐"]), 500);
+    const lk = d.querySelector("#frLike"); if (lk) lk.onclick = async () => { lk.disabled = true; const j = await api({ op: "like", to: x.pid }).catch(() => null); if (j && j.ok) { x.likes = j.likes; x.liked = true; lk.textContent = "❤️ נתת היום"; SFX.coin(); particles(d.querySelector(".frc-top"), "#f43f5e", 22, ["❤️", "💖"]); fData = null; } else { lk.disabled = false; toast(j && j.error === "already" ? "כבר נתת לייק היום 🙂" : "לא הצלחנו – נסה שוב", null, 2500); } };
+    const gf = d.querySelector("#frGift"); if (gf) gf.onclick = async () => {
+      if (S.realBolts != null) { toast("בטלפון של מנהל המערכת אי אפשר לשלוח ברגים 😉", null, 3000); return; }
+      const v = Math.floor(+prompt(`כמה ברגים לשלוח ל${x.kid}? (עד 50 ביום, יש לך ${S.bolts})`, "10") || 0); if (!v) return;
+      if (v > S.bolts) { toast("אין לך מספיק ברגים 🔩", null, 2500); return; }
+      const j = await api({ op: "gift", to: x.pid, n: v }).catch(() => null);
+      if (j && j.ok) { S.bolts -= v; S.gave = (S.gave || 0) + v; save(); SFX.coin(); toast(`🎁 שלחת ${v} ברגים ל${esc(x.kid)}!`, null, 3000); } else toast(j && j.error === "limit" ? `אפשר לשלוח עוד ${j.left} ברגים היום` : "לא הצלחנו – נסה שוב", null, 3000);
+    };
+    const tr = d.querySelector("#frTrade"); if (tr) tr.onclick = async () => { const j = await api({ op: "tradeNew", to: x.pid }).catch(() => null); if (!j || !j.ok) { toast("לא הצלחנו לפתוח טרייד", null, 2500); return; } d.close(); tradeOpen(j.id); };
+  }
+
+  // ---------- 🔄 טרייד ----------
+  let TRD = null, trPoll = 0, trOffset = 0;
+  const offerEmpty = () => ({ items: [], boxes: [], bolts: 0 });
+  function trItem(kind, v, mine) {
+    if (kind === "item") { const it = R.ITEMS[v]; if (!it) return ""; return `<div class="tr-it" style="--c:${RC(it.r)}"><div class="pv">${it.cat === "theme" || it.cat === "page" || it.cat === "trail" || it.cat === "quote" ? preview(v) : svg("", Object.assign({ skin: "skin:classic" }, { [it.cat]: v }), { still: true, noHoli: true })}</div>${esc(it.n.split(" ")[0])}${mine ? `<button class="x" type="button" data-rm="i:${v}">✕</button>` : ""}</div>`; }
+    if (kind === "box") return `<div class="tr-it" style="--c:${R.BOX[v].col}"><div class="pv">${R.BOX[v].em}</div>${R.BOX[v].n}${mine ? `<button class="x" type="button" data-rm="b:${v}">✕</button>` : ""}</div>`;
+    return `<div class="tr-it" style="--c:#475569"><div class="pv">🔩</div>${v}${mine ? `<button class="x" type="button" data-rm="bolts">✕</button>` : ""}</div>`;
+  }
+  const offerHtml = (o, mine) => (o.items || []).map(id => trItem("item", id, mine)).join("") + (o.boxes || []).map(b => trItem("box", b, mine)).join("") + (o.bolts ? trItem("bolts", o.bolts, mine) : "");
+  async function tradeOpen(id) {
+    const d = dlg("roboTrade"); d.dataset.lock = "1"; show(d);
+    TRD = { id, view: null, applied: false, counting: false };
+    d.innerHTML = `<div class="tr"><div class="tr-top"><b>🔄 טרייד</b></div><div class="tr-body"><div class="rw-prog" style="text-align:center;padding:30px">⏳ מתחבר…</div></div></div>`;
+    await trRefresh(); clearInterval(trPoll); trPoll = setInterval(() => { if (!d.open) { clearInterval(trPoll); return; } trRefresh(); }, 1300);
+  }
+  async function trCall(b) { const t0 = Date.now(); const j = await api(Object.assign({ id: TRD.id }, b)).catch(() => null); if (j && j.now) trOffset = j.now - (t0 + Date.now()) / 2; return j; }
+  async function trRefresh() { if (!TRD) return; const j = await trCall({ op: "tradeGet" }); if (j && j.ok) { TRD.view = j; trDraw(); } }
+  function trDraw() {
+    const d = document.getElementById("roboTrade"), v = TRD.view; if (!d || !v) return;
+    if (v.status === "done") return trFinish();
+    if (v.status === "cancel") { clearInterval(trPoll); d.innerHTML = `<div class="tr"><div class="tr-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center"><div style="font-size:70px">🚫</div><div class="ro-nm">הטרייד בוטל</div><div class="rd-btns" style="margin-top:16px"><button class="rbtn alt" type="button" id="trClose">סגור</button></div></div></div>`; d.querySelector("#trClose").onclick = () => { delete d.dataset.lock; d.close(); TRD = null; }; return; }
+    const give = R.offerValue(v.me.offer), get = R.offerValue(v.them.offer), diff = get - give, tilt = Math.max(-14, Math.min(14, diff / Math.max(40, give + get) * 30));
+    const verd = !give && !get ? "⚖️ עוד אין הצעות" : Math.abs(diff) <= Math.max(20, (give + get) * 0.1) ? "⚖️ טרייד הוגן לשניכם" : diff > 0 ? "👍 שווה לך – אתה מקבל יותר" : "⚠️ שים לב: אתה נותן יותר ממה שאתה מקבל";
+    if (v.status === "lock") return trCountdown();
+    d.innerHTML = `<div class="tr"><div class="tr-top"><b>🔄 טרייד עם ${esc(v.them.kid)}</b></div><div class="tr-body">
+      <div class="tr-side"><h4>📤 אתה נותן <em>שווי: ${give}</em></h4><div class="tr-items">${offerHtml(v.me.offer, true)}<button type="button" class="tr-add" id="trAdd" aria-label="להוסיף">＋</button></div></div>
+      <div class="scale"><div class="beam" style="transform:rotate(${-tilt}deg)"><div class="pan l"><i>📤</i>${give}</div><div class="pan r"><i>📥</i>${get}</div></div><div class="post"></div><div class="base"></div></div>
+      <div class="tr-verd">${verd}</div>
+      <div class="tr-side"><h4>📥 אתה מקבל מ${esc(v.them.kid)} <em>שווי: ${get}</em></h4><div class="tr-items">${offerHtml(v.them.offer, false) || `<div class="rw-prog">${esc(v.them.kid)} עוד לא הציע כלום…</div>`}</div></div>
+      <div class="tr-st">${v.me.ok ? "✅ אישרת" : "עוד לא אישרת"} · ${v.them.ok ? `✅ ${esc(v.them.kid)} אישר` : `⏳ מחכה ש${esc(v.them.kid)} יאשר`}</div>
+      <div class="tr-st" style="font-size:11px">כשתשנה משהו – האישורים מתאפסים. אחרי ששניכם מאשרים יש עוד 3 שניות לבטל.</div></div>
+      <div class="tr-foot"><button class="rbtn" type="button" id="trOk">${v.me.ok ? "↩️ לבטל אישור" : "✅ מסכים"}</button><button class="rbtn alt" type="button" id="trCancel">❌ לבטל טרייד</button></div></div>`;
+    d.querySelector("#trAdd").onclick = trPick;
+    d.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { const o = JSON.parse(JSON.stringify(v.me.offer)), k = b.dataset.rm; if (k === "bolts") o.bolts = 0; else if (k.startsWith("i:")) o.items = o.items.filter(x => x !== k.slice(2)); else { const i = o.boxes.indexOf(k.slice(2)); if (i >= 0) o.boxes.splice(i, 1); } trSet(o); });
+    d.querySelector("#trOk").onclick = async () => { if (!v.me.ok && !R.canGive(S, v.me.offer)) { toast("אין לך את כל מה שהצעת 🤔", null, 2500); return; } const j = await trCall({ op: "tradeOk", ok: !v.me.ok }); if (j && j.ok) { TRD.view = j; SFX.tap(); trDraw(); } };
+    d.querySelector("#trCancel").onclick = async () => { const j = await trCall({ op: "tradeCancel" }); if (j && j.ok) { TRD.view = j; trDraw(); } };
+  }
+  async function trSet(o) { if (!R.canGive(S, o)) { toast("אין לך את זה 🤔", null, 2000); return; } const j = await trCall({ op: "tradeSet", offer: o }); if (j && j.ok) { TRD.view = j; trDraw(); } }
+  function trPick() {
+    const v = TRD.view, o = JSON.parse(JSON.stringify(v.me.offer)), own = R.LIST.filter(x => S.own[x.id] && S.own[x.id] !== -1 && x.id !== "skin:classic").sort((a, b) => R.RAR[b.r].o - R.RAR[a.r].o);
+    const d = dlg("roboPick"); show(d);
+    const cnt = t => S.boxes.filter(x => x === t).length - o.boxes.filter(x => x === t).length;
+    const draw2 = () => {
+      d.innerHTML = `<div class="tr"><div class="tr-top"><b>➕ מה להציע?</b></div><div class="tr-body">
+        <div class="rw-sec">📦 תיבות</div><div class="tr-items">${["giant", "mega", "big", "box"].filter(t => cnt(t) > 0).map(t => `<button type="button" class="tr-add" style="width:auto;padding:0 10px;font-size:15px" data-box="${t}">${R.BOX[t].em} ×${cnt(t)}</button>`).join("") || `<span class="rw-prog">אין לך תיבות</span>`}</div>
+        <div class="rw-sec">🔩 ברגים <small>יש לך ${S.realBolts != null ? "∞ (לא לטרייד)" : S.bolts}</small></div><input type="number" min="0" max="${S.realBolts != null ? 0 : S.bolts}" id="pkB" value="${o.bolts || ""}" placeholder="כמה ברגים" style="width:100%;padding:10px;border-radius:12px;border:0;font:inherit;font-size:16px">
+        <div class="rw-sec">👕 אביזרים <small>לחיצה = להוסיף / להוריד</small></div><div class="tr-pick">${own.map(it => `<button type="button" data-it="${it.id}" class="${o.items.includes(it.id) ? "on" : ""}" style="--c:${RC(it.r)}"><div class="pv">${preview(it.id)}</div>${esc(it.n.split(" ")[0])}</button>`).join("") || `<span class="rw-prog">אין לך עוד אביזרים</span>`}</div></div>
+        <div class="tr-foot"><button class="rbtn" type="button" id="pkOk">✅ להציע</button><button class="rbtn alt" type="button" id="pkNo">ביטול</button></div></div>`;
+      d.querySelectorAll("[data-box]").forEach(b => b.onclick = () => { o.boxes.push(b.dataset.box); draw2(); });
+      d.querySelectorAll("[data-it]").forEach(b => b.onclick = () => { const id = b.dataset.it; o.items = o.items.includes(id) ? o.items.filter(x => x !== id) : [...o.items, id].slice(0, 12); b.classList.toggle("on"); });
+      d.querySelector("#pkNo").onclick = () => d.close();
+      d.querySelector("#pkOk").onclick = () => { o.bolts = Math.max(0, Math.min(S.bolts, Math.floor(+d.querySelector("#pkB").value || 0))); d.close(); trSet(o); };
+    };
+    draw2();
+  }
+  function trCountdown() {
+    const d = document.getElementById("roboTrade"), v = TRD.view; if (!d || TRD.counting) return; TRD.counting = true;
+    const box = document.createElement("div"); box.className = "tr-count"; d.querySelector(".tr").appendChild(box);
+    const end = v.lockAt + 3000;
+    const tick = async () => {
+      if (!TRD || TRD.view.status !== "lock") { TRD && (TRD.counting = false); box.remove(); return; }
+      const left = Math.ceil((end - (Date.now() + trOffset)) / 1000);
+      if (left <= 0) { box.innerHTML = `<div class="ro-nm">🤝 מחליפים…</div>`; await trRefresh(); if (TRD && TRD.view.status === "lock") setTimeout(tick, 400); return; }
+      if (box.dataset.n !== String(left)) { box.dataset.n = left; box.innerHTML = `<div class="ro-nm" style="margin-bottom:6px">שניכם הסכמתם!</div><b>${left}</b><div class="tr-st">עוד אפשר להתחרט</div><button class="rbtn alt" type="button" id="trStop" style="margin-top:14px">❌ לבטל!</button>`; SFX.tap(); vib(30);
+        box.querySelector("#trStop").onclick = async () => { const j = await trCall({ op: "tradeCancel" }); if (j && j.ok) { TRD.view = j; TRD.counting = false; box.remove(); trDraw(); } }; }
+      setTimeout(tick, 200);
+    };
+    tick();
+  }
+  async function trFinish() {
+    if (!TRD || TRD.applied) return; TRD.applied = true; clearInterval(trPoll);
+    const d = document.getElementById("roboTrade"), v = TRD.view;
+    const doneKey = "roboTrDone_" + v.id;
+    if (!LS.get(doneKey, "")) { R.applyTrade(S, v.me.offer, v.them.offer); LS.set(doneKey, "1"); save(); publishSoon(); trCall({ op: "tradeDone" }); }
+    const em = o => [...(o.items || []).slice(0, 3).map(id => { const it = R.ITEMS[id]; return it && it.em ? (Array.isArray(it.em) ? it.em[0] : it.em) : "👕"; }), ...(o.boxes || []).slice(0, 2).map(b => R.BOX[b].em), o.bolts ? "🔩" : ""].join("") || "🤝";
+    const sw = document.createElement("div"); sw.className = "tr-swap"; sw.innerHTML = `<div class="s1">${em(v.me.offer)}</div><div class="s2">${em(v.them.offer)}</div>`; d.querySelector(".tr").appendChild(sw);
+    SFX.reveal(5); vib([40, 40, 120]); setTimeout(() => particles(sw, "#facc15", 40, ["✨", "⭐", "🤝"]), 650);
+    await sleep(1600);
+    d.innerHTML = `<div class="tr"><div class="tr-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center"><div style="font-size:80px">🤝</div><div class="ro-nm">הטרייד בוצע!</div><div class="tr-side" style="width:100%;margin-top:12px"><h4>📥 קיבלת</h4><div class="tr-items">${offerHtml(v.them.offer, false) || "—"}</div></div><div class="rd-btns" style="margin-top:14px"><button class="rbtn" type="button" id="trWear">👕 לארון</button><button class="rbtn alt" type="button" id="trClose">סגור</button></div></div></div>`;
+    d.querySelector("#trClose").onclick = () => { delete d.dataset.lock; d.close(); TRD = null; hubRefresh(); };
+    d.querySelector("#trWear").onclick = () => { delete d.dataset.lock; d.close(); TRD = null; open("wear"); };
+  }
+
+  // ---------- 💬 הודעות: לייקים, מתנות, הזמנות לטרייד ----------
+  async function checkInbox() {
+    if (!online()) return; let j; try { j = await api({ op: "inbox" }); } catch (e) { return; } if (!j || !j.ok || !Array.isArray(j.inbox) || !j.inbox.length) return;
+    const likes = j.inbox.filter(x => x.t === "like").length; let ch = false;
+    if (likes) { myLikes += likes; LS.set("roboMyLikes", String(myLikes)); toast(`❤️ קיבלת ${likes === 1 ? "לייק" : likes + " לייקים"} לרובוט שלך!`, null, 4500); }
+    for (const x of j.inbox.filter(x => x.t === "bolts")) { S.bolts += Math.max(0, Math.min(50, x.n | 0)); ch = true; setTimeout(() => { toast(`🎁 ${esc(x.from)} שלח לך ${x.n} ברגים!`, null, 5000); SFX.coin(); }, 600); }
+    for (const x of j.inbox.filter(x => x.t === "trade").slice(-2)) setTimeout(() => toast(`🔄 ${esc(x.from)} מזמין אותך לטרייד!`, ["לפתוח", () => tradeOpen(x.id)], 15000), 1200);
+    if (ch) save();
+  }
+  // ---------- 👑 הכרזה: מישהו בשכבה זכה באולטרה אגדי ----------
+  function checkNews() {
+    let N = []; try { N = JSON.parse(LS.get("roboNews", "[]")) || []; } catch (e) {}
+    const p = profile(); if (!p || !N.length || document.querySelector("dialog[open]")) return;
+    const g = c => (String(c).startsWith("ya") ? 11 : 10), seen = (LS.get("roboNewsSeen", "") || "").split(",");
+    const x = N.find(n => n && n.id && !seen.includes(n.id) && g(n.cls) === g(p.cls) && Date.now() - n.at < 2 * 864e5 && R.ITEMS[n.item]); if (!x) return;
+    LS.set("roboNewsSeen", [...seen, x.id].slice(-30).join(","));
+    if (`${p.first || ""} ${p.last || ""}`.trim() === x.kid) return; // זה אני
+    const d = dlg("roboAnn"); const left = Math.max(0, x.cap - x.n);
+    d.innerHTML = `<div class="ann"><div class="t">👑 אולטרה אגדי!</div><div class="bot">${svg("", { skin: x.item }, { noHoli: true })}</div><div class="w">${esc(x.kid)} מ${CLS_L(x.cls)} זכה ב${esc(x.name)}!</div><div class="l">${left ? `נשארו רק ${left} מתוך ${x.cap} בכל הישיבה 😱` : "וזאת הייתה האחרונה! אזל 🔒"}</div><div class="rd-btns" style="margin-top:18px"><button class="rbtn" type="button" id="annOk">וואו! 🤩</button></div></div>`;
+    show(d); SFX.ultra(); setTimeout(() => SFX.reveal(6), 900); setTimeout(() => particles(d.querySelector(".ann"), "#facc15", 50, ["⭐", "✨", "👑", "💛"]), 400);
+    d.querySelector("#annOk").onclick = () => d.close();
+  }
+  // 🤖 רובוט קטן ליד שם (ימי הולדת / מזל טוב) – מהרשימה ששמורה בטלפון
+  function mini(name, cls) {
+    try { const c = JSON.parse(LS.get("roboClassCache", "{}")) || {}; const lists = cls && c[cls] ? [c[cls]] : Object.values(c); for (const l of lists) { const x = l.find(z => z.kid === name); if (x) return `<span class="robo-mini" style="display:inline-block;width:22px;height:22px;vertical-align:-6px;margin-inline-end:3px">${svg("", Object.assign({ skin: "skin:classic" }, x.eq), { still: true, noHoli: true })}</span>`; } } catch (e) {}
+    return "";
+  }
+
   // ---------- הפעלה ----------
   window.Robo = {
-    svg, open, hub, share, subjectMile, daily, openBoxes, redeem, earn, sfx: SFX, state: () => S, owns: id => !!S.own[id],
+    svg, open, hub, share, subjectMile, daily, openBoxes, redeem, earn, sfx: SFX, mini, friendCard, tradeOpen, checkNews, publish, state: () => S, owns: id => !!S.own[id],
     give(p) { const x = R.grant(S, p); save(); hubRefresh(); return x; }, // דמו / בדיקות
     reload() { S = load(); applyBubble(); try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {} },
     status: () => `🔥 ${S.st.n} · 🔩 ${bl()}${S.boxes.length ? ` · 🎁 ${S.boxes.length}` : ""}`,
@@ -781,6 +1044,10 @@ dialog.robo.open{background:#05020f}
   const boot = () => {
     applyBubble(); setTimeout(applyBubble, 1500); homeBtn();
     applyPowers(); setTimeout(() => checkPowers(), 3000);
+    // 👥 מפרסמים את הרובוט (פעם ב-6 שעות), בודקים הודעות כל דקה וחצי, והכרזות אולטרה
+    if (online() && Date.now() - (+LS.get("roboPubAt", "0") || 0) > 6 * 3600e3) setTimeout(publish, 6000);
+    setTimeout(checkInbox, 7000); setInterval(() => { if (!document.hidden) checkInbox(); }, 90000);
+    setTimeout(checkNews, 9000); setInterval(() => { if (!document.hidden) checkNews(); }, 30000);
     const pc = () => { if (!LS.get("roboPendingCode", "")) return; if (!profile() || !LS.get("introSeen", "") || document.querySelector("dialog[open]")) { setTimeout(pc, 3000); return; } pendingCode(); }; setTimeout(pc, 2500);
     // רצף כניסות: בפתיחה הראשונה של היום, כשלא באמצע משהו (אשף, חלון, אנימציה)
     tries = 0;

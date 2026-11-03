@@ -977,12 +977,13 @@ async function owner(req, S, ip, headers) {
 async function feed(req, S, ip, headers) {
   if (req.method === "GET") {
     const now = Date.now(), today = israelDay(now);
-    const [ups, polls, events, qs, bd, rx, chg, ctl, om, hc, rr] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions", "changes", "control", "ownerMsgs", "holCfg", "roboRare"].map(k => S.get(k)));
+    const [ups, polls, events, qs, bd, rx, chg, ctl, om, hc, rr, rn] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions", "changes", "control", "ownerMsgs", "holCfg", "roboRare", "roboNews"].map(k => S.get(k)));
     return reply(200, {
       ok: true, now,
       // 🎉 מצב חג: האם מנהל המערכת כיבה (הכל / חג מסוים). התאריכים עצמם מחושבים בטלפון
       hol: holPublic(hc),
       robo: roboCounts(rr), // 🤖 כמה נשארו מכל אביזר אולטרה אגדי
+      roboNews: (Array.isArray(rn) ? rn : []).filter(x => now - x.at < 2 * 864e5).slice(0, 5), // 👑 מי זכה באולטרה (שם, כיתה, כמה נשארו)
       updates: activeUpdates(ups, now).map(u => ({ ...publicUpdate(u), reacts: reactCounts(reactsOf(rx, u.id)) })),
       polls: (polls || []).filter(p => p.endsAt > now).sort((a, b) => b.createdAt - a.createdAt).map(publicPoll),
       events: (events || []).filter(e => e.date >= today).sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || ""))).slice(0, 30)
@@ -1127,6 +1128,7 @@ async function feed(req, S, ip, headers) {
   }
   if (action === "robo") { // 🤖 אביזר "אולטרה אגדי" יצא בתיבה: כמות מוגבלת לכל הישיבה. נשמר רק מונה + קוד מכשיר מוצפן (בלי שם)
     if (DEV_RE.test(device) && ["code", "me", "link", "day"].includes(b.op)) return reply(200, await roboOp(S, b, device, ip, now), headers);
+    if (DEV_RE.test(device) && ["pub", "class", "like", "gift", "inbox", "tradeNew", "tradeGet", "tradeSet", "tradeOk", "tradeCancel", "tradeDone"].includes(b.op)) return reply(200, await roboSocial(S, b, device, ip, now), headers);
     if (!DEV_RE.test(device) || b.op !== "claim" || !Object.hasOwn(ROBO_CAPS, String(b.item))) return reply(400, { ok: false, error: "bad_request" }, headers);
     memRate("robo", ip, 3000);
     const pres = await S.get("presence"), k = devKey(device);
@@ -1141,6 +1143,7 @@ async function feed(req, S, ip, headers) {
     });
     const counts = roboCounts(await S.get("roboRare"));
     if (granted) await olog(S, "roboRare", `👑 תלמיד קיבל ${ROBO_NAMES[item]} מתיבה! (${n} מתוך ${cap})`);
+    if (granted && n > 0) { const me = pres[k] || {}; await S.update("roboNews", cur => [{ id: crypto.randomBytes(5).toString("hex"), kid: clean(me.name, MAX_NAME), cls: me.cls || "", item, name: ROBO_NAMES[item], n, cap, at: now }, ...(Array.isArray(cur) ? cur : [])].filter(x => now - x.at < 3 * 864e5).slice(0, 20)); }
     return reply(200, { ok: true, granted, n, cap, counts }, headers);
   }
   if (action === "leave") { // התלמיד מחק את המשתמש שלו: מוחקים את מה שנשמר עליו בשרת, ומודיעים להנהלה
@@ -1514,8 +1517,8 @@ export async function holidayTick(now = Date.now()) {
 }
 
 // ---- 🤖 "הרובוט שלי": אביזרי אולטרה אגדי – כמות מוגבלת לכל הישיבה (חייב להתאים ל-robo-core.js) ----
-const ROBO_CAPS = { "skin:gold": 3, "skin:diamond": 5, "skin:phoenix": 2 };
-const ROBO_NAMES = { "skin:gold": "חליפת זהב טהור", "skin:diamond": "חליפת יהלומים", "skin:phoenix": "עוף החול" };
+const ROBO_CAPS = { "skin:gold": 3, "skin:diamond": 5, "skin:phoenix": 2, "skin:cosmic": 2, "skin:crystal": 3 };
+const ROBO_NAMES = { "skin:gold": "חליפת זהב טהור", "skin:diamond": "חליפת יהלומים", "skin:phoenix": "עוף החול", "skin:cosmic": "השומר הקוסמי", "skin:crystal": "קריסטל קשת" };
 function roboCounts(rr) { const o = {}; for (const [id, cap] of Object.entries(ROBO_CAPS)) { const x = rr && rr[id]; o[id] = { n: x && Array.isArray(x.keys) ? x.keys.length : 0, cap }; } return o; }
 
 // ---- 🎟️ קודים לפרסים, 👑 הטלפון של מנהל המערכת, 🔥 תזכורת לפני שהרצף נשבר ----
@@ -1577,6 +1580,7 @@ async function roboOp(S, b, device, ip, now) {
   if (b.op === "day") { // הרצף של היום (בשביל התזכורת לפני שהוא נשבר)
     const n = Math.max(0, Math.min(5000, Math.floor(+b.n || 0))), d = israelDay(now);
     await S.update("roboDay", cur => { const m = cur && typeof cur === "object" ? { ...cur } : {}; if (!m[k] && Object.keys(m).length >= 4000) return undefined; m[k] = { d, n }; return m; });
+    { const pres = (await S.get("presence")) || {}; if (pres[k] && pres[k].cls) await roboBattleAdd(S, pres[k].cls, 1, now); } // ⚔️ כל כניסה יומית = נקודה לכיתה
     return { ok: true };
   }
   // op === "code": מממשים קוד – כל ילד פעם אחת, ועד הכמות שנקבעה לקוד
@@ -1653,3 +1657,95 @@ export async function streakTick(now = Date.now()) {
   const sent = await sendPush(S, (x, k) => { const r = days[k]; return !!r && r.n >= 2 && r.d === prev; }, { title: "🔥 הרצף שלך עומד להישבר!", body: "עוד לא נכנסת היום – תיכנס לאפליקציה לשמור על הרצף ולקבל את המתנה של היום 🎁", tag: "streak-" + ymd }, { pref: "streak", ttl: 3 * 3600, force: true });
   return { sent };
 }
+
+// ---- 👥 הרובוטים של השכבה: פרופיל ציבורי, לייקים, מתנות, טריידים, קרב כיתות ----
+// "roboPub"    = { devKey: { pid, rn (שם הרובוט), eq, st: {n,best,have,all,opened}, rare: [3 ids], ach: [{e,n}], hide, at } } – השם והכיתה מגיעים מהנוכחות בשרת (לא מהטלפון)
+// "roboLikes"  = { pid: { n, wk: {weekId: n} } } · "roboLikeDay" = { d, pairs: ["fromPid>toPid"] } – בלי לשמור מי נתן לייק למי מעבר ליום
+// "roboInbox"  = { pid: [ {t:"bolts"|"trade"|"like", ...} ] } · "roboGiftDay" = { d, m: {pid: n} } · "roboTrades" = { id: {...} } · "roboBattle" = { weekId: { cls: points } }
+const pidOf = k => crypto.createHash("sha256").update("robo|" + k).digest("hex").slice(0, 12);
+const ITEM_RE = /^(skin|hat|eyes|held|aura|trail|quote|theme|page):[a-z0-9:_]{1,30}$/;
+const gradeOfCls = c => (String(c).startsWith("ya") ? "11" : "10");
+const ilWeek = now => { const d = israelDay(now), w = new Date(d + "T12:00:00Z").getUTCDay(); return new Date(Date.parse(d + "T12:00:00Z") - w * 864e5).toISOString().slice(0, 10); };
+function cleanEq(eq) { const o = {}; if (eq && typeof eq === "object") for (const [k, v] of Object.entries(eq)) if (/^[a-z]{3,6}$/.test(k) && ITEM_RE.test(String(v))) o[k] = String(v); return o; }
+function cleanOffer(o) {
+  o = o && typeof o === "object" ? o : {};
+  return { items: (Array.isArray(o.items) ? o.items : []).map(String).filter(x => ITEM_RE.test(x)).slice(0, 12), boxes: (Array.isArray(o.boxes) ? o.boxes : []).map(String).filter(x => ["box", "big", "mega", "giant"].includes(x)).slice(0, 12), bolts: Math.max(0, Math.min(100000, Math.floor(+o.bolts || 0))) };
+}
+async function roboBattleAdd(S, cls, pts, now) {
+  if (!AUDIENCES.includes(cls)) return; const w = ilWeek(now);
+  await S.update("roboBattle", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; for (const k of Object.keys(o)) if (k < HC.add(w, -21)) delete o[k]; o[w] = { ...(o[w] || {}) }; o[w][cls] = (o[w][cls] || 0) + pts; return o; });
+}
+async function inboxPush(S, pid, msg) { await S.update("roboInbox", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; o[pid] = [...(o[pid] || []), msg].slice(-30); return o; }); }
+async function roboSocial(S, b, device, ip, now) {
+  const k = devKey(device), pid = pidOf(k), pres = (await S.get("presence")) || {}, me = pres[k];
+  if (!me || !me.cls) return { ok: false, error: "not_registered" };
+  memRate("roboSoc", ip, 120);
+  const findPid = async x => { const pub = (await S.get("roboPub")) || {}; const kk = Object.keys(pub).find(z => pub[z].pid === x); return kk ? { key: kk, p: pub[kk], who: pres[kk] } : null; };
+  if (b.op === "pub") { // מפרסמים את הרובוט שלי (מה לובש + הישגים)
+    const st = b.st && typeof b.st === "object" ? b.st : {}, num = (v, m) => Math.max(0, Math.min(m, Math.floor(+v || 0)));
+    const rec = { pid, rn: clean(b.rn, 14), eq: cleanEq(b.eq), st: { n: num(st.n, 5000), best: num(st.best, 5000), have: num(st.have, 2000), all: num(st.all, 2000), opened: num(st.opened, 100000) },
+      rare: (Array.isArray(b.rare) ? b.rare : []).map(String).filter(x => ITEM_RE.test(x)).slice(0, 3), ach: (Array.isArray(b.ach) ? b.ach : []).slice(0, 16).map(a => ({ e: clean(a && a.e, 4), n: clean(a && a.n, 20) })), hide: !!b.hide, at: now };
+    await S.update("roboPub", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; if (!o[k] && Object.keys(o).length >= 3000) return undefined; o[k] = rec; return o; });
+    return { ok: true, pid };
+  }
+  if (b.op === "class") { // הרובוטים של כיתה בשכבה שלי
+    const cls = AUDIENCES.includes(b.cls) && gradeOfCls(b.cls) === gradeOfCls(me.cls) ? b.cls : me.cls;
+    const pub = (await S.get("roboPub")) || {}, likes = (await S.get("roboLikes")) || {}, day = (await S.get("roboLikeDay")) || {}, bat = (await S.get("roboBattle")) || {};
+    const today = israelDay(now), liked = new Set(day.d === today ? (day.pairs || []).filter(x => x.startsWith(pid + ">")).map(x => x.split(">")[1]) : []);
+    const list = Object.entries(pub).filter(([kk, p]) => pres[kk] && pres[kk].cls === cls && (!p.hide || kk === k) && !pres[kk].hide && now - (pres[kk].last || 0) < 60 * 864e5)
+      .map(([kk, p]) => ({ pid: p.pid, me: kk === k, kid: pres[kk].name || "", rn: p.rn, eq: p.eq, st: p.st, rare: p.rare, ach: p.ach, likes: (likes[p.pid] || {}).n || 0, liked: liked.has(p.pid) }));
+    const w = ilWeek(now), last = HC.add(w, -7), cl = Object.keys(CLASSES_GRADE(me.cls));
+    const battle = { week: w, now: cl.map(c => ({ cls: c, pts: ((bat[w] || {})[c]) || 0 })), last: cl.map(c => ({ cls: c, pts: ((bat[last] || {})[c]) || 0 })), lastWeek: last };
+    return { ok: true, cls, myCls: me.cls, list, battle };
+  }
+  if (b.op === "like") {
+    const to = String(b.to || ""); if (!/^[0-9a-f]{12}$/.test(to) || to === pid) return { ok: false, error: "bad_request" };
+    const t = await findPid(to); if (!t || !t.who || gradeOfCls(t.who.cls) !== gradeOfCls(me.cls)) return { ok: false, error: "not_found" };
+    const today = israelDay(now); let fresh = false;
+    await S.update("roboLikeDay", cur => { const o = cur && cur.d === today ? { d: today, pairs: [...cur.pairs] } : { d: today, pairs: [] }; const key = pid + ">" + to; if (o.pairs.includes(key)) return undefined; o.pairs.push(key); fresh = true; return o; });
+    if (!fresh) return { ok: false, error: "already" };
+    const w = ilWeek(now); let n = 0;
+    await S.update("roboLikes", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; const x = { ...(o[to] || { n: 0, wk: {} }) }; x.n++; x.wk = { [w]: ((x.wk || {})[w] || 0) + 1 }; o[to] = x; n = x.n; return o; });
+    await roboBattleAdd(S, t.who.cls, 1, now);
+    await inboxPush(S, to, { t: "like", at: now });
+    return { ok: true, likes: n };
+  }
+  if (b.op === "gift") { // 🎁 ברגים לחבר – עד 50 ביום
+    const to = String(b.to || ""), n = Math.floor(+b.n || 0);
+    if (!/^[0-9a-f]{12}$/.test(to) || to === pid || n < 1 || n > 50) return { ok: false, error: "bad_request" };
+    const t = await findPid(to); if (!t || !t.who || gradeOfCls(t.who.cls) !== gradeOfCls(me.cls)) return { ok: false, error: "not_found" };
+    const today = israelDay(now); let okk = false, left = 0;
+    await S.update("roboGiftDay", cur => { const o = cur && cur.d === today ? { d: today, m: { ...cur.m } } : { d: today, m: {} }; const used = o.m[pid] || 0; if (used + n > 50) { left = 50 - used; return undefined; } o.m[pid] = used + n; left = 50 - o.m[pid]; okk = true; return o; });
+    if (!okk) return { ok: false, error: "limit", left };
+    await inboxPush(S, to, { t: "bolts", n, from: clean(me.name, MAX_NAME), at: now });
+    return { ok: true, left };
+  }
+  if (b.op === "inbox") { let box = []; await S.update("roboInbox", cur => { if (!cur || !cur[pid] || !cur[pid].length) return undefined; box = cur[pid]; const o = { ...cur }; delete o[pid]; return o; }); return { ok: true, inbox: box }; }
+  // ---- 🔄 טרייד: הזמנה → כל צד מציע → שניהם מאשרים → 3 שניות שאפשר לבטל → בוצע ----
+  const TR = id => /^[0-9a-f]{10}$/.test(String(id || "")) ? String(id) : "";
+  const view = (t, mine) => { const side = t.a === pid ? "a" : "b", other = side === "a" ? "b" : "a"; return { ok: true, id: t.id, side, status: t.status, lockAt: t.lockAt || 0, now, me: { offer: t[side + "Offer"], ok: !!t[side + "Ok"], kid: t[side + "Kid"] }, them: { offer: t[other + "Offer"], ok: !!t[other + "Ok"], kid: t[other + "Kid"], done: !!t[other + "Done"] }, doneMe: !!t[side + "Done"] }; };
+  const settle = t => { if (t.status === "lock" && now - t.lockAt >= 3000) t.status = "done"; if (t.status !== "done" && t.status !== "cancel" && now - t.at > 15 * 60e3) t.status = "cancel"; return t; };
+  if (b.op === "tradeNew") {
+    const to = String(b.to || ""); if (!/^[0-9a-f]{12}$/.test(to) || to === pid) return { ok: false, error: "bad_request" };
+    const t = await findPid(to); if (!t || !t.who || gradeOfCls(t.who.cls) !== gradeOfCls(me.cls)) return { ok: false, error: "not_found" };
+    const id = crypto.randomBytes(5).toString("hex"), E = { items: [], boxes: [], bolts: 0 };
+    const tr = { id, a: pid, b: to, aKid: clean(me.name, MAX_NAME), bKid: clean(t.who.name, MAX_NAME), aOffer: E, bOffer: E, aOk: false, bOk: false, status: "open", at: now };
+    await S.update("roboTrades", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; for (const [x, v] of Object.entries(o)) if (now - v.at > 864e5) delete o[x]; o[id] = tr; return o; });
+    await inboxPush(S, to, { t: "trade", id, from: tr.aKid, at: now });
+    return view(tr);
+  }
+  const id = TR(b.id); if (!id) return { ok: false, error: "bad_request" };
+  let res = { ok: false, error: "not_found" };
+  await S.update("roboTrades", cur => {
+    const o = cur && typeof cur === "object" ? { ...cur } : {}, t0 = o[id]; if (!t0 || (t0.a !== pid && t0.b !== pid)) return undefined;
+    const t = settle({ ...t0 }), side = t.a === pid ? "a" : "b";
+    if (b.op === "tradeSet" && t.status === "open") { t[side + "Offer"] = cleanOffer(b.offer); t.aOk = t.bOk = false; }
+    if (b.op === "tradeOk" && t.status === "open") { t[side + "Ok"] = !!b.ok; if (t.aOk && t.bOk) { t.status = "lock"; t.lockAt = now; } }
+    if (b.op === "tradeCancel" && (t.status === "open" || (t.status === "lock" && now - t.lockAt < 3000))) { t.status = "cancel"; t.by = side; }
+    if (b.op === "tradeDone" && t.status === "done") t[side + "Done"] = true;
+    o[id] = t; res = view(t); return o;
+  });
+  if (b.op === "tradeDone" && res.ok) await roboBattleAdd(S, me.cls, 0, now);
+  return res;
+}
+function CLASSES_GRADE(cls) { const o = {}; for (const c of AUDIENCES) if (c !== "all" && gradeOfCls(c) === gradeOfCls(cls)) o[c] = 1; return o; }

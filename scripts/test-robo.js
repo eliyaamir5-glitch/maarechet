@@ -11,7 +11,15 @@ const seeded = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s 
 const ids = R.LIST.map(x => x.id);
 ok("catalog: 150+ items, unique ids", ids.length >= 150 && new Set(ids).size === ids.length, ids.length);
 ok("every item has a known category and rarity", R.LIST.every(x => R.CATS[x.cat] && R.RAR[x.r]));
-ok("ultra legendary = gold, diamond, phoenix – each with a cap", R.LIST.filter(x => x.r === "u").map(x => x.id).sort().join() === "skin:diamond,skin:gold,skin:phoenix" && R.LIST.filter(x => x.r === "u").every(x => x.cap > 0));
+ok("ultra legendary: 5 suits, each with a cap", R.LIST.filter(x => x.r === "u").length === 5 && R.LIST.filter(x => x.r === "u").every(x => x.cap > 0));
+ok("heroes: never in normal boxes, only giant (and 2% mega)", R.LIST.filter(x => x.hero).length >= 10 && R.BOX.giant.hero > 0 && R.BOX.box.hero === undefined);
+{ const S = R.fresh(); let h = 0, n = 0; for (let i = 0; i < 3000; i++) for (const p of R.roll(S, "box")) { if (p.t === "item") { n++; if (R.ITEMS[p.id] && R.ITEMS[p.id].hero) h++; } } ok("no heroes from small boxes", h === 0, h + "/" + n); }
+{ const S = R.fresh(); let h = 0; for (let i = 0; i < 2000; i++) for (const p of R.roll(S, "giant")) if (p.t === "item" && R.ITEMS[p.id] && R.ITEMS[p.id].hero) h++; ok("heroes do come from giant boxes", h > 100, h); }
+ok("robot name filter", R.cleanName("רעם ⚡") === "רעם ⚡" && R.cleanName("בן זונה") === "" && R.cleanName("x".repeat(30)).length === 14);
+{ const S = R.fresh(); R.grant(S, { t: "item", id: "hat:crown" }); S.boxes.push("mega"); S.bolts = 50; ok("trade: can give only what you have", R.canGive(S, { items: ["hat:crown"], boxes: ["mega"], bolts: 50 }) && !R.canGive(S, { items: ["skin:gold"] }) && !R.canGive(S, { boxes: ["mega", "mega"] }) && !R.canGive(S, { items: ["skin:classic"] }));
+  R.applyTrade(S, { items: ["hat:crown"], boxes: ["mega"], bolts: 20 }, { items: ["skin:dragon"], boxes: ["big"], bolts: 5 }); ok("trade applied both ways", !S.own["hat:crown"] && S.own["skin:dragon"] && S.boxes.join() === "big" && S.bolts === 35 && S.trades === 1);
+  ok("trade value scale", R.offerValue({ items: ["skin:dragon"], boxes: ["mega"], bolts: 20 }) === 400 + 380 + 20); }
+{ const S = R.fresh(); S.st.best = 31; S.opened = 12; const a = R.achievements(S, 30); ok("achievements", a.some(x => x.n === "רצף 30") && a.some(x => x.n === "10 תיבות") && a.some(x => x.n === "25 לייקים")); }
 ok("every rarity c..u has droppable items", R.RK.every(r => R.LIST.some(x => x.r === r && !x.x && !x.free)));
 for (const b of Object.keys(R.BOX)) { const s = Object.values(R.BOX[b].odds).reduce((a, c) => a + c, 0); ok(`${b}: odds add up to 100%`, Math.abs(s - 100) < 1e-9, s); }
 ok("streak/subject rewards point to real items", Object.values(R.LADDER).flat().every(p => p.t !== "item" || R.ITEMS[p.id]) && R.ITEMS["held:medal"]);

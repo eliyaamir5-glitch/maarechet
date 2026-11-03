@@ -26,4 +26,4 @@ ok("same device again (reinstall) keeps it, no extra count", r.json.granted === 
 r = await call(null, "GET");
 ok("feed shows how many are left", r.json.robo["skin:gold"].n === 3 && r.json.robo["skin:gold"].cap === 3 && r.json.robo["skin:diamond"].n === 0 && r.json.robo["skin:phoenix"].cap === 2);
 ok("no names / device ids stored", !raw.get("roboRare").includes("device-robo") && !raw.get("roboRare").includes("תלמיד"));
-ok("caps match the app catalog", RC.ITEMS["skin:gold"].cap === 3 && RC.ITEMS["skin:diamond"].cap === 5 && RC.ITEMS["skin:phoenix"].cap === 2 && RC.LIST.filter(x => x.r === "u").length === 3);
+{ const src = (await import("node:fs")).readFileSync(new URL("../netlify/functions/staff.mjs", import.meta.url), "utf8"); const caps = JSON.parse(src.match(/const ROBO_CAPS = (\{[^}]*\})/)[1]); ok("server caps match the app catalog exactly", RC.LIST.filter(x => x.r === "u").every(x => caps[x.id] === x.cap) && Object.keys(caps).length === RC.LIST.filter(x => x.r === "u").length, JSON.stringify(caps)); }

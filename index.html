@@ -2098,7 +2098,7 @@ function renderExtras(){
   const bd=(f.birthdays||[]).filter(x=>gradeOf(x.cls)===gradeOf(myCls())&&Number.isInteger(x.inDays)&&x.inDays>=0&&!(myToday&&x.inDays===0&&x.name===meName));
   const today=bd.filter(x=>x.inDays===0),soon=bd.filter(x=>x.inDays>0);
   const sent=wishSent();
-  if(today.length||soon.length)h+=`<div class="xcard bday">${today.length?`🎂 <b>היום יום ההולדת של ${today.map(x=>escH(x.name)+lbl(x.cls)).join(" ו")}!</b> מזל טוב 🎉
+  if(today.length||soon.length)h+=`<div class="xcard bday">${today.length?`🎂 <b>היום יום ההולדת של ${today.map(x=>(window.Robo&&Robo.mini?Robo.mini(x.name,x.cls):"")+escH(x.name)+lbl(x.cls)).join(" ו")}!</b> מזל טוב 🎉
     <div class="wishrow">${today.map(x=>sent.includes(x.name+"|"+x.cls)?`<span class="wsent">✓ איחלת ל${escH(x.name.split(" ")[0])}</span>`:`<button type="button" class="wishbtn" data-wn="${escH(x.name)}" data-wc="${escH(x.cls)}">🎉 מזל טוב ל${escH(x.name.split(" ")[0])}</button>`).join("")}</div>`:""}${soon.length?`<div class="xsub">🎈 בקרוב: ${soon.map(x=>`${escH(x.name)}${lbl(x.cls)} – ${x.inDays===1?"מחר":"בעוד "+x.inDays+" ימים"}`).join(" · ")}</div>`:""}</div>`;
   // 📊 סקרים
   for(const p of (f.polls||[]).filter(p=>forMe(p.audience)&&p.id!=null&&Array.isArray(p.options)&&p.options.length)){
