@@ -49,7 +49,7 @@ await p.evaluate(() => document.querySelector('#roboUI [data-buy="big"]').click(
 log(await p.evaluate(b0 => Robo.state().bolts === b0 - 130 && Robo.state().boxes.includes("big"), before), "shop: buy a big box with bolts");
 await p.evaluate(() => document.getElementById("roboUI").close());
 // עיצוב לאפליקציה: מופיע בבחירת הצבע רק אחרי שזכו בו
-await p.evaluate(() => openProfile()); await sleep(400);
+await p.evaluate(() => { delete Robo.state().own["theme:neon"]; openProfile(); }); // אולי יצא בתיבה הראשונה await sleep(400);
 log(!(await p.evaluate(() => !!document.querySelector('#profBody [data-th="neon"]'))), "locked app theme is hidden in the profile");
 await p.evaluate(() => { document.getElementById("profDlg").close(); Robo.give({ t: "item", id: "theme:neon" }); openProfile(); }); await sleep(400);
 log(await p.evaluate(() => !!document.querySelector('#profBody [data-th="neon"]')), "won theme appears in the profile colors");

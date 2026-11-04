@@ -1127,6 +1127,8 @@ dialog.robo.open{background:#05020f}
   urlCodes();
   const boot = () => {
     applyBubble(); setTimeout(applyBubble, 1500); homeBtn();
+    // ⚖️ איזון (4.11): מי שצבר יותר מ-2000 ברגים יורד ל-2000 (פעם אחת). האביזרים נשארים
+    if (!S.cap2k) { S.cap2k = 1; const k = S.realBolts != null ? "realBolts" : "bolts"; if (S[k] > 2000 && S[k] < 999999) { S[k] = 2000; setTimeout(() => toast("⚖️ <b>עדכון איזון:</b> היה קל מדי לצבור ברגים, אז כל מי שהיה לו יותר מ-2000 ירד ל-2000. כל האביזרים שלך נשארו! 🤖", null, 10000), 4000); } save(); }
     applyPowers(); setTimeout(() => checkPowers(), 3000);
     // 👥 מפרסמים את הרובוט (פעם ב-6 שעות), בודקים הודעות כל דקה וחצי, והכרזות אולטרה
     if (online() && Date.now() - (+LS.get("roboPubAt", "0") || 0) > 6 * 3600e3) setTimeout(publish, 6000);

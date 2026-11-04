@@ -43,7 +43,7 @@ for (const b of ["box", "big", "mega"]) {
 // ---- קבלת פרסים ----
 { const S = R.fresh(); R.grant(S, { t: "item", id: "hat:crown" }); const d = R.grant(S, { t: "item", id: "hat:crown" });
   ok("new item → owned + marked new", S.own["hat:crown"] && S.news.includes("hat:crown"));
-  ok("duplicate → bolts (epic = 200)", d.dup === 200 && S.bolts === 200);
+  ok("duplicate → bolts (epic = 40)", d.dup === 40 && S.bolts === 40);
   R.grant(S, { t: "box", box: "big" }); ok("box prize goes to my boxes", S.boxes.join() === "big");
   ok("equip owned item", R.equip(S, "hat:crown") && S.eq.hat === "hat:crown"); ok("can't equip what you don't own", !R.equip(S, "skin:gold"));
   R.equip(S, "hat:crown"); ok("tap again = take it off", !S.eq.hat); }
@@ -98,4 +98,6 @@ ok("saving costs more for a longer streak, max 400", R.saveCost(5) < R.saveCost(
   ok("game: 300 bolts a day, max 2 items", a.bolts === 250 && b.bolts === 50 && b.items.length === 2 && S.game.it === 2 && R.gameBank(S, 10, ["c"], t).bolts === 0 && R.gameBank(S, 10, [], at("2026-11-04T10:00:00+02:00")).bolts === 10); }
 { const S = R.fresh(); const id = R.LIST.find(x => x.r === "e").id; S.own[id] = 1; const g = R.grant(S, { t: "item", id, r: "e", shiny: 1 }); ok("shiny of an item you own = shiny version (not a duplicate)", g.shinyNew && S.shiny[id] && !g.dup); const g2 = R.grant(S, { t: "item", id, r: "e", shiny: 1 }); ok("second shiny of the same = duplicate", g2.dup > 0); }
 { const S = R.fresh(); ok("map: 10 steps = a station", R.mapStep(S, 9) === 0 && R.mapStep(S, 1) === 1 && R.mapClaim(S).i === 1 && R.mapClaim(S) === null); R.mapStep(S, 9999); ok("map: capped at the last station, final prize = giant + 3000", S.map.p === R.MAP_N * R.MAP_STEP && R.mapPrize(R.MAP_N).some(p => p.box === "giant") && R.mapPrize(R.MAP_N).some(p => p.n === 3000)); }
+// ---- כלכלה: תיבה אף פעם לא מחזירה יותר ברגים ממה שהיא עולה (גם כשיש כמעט הכל) ----
+for (const t of ["box", "big", "mega", "giant"]) { let tot = 0; const N = 1500; for (let i = 0; i < N; i++) { const S = R.fresh(); for (const it of R.LIST) if (it.r !== "u") S.own[it.id] = 1; const b0 = S.bolts; for (const p of R.roll(S, t)) if (!p.need) R.grant(S, p); tot += S.bolts - b0; } ok(`${t}: even with everything owned, bolts back < 80% of the price`, tot / N < R.BOX[t].price * .8, Math.round(tot / N) + " / " + R.BOX[t].price); }
 console.log(bad ? `❌ ${bad} problems` : "all robo tests passed");

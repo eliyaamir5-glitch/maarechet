@@ -5,13 +5,13 @@
   // ---- דרגות נדירות (כמו בבראול סטארס) ----
   // dup = כמה ברגים מקבלים על אביזר שכבר יש לך · price = מחיר בחנות (רק עד אפי)
   const RAR = {
-    c: { n: "רגיל", col: "#a3b1c2", dup: 20, price: 40, o: 0 },
-    r: { n: "נדיר", col: "#2ecc71", dup: 50, price: 90, o: 1 },
-    s: { n: "סופר נדיר", col: "#3b82f6", dup: 100, price: 200, o: 2 },
-    e: { n: "אפי", col: "#a855f7", dup: 200, price: 450, o: 3 },
-    m: { n: "מיתי", col: "#ef4444", dup: 500, o: 4 },
-    l: { n: "אגדי", col: "#facc15", dup: 1000, o: 5 },
-    u: { n: "אולטרה אגדי", col: "#ffd700", dup: 2500, o: 6 },
+    c: { n: "רגיל", col: "#a3b1c2", dup: 4, price: 40, o: 0 },
+    r: { n: "נדיר", col: "#2ecc71", dup: 10, price: 90, o: 1 },
+    s: { n: "סופר נדיר", col: "#3b82f6", dup: 20, price: 200, o: 2 },
+    e: { n: "אפי", col: "#a855f7", dup: 40, price: 450, o: 3 },
+    m: { n: "מיתי", col: "#ef4444", dup: 100, o: 4 },
+    l: { n: "אגדי", col: "#facc15", dup: 200, o: 5 },
+    u: { n: "אולטרה אגדי", col: "#ffd700", dup: 500, o: 6 },
   };
   const RK = ["c", "r", "s", "e", "m", "l", "u"];
 
@@ -149,17 +149,17 @@
 
   // ---- תיבות: כמה פרסים בכל תיבה, וסיכוי לכל דרגה (באחוזים, לכל פרס) ----
   const BOX = {
-    box: { n: "תיבה", em: "📦", rolls: 2, kind: { item: 57, bolts: 40, box: 3 }, odds: { c: 58, r: 26, s: 11, e: 4, m: 0.85, l: 0.145, u: 0.005 }, bolts: [40, 90], price: 40, col: "#38bdf8" },
-    big: { n: "תיבה גדולה", em: "🎁", rolls: 3, kind: { item: 65, bolts: 30, box: 5 }, odds: { c: 35, r: 32, s: 20, e: 9, m: 3.2, l: 0.78, u: 0.02 }, bolts: [70, 160], price: 130, col: "#a855f7" },
-    mega: { n: "תיבת מגה", em: "💠", rolls: 6, kind: { item: 74, bolts: 20, box: 6 }, odds: { c: 10, r: 30, s: 30, e: 20, m: 7.5, l: 2.45, u: 0.05 }, bolts: [140, 320], price: 380, col: "#f43f5e", hero: 0.02 },
-    giant: { n: "תיבת ענק", em: "💎", rolls: 9, kind: { item: 82, bolts: 12, box: 6 }, odds: { c: 0, r: 8, s: 24, e: 36, m: 22, l: 9.9, u: 0.1 }, bolts: [300, 640], price: 1200, col: "#06b6d4", hero: 0.3 },
+    box: { n: "תיבה", em: "📦", rolls: 2, kind: { item: 57, bolts: 40, box: 3 }, odds: { c: 58, r: 26, s: 11, e: 4, m: 0.85, l: 0.145, u: 0.005 }, bolts: [10, 25], price: 40, col: "#38bdf8" },
+    big: { n: "תיבה גדולה", em: "🎁", rolls: 3, kind: { item: 65, bolts: 30, box: 5 }, odds: { c: 35, r: 32, s: 20, e: 9, m: 3.2, l: 0.78, u: 0.02 }, bolts: [35, 80], price: 130, col: "#a855f7" },
+    mega: { n: "תיבת מגה", em: "💠", rolls: 6, kind: { item: 74, bolts: 20, box: 6 }, odds: { c: 10, r: 30, s: 30, e: 20, m: 7.5, l: 2.45, u: 0.05 }, bolts: [70, 160], price: 380, col: "#f43f5e", hero: 0.02 },
+    giant: { n: "תיבת ענק", em: "💎", rolls: 9, kind: { item: 82, bolts: 12, box: 6 }, odds: { c: 0, r: 8, s: 24, e: 36, m: 22, l: 9.9, u: 0.1 }, bolts: [150, 320], price: 1200, col: "#06b6d4", hero: 0.3 },
   };
   const EXTRA = { box: "box", big: "box", mega: "big", giant: "mega" }; // תיבה בתוך תיבה
   // ⭐ שדרוג בכל לחיצה (כמו בבראול): התיבה מתחילה בדרגה מסוימת, ובכל אחת מ-4 הלחיצות יכולה לעלות דרגה.
   // הדרגה שבסוף = הפרס הראשי (אביזר מהדרגה הזו, מובטח). ועוד פרסים רגילים (extra) לפי הטבלה של התיבה.
   const TIERS = ["r", "s", "e", "m", "l", "u"], TAPS = 4;
   const START = { box: "r", big: "s", mega: "e", giant: "m" }, EXTRA_N = { box: 1, big: 2, mega: 5, giant: 8 };
-  const UP = { r: 0.30, s: 0.15, e: 0.10, m: 0.07, l: 0.02, u: 0 }; // סיכוי לעלות דרגה בכל לחיצה
+  const UP = { r: 0.15, s: 0.075, e: 0.05, m: 0.035, l: 0.01, u: 0 }; // סיכוי לעלות דרגה בכל לחיצה
   function upgrades(type, rnd = Math.random, mult = 1) { let t = START[type]; const out = [t]; for (let i = 0; i < TAPS; i++) { if (rnd() < Math.min(0.9, UP[t] * mult)) t = TIERS[TIERS.indexOf(t) + 1]; out.push(t); } return out; }
   // הסיכוי המדויק לכל דרגה סופית (לטבלה שמוצגת לילדים)
   function finalOdds(type) { let d = { [START[type]]: 1 }; for (let i = 0; i < TAPS; i++) { const n = {}; for (const [t, p] of Object.entries(d)) { const up = UP[t]; n[t] = (n[t] || 0) + p * (1 - up); if (up) { const nx = TIERS[TIERS.indexOf(t) + 1]; n[nx] = (n[nx] || 0) + p * up; } } d = n; } const o = {}; for (const t of TIERS) o[t] = 100 * (d[t] || 0); return o; }

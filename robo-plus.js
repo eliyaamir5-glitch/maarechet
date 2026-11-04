@@ -266,7 +266,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     draw();
   }
   function sellPrice(body, id) {
-    const it = R.ITEMS[id], [lo, hi] = R.PRICE[it.r], sug = Math.max(lo, Math.min(hi, R.RAR[it.r].dup * 2));
+    const it = R.ITEMS[id], [lo, hi] = R.PRICE[it.r], sug = Math.min(hi, lo * 2);
     body.innerHTML = `<button type="button" class="rp-back">→ חזרה</button><div class="rp-h">💰 כמה זה עולה?</div>
       <div class="rp-mk" style="--c:${RC(it.r)}"><div class="pv">${X.preview(id)}</div><div class="t"><b>${esc(it.n)}</b> ${X.rarTag(it.r)}<br><small>מחיר ל${R.RAR[it.r].n}: בין ${lo} ל-${hi} ברגים</small></div></div>
       <div class="rp-pbig">🔩 <span id="rpPv">${sug}</span></div><input class="rp-price" type="range" id="rpP" min="${lo}" max="${hi}" step="${hi > 1000 ? 50 : hi > 300 ? 10 : 5}" value="${sug}">
@@ -453,13 +453,13 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       else if (Math.random() < .08) G.obj.push({ k: "gold", x, y: -40, v: sp * 1.2, s: 28 });
       else G.obj.push({ k: "bolt", x, y: -40, v: sp, s: 25 });
     };
-    const burst = (x, y, col, n = 10, sp = 160) => { for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, v = sp * (.4 + Math.random()); G.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60, life: .6 + Math.random() * .4, a: 1, c: col, s: 2 + Math.random() * 3 }); } };
-    const fxText = (x, y, t, c, life = 1, size = 20) => G.fx.push({ x, y, t, c, a: life, life, size });
+    const burst = (x, y, col, n = 10, sp = 160) => { n = Math.ceil(n * .5); if (G.parts.length > 120) return; for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, v = sp * (.4 + Math.random()); G.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60, life: .6 + Math.random() * .4, a: 1, c: col, s: 2 + Math.random() * 3 }); } };
+    const fxText = (x, y, t, c, life = 1, size = 20) => { G.fx = G.fx.filter(f => f.thief); G.fx.push({ x, y, t, c, a: life, life, size }); };
     const comboUp = () => {
       G.combo++; G.bestCombo = Math.max(G.bestCombo, G.combo);
       if (G.combo % 10 === 0) { const bonus = Math.min(Math.max(0, left() - G.bolts), 1 + G.combo / 5); G.bolts += bonus; AU.combo(G.combo); X.vib([30, 20, 60]); G.shake = .35; fxText(W / 2, H * .38, `🔥 קומבו ${G.combo}! +${bonus}`, "#fb923c", 1.6, 30); burst(G.px, H - 70, "#fb923c", 30, 260); burst(G.px, H - 70, "#fde047", 20, 200); }
     };
-    const loseCombo = () => { if (G.combo >= 5) fxText(G.px, H - 120, "הקומבו נשבר 💔", "#94a3b8", .9, 16); G.combo = 0; };
+    const loseCombo = () => { G.combo = 0; };
     function hit(o) {
       const py = H - 60;
       if (o.k === "bomb" || o.k === "thief") {
@@ -474,7 +474,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       if (o.k === "pow") { const P = POW[o.p]; if (o.p === "shield") G.shield = true; else G.pw[o.p] = P.t; AU.power(); X.vib(30); burst(o.x, py - 20, P.c, 22, 220); fxText(G.px, py - 70, `${P.em} ${P.n}!`, P.c, 1.2, 22); comboUp(); return; }
       if (o.k === "item") { G.items.push(o.r); AU.item(); X.vib(50); burst(o.x, py - 20, RC(o.r), 30, 240); fxText(o.x, py - 60, "✨ " + R.RAR[o.r].n + "!", RC(o.r), 1.3, 22); comboUp(); hud(); return; }
       const mult = G.pw.double > 0 ? 2 : 1, n = Math.min((o.k === "gold" ? 5 : 1) * mult, Math.max(0, left() - G.bolts)); G.bolts += n;
-      if (n) { o.k === "gold" ? AU.gold() : AU.pick(G.combo); burst(o.x, py - 20, o.k === "gold" ? "#fde047" : "#bae6fd", o.k === "gold" ? 16 : 7, 150); fxText(o.x, py - 50, "+" + n, o.k === "gold" ? "#fde047" : "#fff", .9, o.k === "gold" ? 24 : 18); }
+      if (n) { o.k === "gold" ? AU.gold() : AU.pick(G.combo); burst(o.x, py - 20, o.k === "gold" ? "#fde047" : "#bae6fd", o.k === "gold" ? 8 : 3, 120); if (o.k === "gold" || n > 1) fxText(o.x, py - 50, "+" + n, "#fde047", .8, 22); }
       comboUp(); hud();
       if (G.bolts >= left() && G.bolts > LOCK) { G.over = true; AU.combo(50); X.vib([60, 40, 60, 40, 160]); setTimeout(() => bank("win"), 50); return; } // 🏆 שרד עד המקסימום
       if (G.bolts >= left() && !G.fullShown) { G.fullShown = 1; fxText(W / 2, H / 3, "הגעת למקסימום של היום! צא עם הכסף 💰", "#fde047", 3, 18); }
@@ -490,10 +490,10 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       if ((secT += rdt) > 1 && !G.dead) { secT = 0; const bs = breakState(); if (!bs.open && !locked()) { bank("bell"); return; } const tl = d.querySelector("#gmT"); if (bs.until != null) { const n = new Date(), s = bs.until * 60 - (n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds()); tl.textContent = s > 0 ? `⏰ ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : ""; } else tl.textContent = ""; }
       if (!G.dead) {
         const full = G.bolts >= left(), t = G.t;
-        if ((G.nb -= rdt) <= 0) { G.nb = Math.max(.16, .4 - t * .005); if (!full) spawn("bolt"); }
-        if ((G.nbomb -= rdt) <= 0) { G.nbomb = Math.max(.45, 1.9 - t * .03) + Math.random() * .7; spawn("bomb"); if (t > 25 && Math.random() < .35) spawn("bomb"); }
+        if ((G.nb -= rdt) <= 0) { G.nb = Math.max(.32, .55 - t * .004); if (!full && G.obj.length < 12) spawn("bolt"); }
+        if ((G.nbomb -= rdt) <= 0) { G.nbomb = Math.max(.7, 2 - t * .025) + Math.random() * .6; spawn("bomb"); }
         if ((G.nthief -= rdt) <= 0) { G.nthief = Math.max(2.2, 8 - t * .09) + Math.random() * 2; spawn("thief"); }
-        if ((G.npow -= rdt) <= 0) { G.npow = 9 + Math.random() * 7; spawn("pow"); }
+        if ((G.npow -= rdt) <= 0) { G.npow = 14 + Math.random() * 8; spawn("pow"); }
         if ((G.nitem -= rdt) <= 0) { G.nitem = 14 + Math.random() * 12; if (itemsLeft() > 0) spawn("item"); }
       }
       G.px += (G.tx - G.px) * Math.min(1, rdt * 16);
@@ -518,7 +518,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       // רקע בהיר יחסית עם כוכבים זזים – כדי שהכל יבלוט
       const dz = Math.min(1, G.t / 60), g = cx.createLinearGradient(0, 0, 0, H);
       g.addColorStop(0, dz > .5 ? "#4c1d95" : "#3730a3"); g.addColorStop(.6, "#1e1b4b"); g.addColorStop(1, dz > .5 ? "#450a0a" : "#172554"); cx.fillStyle = g; cx.fillRect(-20, -20, W + 40, H + 40);
-      cx.fillStyle = "rgba(255,255,255,.7)"; for (const s of stars) { s.y += s.v * rdt * .15 * speedF(); if (s.y > 1) s.y = 0; cx.globalAlpha = .35 + s.s / 4; cx.fillRect(s.x * W, s.y * H, s.s, s.s); } cx.globalAlpha = 1;
+      cx.fillStyle = "rgba(255,255,255,.5)"; for (const s of stars.slice(0, 18)) { s.y += s.v * rdt * .15 * speedF(); if (s.y > 1) s.y = 0; cx.globalAlpha = .35 + s.s / 4; cx.fillRect(s.x * W, s.y * H, s.s, s.s); } cx.globalAlpha = 1;
       // רצפה זוהרת
       const fl = cx.createLinearGradient(0, H - 40, 0, H); fl.addColorStop(0, "rgba(124,245,255,0)"); fl.addColorStop(1, "rgba(124,245,255,.25)"); cx.fillStyle = fl; cx.fillRect(0, H - 40, W, 40);
       for (const o of G.obj) {
