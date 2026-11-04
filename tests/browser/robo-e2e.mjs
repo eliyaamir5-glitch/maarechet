@@ -77,6 +77,19 @@ await p.evaluate(() => document.getElementById("roboUI").close());
 await p.goto("http://localhost:8797/index.html?hol=hanukkah", { waitUntil: "domcontentloaded" }); await sleep(3000);
 log(await p.evaluate(() => (document.getElementById("asstBtn") || {}).innerHTML.includes("🍩")), "Hanukkah: the robot holds a sufganiya 🍩");
 await p.goto("http://localhost:8797/index.html?hol=off", { waitUntil: "domcontentloaded" }); await sleep(1500);
+// 🔒 עונה חדשה (5.11.2026 07:00): לפני – נעול; אחרי – כולם מתאפסים ל-1000 ברגים פעם אחת
+await p.evaluate(() => { localStorage.setItem("roboLockTest", "1"); localStorage.removeItem("roboOwner"); const s = JSON.parse(localStorage.getItem("robo")); s.bolts = 5000; s.own["hat:crown"] = 1; delete s.season; localStorage.setItem("robo", JSON.stringify(s)); });
+await p.goto("http://localhost:8797/index.html?hol=off", { waitUntil: "domcontentloaded" }); await sleep(2500);
+if (Date.now() < Date.parse("2026-11-05T07:00:00+02:00")) {
+  log(await p.evaluate(() => /🔒/.test(document.getElementById("roboBtn").textContent)), "new season: home button shows 🔒 until tomorrow 07:00");
+  await p.evaluate(() => Robo.open("shop")); await sleep(400);
+  log(await p.evaluate(() => !!document.querySelector("#roboLock[open]") && !document.querySelector("#roboUI[open]") && /07:00/.test(document.getElementById("roboLock").innerText)), "opening the robot shows the lock screen with a countdown");
+  log(await p.evaluate(() => Robo.earn(10) === 0), "no practice bolts while locked");
+  await p.evaluate(() => document.getElementById("roboLock").close());
+} else {
+  log(await p.evaluate(() => { const s = Robo.state(); return s.season === "2026-11-05" && s.bolts <= 1000 + 400 && !s.own["hat:crown"]; }), "new season: everyone restarted with 1000 bolts, old items gone");
+}
+await p.evaluate(() => localStorage.removeItem("roboLockTest"));
 log(!errs.length, "no errors", errs.join(" | "));
 console.log(`errors: ${JSON.stringify(errs)} ${res.filter(Boolean).length}/${res.length} passed`);
 await b.close(); srv.close(); process.exit(res.every(Boolean) ? 0 : 1);

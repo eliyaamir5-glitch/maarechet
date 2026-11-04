@@ -977,6 +977,7 @@ async function owner(req, S, ip, headers) {
 async function feed(req, S, ip, headers) {
   if (req.method === "GET") {
     const now = Date.now(), today = israelDay(now);
+    await roboSeason(S, now);
     const [ups, polls, events, qs, bd, rx, chg, ctl, om, hc, rr, rn, hi] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions", "changes", "control", "ownerMsgs", "holCfg", "roboRare", "roboNews", "roboInvHint"].map(k => S.get(k)));
     return reply(200, {
       ok: true, now,
@@ -1128,6 +1129,7 @@ async function feed(req, S, ip, headers) {
     return reply(200, { ok: true, cls: me.cls, mates, bdays }, headers);
   }
   if (action === "robo") { // 🤖 אביזר "אולטרה אגדי" יצא בתיבה: כמות מוגבלת לכל הישיבה. נשמר רק מונה + קוד מכשיר מוצפן (בלי שם)
+    if (await roboSeason(S, now) && !["me", "link", "day"].includes(b.op)) return reply(200, { ok: false, error: "locked", until: ROBO_RESET_AT }, headers);
     if (DEV_RE.test(device) && ["code", "me", "link", "day"].includes(b.op)) return reply(200, await roboOp(S, b, device, ip, now), headers);
     if (DEV_RE.test(device) && ["pub", "class", "like", "gift", "inbox", "tradeNew", "tradeGet", "tradeSet", "tradeOk", "tradeCancel", "tradeDone", "marketList", "marketSell", "marketBuy", "marketCancel"].includes(b.op)) return reply(200, await roboSocial(S, b, device, ip, now), headers);
     if (!DEV_RE.test(device) || b.op !== "claim" || !Object.hasOwn(ROBO_CAPS, String(b.item))) return reply(400, { ok: false, error: "bad_request" }, headers);
@@ -1664,6 +1666,20 @@ export async function streakTick(now = Date.now()) {
 // "roboLikes"  = { pid: { n, wk: {weekId: n} } } · "roboLikeDay" = { d, pairs: ["fromPid>toPid"] } – בלי לשמור מי נתן לייק למי מעבר ליום
 // "roboInbox"  = { pid: [ {t:"bolts"|"trade"|"like", ...} ] } · "roboGiftDay" = { d, m: {pid: n} } · "roboTrades" = { id: {...} } · "roboBattle" = { weekId: { cls: points } }
 const pidOf = k => crypto.createHash("sha256").update("robo|" + k).digest("hex").slice(0, 12);
+// 🔄 עונה חדשה לרובוט (בקשת מנהל המערכת, 4.11.2026): עד 5.11 07:00 הכל נעול, ואז מוחקים פעם אחת את כל מה שהשרת שומר על הרובוטים
+// (ספירת אולטרה, פרופילים, לייקים, קרב כיתות, שוק, טריידים, הכרזות, הודעות) – כדי שכולם יתחילו שווה. הטלפונים מתאפסים לבד (robo.js)
+let ROBO_RESET_AT = Date.parse("2026-11-05T07:00:00+02:00"); const ROBO_RESET_ID = "2026-11-05", ROBO_BLOBS = ["roboRare", "roboPub", "roboLikes", "roboLikeDay", "roboGiftDay", "roboBattle", "roboMarket", "roboTrades", "roboNews", "roboInbox", "roboInvHint"];
+let roboSeasonDone = false;
+export function __setRoboReset(ms) { ROBO_RESET_AT = ms; roboSeasonDone = false; } // לבדיקות
+async function roboSeason(S, now) { // true = עדיין נעול
+  if (now < ROBO_RESET_AT) return true;
+  if (roboSeasonDone) return false;
+  if ((await S.get("roboSeason")) !== ROBO_RESET_ID) {
+    let first = false; await S.update("roboSeason", cur => { if (cur === ROBO_RESET_ID) return undefined; first = true; return ROBO_RESET_ID; });
+    if (first) { for (const k of ROBO_BLOBS) await S.set(k, null); await olog(S, "roboSeason", "🔄 הרובוט התחיל מחדש לכולם – עונה חדשה (1000 ברגים לכל אחד)"); }
+  }
+  roboSeasonDone = true; return false;
+}
 // 🕵️ שוק: טווח מחירים לכל דרגה (חייב להיות זהה ל-PRICE ב-robo-core.js – הבדיקה בודקת)
 const MARKET_PRICE = { c: [10, 80], r: [25, 200], s: [50, 400], e: [100, 800], m: [250, 2000], l: [500, 5000], u: [2000, 20000] }, MARKET_MAX = 5;
 const ITEM_RE = /^(skin|hat|eyes|held|aura|trail|quote|theme|page):[a-z0-9:_]{1,30}$/;

@@ -11,7 +11,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = 8790;
 const { APP_VERSION } = createRequire(import.meta.url)(path.join(ROOT, "data.js"));
 const mod = await import(pathToFileURL(path.join(ROOT, "netlify/functions/staff.mjs")).href);
-const mem = mod.__useMemoryStore();
+const mem = mod.__useMemoryStore(); mod.__setRoboReset(0); // בתצוגה המקומית הרובוט לא נעול
 const salt = "de5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e";
 mod.__setOwner({ salt, hash: crypto.scryptSync("DEV0DEV0DEV0DEV0", salt, 32).toString("hex") });
 

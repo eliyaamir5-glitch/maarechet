@@ -314,7 +314,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     if (days >= 3 && !bad) { S.boxes.push("big"); S.wBox = (S.wBox || 0) + 1; X.save(); setTimeout(() => { X.SFX.gift(); X.toast("⏰ <b>שבוע שלם בלי איחורים וחיסורים!</b> קיבלת 🎁 תיבה גדולה", ["לפתוח", () => X.openBoxes(["big"])], 10000); }, 4000); }
     else X.save();
   }
-  function mashovRewards() { try { gradeBoxes(); weekBox(); } catch (e) {} }
+  function mashovRewards() { if (X.locked()) return; try { gradeBoxes(); weekBox(); } catch (e) {} }
 
   // ================= 🎮 ברגים נופלים =================
   // 🔩 בורג = 1 · 🌟 זהב = 5 · 🎁 אביזר · 💣 פצצה = כל הסיבוב נעלם · 🦹 גנב = לוקח חצי מהסיבוב
@@ -570,7 +570,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
   window.RoboPlus = { tab, breakState, mashovRewards, play: () => play(), panels: PANELS, _game: () => game };
   // ⚡ תיבת בזק: הודעה קטנה כשנפתח חלון (פעם אחת לחלון)
   function flashCheck() {
-    if (document.hidden || !X.profile() || document.querySelector("dialog[open]")) return;
+    if (X.locked() || document.hidden || !X.profile() || document.querySelector("dialog[open]")) return;
     const f = R.flashNow(X.S, X.dev()); if (!f || f.bought || LS.get("roboFlashSeen", "") === f.id) return;
     LS.set("roboFlashSeen", f.id); X.SFX.gift();
     X.toast(`⚡ <b>תיבת בזק!</b> ${R.BOX[f.box].em} ${R.BOX[f.box].n} ב-${f.price} ברגים בלבד – רק עוד ${f.left} דק'`, ["לחנות", () => X.open("shop")], 12000);

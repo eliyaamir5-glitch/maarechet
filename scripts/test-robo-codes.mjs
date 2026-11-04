@@ -1,7 +1,7 @@
 // בדיקות: קודים לפרסים (כל ילד פעם אחת, הגבלה לקוד), הטלפון של מנהל המערכת (ברגים/סקינים), ותזכורת לפני שהרצף נשבר.
 //   node scripts/test-robo-codes.mjs
 const mod = await import("../netlify/functions/staff.mjs");
-const raw = mod.__useMemoryStore();
+const raw = mod.__useMemoryStore(); mod.__setRoboReset(0);
 const crypto = await import("node:crypto");
 const handler = mod.default, ORIGIN = "https://eliyaamir5-glitch.github.io";
 const ok = (name, c, x = "") => { console.log(c ? "✅" : "❌", name, x); if (!c) process.exitCode = 1; };

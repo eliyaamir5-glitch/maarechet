@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const RC = require("../robo-core.js");
 const mod = await import("../netlify/functions/staff.mjs");
-const raw = mod.__useMemoryStore();
+const raw = mod.__useMemoryStore(); mod.__setRoboReset(0);
 const handler = mod.default, ORIGIN = "https://eliyaamir5-glitch.github.io";
 const ok = (name, c, x = "") => { console.log(c ? "✅" : "❌", name, x); if (!c) process.exitCode = 1; };
 async function call(body, method = "POST", ip = "2.2.2.2") {
@@ -27,3 +27,16 @@ r = await call(null, "GET");
 ok("feed shows how many are left", r.json.robo["skin:gold"].n === 3 && r.json.robo["skin:gold"].cap === 3 && r.json.robo["skin:diamond"].n === 0 && r.json.robo["skin:phoenix"].cap === 2);
 ok("no names / device ids stored", !raw.get("roboRare").includes("device-robo") && !raw.get("roboRare").includes("תלמיד"));
 { const src = (await import("node:fs")).readFileSync(new URL("../netlify/functions/staff.mjs", import.meta.url), "utf8"); const caps = JSON.parse(src.match(/const ROBO_CAPS = (\{[^}]*\})/)[1]); ok("server caps match the app catalog exactly", RC.LIST.filter(x => x.r === "u").every(x => caps[x.id] === x.cap) && Object.keys(caps).length === RC.LIST.filter(x => x.r === "u").length, JSON.stringify(caps)); }
+// ---- 🔒 עונה חדשה: נעול עד שעה מסוימת, ואז השרת מוחק פעם אחת את כל מה שהוא שומר על הרובוטים ----
+mod.__setRoboReset(Date.now() + 3600e3);
+r = await call({ action: "robo", op: "claim", item: "skin:diamond", device: "device-robo-0009" });
+ok("before the new season: robot ops are locked", r.json.ok === false && r.json.error === "locked");
+r = await call({ action: "robo", op: "me", device: "device-robo-0009" });
+ok("owner check ('me') still works while locked", r.json.ok === true);
+raw.delete("roboSeason"); raw.set("roboNews", JSON.stringify([{ id: "x", at: Date.now() }])); raw.set("roboMarket", JSON.stringify({ a: { st: "open" } }));
+mod.__setRoboReset(Date.now() - 1000);
+r = await call(null, "GET");
+ok("new season starts: ultra counts, market, news wiped once", JSON.parse(raw.get("roboRare")) === null && JSON.parse(raw.get("roboMarket")) === null && JSON.parse(raw.get("roboNews")) === null && JSON.parse(raw.get("roboSeason")) === "2026-11-05" && r.json.robo["skin:gold"].n === 0);
+raw.set("roboMarket", JSON.stringify({ b: { st: "open" } })); mod.__setRoboReset(Date.now() - 1000);
+await call(null, "GET");
+ok("the wipe happens only once", JSON.parse(raw.get("roboMarket")).b.st === "open");

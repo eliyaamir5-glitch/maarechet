@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const RC = require("../robo-core.js");
 const mod = await import("../netlify/functions/staff.mjs");
-const raw = mod.__useMemoryStore();
+const raw = mod.__useMemoryStore(); mod.__setRoboReset(0);
 const handler = mod.default, ORIGIN = "https://eliyaamir5-glitch.github.io";
 const ok = (name, c, x = "") => { console.log(c ? "✅" : "❌", name, x); if (!c) process.exitCode = 1; };
 let ipN = 0;

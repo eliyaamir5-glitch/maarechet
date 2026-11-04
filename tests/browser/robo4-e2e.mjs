@@ -8,7 +8,7 @@ const T = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".jso
 const srv = http.createServer((q, s) => { let p = decodeURIComponent(new URL(q.url, "http://x").pathname); if (p.endsWith("/")) p += "index.html"; const f = path.join(ROOT, p);
   if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { s.writeHead(404); return s.end(); } s.writeHead(200, { "Content-Type": T[path.extname(f)] || "application/octet-stream", "Cache-Control": "no-store" }); fs.createReadStream(f).pipe(s); }).listen(8798, "127.0.0.1");
 // השרת האמיתי (staff.mjs) עם אחסון בזיכרון
-const mod = await import("../../netlify/functions/staff.mjs"); mod.__useMemoryStore();
+const mod = await import("../../netlify/functions/staff.mjs"); mod.__useMemoryStore(); mod.__setRoboReset(0);
 let ipN = 0;
 const call = async (body) => { const r = await mod.default(new Request("http://localhost/api/feed", { method: "POST", headers: { "Content-Type": "application/json", origin: "http://localhost:8798" }, body: JSON.stringify(body) }), { ip: "9.9.9." + (++ipN % 250) }); return r.json(); };
 const ME = "device-robo4-0001", FRIEND = "device-robo4-0002";
