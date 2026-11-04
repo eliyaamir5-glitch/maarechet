@@ -1520,8 +1520,8 @@ export async function holidayTick(now = Date.now()) {
 }
 
 // ---- 🤖 "הרובוט שלי": אביזרי אולטרה אגדי – כמות מוגבלת לכל הישיבה (חייב להתאים ל-robo-core.js) ----
-const ROBO_CAPS = { "skin:gold": 3, "skin:diamond": 5, "skin:phoenix": 2, "skin:cosmic": 2, "skin:crystal": 3, "skin:infinity": 1, "skin:legend": 1 };
-const ROBO_NAMES = { "skin:gold": "חליפת זהב טהור", "skin:diamond": "חליפת יהלומים", "skin:phoenix": "עוף החול", "skin:cosmic": "השומר הקוסמי", "skin:crystal": "קריסטל קשת", "skin:infinity": "האינסוף ♾️ – היחיד בכל הישיבה", "skin:legend": "👑 האגדה – הראשון שאסף את כל הגיבורים" };
+const ROBO_CAPS = { "skin:gold": 3, "skin:diamond": 5, "skin:phoenix": 2, "skin:cosmic": 2, "skin:crystal": 3, "skin:infinity": 1, "skin:legend": 1, "theme:goldx": 3 };
+const ROBO_NAMES = { "skin:gold": "חליפת זהב טהור", "skin:diamond": "חליפת יהלומים", "skin:phoenix": "עוף החול", "skin:cosmic": "השומר הקוסמי", "skin:crystal": "קריסטל קשת", "skin:infinity": "האינסוף ♾️ – היחיד בכל הישיבה", "skin:legend": "👑 האגדה – הראשון שאסף את כל הגיבורים", "theme:goldx": "עיצוב זהב טהור ויהלומים 💎" };
 function roboCounts(rr) { const o = {}; for (const [id, cap] of Object.entries(ROBO_CAPS)) { const x = rr && rr[id]; o[id] = { n: x && Array.isArray(x.keys) ? x.keys.length : 0, cap }; } return o; }
 
 // ---- 🎟️ קודים לפרסים, 👑 הטלפון של מנהל המערכת, 🔥 תזכורת לפני שהרצף נשבר ----

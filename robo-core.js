@@ -199,6 +199,7 @@
     ["theme:midnight", "theme", "חצות", "s", { grad: "linear-gradient(135deg,#020617 0%,#1e293b 50%,#0ea5e9 100%)" }],
     ["theme:emerald", "theme", "אזמרגד", "e", { grad: "linear-gradient(135deg,#022c22 0%,#047857 50%,#34d399 100%)" }],
     ["theme:royal", "theme", "מלכותי", "m", { grad: "linear-gradient(135deg,#1e1b4b 0%,#6d28d9 50%,#facc15 100%)" }],
+    ["theme:goldx", "theme", "זהב טהור ויהלומים 💎", "u", { cap: 3, grad: "linear-gradient(120deg,#5c3a00 0%,#b8860b 18%,#fff2a8 35%,#d4a017 50%,#fff7c2 65%,#b8860b 82%,#5c3a00 100%)" }], // 💎 העיצוב הכי נדיר – רק 3 בכל הישיבה
     ["theme:legend", "theme", "אגדי 👑", "l", { grad: "linear-gradient(135deg,#000000 0%,#7f1d1d 45%,#facc15 100%)" }],
     // עיצובים לעמוד
     ["page:index:ocean", "page", "עמוד הבית – אוקיינוס", "s", { pg: "index", grad: "linear-gradient(135deg,#082f49 0%,#0284c7 50%,#67e8f9 100%)" }],

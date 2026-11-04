@@ -243,6 +243,7 @@ ${hat}${sk.over ? sk.over(u) : ""}${(eq ? opt.shiny : S.shiny && Object.values(E
   // תצוגה של אביזר אחד (בכרטיס): הרובוט שלך + האביזר
   function preview(id, still = true) {
     const it = R.ITEMS[id];
+    if (it.id === "theme:goldx") return `<div class="rv-sw rv-gold" style="background:${it.grad}"><span>💎</span><i></i><i></i><i></i></div>`;
     if (it.cat === "theme" || it.cat === "page") return `<div class="rv-sw" style="background:${it.grad}"><span>${it.cat === "page" ? pageIcon(it.pg) : "🎨"}</span></div>`;
     if (it.cat === "trail") return `<div class="rv-sw rv-trail" style="background:radial-gradient(circle,#3b1d7a,#1a1040)">${it.em.map((e, i) => `<span style="animation-delay:${i * .25}s">${e}</span>`).join("")}</div>`;
     if (it.cat === "quote") return `<div class="rv-q"><div class="rv-qb">${esc(it.n)}</div><div style="width:46%;margin:2px auto 0">${svg("", S.eq, { still, noHoli: true })}</div></div>`;
@@ -284,6 +285,9 @@ ${hat}${sk.over ? sk.over(u) : ""}${(eq ? opt.shiny : S.shiny && Object.values(E
 .abot .rsnow{animation:rSnow 3.2s linear infinite}@keyframes rSnow{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(62px) translateX(4px);opacity:0}}
 .abot .rspin{animation:rSpin 1.6s linear infinite}
 .abot.rshadow .body{filter:drop-shadow(0 0 5px #a855f7)}.abot.rpix{image-rendering:pixelated}
+.rv-gold{position:relative;overflow:hidden;background-size:250% 250%!important;animation:gxShine2 4s linear infinite;box-shadow:inset 0 0 0 2px #fff2a8,0 0 14px rgba(250,204,21,.7)}.rv-gold span{filter:drop-shadow(0 0 6px #a5f3fc);animation:rBeat 1.4s infinite}
+.rv-gold i{position:absolute;width:8px;height:8px;background:radial-gradient(circle,#fff 0 25%,transparent 30%);animation:rTw 1.8s ease-in-out infinite}.rv-gold i:nth-of-type(1){left:15%;top:20%}.rv-gold i:nth-of-type(2){left:72%;top:30%;animation-delay:.6s}.rv-gold i:nth-of-type(3){left:40%;top:72%;animation-delay:1.2s}
+@keyframes gxShine2{to{background-position:250% 50%}}
 .abot .rleg{transform-origin:32px 33px;animation:rLeg 9s linear infinite}@keyframes rLeg{to{transform:rotate(360deg)}}.abot.still .rleg{animation:none}
 .abot .rinf1,.abot .rinf2{animation:rInf 3s linear infinite}@keyframes rInf{0%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}100%{transform:rotate(-8deg)}}
 .abot .rcape{transform-box:fill-box;transform-origin:50% 0;animation:rCape 1.6s ease-in-out infinite alternate}@keyframes rCape{to{transform:skewX(4deg) scaleY(1.04)}}
@@ -646,7 +650,7 @@ dialog.robo.open{background:#05020f}
     const rare = rareCounts();
     return `<div class="rw-sec">👑 אולטרה אגדי <small>הכי נדיר שיש – כמות מוגבלת לכל הישיבה!</small></div>` + R.LIST.filter(x => x.r === "u").map(x => {
       const c = rare[x.id] || { n: 0, cap: x.cap }, left = Math.max(0, (c.cap || x.cap) - (c.n || 0));
-      return `<div class="rbx" style="--c:#facc15"><div style="width:58px;height:58px">${svg("", Object.assign({}, S.eq, { skin: x.id }), { still: false, noHoli: true })}</div><div class="t"><b>${esc(x.n)}</b><small>${x.one ? (left ? "♾️ רק אחד בכל הישיבה! עוד לא נלקח 😱" : "♾️ נלקח! יש לו בעלים אחד בלבד 🔒") : left ? `נשארו רק ${left} מתוך ${c.cap || x.cap} בכל הישיבה 😱` : "אזלו! כולן נלקחו 🔒"}</small></div>${S.own[x.id] ? "✅" : ""}</div>`;
+      return `<div class="rbx" style="--c:#facc15"><div style="width:58px;height:58px">${x.cat === "skin" ? svg("", Object.assign({}, S.eq, { skin: x.id }), { still: false, noHoli: true }) : preview(x.id, false)}</div><div class="t"><b>${esc(x.n)}</b><small>${x.one ? (left ? "♾️ רק אחד בכל הישיבה! עוד לא נלקח 😱" : "♾️ נלקח! יש לו בעלים אחד בלבד 🔒") : left ? `נשארו רק ${left} מתוך ${c.cap || x.cap} בכל הישיבה 😱` : "אזלו! כולן נלקחו 🔒"}</small></div>${S.own[x.id] ? "✅" : ""}</div>`;
     }).join("");
   }
   const rareCounts = () => { try { return JSON.parse(LS.get("roboRare", "{}")) || {}; } catch (e) { return {}; } };
@@ -781,7 +785,8 @@ dialog.robo.open{background:#05020f}
     d.innerHTML = `<div class="ro" style="--rc:#a855f7;padding:20px"><div class="ro-nm">🎉 מה קיבלת</div>
       <div class="ro-sum">${items.map(g => `<div class="rc ${g.r === "l" ? "leg" : ""} ${g.r === "u" ? "ult" : ""}" style="--c:${RC(g.r)}"><div class="pv">${preview(g.id)}</div><div class="nm">${esc(R.ITEMS[g.id].n)}</div><div class="rr">${g.dup ? "+" + g.dup + " 🔩" : R.RAR[g.r].n}</div></div>`).join("")}</div>
       ${bolts ? `<div class="ro-sub" style="font-size:17px;font-weight:900">🔩 +${bolts} ברגים</div>` : ""}
-      <div class="rd-btns" style="margin-top:16px">${fresh[0] && ["skin", "hat", "eyes", "held", "aura"].includes(R.ITEMS[fresh[0].id].cat) ? `<button class="rbtn" type="button" id="roWear">👕 ללבוש את ${esc(R.ITEMS[fresh[0].id].n)}</button>` : ""}<button class="rbtn alt" type="button" id="roDone">סגור</button></div></div>`;
+      <div class="rd-btns" style="margin-top:16px">${(() => { const th = fresh.find(g => R.ITEMS[g.id].cat === "theme" && window.Theme && Theme.THEMES[g.id.split(":")[1]]); return th ? `<button class="rbtn" type="button" id="roTheme" data-th="${th.id.split(":")[1]}">🎨 להפעיל את העיצוב ${esc(R.ITEMS[th.id].n)}</button>` : ""; })()}${fresh[0] && ["skin", "hat", "eyes", "held", "aura"].includes(R.ITEMS[fresh[0].id].cat) ? `<button class="rbtn" type="button" id="roWear">👕 ללבוש את ${esc(R.ITEMS[fresh[0].id].n)}</button>` : ""}<button class="rbtn alt" type="button" id="roDone">סגור</button></div></div>`;
+    const tb = d.querySelector("#roTheme"); if (tb) tb.onclick = () => { try { Theme.setTheme(tb.dataset.th); } catch (e) {} tb.textContent = "✅ העיצוב הופעל!"; tb.disabled = true; vib(30); };
     await new Promise(res => { const w = d.querySelector("#roWear"); if (w) w.onclick = () => { R.equip(S, fresh[0].id); save(); res(); }; d.querySelector("#roDone").onclick = res; });
   }
   function celebrateItem(id) { const it = R.ITEMS[id]; toast(`✨ <b>${esc(it.n)}</b> ${rarTag(it.r)} נכנס לארון!`, null, 3000); vib(30); }
@@ -1161,7 +1166,7 @@ dialog.robo.open{background:#05020f}
     LS.set("roboNewsSeen", [...seen, x.id].slice(-30).join(","));
     if (`${p.first || ""} ${p.last || ""}`.trim() === x.kid) return; // זה אני
     const d = dlg("roboAnn"); const left = Math.max(0, x.cap - x.n);
-    d.innerHTML = `<div class="ann"><div class="t">👑 אולטרה אגדי!</div><div class="bot">${svg("", { skin: x.item }, { noHoli: true })}</div><div class="w">${esc(x.kid)} מ${CLS_L(x.cls)} זכה ב${esc(x.name)}!</div><div class="l">${left ? `נשארו רק ${left} מתוך ${x.cap} בכל הישיבה 😱` : "וזאת הייתה האחרונה! אזל 🔒"}</div><div class="rd-btns" style="margin-top:18px"><button class="rbtn" type="button" id="annOk">וואו! 🤩</button></div></div>`;
+    d.innerHTML = `<div class="ann"><div class="t">👑 אולטרה אגדי!</div><div class="bot">${R.ITEMS[x.item].cat === "skin" ? svg("", { skin: x.item }, { noHoli: true }) : preview(x.item, false)}</div><div class="w">${esc(x.kid)} מ${CLS_L(x.cls)} זכה ב${esc(x.name)}!</div><div class="l">${left ? `נשארו רק ${left} מתוך ${x.cap} בכל הישיבה 😱` : "וזאת הייתה האחרונה! אזל 🔒"}</div><div class="rd-btns" style="margin-top:18px"><button class="rbtn" type="button" id="annOk">וואו! 🤩</button></div></div>`;
     show(d); SFX.ultra(); setTimeout(() => SFX.reveal(6), 900); setTimeout(() => particles(d.querySelector(".ann"), "#facc15", 50, ["⭐", "✨", "👑", "💛"]), 400);
     d.querySelector("#annOk").onclick = () => d.close();
   }

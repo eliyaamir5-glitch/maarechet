@@ -11,7 +11,7 @@ const seeded = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s 
 const ids = R.LIST.map(x => x.id);
 ok("catalog: 150+ items, unique ids", ids.length >= 150 && new Set(ids).size === ids.length, ids.length);
 ok("every item has a known category and rarity", R.LIST.every(x => R.CATS[x.cat] && R.RAR[x.r]));
-ok("ultra legendary: 7 suits, each with a cap (♾️ infinity + 👑 legend = only 1)", R.LIST.filter(x => x.r === "u").length === 7 && R.ITEMS["skin:infinity"].cap === 1 && R.LIST.filter(x => x.r === "u").every(x => x.cap > 0));
+ok("ultra legendary: 8 items (7 suits + 💎 gold theme), each with a cap (♾️ infinity + 👑 legend = only 1)", R.LIST.filter(x => x.r === "u").length === 8 && R.ITEMS["skin:infinity"].cap === 1 && R.LIST.filter(x => x.r === "u").every(x => x.cap > 0));
 ok("heroes: never in normal boxes, only giant (and 2% mega)", R.LIST.filter(x => x.hero).length >= 10 && R.BOX.giant.hero > 0 && R.BOX.box.hero === undefined);
 { const S = R.fresh(); let h = 0, n = 0; for (let i = 0; i < 3000; i++) for (const p of R.roll(S, "box")) { if (p.t === "item") { n++; if (R.ITEMS[p.id] && R.ITEMS[p.id].hero) h++; } } ok("no heroes from small boxes", h === 0, h + "/" + n); }
 { const S = R.fresh(); let h = 0; for (let i = 0; i < 2000; i++) for (const p of R.roll(S, "giant")) if (p.t === "item" && R.ITEMS[p.id] && R.ITEMS[p.id].hero) h++; ok("heroes do come from giant boxes", h > 100, h); }
@@ -109,4 +109,5 @@ for (const t of ["box", "big", "mega", "giant"]) { let tot = 0; const N = 1500; 
   ok("new day → new missions", R.missions(S, at("2026-11-05T10:00:00+02:00")).d === "2026-11-05"); }
 { let leg = 0; for (let i = 0; i < 3000; i++) { const S = R.fresh(); for (const p of R.roll(S, "giant")) if (p.id === "skin:legend") leg++; } ok("'the legend' never drops from boxes", leg === 0); ok("legend is one-of-a-kind ultra", R.ITEMS["skin:legend"].cap === 1 && R.ITEMS["skin:legend"].x === 1);
   ok("heroes set = all non-ultra heroes (" + R.SETS.find(x => x.id === "heroes").ids.length + ")", R.SETS.find(x => x.id === "heroes").ids.length >= 25); }
+{ ok("💎 gold & diamonds theme: ultra, only 3 in the school, can drop from boxes", R.ITEMS["theme:goldx"].r === "u" && R.ITEMS["theme:goldx"].cap === 3 && !R.ITEMS["theme:goldx"].x); }
 console.log(bad ? `❌ ${bad} problems` : "all robo tests passed");

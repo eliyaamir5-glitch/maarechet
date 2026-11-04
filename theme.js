@@ -27,6 +27,8 @@
     midnight: { name: "חצות", grad: "linear-gradient(135deg,#020617 0%,#1e293b 50%,#0ea5e9 100%)", dark: "#38bdf8", light: "#0369a1", meta: "#020617", lock: "theme:midnight" },
     emerald: { name: "אזמרגד", grad: "linear-gradient(135deg,#022c22 0%,#047857 50%,#34d399 100%)", dark: "#34d399", light: "#047857", meta: "#022c22", lock: "theme:emerald" },
     royal: { name: "מלכותי", grad: "linear-gradient(135deg,#1e1b4b 0%,#6d28d9 50%,#facc15 100%)", dark: "#c4b5fd", light: "#6d28d9", meta: "#1e1b4b", lock: "theme:royal" },
+    // 💎 אולטרה אגדי – רק 3 בכל הישיבה: הכל זהב טהור נוצץ, הכפתורים יהלומים זוהרים
+    goldx: { name: "זהב ויהלומים 💎", grad: "linear-gradient(120deg,#5c3a00 0%,#b8860b 18%,#fff2a8 35%,#d4a017 50%,#fff7c2 65%,#b8860b 82%,#5c3a00 100%)", dark: "#facc15", light: "#a16207", meta: "#1a1200", lock: "theme:goldx", fx: "gold" },
     legend: { name: "אגדי 👑", grad: "linear-gradient(135deg,#000000 0%,#7f1d1d 45%,#facc15 100%)", dark: "#facc15", light: "#b91c1c", meta: "#000000", lock: "theme:legend" },
   };
   // עיצוב לעמוד אחד (מ"הרובוט שלי"): { calc: { id, grad } }
@@ -36,12 +38,34 @@
   const get = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch (e) { return d; } };
   const set = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
   const st = document.createElement("style"); st.id = "themeStyle";
+  // ✨ עיצוב זהב ויהלומים: רקע זהב-שחור, כותרות זהב נוצץ שזז, כפתורים כמו יהלומים זוהרים, ונצנוצים על המסך
+  const GOLD_CSS = `:root:root{--bg:#0d0a02;--bg2:#17120a;--card:#1c160a;--line:#5c4813;--muted:#d6c08a;--ink:#fff8dc;--accent-ink:#1a1200;--next:#3a2c06;--break:#241c08}
+@media (prefers-color-scheme: light){:root:root{--bg:#fbf6e6;--bg2:#fffdf5;--card:#fffdf5;--line:#ead9a5;--ink:#2b1d00;--muted:#8a6d2a;--accent-ink:#fff;--next:#fff3c4;--break:#f6edd0}}
+html,body{background:radial-gradient(120% 60% at 50% 0%,color-mix(in srgb,#facc15 14%,var(--bg)),var(--bg) 60%) fixed!important}
+.top,.tile.big,.btn.smart,#intro,#wiz,#build,.toast{background-size:300% 300%!important;animation:gxShine 7s linear infinite;color:#1a1200!important;text-shadow:0 1px 0 rgba(255,255,255,.45)}
+.top{box-shadow:0 12px 34px rgba(212,160,23,.45),inset 0 -2px 0 rgba(255,255,255,.35)!important;border-bottom:2px solid #fff2a8}
+.top *{color:inherit}
+@keyframes gxShine{0%{background-position:0% 50%}100%{background-position:300% 50%}}
+:is(.actions>*,button.primary,a.primary,.btn.primary,.pf-acts>button){background:linear-gradient(135deg,#e0f7ff 0%,#a5f3fc 22%,#ffffff 45%,#93c5fd 65%,#e0e7ff 85%,#ffffff 100%)!important;background-size:250% 250%!important;color:#0b1b3a!important;border:1.5px solid #ffffff!important;box-shadow:0 0 0 1px rgba(56,189,248,.5),0 0 14px rgba(125,211,252,.75),inset 0 1px 0 #fff!important;animation:gxDiamond 3.2s ease-in-out infinite;font-weight:800}
+@keyframes gxDiamond{0%,100%{background-position:0% 50%;box-shadow:0 0 0 1px rgba(56,189,248,.5),0 0 12px rgba(125,211,252,.6),inset 0 1px 0 #fff}50%{background-position:100% 50%;box-shadow:0 0 0 1px rgba(56,189,248,.8),0 0 22px rgba(165,243,252,1),inset 0 1px 0 #fff}}
+#gxFx{position:fixed;inset:0;pointer-events:none;z-index:2;overflow:hidden}
+#gxFx i{position:absolute;width:10px;height:10px;font-style:normal;background:radial-gradient(circle,#fff 0 18%,transparent 19%),conic-gradient(from 45deg,transparent 0 20%,#fff7c2 22% 28%,transparent 30% 45%,#fff7c2 47% 53%,transparent 55% 70%,#fff7c2 72% 78%,transparent 80%);animation:gxTw 2.6s ease-in-out infinite;opacity:0}
+@keyframes gxTw{0%,100%{opacity:0;transform:scale(.2) rotate(0)}50%{opacity:.75;transform:scale(1.2) rotate(45deg)}}
+@media (prefers-reduced-motion: reduce){.top,.tile.big,:is(.actions>*,button.primary),#gxFx i{animation:none!important}}`;
+  function gxFx(on) {
+    const go = () => { let f = document.getElementById("gxFx"); if (!on) { if (f) f.remove(); return; } if (f || !document.body) return;
+      f = document.createElement("div"); f.id = "gxFx"; f.setAttribute("aria-hidden", "true");
+      f.innerHTML = Array.from({ length: 12 }, (_, i) => `<i style="left:${(i * 37 + 7) % 96}%;top:${(i * 53 + 11) % 94}%;animation-delay:${((i * .41) % 2.6).toFixed(2)}s;width:${8 + (i % 3) * 4}px;height:${8 + (i % 3) * 4}px"></i>`).join("");
+      document.body.appendChild(f); };
+    if (document.body) go(); else document.addEventListener("DOMContentLoaded", go);
+  }
   function apply() {
     const t = THEMES[get("uiTheme", "purple")] || THEMES.purple, big = get("uiBig", "") === "1";
     // :root:root גובר על ה-:root של כל עמוד, בלי קשר לסדר
     const pg = pageGrad();
     st.textContent = (t === THEMES.purple ? "" : `:root:root{--grad:${t.grad};--accent:${t.dark}}
-@media (prefers-color-scheme: light){:root:root{--accent:${t.light}}}`) + (pg ? `:root:root{--grad:${pg}}` : "") + (big ? `html{zoom:${BIG}}` : "");
+@media (prefers-color-scheme: light){:root:root{--accent:${t.light}}}`) + (t.fx === "gold" ? GOLD_CSS : "") + (pg ? `:root:root{--grad:${pg}}` : "") + (big ? `html{zoom:${BIG}}` : "");
+    gxFx(t.fx === "gold");
     if (!st.isConnected) (document.head || document.documentElement).appendChild(st);
     const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = t.meta;
   }

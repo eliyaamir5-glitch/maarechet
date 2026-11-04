@@ -184,6 +184,10 @@ await p.evaluate(() => { const id = RoboCore.LIST.find(x => x.r === "s" && x.cat
 log(await p.evaluate(() => !!document.querySelector("#roboUI .rc.shiny") && !!document.querySelector("#roboUI .rw-bot .rshiny")), "shiny item: gold card + sparkles on the robot", await p.evaluate(() => [!!document.querySelector("#roboUI .rc.shiny"), !!document.querySelector("#roboUI .rw-bot .rshiny"), JSON.stringify(Robo.state().shiny), JSON.stringify(Robo.state().eq)].join(" ")));
 await p.screenshot({ path: path.join(ROOT, "tests/browser/robo4-shiny.png") });
 await p.evaluate(() => Robo.open("shop")); await sleep(300);
+// 💎 עיצוב זהב ויהלומים (אולטרה, 3 בישיבה)
+log(await p.evaluate(() => { Robo.give({ t: "item", id: "theme:goldx" }); Theme.setTheme("goldx"); const on = !!document.getElementById("gxFx") && getComputedStyle(document.documentElement).getPropertyValue("--accent").trim().length > 0 && /gxDiamond/.test(document.getElementById("themeStyle").textContent); Theme.setTheme("purple"); return on && !document.getElementById("gxFx"); }), "💎 gold & diamonds theme: turns on (gold + diamond buttons + sparkles) and off cleanly");
+const gx = await call({ action: "robo", device: FRIEND, op: "claim", item: "theme:goldx" });
+log(gx.ok && gx.granted && gx.cap === 3, "server: gold theme is capped at 3 in the school", JSON.stringify(gx));
 log(!errs.length, "no errors", errs.join(" | "));
 await p.screenshot({ path: path.join(ROOT, "tests/browser/robo4-shop.png") });
 console.log(`errors: ${JSON.stringify(errs)} ${res.filter(Boolean).length}/${res.length} passed`);
