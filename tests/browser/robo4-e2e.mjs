@@ -128,6 +128,24 @@ await p.evaluate(() => document.querySelector("#rpPlay").click()); await sleep(4
 await p.evaluate(() => document.querySelector(".gm-ov button").click()); await sleep(800);
 const xb = await p.evaluate(async () => { const G = RoboPlus._game(), b0 = Robo.state().bolts; G.bolts = 3; document.querySelector("#roboGame .x").click(); await new Promise(r => setTimeout(r, 400)); return { open: !!document.querySelector("#roboGame[open]"), d: Robo.state().bolts - b0 }; });
 log(!xb.open && xb.d === 3, "✕ in the middle of a round closes and saves the bolts", JSON.stringify(xb));
+// 🔒 מעל 250 בסיבוב: אין יציאה – עד 300 (ניצחון, נשמר) או פצצה
+await p.evaluate(() => { const s = Robo.state(); s.game = { d: RoboCore.ymd(Date.now()), n: 0, it: 0 }; Robo.open("fun", "game"); }); await sleep(300);
+await p.evaluate(() => document.querySelector("#rpPlay").click()); await sleep(400);
+await p.evaluate(() => document.querySelector(".gm-ov button").click()); await sleep(600);
+const lk = await p.evaluate(async () => { const G = RoboPlus._game(), H = document.querySelector(".gm-cv").clientHeight; G.nb = G.nbomb = G.nthief = G.npow = G.nitem = 99; G.obj = []; G.shield = false; G.pw = {}; G.bolts = 251; G.spawnAt("bolt", G.px, H - 75, { v: 30 }); await new Promise(r => setTimeout(r, 700));
+  const cash = document.querySelector("#gmCash"), txt = cash.textContent; cash.click(); document.querySelector("#roboGame .x").click(); await new Promise(r => setTimeout(r, 300));
+  return { b: G.bolts, open: !!document.querySelector("#roboGame[open]"), txt, ov: !!document.querySelector(".gm-ov") }; });
+log(lk.b === 252 && lk.open && !lk.ov && /אין יציאה/.test(lk.txt), "over 250 in a round: cash-out and ✕ are locked", JSON.stringify(lk));
+const b300 = await p.evaluate(() => Robo.state().bolts);
+const win = await p.evaluate(async () => { const G = RoboPlus._game(), H = document.querySelector(".gm-cv").clientHeight; G.bolts = 299; G.spawnAt("bolt", G.px, H - 75, { v: 30 }); await new Promise(r => setTimeout(r, 900)); const h = document.querySelector(".gm-ov h3"); return h ? h.textContent : ""; });
+log(/ניצחת/.test(win) && await p.evaluate(b0 => Robo.state().bolts === b0 + 300 && Robo.state().game.n === 300, b300), "reach 300 → win screen, all 300 saved", win);
+await p.evaluate(() => { const bs = [...document.querySelectorAll(".gm-ov button")]; (bs.find(x => /סיום/.test(x.textContent)) || bs[0]).click(); }); await sleep(500);
+await p.evaluate(() => { const s = Robo.state(); s.game = { d: RoboCore.ymd(Date.now()), n: 0, it: 0 }; Robo.open("fun", "game"); }); await sleep(300);
+await p.evaluate(() => document.querySelector("#rpPlay").click()); await sleep(400);
+await p.evaluate(() => document.querySelector(".gm-ov button").click()); await sleep(600);
+const lb = await p.evaluate(async () => { const G = RoboPlus._game(), H = document.querySelector(".gm-cv").clientHeight, b0 = Robo.state().bolts; G.nb = G.nbomb = G.nthief = G.npow = G.nitem = 99; G.obj = []; G.shield = false; G.bolts = 260; G.spawnAt("bomb", G.px, H - 75, { v: 30, vx: 0 }); await new Promise(r => setTimeout(r, 1800)); return { dead: G.dead, saved: Robo.state().bolts - b0, ov: (document.querySelector(".gm-ov h3") || {}).textContent }; });
+log(lb.dead && lb.saved === 0 && /בום/.test(lb.ov || ""), "over 250 and a bomb → everything lost", JSON.stringify(lb));
+await p.evaluate(() => { const bs = [...document.querySelectorAll(".gm-ov button")]; (bs.find(x => /סיום/.test(x.textContent)) || bs[0]).click(); }); await sleep(500);
 await p.evaluate(() => { const s = Robo.state(); s.game = { d: RoboCore.ymd(Date.now()), n: 300, it: 2 }; Robo.open("fun", "game"); }); await sleep(300);
 log(await p.evaluate(() => document.querySelector("#rpPlay").disabled), "game: after 300 bolts – done for today");
 // ✨ נוצץ + 🌍 אירוע + ⚡ בזק – בלי שגיאות

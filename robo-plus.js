@@ -54,6 +54,7 @@ dialog.robo.game{background:#070418}
 dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
 .gm-cv{flex:1;position:relative;min-height:300px;overflow:hidden}
 .gm-rules{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 10px}.gm-rules span{background:rgba(255,255,255,.1);border-radius:99px;padding:4px 9px;font-size:12.5px;font-weight:800}.gm-rules span.bad{background:rgba(239,68,68,.25);color:#fecaca}.gm-cv canvas{position:absolute;inset:0;width:100%;height:100%}
+.gm-cash.lock,.gm-top .x.lock{background:linear-gradient(180deg,#fca5a5,#dc2626)!important;color:#fff!important;box-shadow:0 4px 0 #7f1d1d!important;animation:rBeat .8s infinite}
 .gm-cash{margin:10px 12px calc(12px + env(safe-area-inset-bottom));font-size:18px!important;padding:14px!important}
 .gm-ov{position:absolute;inset:0;display:grid;place-items:center;background:rgba(5,2,15,.82);z-index:3;text-align:center;padding:20px}
 .gm-ov .big{font-size:64px}.gm-ov h3{font-size:24px;margin:6px 0}.gm-ov p{color:#d9d5ff;margin:4px 0 16px}
@@ -380,7 +381,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
   function gamePanel(body) {
     const S = X.S, bs = breakState(), g = S.game && S.game.d === R.ymd(Date.now()) ? S.game : { n: 0, it: 0 }, left = R.GAME_CAP - g.n, best = S.gameBest || 0;
     body.innerHTML = `${back}<div class="rp-h">🔩 ברגים נופלים</div>
-      <div class="gm-rules"><span>🔩 = 1</span><span>🌟 = 5</span><span>🎁 = אביזר (מהיר!)</span><span class="bad">💣 = כל הסיבוב נעלם!</span><span class="bad">🦹 גנב = לוקח חצי!</span><span>🧲 מגנט</span><span>🛡️ מגן</span><span>🐢 איטי</span><span>⚡ כפול</span><span>🔥 קומבו = בונוס</span></div>
+      <div class="gm-rules"><span>🔩 = 1</span><span>🌟 = 5</span><span>🎁 = אביזר (מהיר!)</span><span class="bad">💣 = כל הסיבוב נעלם!</span><span class="bad">🦹 גנב = לוקח חצי!</span><span class="bad">🔒 מעל 250 – אין יציאה עד 300 או פצצה!</span><span>🧲 מגנט</span><span>🛡️ מגן</span><span>🐢 איטי</span><span>⚡ כפול</span><span>🔥 קומבו = בונוס</span></div>
       <div class="rp-s">ככל שהזמן עובר – הכל נופל יותר מהר ויש יותר פצצות וגנבים 😈 אפשר לצאת עם הכסף מתי שרוצים ולהתחיל סיבוב חדש.</div>
       <div class="rbx" style="--c:#f59e0b"><div class="em">📊</div><div class="t"><b>היום: ${g.n}/${R.GAME_CAP} 🔩 · ${g.it}/${R.GAME_ITEMS} 🎁${best ? ` · 🏆 שיא: ${best}` : ""}</b><small>${bs.free ? "אפשר לשחק עכשיו 🎉" : bs.open ? (bs.until != null ? `הפסקה! עד ${hhmm(bs.until)}` : "אפשר לשחק עכשיו 🎉") : `🔒 עכשיו שיעור – נפתח בהפסקה (${hhmm(bs.until)})`}</small></div></div>
       <button class="rbtn" type="button" id="rpPlay" style="width:100%;font-size:18px;padding:14px" ${bs.open && left > 0 ? "" : "disabled"}>${left <= 0 ? "סיימת להיום 💪 נתראה מחר" : bs.open ? "▶️ לשחק!" : "🔒 רק בהפסקות"}</button>
@@ -404,7 +405,16 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     const G = game = { run: true, px: W / 2, tx: W / 2, obj: [], fx: [], parts: [], bolts: 0, items: [], t: 0, over: false, dead: false, combo: 0, bestCombo: 0, pw: {}, shield: false, shake: 0, stolen: 0 };
     const S = X.S, today = () => (S.game && S.game.d === R.ymd(Date.now()) ? S.game : { n: 0, it: 0 });
     const left = () => R.GAME_CAP - today().n, itemsLeft = () => R.GAME_ITEMS - today().it - G.items.length;
-    const hud = () => { d.querySelector("#gmR").textContent = `🔩 ${G.bolts}`; d.querySelector("#gmI").textContent = `🎁 ${G.items.length}`; d.querySelector("#gmL").textContent = `נשאר היום: ${Math.max(0, left() - G.bolts)}`; d.querySelector("#gmCash").textContent = `💰 לצאת עם הכסף (${G.bolts}${G.items.length ? " + " + G.items.length + " 🎁" : ""})`; };
+    // 🔒 מעל 250 בסיבוב: אין יציאה – חייבים להמשיך עד 300 (נשמר לבד) או עד פצצה
+    const LOCK = 250, locked = () => G.bolts > LOCK && !G.over && !G.dead;
+    const hud = () => {
+      d.querySelector("#gmR").textContent = `🔩 ${G.bolts}`; d.querySelector("#gmI").textContent = `🎁 ${G.items.length}`; d.querySelector("#gmL").textContent = `נשאר היום: ${Math.max(0, left() - G.bolts)}`;
+      const L = locked(), cb = d.querySelector("#gmCash"), xb = d.querySelector(".x");
+      cb.textContent = L ? `🔒 אין יציאה! עד ${left()} או פצצה 😈 (${G.bolts})` : `💰 לצאת עם הכסף (${G.bolts}${G.items.length ? " + " + G.items.length + " 🎁" : ""})`; cb.classList.toggle("lock", L); xb.classList.toggle("lock", L); xb.textContent = L ? "🔒" : "✕";
+      if (L && !G.lockShown) { G.lockShown = 1; AU.thief(); X.vib([60, 40, 60]); G.shake = .4; fxText(W / 2, H * .35, "🔒 עברת 250! אין יציאה – עד 300 או פצצה!", "#f87171", 2.6, 19); }
+      if (!L) G.lockShown = 0;
+    };
+    const lockedMsg = () => { fxText(W / 2, H * .45, "🔒 אי אפשר לצאת! רק 300 או פצצה 😈", "#f87171", 1.4, 18); X.vib(40); };
     const move = e => { const r = box.getBoundingClientRect(), p = e.touches ? e.touches[0] : e; G.tx = Math.max(30, Math.min(W - 30, p.clientX - r.left)); };
     box.addEventListener("pointerdown", move); box.addEventListener("pointermove", move); box.addEventListener("touchmove", e => { move(e); e.preventDefault(); }, { passive: false });
     const key = e => { if (e.key === "ArrowLeft") G.tx = Math.max(30, G.tx - 45); if (e.key === "ArrowRight") G.tx = Math.min(W - 30, G.tx + 45); }; addEventListener("keydown", key);
@@ -417,17 +427,18 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       if (r.bolts || r.items.length) X.step(1); X.save(); X.SFX.coin(); X.vib(40);
       const it = r.items.map(g => `<div style="margin:4px 0">${R.ITEMS[g.id] ? `✨ ${esc(R.ITEMS[g.id].n)} ${X.rarTag(g.r)}${g.dup ? ` (כפול → +${g.dup} 🔩)` : ""}` : ""}</div>`).join("");
       const more = breakState().open && r.left > 0;
-      const i = await overlay(`<div class="big">${why === "bell" ? "🔔" : "💰"}</div><h3>${why === "bell" ? "ההפסקה נגמרה!" : "שמרת!"}</h3><p>+${r.bolts} ברגים 🔩${r.bolts < caught ? ` (הגעת למקסימום של היום)` : ""}</p>${it}<p>⏱️ שרדת ${Math.floor(G.t)} שניות · 🔥 קומבו הכי גדול: ${G.bestCombo}${G.stolen ? ` · 🦹 נגנבו ${G.stolen}` : ""}</p><p>היום: ${R.GAME_CAP - r.left}/${R.GAME_CAP}</p>`, more && why !== "bell" ? ["🔄 עוד סיבוב", "סיום"] : ["סיום"]);
+      const i = await overlay(`<div class="big">${why === "bell" ? "🔔" : why === "win" ? "🏆" : "💰"}</div><h3>${why === "bell" ? "ההפסקה נגמרה!" : why === "win" ? "ניצחת!!! שרדת עד הסוף!" : "שמרת!"}</h3><p>+${r.bolts} ברגים 🔩${r.bolts < caught ? ` (הגעת למקסימום של היום)` : ""}</p>${it}<p>⏱️ שרדת ${Math.floor(G.t)} שניות · 🔥 קומבו הכי גדול: ${G.bestCombo}${G.stolen ? ` · 🦹 נגנבו ${G.stolen}` : ""}</p><p>היום: ${R.GAME_CAP - r.left}/${R.GAME_CAP}</p>`, more && why !== "bell" ? ["🔄 עוד סיבוב", "סיום"] : ["סיום"]);
       if (more && why !== "bell" && i === 0) newRound(); else finish();
     };
     // ✕ / כפתור "חזור" בטלפון: יוצאים תמיד. אם תפסת משהו בסיבוב – נשמר אוטומטית
     const exitGame = () => {
       if (!G.run) return;
+      if (locked()) { lockedMsg(); return; }
       if (!G.over && !G.dead && (G.bolts || G.items.length)) { const caught = G.bolts, r = R.gameBank(X.S, G.bolts, G.items.slice()); if (caught > (X.S.gameBest || 0)) X.S.gameBest = caught; if (r.bolts || r.items.length) X.step(1); X.save(); X.SFX.coin(); if (r.bolts || r.items.length) X.toast(`💰 שמרת ${r.bolts} ברגים${r.items.length ? ` + ${r.items.length} 🎁` : ""} מהמשחק`, null, 3500); }
       finish();
     };
     d.querySelector(".x").onclick = exitGame; d.oncancel = e => { e.preventDefault(); exitGame(); };
-    d.querySelector("#gmCash").onclick = () => { if (!G.over && !G.dead && G.run) bank("cash"); };
+    d.querySelector("#gmCash").onclick = () => { if (locked()) return lockedMsg(); if (!G.over && !G.dead && G.run) bank("cash"); };
     let last = performance.now(), secT = 0;
     // ⚙️ קושי: הולך ועולה כל הזמן
     const speedF = () => 1 + G.t / 22, slowF = () => (G.pw.slow > 0 ? .45 : 1), base = () => Math.max(.75, H / 640) * 175;
@@ -463,7 +474,8 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       const mult = G.pw.double > 0 ? 2 : 1, n = Math.min((o.k === "gold" ? 5 : 1) * mult, Math.max(0, left() - G.bolts)); G.bolts += n;
       if (n) { o.k === "gold" ? AU.gold() : AU.pick(G.combo); burst(o.x, py - 20, o.k === "gold" ? "#fde047" : "#bae6fd", o.k === "gold" ? 16 : 7, 150); fxText(o.x, py - 50, "+" + n, o.k === "gold" ? "#fde047" : "#fff", .9, o.k === "gold" ? 24 : 18); }
       comboUp(); hud();
-      if (G.bolts >= left() && !G.fullShown) { G.fullShown = 1; fxText(W / 2, H / 3, "הגעת ל-300 להיום! צא עם הכסף 💰", "#fde047", 3, 18); }
+      if (G.bolts >= left() && G.bolts > LOCK) { G.over = true; AU.combo(50); X.vib([60, 40, 60, 40, 160]); setTimeout(() => bank("win"), 50); return; } // 🏆 שרד עד המקסימום
+      if (G.bolts >= left() && !G.fullShown) { G.fullShown = 1; fxText(W / 2, H / 3, "הגעת למקסימום של היום! צא עם הכסף 💰", "#fde047", 3, 18); }
     }
     function loop(now) {
       if (!G.run || G.over) return;
@@ -473,7 +485,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       if (!G.dead) G.t += rdt;
       for (const k of Object.keys(G.pw)) { G.pw[k] -= rdt; if (G.pw[k] <= 0) delete G.pw[k]; }
       // ⏰ ההפסקה נגמרה? שומרים אוטומטית
-      if ((secT += rdt) > 1 && !G.dead) { secT = 0; const bs = breakState(); if (!bs.open) { bank("bell"); return; } const tl = d.querySelector("#gmT"); if (bs.until != null) { const n = new Date(), s = bs.until * 60 - (n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds()); tl.textContent = s > 0 ? `⏰ ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : ""; } else tl.textContent = ""; }
+      if ((secT += rdt) > 1 && !G.dead) { secT = 0; const bs = breakState(); if (!bs.open && !locked()) { bank("bell"); return; } const tl = d.querySelector("#gmT"); if (bs.until != null) { const n = new Date(), s = bs.until * 60 - (n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds()); tl.textContent = s > 0 ? `⏰ ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : ""; } else tl.textContent = ""; }
       if (!G.dead) {
         const full = G.bolts >= left(), t = G.t;
         if ((G.nb -= rdt) <= 0) { G.nb = Math.max(.16, .4 - t * .005); if (!full) spawn("bolt"); }
@@ -489,7 +501,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
         if (o.k === "thief") o.x = Math.max(25, Math.min(W - 25, o.x0 + Math.sin(o.y / 55 + o.ph) * o.amp));
         if (o.vx) { o.x += o.vx * dt; if (o.x < 25 || o.x > W - 25) o.vx = -o.vx; }
         if (mag && (o.k === "bolt" || o.k === "gold" || o.k === "item") && o.y > H * .3) o.x += (G.px - o.x) * Math.min(1, dt * 5);
-        if (!G.dead && !o.hit && o.y > py - 40 && o.y < py + 22 && Math.abs(o.x - G.px) < (o.k === "bomb" || o.k === "thief" ? 36 : 44)) { o.hit = true; hit(o); if (G.dead) break; }
+        if (!G.dead && !o.hit && o.y > py - 40 && o.y < py + 22 && Math.abs(o.x - G.px) < (o.k === "bomb" || o.k === "thief" ? 36 : 44)) { o.hit = true; hit(o); if (G.dead || G.over) break; }
         if (!o.hit && o.y >= H + 30 && (o.k === "bolt" || o.k === "gold")) { o.hit = true; loseCombo(); }
       }
       G.obj = G.obj.filter(o => !o.hit && o.y < H + 40);
@@ -545,7 +557,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     }
     G.spawnAt = (k, x, y, extra) => { spawn(k, x); const o = G.obj[G.obj.length - 1]; if (y != null) o.y = y; Object.assign(o, extra || {}); return o; }; // לבדיקות
     hud();
-    await overlay(`<div class="big">🔩</div><h3>מוכן?</h3><p>תזיז את האצבע כדי להזיז את הרובוט.</p><div class="gm-rules" style="justify-content:center"><span>🔩 = 1</span><span>🌟 = 5</span><span>🎁 אביזר</span><span class="bad">💣 הכל נעלם</span><span class="bad">🦹 לוקח חצי</span><span>🧲🛡️🐢⚡ כוחות</span></div><p>ככל שהזמן עובר – יותר מהר! 😈</p>`, ["▶️ יאללה!", "יציאה"]).then(i => { if (i === 1) finish(); });
+    await overlay(`<div class="big">🔩</div><h3>מוכן?</h3><p>תזיז את האצבע כדי להזיז את הרובוט.</p><div class="gm-rules" style="justify-content:center"><span>🔩 = 1</span><span>🌟 = 5</span><span>🎁 אביזר</span><span class="bad">💣 הכל נעלם</span><span class="bad">🦹 לוקח חצי</span><span class="bad">🔒 מעל 250 אין יציאה!</span><span>🧲🛡️🐢⚡ כוחות</span></div><p>ככל שהזמן עובר – יותר מהר! 😈</p>`, ["▶️ יאללה!", "יציאה"]).then(i => { if (i === 1) finish(); });
     if (!G.run) return;
     fit(); G.px = G.tx = W / 2; newRound();
   }
