@@ -545,7 +545,8 @@ dialog.robo.open{background:#05020f}
   const show = d => { if (!d.open) { try { d.showModal(); } catch (e) { d.setAttribute("open", ""); } } };
   function toast(html, act, ms = 6000) {
     const t = document.createElement("div"); t.className = "rtoast"; t.innerHTML = html + (act ? `<button class="rbtn sm" type="button">${act[0]}</button>` : "");
-    document.body.appendChild(t); if (act) t.querySelector("button").onclick = () => { t.remove(); act[1](); };
+    // אם יש חלון פתוח (ארון/תיבה) – ההודעה נכנסת לתוכו, אחרת היא מוסתרת מאחוריו
+    const top = [...document.querySelectorAll("dialog[open]")].pop(); (top || document.body).appendChild(t); if (act) t.querySelector("button").onclick = () => { t.remove(); act[1](); };
     setTimeout(() => t.remove(), ms); return t;
   }
   // 🎮 נקודה על הלשונית "כיף": גלגל שעוד לא סובב היום + אוצר במפה שמחכה

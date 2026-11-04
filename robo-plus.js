@@ -73,6 +73,16 @@
 .rp-lab.big .lx-card{animation:lxIn .9s cubic-bezier(.2,1.5,.4,1),rBeat 1.6s 1s infinite}
 .lx-sum{margin:14px 0;padding:10px;border-radius:18px;background:rgba(255,255,255,.06)}.lx-sum .lbl{font-size:12px;font-weight:800;color:#c7c3ff}.lx-sum .lx-row{display:flex;gap:6px;justify-content:center;margin:4px 0;background:none}.lx-i{display:block;width:44px;height:44px;border-radius:12px;overflow:hidden;background:rgba(255,255,255,.08);opacity:.75;filter:grayscale(.3)}.lx-i.got{width:62px;height:62px;opacity:1;filter:none;box-shadow:0 0 16px var(--n);background:rgba(255,255,255,.12)}.lx-sum .eq{font-size:18px}
 .rp-lab .rd-btns{margin:0 auto}
+/* 🎁 קיבלת */
+.rw-chest{font-size:110px;line-height:1;margin:10px 0;animation:rwBounce .8s ease-in-out infinite;cursor:pointer;filter:drop-shadow(0 0 24px #facc15)}@keyframes rwBounce{50%{transform:translateY(-14px) rotate(-6deg) scale(1.05)}}
+.rw-chest.pop{animation:rwPop .5s ease-out forwards}@keyframes rwPop{to{transform:scale(2.2);opacity:0}}
+.rw-hint{font-weight:900;font-size:18px;color:#fde047;animation:rBeat .8s infinite}
+.rw-sub{color:#fde68a;font-weight:800;margin:-4px 0 10px}
+.rw-cards{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:6px 0 14px}
+.rw-card{width:132px;padding:12px 8px;border-radius:20px;background:linear-gradient(160deg,color-mix(in srgb,var(--c) 45%,#1a1040),#1a1040);border:3px solid var(--c);box-shadow:0 0 26px color-mix(in srgb,var(--c) 70%,transparent);animation:lxIn .6s cubic-bezier(.2,1.5,.4,1) both}
+.rw-card:nth-child(2){animation-delay:.15s}.rw-card:nth-child(3){animation-delay:.3s}.rw-card:nth-child(4){animation-delay:.45s}
+.rw-card .ic{font-size:50px;line-height:1.1}.rw-card .ic.pv{width:80px;height:80px;margin:0 auto}.rw-card b{display:block;font-size:19px;font-weight:900;margin-top:4px}.rw-card small{display:block;font-size:12px;color:#d9d5ff;margin-top:2px}
+.rw-count{font-size:22px;font-weight:900;margin:0 0 14px;padding:8px 14px;border-radius:99px;background:rgba(255,255,255,.08);display:inline-block;font-variant-numeric:tabular-nums}.rw-count.done{animation:rBeat .5s 2;background:rgba(250,204,21,.25)}
 /* 🕵️ שוק */
 .rp-mk{display:flex;align-items:center;gap:10px;border-radius:16px;padding:9px;margin-bottom:8px;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 45%,#000),#1a1040);border:1.5px solid color-mix(in srgb,var(--c) 60%,#fff 10%)}
 .rp-mk .pv{width:60px;height:60px;flex:0 0 60px}.rp-mk .t{flex:1;min-width:0}.rp-mk .t b{display:block;font-size:14px}.rp-mk .t small{font-size:12px;color:#d9d5ff}
@@ -144,7 +154,9 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       ${tile("sets", "🎭", "#f97316", "סטים", `השלמת ${sets}/${R.SETS.length}`)}
       ${tile("bonus", "📚", "#14b8a6", "בונוסים", "ציון טוב · שבוע בלי איחורים")}</div>`;
     body.querySelectorAll("[data-p]").forEach(b => b.onclick = () => PANELS[b.dataset.p](body));
-    body.querySelectorAll("[data-mc]").forEach(b => b.onclick = () => { const r = R.claimMission(X.S, b.dataset.mc); if (!r.ok) return; X.save(); X.SFX.coin(); X.vib(30); X.toast(`📋 +${r.bolts} ברגים 🔩${r.box ? " · וגם 🎁 תיבה גדולה על כל המשימות!" : ""}`, r.box ? ["לפתוח", () => X.openBoxes([r.box])] : null, 6000); tab(body); X.hubRefresh(); });
+    body.querySelectorAll("[data-mc]").forEach(b => b.onclick = async () => { const before = X.S.bolts, M = R.MISSIONS[b.dataset.mc], r = R.claimMission(X.S, b.dataset.mc); if (!r.ok) return; X.save();
+      const open = await rewardShow({ title: "📋 משימה הושלמה!", sub: `${M.em} ${M.n}${r.box ? " · וגם בונוס על כל 3 המשימות!" : ""}`, got: [{ t: "bolts", n: r.bolts }, ...(r.box ? [{ t: "box", box: r.box }] : [])], before });
+      tab(body); X.hubRefresh(); if (open && r.box) X.openBoxes([r.box]); });
   }
   // ================= 👑 האגדה: אוסף הגיבורים =================
   function legendPanel(body) {
@@ -190,6 +202,29 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     };
   }
 
+  // ================= 🎁 מסך "קיבלת!" – תיבת אוצר שנפתחת, כרטיס לכל פרס, ומונה ברגים שעולה =================
+  function rewardShow({ title, sub, got, before }) {
+    return new Promise(async res => {
+      const bolts = got.filter(g => g.t === "bolts").reduce((a, g) => a + g.n, 0), boxes = got.filter(g => g.t === "box"), items = got.filter(g => g.t === "item");
+      const ov = document.createElement("div"); ov.className = "rp-lab rw-reward"; ov.style.setProperty("--c", "#facc15"); ov.style.setProperty("--n", "#facc15");
+      (document.querySelector("#roboUI[open]") || document.body).appendChild(ov);
+      ov.innerHTML = `<div class="lx-t">${title}</div><div class="rw-chest">💰</div><div class="rw-hint">לחץ לפתוח!</div>`;
+      X.SFX.gift(); X.vib(40);
+      await new Promise(r => { const go = () => { ov.removeEventListener("click", go); r(); }; ov.addEventListener("click", go); setTimeout(go, 2600); });
+      ov.querySelector(".rw-chest").classList.add("pop"); X.SFX.open(); X.vib([40, 30, 100]); X.particles(ov, "#facc15", 50, ["🪙", "✨", "⭐", "🔩"]); await X.sleep(500);
+      const card = g => g.t === "bolts" ? `<div class="rw-card" style="--c:#facc15"><div class="ic">🔩</div><b>+${g.n}</b><small>ברגים</small></div>`
+        : g.t === "box" ? `<div class="rw-card" style="--c:${R.BOX[g.box].col}"><div class="ic">${R.BOX[g.box].em}</div><b>${esc(R.BOX[g.box].n)}</b><small>נכנסה לתיבות שלך</small></div>`
+        : `<div class="rw-card" style="--c:${RC(g.r)}"><div class="ic pv">${X.preview(g.id)}</div><b>${esc(R.ITEMS[g.id].n)}</b><small>${g.dup ? `כפול → +${g.dup} 🔩` : "חדש באוסף! ✨"}</small></div>`;
+      ov.className = "rp-lab res rw-reward"; ov.innerHTML = `<div class="lx-rays"></div><div class="lx-res"><div class="lx-up">🎉 קיבלת!</div>${sub ? `<div class="rw-sub">${esc(sub)}</div>` : ""}
+        <div class="rw-cards">${got.map(card).join("")}</div>
+        ${bolts || items.some(g => g.dup) ? `<div class="rw-count">🔩 <span id="rwCnt">${before}</span> ברגים</div>` : ""}
+        <div class="rd-btns">${boxes.length ? `<button class="rbtn" type="button" data-a="open">🎁 לפתוח ${boxes.length > 1 ? `את ${boxes.length} התיבות` : "את התיבה"} עכשיו!</button><button class="rbtn alt" type="button" data-a="later">אחר כך</button>` : `<button class="rbtn" type="button" data-a="ok">יש! 🤩</button>`}</div></div>`;
+      X.SFX.reveal(3); X.particles(ov, "#facc15", 40, ["🪙", "✨", "💛"]);
+      const cnt = ov.querySelector("#rwCnt");
+      if (cnt) { const to = X.S.bolts, t0 = performance.now(); const f = now => { const t = Math.min(1, (now - t0) / 1200); cnt.textContent = Math.round(before + (to - before) * (1 - Math.pow(1 - t, 3))); if (t < 1) requestAnimationFrame(f); else { cnt.parentElement.classList.add("done"); X.SFX.coin(); } }; setTimeout(() => requestAnimationFrame(f), 400); }
+      ov.querySelectorAll("[data-a]").forEach(b => b.onclick = e => { e.stopPropagation(); ov.remove(); res(b.dataset.a === "open"); });
+    });
+  }
   // ================= 🗺️ המסע =================
   const ROW = 78;
   function mapPanel(body) {
@@ -209,12 +244,12 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       <div class="rp-map" id="rpMap"><div class="rp-map-in" style="height:${H}px">${worlds}${path}${st}<div class="rp-me" style="left:${meAt.x}%;top:${meAt.y}px">${X.svg("", null, { still: true })}</div></div></div>`;
     wireBack(body);
     const m = body.querySelector("#rpMap"); requestAnimationFrame(() => { m.scrollTop = Math.max(0, meAt.y - m.clientHeight / 2); });
-    const claim = () => {
-      const got = []; let c; while ((c = R.mapClaim(X.S))) got.push(...c.prize.map(p => R.grant(X.S, p)));
-      if (!got.length) return; X.save(); X.vib([40, 30, 90]); X.SFX.gift();
-      const boxes = got.filter(g => g.t === "box").map(g => g.box), bolts = got.filter(g => g.t === "bolts").reduce((a, g) => a + g.n, 0);
-      X.toast(`🗺️ אוצר! ${[bolts ? `${bolts} ברגים 🔩` : "", ...boxes.map(b => R.BOX[b].em + " " + R.BOX[b].n)].filter(Boolean).join(" + ")}`, boxes.length ? ["לפתוח", () => X.openBoxes(boxes)] : null, 9000);
-      mapPanel(body); X.hubRefresh();
+    const claim = async () => {
+      const before = X.S.bolts, got = [], st = []; let c; while ((c = R.mapClaim(X.S))) { st.push(c.i); got.push(...c.prize.map(p => R.grant(X.S, p))); }
+      if (!got.length) return; X.save();
+      const boxes = got.filter(g => g.t === "box").map(g => g.box);
+      const open = await rewardShow({ title: "🗺️ מצאת אוצר!", sub: st.length > 1 ? `תחנות ${st.join(", ")} במסע` : `תחנה ${st[0]} במסע`, got, before });
+      mapPanel(body); X.hubRefresh(); if (open && boxes.length) X.openBoxes(boxes);
     };
     const cb = body.querySelector("#rpClaim"); if (cb) cb.onclick = claim;
     body.querySelectorAll(".rp-st.ready").forEach(e => e.onclick = claim);

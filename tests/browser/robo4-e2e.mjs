@@ -52,7 +52,12 @@ log(await p.evaluate(() => document.querySelectorAll("#roboUI .rp-st").length ==
 if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + "/3-map.png" });
 const mb = await p.evaluate(() => Robo.state().bolts);
 await p.evaluate(() => document.querySelector("#rpClaim").click()); await sleep(500);
-log(await p.evaluate(b0 => { const s = Robo.state(); return s.map.c === 2 && s.bolts === b0 + 110 && s.boxes.includes("box"); }, mb), "map: claim treasures (110 bolts + a box)");
+log(await p.evaluate(() => { const o = document.querySelector("#roboUI .rw-reward"); if (!o) return false; const r = o.getBoundingClientRect(); return o.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)) && !!o.querySelector(".rw-chest"); }), "map: treasure screen pops up on top with a chest");
+await p.evaluate(() => document.querySelector("#roboUI .rw-reward").click()); await sleep(1900);
+if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + "/3b-map-reward.png" });
+log(await p.evaluate(b0 => { const o = document.querySelector("#roboUI .rw-reward"); return !!o && o.querySelectorAll(".rw-card").length === 2 && /110/.test(o.innerText) && +o.querySelector("#rwCnt").textContent === Robo.state().bolts && Robo.state().bolts === b0 + 110; }, mb), "map: shows what you got (110 bolts + a box) and the bolt counter climbs");
+await p.evaluate(() => document.querySelector('#roboUI .rw-reward [data-a="later"]').click()); await sleep(300);
+log(await p.evaluate(() => { const s = Robo.state(); return s.map.c === 2 && s.boxes.includes("box") && !document.querySelector(".rw-reward"); }), "map: treasures saved, screen closed");
 // 🔨 מעבדה
 await p.evaluate(() => { const ids = RoboCore.LIST.filter(x => x.r === "c" && !x.free && x.cat !== "theme" && x.cat !== "page").slice(0, 5).map(x => x.id); ids.forEach(id => Robo.give({ t: "item", id, r: "c" })); window.__lab = ids; Robo.open("fun", "lab"); }); await sleep(400);
 for (let i = 0; i < 5; i++) { await p.evaluate(i => document.querySelector(`#roboUI .rc[data-id="${window.__lab[i]}"]`).click(), i); await sleep(120); }
@@ -78,7 +83,7 @@ log(await p.evaluate(() => document.querySelectorAll("#roboUI .rp-set").length =
 await p.evaluate(() => { const m = RoboCore.missions(Robo.state()); for (const id of m.ids) Robo._.trk(RoboCore.MISSIONS[id].ev, 999); Robo.open("fun"); }); await sleep(500);
 if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + "/s5-fun.png" });
 const mb0 = await p.evaluate(() => Robo.state().bolts);
-for (let i = 0; i < 3; i++) { await p.evaluate(() => { const b = document.querySelector("#roboUI [data-mc]"); b && b.click(); }); await sleep(400); }
+for (let i = 0; i < 3; i++) { await p.evaluate(() => { const b = document.querySelector("#roboUI [data-mc]"); b && b.click(); }); await sleep(300); await p.evaluate(() => { const o = document.querySelector(".rw-reward"); o && o.click(); }); await sleep(900); await p.evaluate(() => { const b = document.querySelector('.rw-reward [data-a="later"], .rw-reward [data-a="ok"]'); b && b.click(); }); await sleep(300); }
 log(await p.evaluate(b0 => { const s = Robo.state(); return s.ms.all === 1 && s.bolts > b0 && s.boxes.includes("big"); }, mb0), "daily missions: 3 claimed → bolts + a big box");
 // 👑 האגדה: אוספים את כל הגיבורים → השרת נותן את האגדה לראשון
 await p.evaluate(() => { const st = RoboCore.SETS.find(x => x.id === "heroes"); for (const id of st.ids) Robo.give({ t: "item", id }); }); await sleep(4500);
