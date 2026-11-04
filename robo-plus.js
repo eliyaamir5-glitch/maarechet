@@ -9,6 +9,13 @@
   const back = `<button type="button" class="rp-back">→ חזרה</button>`;
 
   const CSS = `
+.rp-msb{border-radius:18px;padding:10px 12px 4px;margin-bottom:10px;background:linear-gradient(135deg,#1e3a8a,#1a1040);border:1.5px solid rgba(147,197,253,.4)}
+.rp-msh{font-weight:900;font-size:15px;margin-bottom:6px}.rp-msh small{font-weight:700;color:#c7c3ff;font-size:12px;margin-inline-start:6px}
+.rp-ms{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid rgba(255,255,255,.08)}.rp-ms .e{font-size:22px}.rp-ms .t{flex:1;min-width:0;font-size:13px}.rp-ms small{font-weight:800;color:#c7c3ff}
+.rp-ms.done{background:rgba(250,204,21,.08);border-radius:10px}.rp-ms.got{opacity:.6}
+.rp-legend{display:flex;align-items:center;gap:12px;width:100%;margin-bottom:10px;padding:10px 12px;border-radius:18px;border:1.5px solid #facc15;cursor:pointer;font:inherit;color:#fff;text-align:start;background:radial-gradient(120% 140% at 0% 50%,#7f1d1d,#1c0a0a 60%,#000);box-shadow:0 0 22px rgba(250,204,21,.25)}
+.rp-legend .lg-bot{width:66px;height:66px;flex:0 0 66px}.rp-legend .t{flex:1;min-width:0}.rp-legend b{display:block;font-size:17px;color:#fde047}.rp-legend small{display:block;font-size:12px;color:#fde68a}
+.rp-lghero{text-align:center;border-radius:20px;padding:12px;background:radial-gradient(120% 90% at 50% 0%,#7f1d1d,#1c0a0a 60%,#0b0820)}.rp-lghero .lg-big{width:150px;height:150px;margin:0 auto}.rp-lghero .rbx{text-align:start}
 .rp-menu{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .rp-t{position:relative;border:0;border-radius:18px;padding:14px 10px;font:inherit;color:#fff;cursor:pointer;text-align:center;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 75%,#000),#1a1040);border:1.5px solid color-mix(in srgb,var(--c) 70%,#fff 10%);box-shadow:0 6px 16px rgba(0,0,0,.3)}
 .rp-t .e{font-size:34px;line-height:1.1}.rp-t b{display:block;font-size:15px;margin-top:4px}.rp-t small{display:block;font-size:11.5px;color:#d9d5ff;margin-top:2px}
@@ -94,7 +101,12 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     const wheelOk = S.wheel !== R.ymd(Date.now()), bs = breakState(), g = S.game && S.game.d === R.ymd(Date.now()) ? S.game : { n: 0, it: 0 };
     const mp = S.map || { p: 0, c: 0 }, ready = Math.min(R.MAP_N, Math.floor(mp.p / R.MAP_STEP)) - mp.c, sets = R.SETS.filter(x => (S.sets || {})[x.id]).length;
     const tile = (k, e, c, t, s, dot, wide) => `<button type="button" class="rp-t${wide ? " wide" : ""}" data-p="${k}" style="--c:${c}">${dot ? `<span class="dot">${dot}</span>` : ""}<div class="e">${e}</div><b>${t}</b><small>${s}</small></button>`;
-    body.innerHTML = (R.eventNow() ? `<div class="rev"><b>${R.eventNow().n}</b> פי ${R.eventNow().up} סיכוי שהתיבות ישתדרגו!</div>` : "") + `<div class="rp-menu">
+    const ms = R.missions(S), heroes = R.SETS.find(x => x.id === "heroes"), hHave = heroes.ids.filter(id => S.own[id] && S.own[id] !== -1).length, legendTaken = ((JSON.parse(LS.get("roboRare", "{}") || "{}") || {})["skin:legend"] || {}).n >= 1;
+    const mRow = id => { const M = R.MISSIONS[id], p = ms.p[id] || 0, done = p >= M.need, got = ms.got[id]; return `<div class="rp-ms${got ? " got" : done ? " done" : ""}"><span class="e">${M.em}</span><div class="t"><b>${esc(M.n)}</b><div class="rp-bar" style="margin:4px 0 0;height:7px"><i style="width:${p / M.need * 100}%"></i></div></div>${got ? "✅" : done ? `<button class="rbtn sm" type="button" data-mc="${id}">🔩 ${M.b}</button>` : `<small>${p}/${M.need}</small>`}</div>`; };
+    body.innerHTML = (R.eventNow() ? `<div class="rev"><b>${R.eventNow().n}</b> פי ${R.eventNow().up} סיכוי שהתיבות ישתדרגו!</div>` : "")
+      + `<div class="rp-msb"><div class="rp-msh">📋 משימות היום <small>${ms.all ? "✅ השלמת הכל! קיבלת 🎁" : "כל ה-3 = 🎁 תיבה גדולה"}</small></div>${ms.ids.map(mRow).join("")}</div>`
+      + `<button type="button" class="rp-legend" data-p="legend"><div class="lg-bot">${X.svg("", { skin: "skin:legend" }, { still: false, noHoli: true })}</div><div class="t"><b>👑 האגדה</b><small>${legendTaken ? "נלקחה! מישהו אסף את כל הגיבורים 🔒" : "הראשון שאוסף את כל הגיבורים מקבל – רק אחד בכל הישיבה!"}</small><div class="rp-bar" style="margin:6px 0 0"><i style="width:${hHave / heroes.ids.length * 100}%"></i></div><small>🦸 ${hHave}/${heroes.ids.length} גיבורים</small></div></button>`
+      + `<div class="rp-menu">
       ${tile("game", "🔩", "#f59e0b", "ברגים נופלים", bs.open ? (g.n >= R.GAME_CAP ? "סיימת להיום 💪" : `משחק להפסקה · עוד ${R.GAME_CAP - g.n} 🔩 היום`) : `🔒 נפתח ב-${hhmm(bs.until)}`, bs.open && g.n < R.GAME_CAP ? "!" : "", true)}
       ${tile("wheel", "🎰", "#ec4899", "גלגל מזל", wheelOk ? "סיבוב חינם היום!" : "חוזר מחר 🌙", wheelOk ? "1" : "")}
       ${tile("map", "🗺️", "#22c55e", "המסע", ready > 0 ? "יש אוצר שמחכה! 💰" : `תחנה ${mp.c}/${R.MAP_N}`, ready > 0 ? ready : "")}
@@ -103,6 +115,19 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       ${tile("sets", "🎭", "#f97316", "סטים", `השלמת ${sets}/${R.SETS.length}`)}
       ${tile("bonus", "📚", "#14b8a6", "בונוסים", "ציון טוב · שבוע בלי איחורים")}</div>`;
     body.querySelectorAll("[data-p]").forEach(b => b.onclick = () => PANELS[b.dataset.p](body));
+    body.querySelectorAll("[data-mc]").forEach(b => b.onclick = () => { const r = R.claimMission(X.S, b.dataset.mc); if (!r.ok) return; X.save(); X.SFX.coin(); X.vib(30); X.toast(`📋 +${r.bolts} ברגים 🔩${r.box ? " · וגם 🎁 תיבה גדולה על כל המשימות!" : ""}`, r.box ? ["לפתוח", () => X.openBoxes([r.box])] : null, 6000); tab(body); X.hubRefresh(); });
+  }
+  // ================= 👑 האגדה: אוסף הגיבורים =================
+  function legendPanel(body) {
+    const S = X.S, st = R.SETS.find(x => x.id === "heroes"), have = st.ids.filter(id => S.own[id] && S.own[id] !== -1), mine = !!S.own["skin:legend"];
+    const taken = ((JSON.parse(LS.get("roboRare", "{}") || "{}") || {})["skin:legend"] || {}).n >= 1;
+    body.innerHTML = `${back}<div class="rp-lghero"><div class="lg-big">${X.svg("", { skin: "skin:legend" }, { noHoli: true })}</div><div class="rp-h">👑 האגדה</div>
+      <div class="rp-s">הסקין הכי נדיר במשחק – <b>רק אחד בכל הישיבה!</b> מי שאוסף ראשון את כל ${st.ids.length} הגיבורים 🦸 מקבל אותו אוטומטית, וכל הישיבה מקבלת הכרזה.</div>
+      <div class="rbx" style="--c:#facc15"><div class="em">${mine ? "👑" : taken ? "🔒" : "⏳"}</div><div class="t"><b>${mine ? "היא שלך! אתה האגדה 👑" : taken ? "כבר נלקחה – מישהו הגיע ראשון" : "עוד לא נלקחה – המירוץ פתוח!"}</b><small>יש לך ${have.length} מתוך ${st.ids.length} גיבורים</small></div></div></div>
+      <div class="rw-sec">🦸 הגיבורים <small>מתיבת ענק 💎 (ולפעמים ממגה), מטרייד ומהשוק</small></div>
+      <div class="rw-grid">${st.ids.map(id => X.card(R.ITEMS[id])).join("")}</div>`;
+    wireBack(body);
+    body.querySelectorAll(".rc[data-id]").forEach(b => b.onclick = () => { const it = R.ITEMS[b.dataset.id]; X.toast(`${esc(it.n)} ${X.rarTag(it.r)} – ${S.own[it.id] ? "יש לך ✅" : "עוד אין לך"}`, null, 2500); });
   }
   const wireBack = body => { const b = body.querySelector(".rp-back"); if (b) b.onclick = () => tab(body); };
 
@@ -123,7 +148,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       <table class="rodds" style="margin-top:14px">${R.WHEEL.map(w => `<tr><td>${wLabel(w)} ${w.t === "box" ? R.BOX[w.box].n : "ברגים"}</td><td style="text-align:center">${Math.round(w.w / R.WHEEL.reduce((a, x) => a + x.w, 0) * 100)}%</td></tr>`).join("")}</table>`;
     wireBack(body);
     body.querySelector("#rpSpin").onclick = async () => {
-      if (spinning) return; const r = R.spinWheel(X.S); if (!r) return; spinning = true; X.step(1); X.save();
+      if (spinning) return; const r = R.spinWheel(X.S); if (!r) return; spinning = true; X.trk("wheel"); X.step(1); X.save();
       const b = body.querySelector("#rpSpin"); b.disabled = true; b.textContent = "מסתובב… 🌀";
       const n = R.WHEEL.length, deg = 360 * 6 + (360 - (r.i + .5) * 360 / n) + (Math.random() - .5) * (300 / n), w = body.querySelector("svg.w");
       if (X.REDUCED) w.style.transition = "none"; w.style.transform = `rotate(${deg}deg)`;
@@ -185,7 +210,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     body.querySelector("#rpLab").onclick = async () => {
       if (labSel.length !== 5 || !confirm(`לחבר את 5 האביזרים? הם ייעלמו, ובמקומם תקבל אביזר ${R.RAR[nr].n} אחד`)) return;
       const sel = labSel.slice(), r = R.labCombine(X.S, sel); if (!r.ok) { X.toast("משהו לא הסתדר 🤔", null, 3000); return; }
-      labSel = []; X.step(1); X.save();
+      labSel = []; X.trk("lab"); X.step(1); X.save();
       const ov = document.createElement("div"); ov.className = "rp-lab"; document.body.appendChild(ov);
       ov.innerHTML = sel.map((id, i) => { const a = i / 5 * Math.PI * 2; return `<div class="it" style="left:calc(50% + ${Math.cos(a) * 120}px - 35px);top:calc(50% + ${Math.sin(a) * 120}px - 35px)">${X.preview(id)}</div>`; }).join("") + `<div class="core">⚗️</div>`;
       X.SFX.up(1); await X.sleep(300); ov.querySelectorAll(".it").forEach(e => { e.style.left = "calc(50% - 35px)"; e.style.top = "calc(50% - 35px)"; e.style.opacity = ".2"; e.style.transform = "scale(.3) rotate(360deg)"; });
@@ -212,6 +237,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
   let mkSeg = "buy", mkData = null;
   const mkOk = it => X.S.own[it.id] && X.S.own[it.id] !== -1 && !it.free;
   async function marketPanel(body, fresh = true) {
+    if (fresh) { X.trk("market"); X.save(); }
     body.innerHTML = `${back}<div class="rp-h">🕵️ השוק</div><div class="rw-prog" style="text-align:center;padding:24px 0">⏳ טוען…</div>`; wireBack(body);
     if (!X.online()) { body.querySelector(".rw-prog").textContent = window.__DEMO ? "בדמו אין שוק 🙂" : "צריך להירשם קודם"; return; }
     if (fresh || !mkData) { try { mkData = await X.api({ op: "marketList" }); } catch (e) { mkData = null; } }
@@ -424,7 +450,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     const finish = () => { G.run = false; game = null; removeEventListener("keydown", key); removeEventListener("resize", fit); try { ro && ro.disconnect(); } catch (e) {} delete d.dataset.lock; d.close(); X.hubRefresh(); if (host && host.isConnected) gamePanel(host); };
     const newRound = () => { Object.assign(G, { obj: [], parts: [], fx: [], bolts: 0, items: [], t: 0, nb: .35, nbomb: 1.6 + Math.random(), nthief: 7 + Math.random() * 4, npow: 6 + Math.random() * 5, nitem: 10 + Math.random() * 10, over: false, dead: false, fullShown: 0, combo: 0, bestCombo: 0, pw: {}, shield: false, shake: 0, stolen: 0 }); hud(); fit(); last = performance.now(); requestAnimationFrame(loop); };
     const bank = async (why) => {
-      G.over = true; const caught = G.bolts, items = G.items.slice(), r = R.gameBank(X.S, G.bolts, items);
+      G.over = true; const caught = G.bolts, items = G.items.slice(), r = R.gameBank(X.S, G.bolts, items); if (r.bolts) X.trk("game"); if (caught >= 40) X.trk("game40");
       if (caught > (X.S.gameBest || 0)) X.S.gameBest = caught;
       if (r.bolts || r.items.length) X.step(1); X.save(); X.SFX.coin(); X.vib(40);
       const it = r.items.map(g => `<div style="margin:4px 0">${R.ITEMS[g.id] ? `✨ ${esc(R.ITEMS[g.id].n)} ${X.rarTag(g.r)}${g.dup ? ` (כפול → +${g.dup} 🔩)` : ""}` : ""}</div>`).join("");
@@ -564,7 +590,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     fit(); G.px = G.tx = W / 2; newRound();
   }
 
-  const PANELS = { wheel: wheelPanel, map: mapPanel, lab: labPanel, sets: setsPanel, market: marketPanel, bonus: bonusPanel, game: gamePanel };
+  const PANELS = { legend: legendPanel, wheel: wheelPanel, map: mapPanel, lab: labPanel, sets: setsPanel, market: marketPanel, bonus: bonusPanel, game: gamePanel };
 
   // ================= הפעלה =================
   window.RoboPlus = { tab, breakState, mashovRewards, play: () => play(), panels: PANELS, _game: () => game };

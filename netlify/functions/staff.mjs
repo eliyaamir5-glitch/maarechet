@@ -1145,7 +1145,7 @@ async function feed(req, S, ip, headers) {
       x.keys.push(k); m[item] = x; granted = true; n = x.keys.length; return m;
     });
     const counts = roboCounts(await S.get("roboRare"));
-    if (granted) await olog(S, "roboRare", `👑 תלמיד קיבל ${ROBO_NAMES[item]} מתיבה! (${n} מתוך ${cap})`);
+    if (granted) await olog(S, "roboRare", item === "skin:legend" ? `👑 ${clean((pres[k] || {}).name, MAX_NAME) || "תלמיד"} אסף ראשון את כל הגיבורים וקיבל את האגדה!` : `👑 תלמיד קיבל ${ROBO_NAMES[item]} מתיבה! (${n} מתוך ${cap})`);
     if (granted && n > 0) { const me = pres[k] || {}; await S.update("roboNews", cur => [{ id: crypto.randomBytes(5).toString("hex"), kid: clean(me.name, MAX_NAME), cls: me.cls || "", item, name: ROBO_NAMES[item], n, cap, at: now }, ...(Array.isArray(cur) ? cur : [])].filter(x => now - x.at < 3 * 864e5).slice(0, 20)); }
     return reply(200, { ok: true, granted, n, cap, counts }, headers);
   }
@@ -1520,8 +1520,8 @@ export async function holidayTick(now = Date.now()) {
 }
 
 // ---- 🤖 "הרובוט שלי": אביזרי אולטרה אגדי – כמות מוגבלת לכל הישיבה (חייב להתאים ל-robo-core.js) ----
-const ROBO_CAPS = { "skin:gold": 3, "skin:diamond": 5, "skin:phoenix": 2, "skin:cosmic": 2, "skin:crystal": 3, "skin:infinity": 1 };
-const ROBO_NAMES = { "skin:gold": "חליפת זהב טהור", "skin:diamond": "חליפת יהלומים", "skin:phoenix": "עוף החול", "skin:cosmic": "השומר הקוסמי", "skin:crystal": "קריסטל קשת", "skin:infinity": "האינסוף ♾️ – היחיד בכל הישיבה" };
+const ROBO_CAPS = { "skin:gold": 3, "skin:diamond": 5, "skin:phoenix": 2, "skin:cosmic": 2, "skin:crystal": 3, "skin:infinity": 1, "skin:legend": 1 };
+const ROBO_NAMES = { "skin:gold": "חליפת זהב טהור", "skin:diamond": "חליפת יהלומים", "skin:phoenix": "עוף החול", "skin:cosmic": "השומר הקוסמי", "skin:crystal": "קריסטל קשת", "skin:infinity": "האינסוף ♾️ – היחיד בכל הישיבה", "skin:legend": "👑 האגדה – הראשון שאסף את כל הגיבורים" };
 function roboCounts(rr) { const o = {}; for (const [id, cap] of Object.entries(ROBO_CAPS)) { const x = rr && rr[id]; o[id] = { n: x && Array.isArray(x.keys) ? x.keys.length : 0, cap }; } return o; }
 
 // ---- 🎟️ קודים לפרסים, 👑 הטלפון של מנהל המערכת, 🔥 תזכורת לפני שהרצף נשבר ----

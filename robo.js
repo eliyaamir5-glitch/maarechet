@@ -15,10 +15,13 @@
   function save() {
     // 🎭 סט שלם → פרס (פעם אחת)
     const sets = R.setsCheck(S); for (const st of sets) { for (const p of st.prize) R.grant(S, p); setTimeout(() => { toast(`🎭 <b>השלמת את הסט ${esc(st.n)}!</b> קיבלת ${esc(st.prize.map(giftText).join(" + "))}`, st.prize.some(p => p.t === "box") ? ["לפתוח", () => openBoxes(st.prize.filter(p => p.t === "box").map(p => p.box))] : null, 9000); SFX.gift(); }, 900); }
+    if (S.sets && S.sets.heroes && !S.legendTry && !legendBusy && !locked()) setTimeout(legendClaim, 1500);
     LS.set("robo", JSON.stringify(S)); try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {} applyBubble(); homeBtn(); }
   // כפתור "🤖 הרובוט שלי" במסך הראשי – עם מספר התיבות שמחכות
+  // 📋 משימות יומיות: מעדכנים התקדמות ומודיעים כשמשימה הושלמה
+  function trk(ev, n = 1) { const d = R.track(S, ev, n); for (const id of d) { const M = R.MISSIONS[id]; setTimeout(() => toast(`📋 <b>משימה הושלמה!</b> ${M.em} ${esc(M.n)} – לך לאסוף את הפרס`, ["לאסוף", () => open("fun")], 6000), 1200); } return d.length; }
   // 🗺️ צעדים במסע (מחזיר כמה תחנות חדשות)
-  function step(n) { const k = R.mapStep(S, n); if (k > 0) setTimeout(() => toast(`🗺️ הגעת לתחנה חדשה במסע! יש שם אוצר 💰`, ["למפה", () => open("fun", "map")], 7000), 1500); return k; }
+  function step(n) { trk("step", n); const k = R.mapStep(S, n); if (k > 0) setTimeout(() => toast(`🗺️ הגעת לתחנה חדשה במסע! יש שם אוצר 💰`, ["למפה", () => open("fun", "map")], 7000), 1500); return k; }
   function homeBtn() { const b = document.getElementById("roboBtn"); if (!b) return; if (locked()) { b.innerHTML = "🔒 הרובוט שלי"; b.classList.remove("rb-glow"); return; } const n = S.boxes.length; b.innerHTML = `🤖 הרובוט שלי${n ? ` <span class="rb-badge">${n}</span>` : ""}`; b.classList.toggle("rb-glow", n > 0); }
   const profile = () => { try { return JSON.parse(LS.get("profile", "null")) || null; } catch (e) { return null; } };
   const dev = () => LS.get("deviceId", "") || "dev";
@@ -94,6 +97,12 @@
       under: () => `<g class="rwing"><path d="M8 30Q-10 20-6 2Q2 18 12 22Z" fill="#f97316"/><path d="M8 34Q-12 34-10 18Q0 30 12 28Z" fill="#fde047" opacity=".9"/></g><g class="rwing r"><path d="M56 30Q74 20 70 2Q62 18 52 22Z" fill="#f97316"/><path d="M56 34Q76 34 74 18Q64 30 52 28Z" fill="#fde047" opacity=".9"/></g><g class="rflame"><path d="M22 16q-3-8 3-12 0 5 4 6 0-5 5-8 0 6 4 8 2-4 5-5-1 5 1 11z" fill="#fde047"/></g>`,
       top: u => shine(u) + twinkles([[15, 18, 2.6], [50, 20, 2.2], [48, 47, 2.8]], "#fffbe6"), cls: "rgold", bg: "radial-gradient(circle at 35% 30%,#fef08a,#f97316 45%,#7f1d1d)", ring: "#f97316" },
     // ♾️ האינסוף – רק אחד בכל הישיבה: חור שחור עם דיסקת זהב מסתובבת סביב הראש
+    // 👑 האגדה – רק אחד בכל הישיבה: שחור-ארגמן-זהב, קרני שמש מסתובבות, עיני אש, כתר זהב
+    "skin:legend": { noAnt: 1, head: "u:h", ear: "u:e", scr: "#0a0000", eye: "#ff3b3b", stroke: "#facc15", glow: "#facc15", bg: "radial-gradient(circle at 50% 40%,#facc15,#7f1d1d 55%,#000)", ring: "#facc15",
+      defs: u => `<radialGradient id="${u}h" cx="50%" cy="30%" r="80%"><stop offset="0" stop-color="#7f1d1d"/><stop offset=".55" stop-color="#1c0a0a"/><stop offset="1" stop-color="#000"/></radialGradient>` + lg(u, "e", [[0, "#fde047"], [1, "#a16207"]]) + lg(u, "g", [[0, "#fff7c2"], [.5, "#facc15"], [1, "#b45309"]], 0, 1),
+      under: u => `<g class="rleg">${Array.from({ length: 16 }, (_, i) => `<path d="M32 33L${32 + 31 * Math.cos(i * Math.PI / 8 - .08)} ${33 + 31 * Math.sin(i * Math.PI / 8 - .08)}L${32 + 31 * Math.cos(i * Math.PI / 8 + .08)} ${33 + 31 * Math.sin(i * Math.PI / 8 + .08)}Z" fill="url(#${u}g)" opacity="${i % 2 ? .35 : .7}"/>`).join("")}</g>`,
+      top: u => `<g clip-path="url(#${u}c)"><path d="M11 44 Q32 36 53 44 L53 51 L11 51Z" fill="#facc15" opacity=".18"/>${Array.from({ length: 8 }, (_, i) => `<circle class="rtw" style="animation-delay:${(i * .27) % 2}s" cx="${14 + (i * 31) % 36}" cy="${18 + (i * 13) % 28}" r=".8" fill="#fde68a"/>`).join("")}</g>` + shine(u) + `<path d="M26 17.5l2 2.6 4-3.6 4 3.6 2-2.6-.8 4.2H26.8z" fill="url(#${u}g)" stroke="#78350f" stroke-width=".4"/>`,
+      over: u => `<path d="M20 9l3.5 4.5L27 6.5l5 6.5 5-6.5 3.5 7 3.5-4.5-1.6 7.5H21.6z" fill="url(#${u}g)" stroke="#78350f" stroke-width=".6" style="filter:drop-shadow(0 0 3px #facc15)"/><circle cx="32" cy="12.5" r="1.5" fill="#ef4444"/>` + twinkles([[4, 18, 2.8], [60, 44, 3], [58, 12, 2.2], [6, 48, 2.4]], "#fde047") },
     "skin:infinity": { head: "u:h", ear: "#1c1917", scr: "#000", eye: "#fde047", stroke: "#fbbf24", glow: "#f59e0b", defs: u => `<radialGradient id="${u}h" cx="50%" cy="50%" r="70%"><stop offset="0" stop-color="#000"/><stop offset=".55" stop-color="#0c0a09"/><stop offset=".8" stop-color="#4c1d95"/><stop offset="1" stop-color="#f59e0b"/></radialGradient>` + lg(u, "dk", [[0, "#fde047"], [.5, "#f97316"], [1, "#a855f7"]], 1, 0),
       under: u => `<g class="rinf1" style="transform-origin:32px 33px"><ellipse cx="32" cy="33" rx="31" ry="9" fill="none" stroke="url(#${u}dk)" stroke-width="3.2" opacity=".9"/></g>`,
       top: u => `<g clip-path="url(#${u}c)">${Array.from({ length: 12 }, (_, i) => `<circle class="rtw" style="animation-delay:${(i * .19) % 2}s" cx="${13 + (i * 29) % 38}" cy="${17 + (i * 17) % 32}" r=".7" fill="#fde68a"/>`).join("")}</g>` + shine(u),
@@ -118,7 +127,7 @@
   function genSkin(id) {
     const it = R.ITEMS[id]; if (!it || !it.sk) return null; if (genCache[id]) return genCache[id];
     const [a, b, c] = it.sk;
-    return (genCache[id] = { head: "u:h", ear: b, eye: it.e || "#fff", scr: it.s || "#1b1f45", defs: u => lg(u, "h", [[0, a], [.55, b], [1, c]], 0, 1), top: u => (it.shine ? shine(u) : "") + (it.tw ? twinkles([[15, 18, 2.4], [49, 46, 2.6]], "#fff") : ""), bg: `radial-gradient(circle at 35% 30%,${a},${b} 55%,${c})`, ring: b });
+    return (genCache[id] = { head: "u:h", ear: b, eye: it.e || "#fff", scr: it.s || "#1b1f45", defs: u => lg(u, "h", [[0, a], [.55, b], [1, c]], 0, 1), top: u => (it.shine ? shine(u) : "") + (it.tw ? twinkles([[15, 18, 2.4], [49, 46, 2.6]], "#fff") : "") + (it.mk ? `<text x="32" y="19.6" font-size="5.6" font-weight="900" text-anchor="middle" fill="${it.e || "#fff"}" style="filter:drop-shadow(0 0 1.5px ${b})">${it.mk}</text>` : ""), bg: `radial-gradient(circle at 35% 30%,${a},${b} 55%,${c})`, ring: b });
   }
   // כובעים (מעל הראש, הראש מתחיל ב-y=15)
   const HAT = {
@@ -222,7 +231,7 @@
     const hatIt = R.ITEMS[E.hat], hat = HAT[E.hat] ? HAT[E.hat](u) : hatIt && hatIt.em ? `<text x="32" y="${hatIt.em.length > 3 ? 12 : 13}" font-size="${hatIt.em.length > 3 ? 9 : 15}" text-anchor="middle">${hatIt.em}</text>` : "";
     return `<svg class="abot ${cls}${opt.still ? " still" : ""}${sk.cls ? " " + sk.cls : ""}" viewBox="0 0 64 64" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs>
 ${E.aura && AURA[E.aura] ? `<g class="raura">${AURA[E.aura](u)}</g>` : E.aura && R.ITEMS[E.aura] && R.ITEMS[E.aura].fl ? `<g class="raura">${[[7, 52, 0], [57, 46, .8], [11, 26, 1.6], [55, 20, 2.3]].map(([x, y, d], i) => `<text class="rbub" style="animation-delay:${d}s" x="${x}" y="${y}" font-size="8" text-anchor="middle">${R.ITEMS[E.aura].fl[i % R.ITEMS[E.aura].fl.length]}</text>`).join("")}</g>` : ""}<g class="body">
-${hat ? "" : `<line x1="32" y1="9" x2="32" y2="16" stroke="${sk.stroke || "#e8ebff"}" stroke-width="2.5" stroke-linecap="round"/><circle class="ant" cx="32" cy="7.5" r="3.6" fill="${sk.stroke || "#7cf5ff"}"/>`}
+${hat || sk.noAnt ? "" : `<line x1="32" y1="9" x2="32" y2="16" stroke="${sk.stroke || "#e8ebff"}" stroke-width="2.5" stroke-linecap="round"/><circle class="ant" cx="32" cy="7.5" r="3.6" fill="${sk.stroke || "#7cf5ff"}"/>`}
 ${sk.under ? sk.under(u) : ""}
 <rect class="ear l" x="6.5" y="27" width="6" height="12" rx="3" fill="${ear}"${strokeA}/><rect class="ear r" x="51.5" y="27" width="6" height="12" rx="3" fill="${ear}"${strokeA}/>
 <rect x="11" y="15" width="42" height="36" rx="14" fill="${head}"${strokeA}${glow}/>${sk.top ? sk.top(u) : ""}<rect x="15.5" y="20" width="33" height="24" rx="9" fill="${scr}"/>
@@ -275,6 +284,7 @@ ${hat}${sk.over ? sk.over(u) : ""}${(eq ? opt.shiny : S.shiny && Object.values(E
 .abot .rsnow{animation:rSnow 3.2s linear infinite}@keyframes rSnow{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(62px) translateX(4px);opacity:0}}
 .abot .rspin{animation:rSpin 1.6s linear infinite}
 .abot.rshadow .body{filter:drop-shadow(0 0 5px #a855f7)}.abot.rpix{image-rendering:pixelated}
+.abot .rleg{transform-origin:32px 33px;animation:rLeg 9s linear infinite}@keyframes rLeg{to{transform:rotate(360deg)}}.abot.still .rleg{animation:none}
 .abot .rinf1,.abot .rinf2{animation:rInf 3s linear infinite}@keyframes rInf{0%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}100%{transform:rotate(-8deg)}}
 .abot .rcape{transform-box:fill-box;transform-origin:50% 0;animation:rCape 1.6s ease-in-out infinite alternate}@keyframes rCape{to{transform:skewX(4deg) scaleY(1.04)}}
 .abot.still *,.abot.still{animation:none!important}
@@ -539,7 +549,7 @@ dialog.robo.open{background:#05020f}
     setTimeout(() => t.remove(), ms); return t;
   }
   // 🎮 נקודה על הלשונית "כיף": גלגל שעוד לא סובב היום + אוצר במפה שמחכה
-  const funDot = () => (S.wheel !== R.ymd(Date.now()) ? 1 : 0) + (Math.min(R.MAP_N, Math.floor(((S.map || {}).p || 0) / R.MAP_STEP)) > ((S.map || {}).c || 0) ? 1 : 0);
+  const funDot = () => (() => { const m = R.missions(S); return m.ids.filter(id => !m.got[id] && (m.p[id] || 0) >= R.MISSIONS[id].need).length; })() + (S.wheel !== R.ymd(Date.now()) ? 1 : 0) + (Math.min(R.MAP_N, Math.floor(((S.map || {}).p || 0) / R.MAP_STEP)) > ((S.map || {}).c || 0) ? 1 : 0);
   // 🌍 אירוע עולמי (ימים 1–3 בחודש)
   const evBanner = () => { const e = R.eventNow(); return e ? `<div class="rev"><b>${e.n}</b> עד ה-${e.until} בחודש: פי ${e.up} סיכוי שהתיבה תשתדרג בכל לחיצה! 🚀</div>` : ""; };
   const rarTag = r => `<span class="rtag ${r === "u" ? "u" : ""}" style="--c:${RC(r)}">${R.RAR[r].n}</span>`;
@@ -650,7 +660,7 @@ dialog.robo.open{background:#05020f}
     if (!S.own[id]) { toast(`❓ <b>${esc(it.n)}</b> ${rarTag(it.r)}<br><small>${esc(howGet(it))}</small>`, null, 4000); return; }
     if (it.cat === "theme") { if (window.Theme) Theme.setTheme(id.split(":")[1]); vib(20); draw(); toast(`🎨 העיצוב "${esc(it.n)}" הופעל בכל האפליקציה!`, null, 2500); return; }
     if (it.cat === "page") { const m = pageMap(); if (pageOn(it)) delete m[it.pg]; else m[it.pg] = { id, grad: it.grad }; LS.set("roboPage", JSON.stringify(m)); draw(); toast(pageOn(it) ? `✨ העמוד מעוצב! תיכנס אליו לראות` : "העיצוב הוסר מהעמוד", null, 2500); return; }
-    R.equip(S, id); save(); vib(15); draw(); publishSoon();
+    R.equip(S, id); trk("wear"); save(); vib(15); draw(); publishSoon();
     const b = document.getElementById("rwBot"); if (b) { b.classList.add("hop"); setTimeout(() => b.classList.remove("hop"), 650); }
   }
   function howGet(it) {
@@ -669,7 +679,7 @@ dialog.robo.open{background:#05020f}
     try {
       for (let bi = 0; bi < list.length; bi++) {
         const type = list[bi], ix = S.boxes.indexOf(type); if (ix < 0) continue;
-        S.boxes.splice(ix, 1); S.opened = (S.opened || 0) + 1; R.mapStep(S, 1);
+        S.boxes.splice(ix, 1); S.opened = (S.opened || 0) + 1; R.mapStep(S, 1); trk("box");
         let prizes = R.roll(S, type), taps = prizes.taps.slice();
         if (opt.rig && bi === 0) { const id = R.LIST.filter(x => x.r === opt.rig && !x.x)[0].id; prizes[prizes.length - 1] = { t: "item", id, r: opt.rig, main: 1, ...(opt.rig === "u" ? { need: "claim" } : {}) }; const st = R.TIERS.indexOf(R.START[type]), en = R.TIERS.indexOf(opt.rig); taps = Array.from({ length: R.TAPS + 1 }, (_, i) => R.TIERS[Math.min(en, st + i)]); } // דמו בלבד
         // אולטרה אגדי – השרת מאשר (כמות מוגבלת). לא אושר → אגדי רגיל במקום
@@ -775,6 +785,27 @@ dialog.robo.open{background:#05020f}
   }
   function celebrateItem(id) { const it = R.ITEMS[id]; toast(`✨ <b>${esc(it.n)}</b> ${rarTag(it.r)} נכנס לארון!`, null, 3000); vib(30); }
 
+  // ---------- 👑 האגדה: מי שאוסף ראשון את כל הגיבורים ----------
+  let legendBusy = false;
+  async function legendClaim() {
+    if (legendBusy || S.legendTry || !S.sets || !S.sets.heroes || locked() || window.__DEMO) return; legendBusy = true;
+    try {
+      const base = (typeof SERVER_BASE !== "undefined" && SERVER_BASE) || "";
+      const r = await fetch(base + "/api/feed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "robo", op: "claim", item: "skin:legend", device: dev() }) });
+      const j = await r.json(); if (!j || !j.ok) return; // אין חיבור / נעול – ננסה שוב אחר כך
+      if (j.counts) LS.set("roboRare", JSON.stringify(j.counts));
+      S.legendTry = 1;
+      if (j.granted) { R.grant(S, { t: "item", id: "skin:legend", r: "u" }); save(); legendShow(true); }
+      else { save(); legendShow(false); }
+    } catch (e) {} finally { legendBusy = false; }
+  }
+  function legendShow(won) {
+    const d = dlg("roboAnn");
+    d.innerHTML = won ? `<div class="ann"><div class="t">👑 אתה האגדה!!!</div><div class="bot">${svg("", { skin: "skin:legend" }, { noHoli: true })}</div><div class="w">אספת ראשון בישיבה את כל הגיבורים 🦸</div><div class="l">קיבלת את "האגדה" – הסקין הכי נדיר במשחק. רק אחד בכל הישיבה, והוא שלך!</div><div class="rd-btns" style="margin-top:18px"><button class="rbtn" type="button" id="annOk">👑 ללבוש עכשיו</button></div></div>`
+      : `<div class="ann"><div class="t">🦸 אספת את כל הגיבורים!</div><div class="bot">${svg()}</div><div class="w">כל הכבוד – זה הישג ענק!</div><div class="l">"האגדה" 👑 כבר נלקחה – מישהו הגיע לפניך. אבל אתה בין הבודדים שאספו הכל!</div><div class="rd-btns" style="margin-top:18px"><button class="rbtn" type="button" id="annOk">וואו 🤩</button></div></div>`;
+    show(d); if (won) { SFX.ultra(); setTimeout(() => SFX.reveal(6), 900); setTimeout(() => particles(d.querySelector(".ann"), "#facc15", 80, ["👑", "⭐", "✨", "💛"]), 400); vib([80, 60, 80, 60, 300]); }
+    d.querySelector("#annOk").onclick = () => { if (won) { R.equip(S, "skin:legend"); save(); publishSoon(); } d.close(); };
+  }
   // ---------- שרת: אולטרה אגדי (כמות מוגבלת) ----------
   async function claim(id) {
     if (window.__DEMO) return true;
@@ -953,7 +984,7 @@ dialog.robo.open{background:#05020f}
   let earnShown = 0;
   function earn(n) {
     if (locked()) return 0;
-    const g = R.earn(S, n); if (!g) return 0; save();
+    const g = R.earn(S, n); if (!g) return 0; trk("learn", g); save();
     const now = Date.now(); if (now - earnShown > 1500) { earnShown = now; const t = document.createElement("div"); t.className = "rtoast"; t.style.padding = "6px 12px"; t.style.fontSize = "13px"; t.textContent = `+${g} 🔩 על התרגול!`; document.body.appendChild(t); setTimeout(() => t.remove(), 1400); }
     return g;
   }
@@ -1013,7 +1044,7 @@ dialog.robo.open{background:#05020f}
       ${x.me ? `<p class="rw-prog" style="text-align:center;margin-top:14px">ככה החברים רואים את הרובוט שלך 😎</p>` : `<div class="frc-btns"><button class="rbtn" type="button" id="frLike" ${x.liked ? "disabled" : ""}>${x.liked ? "❤️ נתת היום" : "❤️ לייק"}</button><button class="rbtn alt" type="button" id="frGift">🎁 ברגים</button><button class="rbtn alt" type="button" id="frTrade">🔄 טרייד</button></div>`}</div></div>`;
     show(d); d.querySelector(".rw-x").onclick = () => d.close();
     if (!REDUCED) setTimeout(() => particles(d.querySelector(".frc-top"), rc, 18, ["✨", "⭐"]), 500);
-    const lk = d.querySelector("#frLike"); if (lk) lk.onclick = async () => { lk.disabled = true; const j = await api({ op: "like", to: x.pid }).catch(() => null); if (j && j.ok) { x.likes = j.likes; x.liked = true; lk.textContent = "❤️ נתת היום"; SFX.coin(); particles(d.querySelector(".frc-top"), "#f43f5e", 22, ["❤️", "💖"]); fData = null; } else { lk.disabled = false; toast(j && j.error === "already" ? "כבר נתת לייק היום 🙂" : "לא הצלחנו – נסה שוב", null, 2500); } };
+    const lk = d.querySelector("#frLike"); if (lk) lk.onclick = async () => { lk.disabled = true; const j = await api({ op: "like", to: x.pid }).catch(() => null); if (j && j.ok) { trk("like"); save(); x.likes = j.likes; x.liked = true; lk.textContent = "❤️ נתת היום"; SFX.coin(); particles(d.querySelector(".frc-top"), "#f43f5e", 22, ["❤️", "💖"]); fData = null; } else { lk.disabled = false; toast(j && j.error === "already" ? "כבר נתת לייק היום 🙂" : "לא הצלחנו – נסה שוב", null, 2500); } };
     const gf = d.querySelector("#frGift"); if (gf) gf.onclick = async () => {
       if (S.realBolts != null) { toast("בטלפון של מנהל המערכת אי אפשר לשלוח ברגים 😉", null, 3000); return; }
       const v = Math.floor(+prompt(`כמה ברגים לשלוח ל${x.kid}? (עד 50 ביום, יש לך ${S.bolts})`, "10") || 0); if (!v) return;
@@ -1125,7 +1156,7 @@ dialog.robo.open{background:#05020f}
     let N = []; try { N = JSON.parse(LS.get("roboNews", "[]")) || []; } catch (e) {}
     const p = profile(); if (!p || !N.length || locked() || document.querySelector("dialog[open]")) return;
     const g = c => (String(c).startsWith("ya") ? 11 : 10), seen = (LS.get("roboNewsSeen", "") || "").split(",");
-    const x = N.find(n => n && n.id && !seen.includes(n.id) && g(n.cls) === g(p.cls) && Date.now() - n.at < 2 * 864e5 && R.ITEMS[n.item]); if (!x) return;
+    const x = N.find(n => n && n.id && !seen.includes(n.id) && (g(n.cls) === g(p.cls) || n.item === "skin:legend") && Date.now() - n.at < 2 * 864e5 && R.ITEMS[n.item]); if (!x) return;
     LS.set("roboNewsSeen", [...seen, x.id].slice(-30).join(","));
     if (`${p.first || ""} ${p.last || ""}`.trim() === x.kid) return; // זה אני
     const d = dlg("roboAnn"); const left = Math.max(0, x.cap - x.n);
@@ -1144,7 +1175,7 @@ dialog.robo.open{background:#05020f}
     svg, open, hub, share, subjectMile, daily, openBoxes, redeem, earn, sfx: SFX, mini, friendCard, tradeOpen, checkNews, publish, inviteHint, state: () => S, owns: id => !!S.own[id],
     give(p) { const x = R.grant(S, p); save(); hubRefresh(); return x; }, // דמו / בדיקות
     // בשביל robo-plus.js (גלגל, מעבדה, שוק, משחק, מפה)
-    _: { locked, get S() { return S; }, save, toast, dlg, show, SFX, openBoxes, svg, preview, RC, rarTag, esc, particles, draw, hubRefresh, api, sleep, vib, card, celebrateItem, online, profile, dev, CLS_L, giftText, giftIcon, bl, step, open, wireMute, muteBtn, REDUCED, page, LS },
+    _: { locked, trk, get S() { return S; }, save, toast, dlg, show, SFX, openBoxes, svg, preview, RC, rarTag, esc, particles, draw, hubRefresh, api, sleep, vib, card, celebrateItem, online, profile, dev, CLS_L, giftText, giftIcon, bl, step, open, wireMute, muteBtn, REDUCED, page, LS },
     reload() { S = load(); applyBubble(); try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {} },
     locked, status: () => locked() ? "🔒 נעול עד 07:30" : `🔥 ${S.st.n} · 🔩 ${bl()}${S.boxes.length ? ` · 🎁 ${S.boxes.length}` : ""}`,
   };

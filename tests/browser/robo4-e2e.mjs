@@ -68,6 +68,23 @@ log(await p.evaluate(() => Robo.state().sets && Robo.state().sets.gems && Robo.s
 await p.evaluate(() => Robo.open("fun", "sets")); await sleep(300);
 if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + "/6-sets.png" });
 log(await p.evaluate(() => document.querySelectorAll("#roboUI .rp-set").length === RoboCore.SETS.length && !!document.querySelector("#roboUI .rp-set.done")), "sets panel shows progress");
+// 📋 משימות יומיות
+await p.evaluate(() => { const m = RoboCore.missions(Robo.state()); for (const id of m.ids) Robo._.trk(RoboCore.MISSIONS[id].ev, 999); Robo.open("fun"); }); await sleep(500);
+if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + "/s5-fun.png" });
+const mb0 = await p.evaluate(() => Robo.state().bolts);
+for (let i = 0; i < 3; i++) { await p.evaluate(() => { const b = document.querySelector("#roboUI [data-mc]"); b && b.click(); }); await sleep(400); }
+log(await p.evaluate(b0 => { const s = Robo.state(); return s.ms.all === 1 && s.bolts > b0 && s.boxes.includes("big"); }, mb0), "daily missions: 3 claimed → bolts + a big box");
+// 👑 האגדה: אוספים את כל הגיבורים → השרת נותן את האגדה לראשון
+await p.evaluate(() => { const st = RoboCore.SETS.find(x => x.id === "heroes"); for (const id of st.ids) Robo.give({ t: "item", id }); }); await sleep(4500);
+log(await p.evaluate(() => !!Robo.state().own["skin:legend"] && /האגדה/.test((document.querySelector("#roboAnn[open]") || {}).innerText || "")), "collect all heroes → first one gets 'the legend' 👑");
+if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + "/s5-legend-win.png" });
+await p.evaluate(() => document.querySelector("#roboAnn #annOk").click()); await sleep(400);
+log(await p.evaluate(() => Robo.state().eq.skin === "skin:legend"), "wearing the legend");
+await p.evaluate(() => Robo.open("fun", "legend")); await sleep(500);
+if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + "/s5-legend-panel.png" });
+const leg2 = await call({ action: "robo", device: FRIEND, op: "claim", item: "skin:legend" });
+log(leg2.ok && leg2.granted === false, "a second kid can't get the legend (only one in the school)", JSON.stringify(leg2));
+await p.evaluate(() => { const s = Robo.state(); s.eq.skin = "skin:classic"; });
 // 🕵️ שוק
 await p.evaluate(() => Robo.open("fun", "market")); await sleep(1500);
 log(await p.evaluate(() => /יוסי כהן/.test(document.getElementById("rpMk").innerText) && !!document.querySelector('#rpMk [data-buy]')), "market: friend's listing shows (name + price)", JSON.stringify(listed));

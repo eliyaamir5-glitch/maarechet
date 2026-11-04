@@ -141,6 +141,72 @@
     ["page:calc:sunset", "page", "מחשבון – שקיעה", "r", { pg: "calc", grad: "linear-gradient(135deg,#7c2d12 0%,#f97316 50%,#fde047 100%)" }],
     ["page:index:space", "page", "עמוד הבית – חלל", "e", { pg: "index", grad: "linear-gradient(135deg,#020617 0%,#1e3a8a 50%,#6366f1 100%)" }],
     ["page:cards:forest", "page", "כרטיסיות – יער", "r", { pg: "cards", grad: "linear-gradient(135deg,#052e16 0%,#15803d 50%,#86efac 100%)" }],
+    // ===== עונה 5 (4.11.2026): המון אביזרים חדשים =====
+    // 🦸 גיבורים חדשים – הדמויות. מי שאוסף את כל הגיבורים ראשון בישיבה מקבל את "האגדה" 👑
+    ["skin:h_shadow", "skin", "צל הלילה 🦸", "m", { hero: 1, sk: ["#475569", "#0f172a", "#000000"], e: "#22d3ee", mk: "☾" }],
+    ["skin:h_storm", "skin", "סערה 🦸", "m", { hero: 1, sk: ["#e0f2fe", "#38bdf8", "#1e3a8a"], e: "#ffffff", mk: "ϟ" }],
+    ["skin:h_jungle", "skin", "מלך הג'ונגל 🦸", "m", { hero: 1, sk: ["#bbf7d0", "#16a34a", "#14532d"], e: "#fde047", mk: "✦" }],
+    ["skin:h_magma", "skin", "מגמה 🦸", "m", { hero: 1, sk: ["#fde047", "#dc2626", "#450a0a"], e: "#fff7ed", mk: "▲" }],
+    ["skin:h_pulse", "skin", "פולס 🦸", "m", { hero: 1, sk: ["#fbcfe8", "#db2777", "#500724"], e: "#fff1f2", mk: "♥" }],
+    ["skin:h_quantum", "skin", "קוונטום 🦸", "l", { hero: 1, sk: ["#a5f3fc", "#7c3aed", "#0f0a2e"], e: "#ecfeff", shine: 1, tw: 1, mk: "⚛" }],
+    ["skin:h_steel", "skin", "לוחם הפלדה 🦸", "l", { hero: 1, sk: ["#f8fafc", "#64748b", "#0f172a"], e: "#38bdf8", shine: 1, mk: "★" }],
+    ["skin:h_star", "skin", "כוכבת הצפון 🦸", "l", { hero: 1, sk: ["#fef9c3", "#facc15", "#1e3a8a"], e: "#ffffff", tw: 1, mk: "✶" }],
+    ["hat:h_crest", "hat", "סמל הגיבורים ⚜️ 🦸", "e", { hero: 1, em: "⚜️" }],
+    ["held:h_hammer", "held", "פטיש הברקים 🔨 🦸", "m", { hero: 1, em: "🔨" }],
+    ["held:h_star", "held", "כוכב הכוח 🌟 🦸", "m", { hero: 1, em: "🌟" }],
+    ["aura:h_light", "aura", "כנפי אור 🕊️ 🦸", "l", { hero: 1, fl: ["🕊️", "✨"] }],
+    ["trail:h_power", "trail", "עקבות כוח 💥 🦸", "e", { hero: 1, em: ["💥", "⚡", "✨"] }],
+    // 👑 האגדה: רק אחד בכל הישיבה – למי שאוסף ראשון את כל הגיבורים (לא יוצא בתיבות)
+    ["skin:legend", "skin", "👑 האגדה", "u", { cap: 1, one: 1, x: 1, how: "הראשון בישיבה שאוסף את כל הגיבורים 🦸 – רק אחד יקבל!" }],
+    // חליפות
+    ...[["peach", "אפרסק", "c", ["#ffedd5", "#fdba74", "#ea580c"], "#7c2d12"], ["lilac", "לילך", "c", ["#f3e8ff", "#d8b4fe", "#9333ea"], "#581c87"], ["lime", "ליים", "c", ["#ecfccb", "#a3e635", "#4d7c0f"], "#365314"],
+        ["denim", "ג'ינס", "c", ["#bfdbfe", "#3b82f6", "#1e3a8a"], "#eff6ff"], ["choco", "שוקולד", "c", ["#d6a77a", "#7c4a1e", "#3f2a14"], "#fde68a"],
+        ["cotton", "צמר גפן מתוק", "r", ["#fce7f3", "#c4b5fd", "#93c5fd"], "#7c3aed"], ["copper", "נחושת", "r", ["#fed7aa", "#c2410c", "#7c2d12"], "#fff7ed", 1], ["teal", "טורקיז", "r", ["#ccfbf1", "#14b8a6", "#134e4a"], "#f0fdfa"],
+        ["berry", "פירות יער", "r", ["#fbcfe8", "#be185d", "#4c0519"], "#fdf2f8"], ["toxic", "רעלי", "r", ["#ecfccb", "#84cc16", "#1a2e05"], "#d9f99d"],
+        ["jade", "ירקן", "s", ["#d1fae5", "#059669", "#022c22"], "#ecfdf5", 1], ["twilight", "דמדומים", "s", ["#fde68a", "#c026d3", "#1e1b4b"], "#fdf4ff"], ["coral", "אלמוגים", "s", ["#ffe4e6", "#fb7185", "#9f1239"], "#fff1f2"],
+        ["honey", "דבש", "s", ["#fef3c7", "#f59e0b", "#78350f"], "#451a03"], ["cyber", "סייבר", "s", ["#f0abfc", "#06b6d4", "#0f172a"], "#22d3ee"],
+        ["nebula", "ערפילית", "e", ["#f5d0fe", "#7c3aed", "#0c0a2e"], "#f0abfc", 1, 1], ["plasma", "פלזמה", "e", ["#a5f3fc", "#ec4899", "#4c1d95"], "#ffffff", 1], ["pearl", "פנינה", "e", ["#ffffff", "#e2e8f0", "#cbd5e1"], "#a855f7", 1, 1],
+        ["sunfire", "אש השמש", "e", ["#fef08a", "#f97316", "#b91c1c"], "#fffbeb", 1],
+        ["abyss", "תהום", "m", ["#1e3a8a", "#020617", "#000000"], "#38bdf8", 0, 1], ["solar", "שמש בוערת", "m", ["#fffbeb", "#facc15", "#ea580c"], "#7c2d12", 1, 1], ["frostfire", "קרח ואש", "m", ["#bae6fd", "#a855f7", "#ef4444"], "#ffffff", 1],
+        ["prism", "פריזמה", "l", ["#fde68a", "#34d399", "#818cf8"], "#ffffff", 1, 1], ["royal", "מלכותי", "l", ["#fef3c7", "#7c3aed", "#1e1b4b"], "#facc15", 1, 1]]
+      .map(([k, n, r, sk, e, shine, tw]) => ["skin:" + k, "skin", n, r, { sk, e, ...(shine ? { shine: 1 } : {}), ...(tw ? { tw: 1 } : {}) }]),
+    // כובעים (אימוג'י על הראש)
+    ...[["bow", "פפיון 🎀", "🎀", "c"], ["sunflower", "חמנייה 🌻", "🌻", "c"], ["donut", "דונאט 🍩", "🍩", "c"], ["cherry", "דובדבנים 🍒", "🍒", "c"],
+        ["rocket", "טיל 🚀", "🚀", "r"], ["bouquet", "זר 💐", "💐", "r"], ["shroom", "פטרייה 🍄", "🍄", "r"], ["ghost", "רוח 👻", "👻", "s"], ["octo", "תמנון 🐙", "🐙", "s"], ["snowman", "איש שלג ⛄", "⛄", "s"],
+        ["dragonhead", "ראש דרקון 🐲", "🐲", "e"], ["sparkcrown", "כתר ניצוצות", "✨👑✨", "e"], ["triplefire", "אש משולשת", "🔥🔥🔥", "m"], ["saturn", "טבעת שבתאי 🪐", "🪐", "m"], ["galaxyhat", "גלקסיה 🌌", "🌌", "l"]]
+      .map(([k, n, em, r]) => ["hat:" + k, "hat", n, r, { em }]),
+    // ביד
+    ...[["pretzel", "בייגלה 🥨", "🥨", "c"], ["cookie", "עוגייה 🍪", "🍪", "c"], ["baseball", "בייסבול ⚾", "⚾", "c"], ["volley", "כדורעף 🏐", "🏐", "c"], ["pencil", "עיפרון ✏️", "✏️", "c"], ["ruler", "סרגל 📏", "📏", "c"],
+        ["violin", "כינור 🎻", "🎻", "r"], ["piano", "קלידים 🎹", "🎹", "r"], ["camera", "מצלמה 📷", "📷", "r"], ["scope", "טלסקופ 🔭", "🔭", "r"], ["tube", "מבחנה 🧪", "🧪", "r"], ["yoyo", "יו-יו 🪀", "🪀", "r"],
+        ["parrot", "תוכי 🦜", "🦜", "s"], ["turtle", "צב 🐢", "🐢", "s"], ["dolphin", "דולפין 🐬", "🐬", "s"], ["rocket", "טיל 🚀", "🚀", "s"], ["magnet", "מגנט 🧲", "🧲", "s"],
+        ["dna", "DNA 🧬", "🧬", "e"], ["earth", "כדור הארץ 🌍", "🌍", "e"], ["eagle", "נשר 🦅", "🦅", "e"], ["lion", "אריה 🦁", "🦁", "e"],
+        ["trident", "קלשון 🔱", "🔱", "m"], ["tornado", "טורנדו 🌪️", "🌪️", "m"], ["sun", "שמש ☀️", "☀️", "l"], ["shooting", "כוכב נופל 🌠", "🌠", "l"]]
+      .map(([k, n, em, r]) => ["held:" + k + (k === "rocket" ? "2" : ""), "held", n, r, { em }]),
+    // הילות
+    ...[["stars2", "כוכבים נוצצים", ["⭐", "💫"], "r"], ["clovers", "תלתנים 🍀", ["🍀"], "s"], ["balloons", "בלונים 🎈", ["🎈", "🎉"], "s"], ["frost", "פתיתי שלג ❄️", ["❄️", "✨"], "e"],
+        ["sakura", "פריחה 🌸", ["🌸", "🌺"], "e"], ["thunder", "סערה ⛈️", ["⚡", "⛈️"], "m"], ["planets", "כוכבי לכת 🪐", ["🪐", "🌍", "🌙"], "m"], ["diamonds", "יהלומים 💎", ["💎", "✨"], "l"], ["phoenixfire", "אש עוף החול", ["🔥", "👑"], "l"]]
+      .map(([k, n, fl, r]) => ["aura:" + k, "aura", n, r, { fl }]),
+    // עקבות
+    ...[["flowers", "פרחים 🌸", ["🌸", "🌼"], "c"], ["clover", "תלתן 🍀", ["🍀", "☘️"], "r"], ["balloons", "בלונים 🎈", ["🎈"], "s"], ["paws", "טביעות 🐾", ["🐾"], "s"],
+        ["night", "לילה 🌙", ["🌙", "⭐"], "e"], ["butterfly", "פרפרים 🦋", ["🦋", "✨"], "m"], ["cosmos", "קוסמוס 🌌", ["🌌", "✨", "💫"], "l"], ["treasure", "אוצר 💰", ["🪙", "💎", "💰"], "l"]]
+      .map(([k, n, em, r]) => ["trail:" + k, "trail", n, r, { em }]),
+    // קריאות
+    ...[["c", "בוקר טוב! ☀️"], ["c", "יש מבחן? 😱"], ["c", "אני רעב 🍕"], ["r", "אלוף העולם 🏆"], ["r", "תורי לשחק 🎮"], ["r", "קיבלתי 100! 💯"], ["s", "עונה חדשה! 🚀"],
+        ["s", "אספתי הכל 😎"], ["e", "אף אחד לא עוצר אותי ⚡"], ["e", "גיבור אמיתי 🦸"], ["m", "האגדה מתחילה 👑"], ["l", "אני הבוס פה 💎"]]
+      .map(([r, t], i) => ["quote:s5_" + i, "quote", t, r]),
+    // עיצובים לאפליקציה
+    ["theme:sunrise", "theme", "זריחה", "r", { grad: "linear-gradient(135deg,#fde68a 0%,#fb923c 50%,#f43f5e 100%)" }],
+    ["theme:midnight", "theme", "חצות", "s", { grad: "linear-gradient(135deg,#020617 0%,#1e293b 50%,#0ea5e9 100%)" }],
+    ["theme:emerald", "theme", "אזמרגד", "e", { grad: "linear-gradient(135deg,#022c22 0%,#047857 50%,#34d399 100%)" }],
+    ["theme:royal", "theme", "מלכותי", "m", { grad: "linear-gradient(135deg,#1e1b4b 0%,#6d28d9 50%,#facc15 100%)" }],
+    ["theme:legend", "theme", "אגדי 👑", "l", { grad: "linear-gradient(135deg,#000000 0%,#7f1d1d 45%,#facc15 100%)" }],
+    // עיצובים לעמוד
+    ["page:index:ocean", "page", "עמוד הבית – אוקיינוס", "s", { pg: "index", grad: "linear-gradient(135deg,#082f49 0%,#0284c7 50%,#67e8f9 100%)" }],
+    ["page:index:gold", "page", "עמוד הבית – זהב", "l", { pg: "index", grad: "linear-gradient(135deg,#78350f 0%,#d97706 45%,#fde047 100%)" }],
+    ["page:calc:ice", "page", "מחשבון – קרח", "s", { pg: "calc", grad: "linear-gradient(135deg,#0c4a6e 0%,#38bdf8 50%,#e0f2fe 100%)" }],
+    ["page:absences:galaxy", "page", "נוכחות – גלקסיה", "m", { pg: "absences", grad: "linear-gradient(135deg,#0f0a2e 0%,#6d28d9 50%,#ec4899 100%)" }],
+    ["page:phones:candy", "page", "ספר טלפונים – ממתקים", "r", { pg: "phones", grad: "linear-gradient(135deg,#db2777 0%,#f9a8d4 50%,#c4b5fd 100%)" }],
+    ["page:cards:lava", "page", "כרטיסיות – לבה", "e", { pg: "cards", grad: "linear-gradient(135deg,#1c1917 0%,#dc2626 50%,#f97316 100%)" }],
   ];
   const ITEMS = {}; I.forEach(([id, cat, n, r, o]) => { ITEMS[id] = Object.assign({ id, cat, n, r }, o || {}); });
   const LIST = Object.values(ITEMS);
@@ -344,6 +410,10 @@
     { id: "food", n: "🍕 אוכל", ids: ["held:pizza", "held:burger", "held:popcorn", "held:cupcake", "held:icecream", "held:melon", "held:cake"], prize: [{ t: "box", box: "big" }, { t: "bolts", n: 400 }] },
     { id: "crowns", n: "👑 כתרים", ids: ["hat:crown", "hat:diamondcrown", "hat:tiara", "hat:stars", "hat:streak"], prize: [{ t: "box", box: "giant" }, { t: "bolts", n: 1000 }] },
     { id: "animals", n: "🦊 חיות", ids: ["held:dino", "held:octopus", "held:fox", "held:penguin", "held:butterfly", "held:unicorn", "held:dragon"], prize: [{ t: "box", box: "mega" }, { t: "bolts", n: 600 }] },
+    { id: "music", n: "🎵 להקה", ids: ["held:guitar", "held:violin2", "held:violin", "held:piano", "held:drum", "held:trumpet", "held:mic"], prize: [{ t: "box", box: "big" }, { t: "bolts", n: 300 }] },
+    { id: "cosmos", n: "🌌 קוסמוס", ids: ["hat:galaxyhat", "held:shooting", "aura:planets", "trail:cosmos", "skin:nebula"], prize: [{ t: "box", box: "giant" }] },
+    { id: "sweets", n: "🍬 מתוקים", ids: ["held:cupcake", "held:lolly", "held:cookie", "hat:donut", "skin:choco", "skin:cotton"], prize: [{ t: "box", box: "big" }, { t: "bolts", n: 250 }] },
+    { id: "newheroes", n: "🦸 הגיבורים החדשים", ids: LIST.filter(x => x.hero && /^(skin|hat|held|aura|trail):h_/.test(x.id)).map(x => x.id), prize: [{ t: "box", box: "giant" }, { t: "bolts", n: 1500 }] },
     { id: "eyes", n: "👓 משקפיים", ids: LIST.filter(x => x.cat === "eyes" && ["c", "r", "s"].includes(x.r)).map(x => x.id), prize: [{ t: "box", box: "mega" }, { t: "bolts", n: 500 }] },
   ].map(x => Object.assign(x, { ids: x.ids.filter(id => ITEMS[id]) }));
   function setsCheck(S) { S.sets = S.sets || {}; const out = []; for (const st of SETS) { if (S.sets[st.id] || !st.ids.length) continue; if (st.ids.every(id => S.own[id] && S.own[id] !== -1)) { S.sets[st.id] = Date.now(); out.push(st); } } return out; }
@@ -365,6 +435,28 @@
   const mapPrize = i => i === MAP_N ? [{ t: "box", box: "giant" }, { t: "bolts", n: 3000 }] : i % 10 === 0 ? [{ t: "box", box: "giant" }] : i % 5 === 0 ? [{ t: "box", box: "mega" }] : i % 2 === 0 ? [{ t: "box", box: i > 20 ? "big" : "box" }] : [{ t: "bolts", n: 100 + i * 10 }];
   function mapStep(S, n = 1) { S.map = S.map || { p: 0, c: 0 }; const before = Math.floor(S.map.p / MAP_STEP); S.map.p = Math.min(MAP_N * MAP_STEP, S.map.p + Math.max(0, n | 0)); return Math.floor(S.map.p / MAP_STEP) - before; }
   function mapClaim(S) { S.map = S.map || { p: 0, c: 0 }; const reach = Math.min(MAP_N, Math.floor(S.map.p / MAP_STEP)); if (S.map.c >= reach) return null; const i = ++S.map.c; return { i, prize: mapPrize(i) }; }
+  // 📋 משימות יומיות: 3 משימות קטנות כל יום (שונות לכל ילד), פרס קטן לכל אחת + תיבה על כל ה-3
+  const MISSIONS = {
+    box: { n: "לפתוח 2 תיבות", ev: "box", need: 2, b: 30, em: "🎁" }, wheel: { n: "לסובב את גלגל המזל", ev: "wheel", need: 1, b: 20, em: "🎰" },
+    game: { n: "לשמור ברגים במשחק", ev: "game", need: 1, b: 30, em: "🔩" }, game40: { n: "לתפוס 40 ברגים בסיבוב אחד", ev: "game40", need: 1, b: 50, em: "🏃" },
+    learn: { n: "לקבל 20 ברגים מתרגול", ev: "learn", need: 20, b: 40, em: "📚" }, wear: { n: "להחליף 3 דברים לרובוט", ev: "wear", need: 3, b: 20, em: "👕" },
+    like: { n: "לתת לייק לרובוט של חבר", ev: "like", need: 1, b: 25, em: "❤️" }, lab: { n: "להשתמש במעבדה", ev: "lab", need: 1, b: 40, em: "🔨" },
+    market: { n: "לבקר בשוק", ev: "market", need: 1, b: 15, em: "🕵️" }, steps: { n: "ללכת 4 צעדים במסע", ev: "step", need: 4, b: 25, em: "🗺️" },
+  };
+  function missions(S, now = Date.now()) {
+    const d = ymd(now); if (S.ms && S.ms.d === d) return S.ms;
+    if (!S.seed) S.seed = Math.floor(Math.random() * 1e9);
+    let h = 2166136261; for (const c of d + "|" + S.seed) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+    const keys = Object.keys(MISSIONS), ids = [];
+    while (ids.length < 3) { h = Math.imul(h ^ (h >>> 13), 1597334677) >>> 0; const k = keys[h % keys.length]; if (!ids.includes(k)) ids.push(k); }
+    return (S.ms = { d, ids, p: {}, got: {}, all: 0 });
+  }
+  function track(S, ev, n = 1, now = Date.now()) { const m = missions(S, now); let done = []; for (const id of m.ids) { const M = MISSIONS[id]; if (M.ev !== ev || m.got[id]) continue; const was = (m.p[id] || 0) >= M.need; m.p[id] = Math.min(M.need, (m.p[id] || 0) + n); if (!was && m.p[id] >= M.need) done.push(id); } return done; }
+  function claimMission(S, id, now = Date.now()) {
+    const m = missions(S, now), M = MISSIONS[id]; if (!M || !m.ids.includes(id) || m.got[id] || (m.p[id] || 0) < M.need) return { ok: false };
+    m.got[id] = 1; S.bolts += M.b; let box = null; if (m.ids.every(k => m.got[k]) && !m.all) { m.all = 1; box = "big"; S.boxes.push(box); }
+    return { ok: true, bolts: M.b, box };
+  }
   // ---- 🏷️ שם לרובוט (עם סינון מילים לא יפות) ----
   const BAD = ["זונה", "שרמוט", "כוס", "זין", "מזדיין", "חרא", "מניאק", "בן זונה", "אידיוט", "מפגר", "דביל", "מטומטם", "fuck", "shit", "bitch", "dick", "ass", "sex", "porn", "nazi", "נאצי", "היטלר", "hitler"];
   function cleanName(n) { const t = String(n || "").replace(/[<>&"'`\u0000-\u001f]/g, "").replace(/\s+/g, " ").trim().slice(0, 14); const low = t.toLowerCase().replace(/[^a-zא-ת]/g, ""); return BAD.some(w => low.includes(w.replace(/\s/g, ""))) ? "" : t; }
@@ -406,6 +498,6 @@
     const d = ymd(now); if (!S.earn || S.earn.d !== d) S.earn = { d, n: 0 };
     const g = Math.max(0, Math.min(n, EARN_CAP - S.earn.n)); S.earn.n += g; S.bolts += g; return g;
   }
-  const api = { WORLDS, MAP_N, MAP_STEP, mapPrize, mapStep, mapClaim, SHINY, WHEEL, spinWheel, FLASH, flashNow, buyFlash, labCombine, SETS, setsCheck, eventNow, PRICE, GAME_CAP, GAME_ITEMS, gameBank, cleanName, achievements, RVAL, BVAL, offerValue, canGive, applyTrade, weekId, HEROES, EARN_CAP, earn, RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
+  const api = { MISSIONS, missions, track, claimMission, WORLDS, MAP_N, MAP_STEP, mapPrize, mapStep, mapClaim, SHINY, WHEEL, spinWheel, FLASH, flashNow, buyFlash, labCombine, SETS, setsCheck, eventNow, PRICE, GAME_CAP, GAME_ITEMS, gameBank, cleanName, achievements, RVAL, BVAL, offerValue, canGive, applyTrade, weekId, HEROES, EARN_CAP, earn, RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.RoboCore = api;
 })(typeof self !== "undefined" ? self : this);

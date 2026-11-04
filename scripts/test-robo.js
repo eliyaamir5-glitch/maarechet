@@ -11,7 +11,7 @@ const seeded = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s 
 const ids = R.LIST.map(x => x.id);
 ok("catalog: 150+ items, unique ids", ids.length >= 150 && new Set(ids).size === ids.length, ids.length);
 ok("every item has a known category and rarity", R.LIST.every(x => R.CATS[x.cat] && R.RAR[x.r]));
-ok("ultra legendary: 6 suits, each with a cap (♾️ infinity = only 1)", R.LIST.filter(x => x.r === "u").length === 6 && R.ITEMS["skin:infinity"].cap === 1 && R.LIST.filter(x => x.r === "u").every(x => x.cap > 0));
+ok("ultra legendary: 7 suits, each with a cap (♾️ infinity + 👑 legend = only 1)", R.LIST.filter(x => x.r === "u").length === 7 && R.ITEMS["skin:infinity"].cap === 1 && R.LIST.filter(x => x.r === "u").every(x => x.cap > 0));
 ok("heroes: never in normal boxes, only giant (and 2% mega)", R.LIST.filter(x => x.hero).length >= 10 && R.BOX.giant.hero > 0 && R.BOX.box.hero === undefined);
 { const S = R.fresh(); let h = 0, n = 0; for (let i = 0; i < 3000; i++) for (const p of R.roll(S, "box")) { if (p.t === "item") { n++; if (R.ITEMS[p.id] && R.ITEMS[p.id].hero) h++; } } ok("no heroes from small boxes", h === 0, h + "/" + n); }
 { const S = R.fresh(); let h = 0; for (let i = 0; i < 2000; i++) for (const p of R.roll(S, "giant")) if (p.t === "item" && R.ITEMS[p.id] && R.ITEMS[p.id].hero) h++; ok("heroes do come from giant boxes", h > 100, h); }
@@ -100,4 +100,13 @@ ok("saving costs more for a longer streak, max 400", R.saveCost(5) < R.saveCost(
 { const S = R.fresh(); ok("map: 10 steps = a station", R.mapStep(S, 9) === 0 && R.mapStep(S, 1) === 1 && R.mapClaim(S).i === 1 && R.mapClaim(S) === null); R.mapStep(S, 9999); ok("map: capped at the last station, final prize = giant + 3000", S.map.p === R.MAP_N * R.MAP_STEP && R.mapPrize(R.MAP_N).some(p => p.box === "giant") && R.mapPrize(R.MAP_N).some(p => p.n === 3000)); }
 // ---- כלכלה: תיבה אף פעם לא מחזירה יותר ברגים ממה שהיא עולה (גם כשיש כמעט הכל) ----
 for (const t of ["box", "big", "mega", "giant"]) { let tot = 0; const N = 1500; for (let i = 0; i < N; i++) { const S = R.fresh(); for (const it of R.LIST) if (it.r !== "u") S.own[it.id] = 1; const b0 = S.bolts; for (const p of R.roll(S, t)) if (!p.need) R.grant(S, p); tot += S.bolts - b0; } ok(`${t}: even with everything owned, bolts back < 80% of the price`, tot / N < R.BOX[t].price * .8, Math.round(tot / N) + " / " + R.BOX[t].price); }
+// ---- עונה 5: משימות יומיות + האגדה ----
+{ const S = R.fresh(), t = at("2026-11-04T10:00:00+02:00"); const m = R.missions(S, t); ok("3 different daily missions", m.ids.length === 3 && new Set(m.ids).size === 3);
+  ok("same missions all day, new ones tomorrow", JSON.stringify(R.missions(S, at("2026-11-04T20:00:00+02:00")).ids) === JSON.stringify(m.ids));
+  ok("can't claim before done", !R.claimMission(S, m.ids[0], t).ok);
+  for (const id of m.ids) R.track(S, R.MISSIONS[id].ev, 999, t);
+  const b0 = S.bolts; const r = m.ids.map(id => R.claimMission(S, id, t)); ok("all 3 done → bolts + a big box once", r.every(x => x.ok) && S.boxes.filter(b => b === "big").length === 1 && S.bolts > b0 && !R.claimMission(S, m.ids[0], t).ok);
+  ok("new day → new missions", R.missions(S, at("2026-11-05T10:00:00+02:00")).d === "2026-11-05"); }
+{ let leg = 0; for (let i = 0; i < 3000; i++) { const S = R.fresh(); for (const p of R.roll(S, "giant")) if (p.id === "skin:legend") leg++; } ok("'the legend' never drops from boxes", leg === 0); ok("legend is one-of-a-kind ultra", R.ITEMS["skin:legend"].cap === 1 && R.ITEMS["skin:legend"].x === 1);
+  ok("heroes set = all non-ultra heroes (" + R.SETS.find(x => x.id === "heroes").ids.length + ")", R.SETS.find(x => x.id === "heroes").ids.length >= 25); }
 console.log(bad ? `❌ ${bad} problems` : "all robo tests passed");

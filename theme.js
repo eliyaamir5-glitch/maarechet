@@ -23,6 +23,11 @@
     space: { name: "חלל עמוק", grad: "linear-gradient(135deg,#020617 0%,#1e1b4b 50%,#7c3aed 100%)", dark: "#a78bfa", light: "#6d28d9", meta: "#020617", lock: "theme:space" },
     hero: { name: "גיבורים", grad: "linear-gradient(135deg,#7f1d1d 0%,#dc2626 45%,#facc15 100%)", dark: "#facc15", light: "#b91c1c", meta: "#7f1d1d", lock: "theme:hero" },
     gold: { name: "זהב", grad: "linear-gradient(135deg,#78350f 0%,#d97706 40%,#facc15 70%,#a16207 100%)", dark: "#facc15", light: "#a16207", meta: "#78350f", lock: "theme:gold" },
+    sunrise: { name: "זריחה", grad: "linear-gradient(135deg,#fde68a 0%,#fb923c 50%,#f43f5e 100%)", dark: "#fb923c", light: "#c2410c", meta: "#fb923c", lock: "theme:sunrise" },
+    midnight: { name: "חצות", grad: "linear-gradient(135deg,#020617 0%,#1e293b 50%,#0ea5e9 100%)", dark: "#38bdf8", light: "#0369a1", meta: "#020617", lock: "theme:midnight" },
+    emerald: { name: "אזמרגד", grad: "linear-gradient(135deg,#022c22 0%,#047857 50%,#34d399 100%)", dark: "#34d399", light: "#047857", meta: "#022c22", lock: "theme:emerald" },
+    royal: { name: "מלכותי", grad: "linear-gradient(135deg,#1e1b4b 0%,#6d28d9 50%,#facc15 100%)", dark: "#c4b5fd", light: "#6d28d9", meta: "#1e1b4b", lock: "theme:royal" },
+    legend: { name: "אגדי 👑", grad: "linear-gradient(135deg,#000000 0%,#7f1d1d 45%,#facc15 100%)", dark: "#facc15", light: "#b91c1c", meta: "#000000", lock: "theme:legend" },
   };
   // עיצוב לעמוד אחד (מ"הרובוט שלי"): { calc: { id, grad } }
   const PG = (location.pathname.split("/").pop() || "index").replace(/\.html$/, "") || "index";
