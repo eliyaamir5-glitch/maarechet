@@ -25,7 +25,7 @@
   const RC = r => R.RAR[r].col;
   const bl = () => S.bolts >= 999999 ? "∞" : S.bolts;
   // 🔒 עונה חדשה: הרובוט נעול לכולם עד 5.11.2026 07:00, ואז כולם מתחילים מאפס ושווים – 1000 ברגים (בקשת מנהל המערכת)
-  const OPEN_AT = Date.parse("2026-11-05T07:00:00+02:00"), SEASON = "2026-11-05";
+  const OPEN_AT = Date.parse("2026-11-04T07:30:00+02:00"), SEASON = "2026-11-05";
   const testRun = () => !!(navigator.webdriver && LS.get("roboTest", "") && !LS.get("roboLockTest", ""));
   const locked = () => !testRun() && !powers().owner && Date.now() < OPEN_AT;
   function seasonReset() {
@@ -40,8 +40,8 @@
   function lockScreen() {
     const d = dlg("roboLock"); let tm = 0;
     const draw = () => { if (!d.open && tm) { clearInterval(tm); return; } if (!locked()) { clearInterval(tm); d.close(); seasonReset(); return; } const c = d.querySelector("#rlLeft"); if (c) c.textContent = lockLeft(); };
-    d.innerHTML = `<div class="ann" style="padding:calc(28px + env(safe-area-inset-top)) 20px 24px"><div class="t">🔒 הרובוט נעול עד מחר</div><div class="bot">${svg("", { skin: "skin:classic" }, { noHoli: true })}</div>
-      <div class="w">נפתח לכולם ביחד מחר ב-07:00 ⏰</div><div class="l">עונה חדשה: כולם מתחילים מאפס ושווים –<br>1000 ברגים 🔩 לכל אחד!</div>
+    d.innerHTML = `<div class="ann" style="padding:calc(28px + env(safe-area-inset-top)) 20px 24px"><div class="t">🔒 הרובוט נעול עד הבוקר</div><div class="bot">${svg("", { skin: "skin:classic" }, { noHoli: true })}</div>
+      <div class="w">נפתח לכולם ביחד ב-07:30 בבוקר ⏰</div><div class="l">עונה חדשה: כולם מתחילים מאפס ושווים –<br>1000 ברגים 🔩 לכל אחד!</div>
       <div style="font-size:34px;font-weight:900;margin:16px 0;font-variant-numeric:tabular-nums" id="rlLeft">${lockLeft()}</div><div class="rd-btns"><button class="rbtn" type="button" id="rlOk">הבנתי 👍</button></div></div>`;
     show(d); d.querySelector("#rlOk").onclick = () => { clearInterval(tm); d.close(); }; tm = setInterval(draw, 1000);
   } // ∞ = ברגים לאין סוף (רק בטלפון של מנהל המערכת)
@@ -808,7 +808,7 @@ dialog.robo.open{background:#05020f}
   async function redeem(raw) {
     const code = String(raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (code.length < 4) return { ok: false, msg: "זה לא נראה כמו קוד 🤔" };
-    if (locked()) { LS.set("roboPendingCode", null); return { ok: false, msg: "🔒 הרובוט נעול עד מחר ב-07:00 – אז כולם מתחילים מחדש. תנסה את הקוד מחר!" }; }
+    if (locked()) { LS.set("roboPendingCode", null); return { ok: false, msg: "🔒 הרובוט נעול עד 07:30 בבוקר – אז כולם מתחילים מחדש. תנסה את הקוד אז!" }; }
     if (!profile()) { LS.set("roboPendingCode", code); return { ok: false, msg: "שמרתי את הקוד – הוא ימומש אחרי שתסיים להירשם 🙂" }; }
     if (window.__DEMO) return { ok: false, msg: "בדמו אין מימוש קודים" };
     let j; try { j = await api(code.startsWith("OWN") ? { op: "link", token: code } : { op: "code", code }); } catch (e) { return { ok: false, msg: "אין חיבור לאינטרנט כרגע – נסה שוב עוד רגע" }; }
@@ -920,7 +920,7 @@ dialog.robo.open{background:#05020f}
   function hub(el) { hubEl = el; hubRefresh(); }
   function hubRefresh() {
     const el = hubEl; if (!el || !el.isConnected) return;
-    if (locked()) { el.innerHTML = `<div style="font-size:14px;font-weight:800;line-height:1.6">🔒 הרובוט נעול עד מחר ב-07:00.<br><span style="font-weight:600;opacity:.85">עונה חדשה: כולם מתחילים שווה עם 1000 ברגים 🔩</span></div>`; return; }
+    if (locked()) { el.innerHTML = `<div style="font-size:14px;font-weight:800;line-height:1.6">🔒 הרובוט נעול עד 07:30 בבוקר.<br><span style="font-weight:600;opacity:.85">עונה חדשה: כולם מתחילים שווה עם 1000 ברגים 🔩</span></div>`; return; }
     const pr = R.progress(S), nb = S.boxes.length, b = R.best(S);
     el.innerHTML = `<div style="display:flex;gap:12px;align-items:center"><button type="button" id="rhBot" style="width:86px;height:86px;flex:0 0 86px;border:0;border-radius:24px;cursor:pointer;background:${(SK[S.eq.skin] || {}).bg || DEF_BG};box-shadow:0 8px 20px rgba(0,0,0,.3)">${svg()}</button>
       <div style="flex:1;min-width:0"><div style="display:flex;gap:6px;flex-wrap:wrap;font-size:13px;font-weight:800"><span>🔥 רצף ${S.st.n}</span><span>🔩 ${bl()}</span><span>🏆 ${pr.have}/${pr.all}</span></div>
@@ -1146,7 +1146,7 @@ dialog.robo.open{background:#05020f}
     // בשביל robo-plus.js (גלגל, מעבדה, שוק, משחק, מפה)
     _: { locked, get S() { return S; }, save, toast, dlg, show, SFX, openBoxes, svg, preview, RC, rarTag, esc, particles, draw, hubRefresh, api, sleep, vib, card, celebrateItem, online, profile, dev, CLS_L, giftText, giftIcon, bl, step, open, wireMute, muteBtn, REDUCED, page, LS },
     reload() { S = load(); applyBubble(); try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {} },
-    locked, status: () => locked() ? "🔒 נעול עד מחר 07:00" : `🔥 ${S.st.n} · 🔩 ${bl()}${S.boxes.length ? ` · 🎁 ${S.boxes.length}` : ""}`,
+    locked, status: () => locked() ? "🔒 נעול עד 07:30" : `🔥 ${S.st.n} · 🔩 ${bl()}${S.boxes.length ? ` · 🎁 ${S.boxes.length}` : ""}`,
   };
   try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {}
   urlCodes();

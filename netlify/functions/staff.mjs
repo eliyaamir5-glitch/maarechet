@@ -1668,7 +1668,7 @@ export async function streakTick(now = Date.now()) {
 const pidOf = k => crypto.createHash("sha256").update("robo|" + k).digest("hex").slice(0, 12);
 // 🔄 עונה חדשה לרובוט (בקשת מנהל המערכת, 4.11.2026): עד 5.11 07:00 הכל נעול, ואז מוחקים פעם אחת את כל מה שהשרת שומר על הרובוטים
 // (ספירת אולטרה, פרופילים, לייקים, קרב כיתות, שוק, טריידים, הכרזות, הודעות) – כדי שכולם יתחילו שווה. הטלפונים מתאפסים לבד (robo.js)
-let ROBO_RESET_AT = Date.parse("2026-11-05T07:00:00+02:00"); const ROBO_RESET_ID = "2026-11-05", ROBO_BLOBS = ["roboRare", "roboPub", "roboLikes", "roboLikeDay", "roboGiftDay", "roboBattle", "roboMarket", "roboTrades", "roboNews", "roboInbox", "roboInvHint"];
+let ROBO_RESET_AT = Date.parse("2026-11-04T07:30:00+02:00"); const ROBO_RESET_ID = "2026-11-05", ROBO_BLOBS = ["roboRare", "roboPub", "roboLikes", "roboLikeDay", "roboGiftDay", "roboBattle", "roboMarket", "roboTrades", "roboNews", "roboInbox", "roboInvHint"];
 let roboSeasonDone = false;
 export function __setRoboReset(ms) { ROBO_RESET_AT = ms; roboSeasonDone = false; } // לבדיקות
 async function roboSeason(S, now) { // true = עדיין נעול
