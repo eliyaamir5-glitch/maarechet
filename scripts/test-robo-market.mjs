@@ -39,3 +39,12 @@ r = await R(2, { op: "marketCancel", id: id2 }); ok("can't cancel someone else's
 r = await R(1, { op: "marketCancel", id: id2 }); ok("cancel my listing → item comes back", r.ok && r.item === "held:burger");
 r = await R(2, { op: "marketBuy", id: id2 }); ok("cancelled listing can't be bought", r.error === "gone");
 r = await feed({ action: "robo", device: "device-mrkt-9999", op: "marketList" }); ok("unregistered device refused", r.error === "not_registered");
+// ---- 🏆 טבלת שיאים שבועית ----
+r = await R(1, { op: "score", g: "bolts", v: 320 }); ok("post a weekly score", r.ok);
+await R(1, { op: "score", g: "bolts", v: 100 }); // נמוך יותר – לא מחליף
+await R(2, { op: "score", g: "bolts", v: 450 });
+await R(3, { op: "score", g: "bolts", v: 999 });
+r = await R(1, { op: "scores", g: "bolts" }); ok("leaderboard: my grade only, best first, keeps my best", r.ok && r.list.length === 2 && r.list[0].kid === "יוסי לוי" && r.list[0].v === 450 && r.list[1].me && r.list[1].v === 320 && r.me.rank === 2, JSON.stringify(r.list));
+ok("leaderboard: no device ids", !JSON.stringify(r).includes("device-mrkt"));
+r = await R(1, { op: "score", g: "nope", v: 5 }); ok("bad game refused", !r.ok);
+r = await R(1, { op: "scores", g: "run" }); ok("empty run board", r.ok && r.list.length === 0 && Array.isArray(r.last));

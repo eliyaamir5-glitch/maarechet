@@ -111,4 +111,12 @@ for (const t of ["box", "big", "mega", "giant"]) { let tot = 0; const N = 1500; 
   ok("heroes set = all non-ultra heroes (" + R.SETS.find(x => x.id === "heroes").ids.length + ")", R.SETS.find(x => x.id === "heroes").ids.length >= 25); }
 { ok("💎 gold & diamonds theme: ultra, only 3 in the school, can drop from boxes", R.ITEMS["theme:goldx"].r === "u" && R.ITEMS["theme:goldx"].cap === 3 && !R.ITEMS["theme:goldx"].x); }
 { const S = R.fresh(), t = at("2026-11-04T10:00:00+02:00"); const a = R.runBank(S, 200, t), b = R.runBank(S, 200, t); ok("run: 250 bolts a day", a.bolts === 200 && b.bolts === 50 && b.left === 0 && R.runBank(S, 10, at("2026-11-05T10:00:00+02:00")).bolts === 10); }
+// ---- משחקים: כפול או כלום, שדרוגים, אתגר יומי ----
+{ const t = at("2026-11-04T10:00:00+02:00"); let S = R.fresh(); const w = R.gameDouble(S, true, t); ok("double or nothing: win = 1000, done for today", w.bolts === 1000 && S.bolts === 1000 && S.game.n === R.GAME_CAP && R.gameBank(S, 50, [], t).bolts === 0);
+  S = R.fresh(); const l = R.gameDouble(S, false, t); ok("double or nothing: lose = nothing, done for today", l.bolts === 0 && S.bolts === 0 && S.game.n === R.GAME_CAP); }
+{ const S = R.fresh(); S.bolts = 300; ok("upgrade: buy level 1 magnet (250)", R.buyUpg(S, "magnet").ok && R.upg(S, "magnet") === 1 && S.bolts === 50); ok("upgrade: not enough bolts", R.buyUpg(S, "magnet").error === "bolts");
+  S.bolts = 1e6; R.buyUpg(S, "magnet"); R.buyUpg(S, "magnet"); ok("upgrade: max level 3", R.buyUpg(S, "magnet").error === "max" && R.upg(S, "magnet") === 3); }
+{ const t = at("2026-11-04T10:00:00+02:00"), S = R.fresh(), c = R.challenge("run", t); ok("daily challenge: same all day", R.challenge("run", at("2026-11-04T20:00:00+02:00")).id === c.id);
+  ok("daily challenge: fail → nothing", R.challengeCheck(S, "run", {}, t) === null && !S.boxes.length);
+  const big = { dist: 9999, flights: 9, bolts: 999, cleanDist: 9999, world: 9, bullyPass: 9 }; ok("daily challenge: success → mega box once a day", R.challengeCheck(S, "run", big, t) && S.boxes.join() === "mega" && R.challengeCheck(S, "run", big, t) === null); }
 console.log(bad ? `❌ ${bad} problems` : "all robo tests passed");

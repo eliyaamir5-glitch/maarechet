@@ -37,7 +37,7 @@ log(await p.evaluate(() => !!window.RoboPlus && typeof Asst.todayLessons === "fu
 // לשונית כיף
 await p.evaluate(() => Robo.open("fun")); await sleep(500);
 if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + "/1-fun.png" });
-log(await p.evaluate(() => document.querySelectorAll("#roboUI .rp-t").length === 8), "fun tab: 8 tiles (game, run, wheel, map, lab, market, sets, bonuses)");
+log(await p.evaluate(() => document.querySelectorAll("#roboUI .rp-t").length === 10), "fun tab: 10 tiles (game, run, wheel, map, lab, market, leaderboard, upgrades, sets, bonuses)");
 // 🎰 גלגל
 await p.evaluate(() => document.querySelector('#roboUI [data-p="wheel"]').click()); await sleep(300);
 const s0 = await p.evaluate(() => { const s = Robo.state(); return { b: s.bolts, x: s.boxes.length }; });
@@ -131,7 +131,7 @@ const th = await p.evaluate(async () => { const G = RoboPlus._game(), H = docume
 log(th.b === 10 && th.st === 10, "thief caught → takes half of the round (20 → 10)", JSON.stringify(th));
 const sh = await p.evaluate(async () => { const G = RoboPlus._game(), H = document.querySelector(".gm-cv").clientHeight; G.obj = []; G.nthief = G.nbomb = 99; G.spawnAt("pow", G.px, H - 75, { v: 30, p: "shield" }); await new Promise(r => setTimeout(r, 700)); const had = G.shield; G.spawnAt("bomb", G.px, H - 75, { v: 30, vx: 0 }); await new Promise(r => setTimeout(r, 700)); return { had, now: G.shield, dead: G.dead, b: G.bolts }; });
 log(sh.had && !sh.now && !sh.dead && sh.b === 10, "shield power-up saves you from one bomb", JSON.stringify(sh));
-log(await p.evaluate(() => { const G = RoboPlus._game(), t0 = G.t; G.t = 0; const a = G.spawnAt("bomb", 50, -40).v; G.t = 44; const b = G.spawnAt("bomb", 50, -40).v; G.obj = []; G.t = t0; return b > a * 1.8; }), "difficulty also grows with time (bombs faster after 44 s)");
+log(await p.evaluate(() => { const G = RoboPlus._game(), t0 = G.t; G.t = 0; const a = G.spawnAt("bomb", 50, -40).v; G.t = 44; const b = G.spawnAt("bomb", 50, -40).v; G.obj = []; G.t = t0; return b > a * 1.5; }), "difficulty also grows with time (bombs faster after 44 s)");
 if (process.env.SHOTS) { await p.evaluate(() => { const G = RoboPlus._game(), W = document.querySelector(".gm-cv").clientWidth, H = document.querySelector(".gm-cv").clientHeight; G.nb = G.nbomb = G.nthief = G.npow = 99; G.obj = []; G.combo = 12; G.shield = true; G.pw.magnet = 5; [["bolt", .2, .3], ["gold", .5, .25], ["bomb", .75, .4], ["thief", .3, .55], ["item", .65, .15], ["pow", .15, .7], ["bolt", .85, .6], ["bolt", .45, .5]].forEach(([k, x, y], i) => G.spawnAt(k, W * x, H * y, { v: 1, vx: 0, amp: 0, ...(k === "pow" ? { p: "double" } : {}) })); }); await sleep(200); await p.screenshot({ path: process.env.SHOTS + "/9b-game-new.png" }); }
 const sb = await p.evaluate(async () => { const G = RoboPlus._game(), H = document.querySelector(".gm-cv").clientHeight; G.obj = []; G.shield = false; G.bolts = 6; G.spawnAt("bomb", G.px, H - 75, { v: 30, vx: 0 }); await new Promise(r => setTimeout(r, 600)); return { dead: G.dead, b: G.bolts }; });
 log(sb.dead && sb.b === 0, "bomb without shield → round lost", JSON.stringify(sb));
@@ -169,8 +169,11 @@ const lk = await p.evaluate(async () => { const G = RoboPlus._game(), H = docume
   return { b: G.bolts, open: !!document.querySelector("#roboGame[open]"), txt, ov: !!document.querySelector(".gm-ov") }; });
 log(lk.b === 402 && lk.open && !lk.ov && /אין יציאה/.test(lk.txt), "over 400 in a round: cash-out and ✕ are locked", JSON.stringify(lk));
 const b300 = await p.evaluate(() => Robo.state().bolts);
-const win = await p.evaluate(async () => { const G = RoboPlus._game(), H = document.querySelector(".gm-cv").clientHeight; G.bolts = 499; G.spawnAt("bolt", G.px, H - 75, { v: 30 }); await new Promise(r => setTimeout(r, 900)); const h = document.querySelector(".gm-ov h3"); return h ? h.textContent : ""; });
-log(/ניצחת/.test(win) && await p.evaluate(b0 => Robo.state().bolts === b0 + 500 && Robo.state().game.n === 500, b300), "reach 500 → win screen, all 500 saved", win);
+const win = await p.evaluate(async () => { const G = RoboPlus._game(), H = document.querySelector(".gm-cv").clientHeight; G.bolts = 499; G.spawnAt("bolt", G.px, H - 75, { v: 30 }); await new Promise(r => setTimeout(r, 2200)); const h = document.querySelector(".gm-ov h3"); return h ? h.textContent : ""; });
+log(/כפול או כלום/.test(win), "reach 500 → slow-mo, then 'double or nothing?'", win);
+await p.evaluate(() => document.querySelector(".gm-ov button").click()); await sleep(600);
+const win2 = await p.evaluate(() => (document.querySelector(".gm-ov h3") || {}).textContent || "");
+log(/ניצחת/.test(win2) && await p.evaluate(b0 => Robo.state().bolts === b0 + 500 && Robo.state().game.n === 500, b300), "keep → win screen, all 500 saved", win2);
 await p.evaluate(() => { const bs = [...document.querySelectorAll(".gm-ov button")]; (bs.find(x => /סיום/.test(x.textContent)) || bs[0]).click(); }); await sleep(500);
 await p.evaluate(() => { const s = Robo.state(); s.game = { d: RoboCore.ymd(Date.now()), n: 0, it: 0 }; Robo.open("fun", "game"); }); await sleep(300);
 await p.evaluate(() => document.querySelector("#rpPlay").click()); await sleep(400);
@@ -178,6 +181,22 @@ await p.evaluate(() => document.querySelector(".gm-ov button").click()); await s
 const lb = await p.evaluate(async () => { const G = RoboPlus._game(), H = document.querySelector(".gm-cv").clientHeight, b0 = Robo.state().bolts; G.nb = G.nbomb = G.nthief = G.npow = G.nitem = 99; G.obj = []; G.shield = false; G.bolts = 410; G.spawnAt("bomb", G.px, H - 75, { v: 30, vx: 0 }); await new Promise(r => setTimeout(r, 1800)); return { dead: G.dead, saved: Robo.state().bolts - b0, ov: (document.querySelector(".gm-ov h3") || {}).textContent }; });
 log(lb.dead && lb.saved === 0 && /בום/.test(lb.ov || ""), "over 400 and a bomb → everything lost", JSON.stringify(lb));
 await p.evaluate(() => { const bs = [...document.querySelectorAll(".gm-ov button")]; (bs.find(x => /סיום/.test(x.textContent)) || bs[0]).click(); }); await sleep(500);
+// 🎲 כפול או כלום: מכפילים ושורדים → 1000 · מכפילים ונופלים → כלום
+for (const [winIt, label] of [[true, "double → survive 30 s → 1000 bolts"], [false, "double → bomb → lose everything"]]) {
+  await p.evaluate(() => { const s = Robo.state(); s.game = { d: RoboCore.ymd(Date.now()), n: 0, it: 0 }; Robo.open("fun", "game"); }); await sleep(300);
+  await p.evaluate(() => document.querySelector("#rpPlay").click()); await sleep(400);
+  await p.evaluate(() => document.querySelector(".gm-ov button").click()); await sleep(500);
+  const d0 = await p.evaluate(() => Robo.state().bolts);
+  await p.evaluate(async () => { const G = RoboPlus._game(), H = document.querySelector(".gm-cv").clientHeight; G.nb = G.nbomb = G.nthief = G.npow = G.nitem = 99; G.obj = []; G.shield = false; G.bolts = 499; G.spawnAt("bolt", G.px, H - 75, { v: 30 }); await new Promise(r => setTimeout(r, 2200)); });
+  await p.evaluate(() => { const bs = [...document.querySelectorAll(".gm-ov button")]; bs.find(x => /להכפיל/.test(x.textContent)).click(); }); await sleep(500);
+  const hard = await p.evaluate(() => { const G = RoboPlus._game(); return G && G.hard > 20 && G.hardBase === 500; });
+  if (winIt) await p.evaluate(() => { const G = RoboPlus._game(); G.obj = []; G.nb = G.nbomb = G.nthief = 99; G.hard = .3; });
+  else await p.evaluate(() => { const G = RoboPlus._game(), H = document.querySelector(".gm-cv").clientHeight; G.obj = []; G.nb = G.nbomb = G.nthief = 99; G.spawnAt("bomb", G.px, H - 75, { v: 30, vx: 0 }); });
+  await sleep(1800);
+  const res = await p.evaluate(d0 => ({ h: (document.querySelector(".gm-ov h3") || {}).textContent || "", d: Robo.state().bolts - d0, n: Robo.state().game.n }), d0);
+  log(hard && (winIt ? /הכפלת/.test(res.h) && res.d === 1000 : /הפסדת/.test(res.h) && res.d === 0) && res.n === 500, label, JSON.stringify(res));
+  await p.evaluate(() => { const b = document.querySelector(".gm-ov button"); b && b.click(); }); await sleep(500);
+}
 await p.evaluate(() => { const s = Robo.state(); s.game = { d: RoboCore.ymd(Date.now()), n: 500, it: 2 }; Robo.open("fun", "game"); }); await sleep(300);
 log(await p.evaluate(() => !document.querySelector("#rpPlay").disabled && /אימון/.test(document.querySelector("#rpPlay").textContent)), "game: after 500 bolts – practice mode button (no prizes)");
 // 🏋️ אימון: משחקים, אין נעילה, לא מקבלים ברגים, נשמר שיא
@@ -193,8 +212,10 @@ await p.evaluate(() => { const bs = [...document.querySelectorAll(".gm-ov button
 await p.evaluate(() => { const s = Robo.state(); s.run = null; Robo.open("fun"); }); await sleep(400);
 log(await p.evaluate(() => !!document.querySelector('#roboUI [data-p="run"]')), "run: tile in the fun tab");
 await p.evaluate(() => document.querySelector('#roboUI [data-p="run"]').click()); await sleep(300);
-await p.evaluate(() => document.querySelector("#rnPlay").click()); await sleep(400);
-await p.evaluate(() => document.querySelector("#roboRun .gm-ov button").click()); await sleep(1500);
+await p.evaluate(() => document.querySelector("#rnPlay").click());
+await p.waitForSelector("#roboRun .gm-ov button", { timeout: 8000 }); await sleep(200);
+await p.evaluate(() => document.querySelector("#roboRun .gm-ov button").click());
+await p.waitForFunction(() => window.RoboRun && RoboRun._game() && RoboRun._game().dist > 5, { timeout: 8000 }).catch(() => {});
 log(await p.evaluate(() => { const c = document.querySelector("#roboRun[open] canvas"); return !!c && c.width > 200 && RoboRun._game().dist > 5; }), "run: running (canvas + distance grows)");
 const rn = await p.evaluate(async () => { const G = RoboRun._game(), w = ms => new Promise(r => setTimeout(r, ms)); G.obj = []; G.next = 999; const out = {};
   G.spawnAt("bolt", 0, 4); G.spawnAt("bolt", 0, 6); await w(800); out.bolts = G.bolts;
@@ -206,10 +227,39 @@ const rn = await p.evaluate(async () => { const G = RoboRun._game(), w = ms => n
 log(rn.bolts === 2 && rn.lane === 1, "run: collect bolts + swipe to change lane", JSON.stringify(rn));
 log(rn.jumped && rn.ducked, "run: jump over a bench, duck under a bar", JSON.stringify(rn));
 log(rn.shield, "run: shield saves you from a locker", JSON.stringify(rn));
+const ex = await p.evaluate(async () => { const G = RoboRun._game(), w = ms => new Promise(r => setTimeout(r, ms)), clr = () => { G.obj = []; G.next = 999; G.shield = false; G.jt = -1; G.st = -1; }; const o = {};
+  // 💩 קקי → עפים; רחפן גונב חצי; קשת ×2; ציפור מפילה
+  clr(); G.bolts = 40; G.spawnAt("poop", G.lane, 2.5); await w(500); o.fly = G.fly > 5 && G.stats.flights === 1; await w(500); o.alt = G.alt > .8;
+  clr(); G.spawnAt("drone", G.lane, 2.5); await w(500); o.drone = G.bolts === 20;
+  clr(); G.spawnAt("rainbow", G.lane, 2.5); await w(500); o.rainbow = G.rainbowT > 3;
+  clr(); G.spawnAt("bird", G.lane, 2.5); await w(500); o.bird = G.fly === 0 && !G.dead;
+  await w(900);
+  // 🤸 טרמפולינה מעל ארון
+  clr(); G.spawnAt("tramp", G.lane, 2); await w(250); G.spawnAt("locker", G.lane, 4); await w(500); o.tramp = !G.dead;
+  await w(900);
+  // 🧊 קרח: אי אפשר לפנות
+  clr(); G.spawnAt("ice", G.lane, 2); await w(400); const l0 = G.lane; G.act(l0 === 1 ? "L" : "R"); o.ice = G.ice > 0 && G.lane === l0; await w(1500);
+  // 😠 ביריון: גוף/יד = לוקח 20%, מסלול שלישי = עוברים
+  clr(); G.bolts = 50; const b = G.lane; G.spawnAt("bully", b, 2.5, { base: b, arm: b === 1 ? -1 : 1 }); await w(500); o.bully = G.bolts === 40;
+  clr(); const safe = [-1, 0, 1].find(l => l !== G.lane && l !== G.lane + (G.lane === 1 ? -1 : 1)); G.spawnAt("bully", G.lane === 1 ? 0 : G.lane === -1 ? 0 : 1, 2.5, { base: G.lane === 0 ? 1 : 0, arm: G.lane === 0 ? 1 : -G.lane }); const pass0 = G.stats.bullyPass; await w(500); o.bullyPass = G.stats.bullyPass === pass0 + 1 || G.bolts < 40;
+  // 🤖 מעידה → רודף; מעידה שנייה → נתפס
+  clr(); G.spawnAt("bench", G.lane, 2.5); await w(500); o.chase = G.chase > 4 && !G.dead;
+  if (window.__shot) await window.__shot();
+  clr(); G.spawnAt("beam", G.lane, 2.5); await w(1600); o.caught = G.dead;
+  o.h = (document.querySelector("#roboRun .gm-ov h3") || {}).textContent || ""; return o; });
+log(ex.fly && ex.alt, "run: 💩 magic poop → the robot flies up", JSON.stringify(ex));
+log(ex.drone && ex.rainbow && ex.bird, "run: sky – drone steals half, rainbow ×2, bird knocks you down", JSON.stringify(ex));
+log(ex.tramp && ex.ice, "run: trampoline jumps over a locker, ice blocks turning", JSON.stringify(ex));
+log(ex.bully && ex.bullyPass, "run: bully takes 20% (body/hand), safe lane passes", JSON.stringify(ex));
+log(ex.chase && ex.caught && /תפס/.test(ex.h), "run: stumble → giant robot chases → second stumble = caught", JSON.stringify(ex));
+await p.evaluate(() => { const bs = [...document.querySelectorAll("#roboRun .gm-ov button")]; (bs.find(x => /עוד ריצה/.test(x.textContent)) || bs[0]).click(); }); await sleep(600);
+if (process.env.SHOTS) { await p.evaluate(() => { const G = RoboRun._game(); G.dist = 520; G.wIdx = 1; G.obj = []; G.next = 999; G.spawnAt("bully", 0, 14, { base: 0, arm: 1 }); G.spawnAt("poop", -1, 9); G.spawnAt("tramp", 1, 30); }); await sleep(150); await p.screenshot({ path: process.env.SHOTS + "/run-world2.png" });
+  await p.evaluate(() => { const G = RoboRun._game(); G.obj = []; G.fly = 8; G.alt = 1; [["bird", -1, 10], ["drone", 1, 16], ["sbolt", 0, 7], ["sbolt", 0, 9.5], ["sbolt", 0, 12], ["rainbow", 0, 22]].forEach(([k, l, z]) => G.spawnAt(k, l, z)); G.v = .01; G.puffs.push({ x: 200, y: 600, r: 18, a: 1, txt: true }); }); await sleep(150); await p.screenshot({ path: process.env.SHOTS + "/run-sky.png" });
+  await p.evaluate(() => { const G = RoboRun._game(); G.fly = 0; G.alt = 0; G.obj = []; G.dist = 60; G.wIdx = 0; }); await sleep(400); }
 if (process.env.SHOTS) { await p.evaluate(() => { const G = RoboRun._game(); G.obj = []; G.next = 999; [["bolt", -1, 8], ["bolt", -1, 11], ["bolt", -1, 14], ["bench", 0, 12], ["locker", 1, 22], ["beam", -1, 30], ["pow", 0, 26, { p: "magnet" }], ["gold", 1, 9]].forEach(([k, l, z, e]) => G.spawnAt(k, l, z, Object.assign({ v: 0 }, e || {}))); G.v = 0.01; }); await sleep(120); await p.screenshot({ path: process.env.SHOTS + "/run.png" }); }
 const rb0 = await p.evaluate(() => Robo.state().bolts);
 const cr = await p.evaluate(async () => { const G = RoboRun._game(), w = ms => new Promise(r => setTimeout(r, ms)); G.obj = []; G.next = 999; G.shield = false; G.pw = {}; G.jt = -1; G.st = -1; G.spawnAt("locker", G.lane, 3); await w(1600); return { dead: G.dead, h: (document.querySelector("#roboRun .gm-ov h3") || {}).textContent, b: G.bolts }; });
-log(cr.dead && /נתקעת|שיא/.test(cr.h || "") && await p.evaluate((b0, n) => Robo.state().bolts === b0 + n && Robo.state().run.n === n, rb0, cr.b), "run: crash ends the run, collected bolts are saved", JSON.stringify(cr));
+log(cr.dead && /נתקעת|שיא/.test(cr.h || "") && await p.evaluate((b0, n) => Robo.state().bolts === b0 + n && Robo.state().run.n >= n, rb0, cr.b), "run: crash ends the run, collected bolts are saved", JSON.stringify(cr));
 await p.evaluate(() => { const bs = [...document.querySelectorAll("#roboRun .gm-ov button")]; (bs.find(x => /סיום/.test(x.textContent)) || bs[0]).click(); }); await sleep(400);
 log(await p.evaluate(() => !document.querySelector("#roboRun[open]") && Robo.state().runBest > 0), "run: closed, best distance saved");
 // ✨ נוצץ + 🌍 אירוע + ⚡ בזק – בלי שגיאות

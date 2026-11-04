@@ -424,6 +424,34 @@
   const PRICE = { c: [10, 80], r: [25, 200], s: [50, 400], e: [100, 800], m: [250, 2000], l: [500, 5000], u: [2000, 20000] };
   // 🎮 משחק הברגים: עד 500 ברגים ו-2 אביזרים ביום (אחרי זה – מצב אימון בלי פרסים)
   const GAME_CAP = 500, GAME_ITEMS = 2;
+  // 🎲 כפול או כלום (ברגים נופלים, כשמגיעים ל-500): ניצחון = 500 נשמרים + עוד 500, הפסד = כלום (וגמרת להיום)
+  function gameDouble(S, win, now = Date.now()) {
+    const d = ymd(now); if (!S.game || S.game.d !== d) S.game = { d, n: 0, it: 0 };
+    const base = Math.max(0, GAME_CAP - S.game.n); S.game.n = GAME_CAP; S.game.dbl = win ? 1 : -1;
+    if (win) S.bolts += base * 2; return { bolts: win ? base * 2 : 0 };
+  }
+  // 🛒 שדרוגים קבועים למשחקים (3 רמות לכל אחד)
+  const UPG = {
+    magnet: { n: "מגנט חזק", em: "🧲", g: "both", d: "המגנט מחזיק יותר זמן (+3 שניות לכל רמה)", cost: [250, 700, 1800] },
+    shield: { n: "מגן בהתחלה", em: "🛡️", g: "both", d: "סיכוי להתחיל עם מגן: 35% → 70% → תמיד", cost: [400, 1000, 2500] },
+    luck: { n: "מזל", em: "🍀", g: "both", d: "יותר כוחות ופריטים נופלים", cost: [350, 900, 2200] },
+    bucket: { n: "רובוט רחב", em: "🪣", g: "bolts", d: "ב\"ברגים נופלים\" – תופסים רחב יותר", cost: [300, 800, 2000] },
+    flight: { n: "קקי עוצמתי", em: "💩", g: "run", d: "בריצה – עפים יותר זמן (+2 שניות לכל רמה)", cost: [300, 800, 2000] },
+  };
+  const upg = (S, k) => Math.min(3, (S.upg || {})[k] || 0);
+  function buyUpg(S, k) { const U = UPG[k], l = upg(S, k); if (!U) return { ok: false, error: "bad" }; if (l >= 3) return { ok: false, error: "max" }; const c = U.cost[l]; if (S.bolts < c) return { ok: false, error: "bolts", cost: c }; S.bolts -= c; S.upg = Object.assign({}, S.upg, { [k]: l + 1 }); return { ok: true, lvl: l + 1, cost: c }; }
+  // 🎯 אתגר יומי לכל משחק (אחד ביום, אותו אתגר לכל השכבה) – הצלחה = 💠 תיבת מגה (פעם ביום)
+  const CHAL = {
+    bolts: [{ id: "lv5", n: "להגיע לשלב 5 בסיבוב אחד", ok: s => s.lvl >= 5 }, { id: "gold3", n: "לתפוס 3 ברגי זהב בסיבוב אחד", ok: s => s.gold >= 3 }, { id: "noshield", n: "לתפוס 120 ברגים בסיבוב בלי להשתמש במגן", ok: s => s.bolts >= 120 && !s.shieldUsed },
+      { id: "combo30", n: "קומבו של 30 ברצף", ok: s => s.combo >= 30 }, { id: "boss", n: "לשרוד בוס 👾", ok: s => s.boss >= 1 }, { id: "t90", n: "לשרוד 90 שניות בסיבוב אחד", ok: s => s.t >= 90 }],
+    run: [{ id: "d800", n: "לרוץ 800 מטר בריצה אחת", ok: s => s.dist >= 800 }, { id: "fly2", n: "לעוף 2 פעמים בריצה אחת 💩", ok: s => s.flights >= 2 }, { id: "b60", n: "לאסוף 60 ברגים בריצה אחת", ok: s => s.bolts >= 60 },
+      { id: "nostumble", n: "לרוץ 500 מטר בלי למעוד", ok: s => s.cleanDist >= 500 }, { id: "world3", n: "להגיע לעולם השלישי 🍽️", ok: s => s.world >= 3 }, { id: "bully", n: "לעבור 3 ביריונים בלי שיתפסו אותך", ok: s => s.bullyPass >= 3 }],
+  };
+  function challenge(game, now = Date.now()) { const d = ymd(now), L = CHAL[game]; let h = 0; for (const c of d + game) h = (h * 31 + c.charCodeAt(0)) >>> 0; return L[h % L.length]; }
+  function challengeCheck(S, game, stats, now = Date.now()) {
+    const d = ymd(now), c = challenge(game, now); S.chal = S.chal || {}; if (S.chal[game] === d || !c.ok(stats || {})) return null;
+    S.chal[game] = d; S.boxes.push("mega"); return c;
+  }
   // 🏃 ריצת הרובוט: עד 250 ברגים ביום (אחרי זה – אימון בלי פרסים)
   const RUN_CAP = 250;
   function runBank(S, n, now = Date.now()) { const d = ymd(now); if (!S.run || S.run.d !== d) S.run = { d, n: 0 }; const g = Math.max(0, Math.min(Math.floor(n), RUN_CAP - S.run.n)); S.run.n += g; S.bolts += g; return { bolts: g, left: RUN_CAP - S.run.n }; }
@@ -502,6 +530,6 @@
     const d = ymd(now); if (!S.earn || S.earn.d !== d) S.earn = { d, n: 0 };
     const g = Math.max(0, Math.min(n, EARN_CAP - S.earn.n)); S.earn.n += g; S.bolts += g; return g;
   }
-  const api = { RUN_CAP, runBank, MISSIONS, missions, track, claimMission, WORLDS, MAP_N, MAP_STEP, mapPrize, mapStep, mapClaim, SHINY, WHEEL, spinWheel, FLASH, flashNow, buyFlash, labCombine, SETS, setsCheck, eventNow, PRICE, GAME_CAP, GAME_ITEMS, gameBank, cleanName, achievements, RVAL, BVAL, offerValue, canGive, applyTrade, weekId, HEROES, EARN_CAP, earn, RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
+  const api = { gameDouble, UPG, upg, buyUpg, CHAL, challenge, challengeCheck, RUN_CAP, runBank, MISSIONS, missions, track, claimMission, WORLDS, MAP_N, MAP_STEP, mapPrize, mapStep, mapClaim, SHINY, WHEEL, spinWheel, FLASH, flashNow, buyFlash, labCombine, SETS, setsCheck, eventNow, PRICE, GAME_CAP, GAME_ITEMS, gameBank, cleanName, achievements, RVAL, BVAL, offerValue, canGive, applyTrade, weekId, HEROES, EARN_CAP, earn, RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.RoboCore = api;
 })(typeof self !== "undefined" ? self : this);

@@ -96,7 +96,7 @@ dialog.robo.game{background:#070418}
 .gm{position:relative;height:100%;display:flex;flex-direction:column;touch-action:none;user-select:none;-webkit-user-select:none}
 .gm-top{display:flex;align-items:center;gap:6px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:#120c2e;font-weight:900;font-size:14px}
 .gm-top .x{border:0;background:rgba(255,255,255,.12);color:#fff;border-radius:10px;width:34px;height:34px;font-size:16px;cursor:pointer}
-.gm-top span{background:rgba(255,255,255,.08);border-radius:99px;padding:5px 10px;white-space:nowrap}.gm-top span:empty{display:none}
+.gm-top span{background:rgba(255,255,255,.08);border-radius:99px;padding:5px 8px;white-space:nowrap;font-size:13px}.gm-top{overflow:hidden}.gm-top .gm-snd{width:30px;height:30px;font-size:14px;flex:0 0 auto}.gm-top span:empty{display:none}
 dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
 .gm-cv{flex:1;position:relative;min-height:300px;overflow:hidden}
 .gm-rules{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 10px}.gm-rules span{background:rgba(255,255,255,.1);border-radius:99px;padding:4px 9px;font-size:12.5px;font-weight:800}.gm-rules span.bad{background:rgba(239,68,68,.25);color:#fecaca}.gm-cv canvas{position:absolute;inset:0;width:100%;height:100%}
@@ -152,6 +152,8 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       ${tile("map", "🗺️", "#22c55e", "המסע", ready > 0 ? "יש אוצר שמחכה! 💰" : `תחנה ${mp.c}/${R.MAP_N}`, ready > 0 ? ready : "")}
       ${tile("lab", "🔨", "#38bdf8", "מעבדה", "5 אביזרים → 1 נדיר יותר")}
       ${tile("market", "🕵️", "#a855f7", "שוק", "קונים ומוכרים בברגים")}
+      ${tile("lb", "🏆", "#eab308", "טבלת שיאים", "הכי טובים בשכבה השבוע")}
+      ${tile("upg", "🛒", "#6366f1", "שדרוגים", "מגנט, מגן, קקי עוצמתי…")}
       ${tile("sets", "🎭", "#f97316", "סטים", `השלמת ${sets}/${R.SETS.length}`)}
       ${tile("bonus", "📚", "#14b8a6", "בונוסים", "ציון טוב · שבוע בלי איחורים")}</div>`;
     body.querySelectorAll("[data-p]").forEach(b => b.onclick = () => PANELS[b.dataset.p](body));
@@ -449,23 +451,59 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
   // 🔩 בורג = 1 · 🌟 זהב = 5 · 🎁 אביזר · 💣 פצצה = כל הסיבוב נעלם · 🦹 גנב = לוקח חצי מהסיבוב
   // כוחות: 🧲 מגנט · 🛡️ מגן (מציל מפצצה/גנב אחד) · 🐢 הילוך איטי · ⚡ כפול. קומבו כל 10 תפיסות ברצף = בונוס. ככל שהזמן עובר – יותר מהר ויותר מסוכן
   const ITEM_R = [["r", 60], ["s", 30], ["e", 10]];
-  const POW = { magnet: { em: "🧲", n: "מגנט", c: "#f43f5e", t: 6 }, shield: { em: "🛡️", n: "מגן", c: "#38bdf8", t: 0 }, slow: { em: "🐢", n: "איטי", c: "#22c55e", t: 5 }, double: { em: "⚡", n: "כפול", c: "#facc15", t: 6 } };
+  const POW = { magnet: { em: "🧲", n: "מגנט", c: "#f43f5e", t: 6 }, shield: { em: "🛡️", n: "מגן", c: "#38bdf8", t: 0 }, slow: { em: "🐢", n: "איטי", c: "#22c55e", t: 5 }, double: { em: "⚡", n: "כפול", c: "#facc15", t: 6 },
+    freeze: { em: "⏸️", n: "הקפאה", c: "#67e8f9", t: 3 }, rain: { em: "🌧️", n: "גשם זהב", c: "#fde047", t: 5 }, triple: { em: "×3", n: "פי 3", c: "#fb923c", t: 6 }, bucket: { em: "🪣", n: "רובוט ענק", c: "#a3e635", t: 8 }, defuse: { em: "🧯", n: "מנטרל פצצות", c: "#f87171", t: 6 } };
   // 🔊 צלילים של המשחק (מכבדים את כפתור ההשתקה)
-  const AU = (() => {
-    let ac; const ctx = () => { if (X.SFX.muted && X.SFX.muted()) return null; try { if (!ac) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; ac = new A(); } if (ac.state === "suspended") ac.resume(); return ac; } catch (e) { return null; } };
-    const tone = (f, t, dur, type = "sine", vol = .14, to = 0) => { const c = ctx(); if (!c) return; const o = c.createOscillator(), g = c.createGain(), t0 = c.currentTime + t; o.type = type; o.frequency.setValueAtTime(f, t0); if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + dur); g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + .01); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur); o.connect(g).connect(c.destination); o.start(t0); o.stop(t0 + dur + .05); };
-    const noise = (t, dur, vol = .3) => { const c = ctx(); if (!c) return; const n = Math.floor(c.sampleRate * dur), b = c.createBuffer(1, n, c.sampleRate), dd = b.getChannelData(0); for (let i = 0; i < n; i++) dd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2); const s = c.createBufferSource(), g = c.createGain(); s.buffer = b; g.gain.value = vol; s.connect(g).connect(c.destination); s.start(c.currentTime + t); };
-    return {
-      pick(k) { tone(700 + Math.min(k, 40) * 22, 0, .08, "triangle", .11); },
+  // 🔊🎵 מנוע הצלילים של המשחקים: אפקט לכל דבר + מוזיקת רקע. כיבוי: צלילים = roboMute, מוזיקה = roboMusic="0"
+  const SND = (() => {
+    let ac; const fxOff = () => !!(X.SFX.muted && X.SFX.muted()), musOff = () => LS.get("roboMusic", "") === "0";
+    const ctx = force => { if (!force && fxOff()) return null; try { if (!ac) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; ac = new A(); } if (ac.state === "suspended") ac.resume(); return ac; } catch (e) { return null; } };
+    const tone = (f, t, dur, type = "sine", vol = .14, to = 0, dest) => { const c = ctx(!!dest); if (!c) return; const o = c.createOscillator(), g = c.createGain(), t0 = c.currentTime + t; o.type = type; o.frequency.setValueAtTime(f, t0); if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + dur); g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + .01); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur); o.connect(g).connect(dest || c.destination); o.start(t0); o.stop(t0 + dur + .05); };
+    const noise = (t, dur, vol = .3, f0 = 0, f1 = 0, dest) => { const c = ctx(!!dest); if (!c) return; const n = Math.floor(c.sampleRate * dur), b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2); const sN = c.createBufferSource(), g = c.createGain(); sN.buffer = b; g.gain.value = vol; let node = sN; if (f0) { const fl = c.createBiquadFilter(); fl.type = "bandpass"; fl.frequency.setValueAtTime(f0, c.currentTime + t); if (f1) fl.frequency.exponentialRampToValueAtTime(f1, c.currentTime + t + dur); node.connect(fl); node = fl; } node.connect(g).connect(dest || c.destination); sN.start(c.currentTime + t); };
+    const fx = {
+      pick(k) { tone(700 + Math.min(k, 40) * 22, 0, .08, "triangle", .11); }, coin(k = 0) { tone(880 + (k % 8) * 60, 0, .07, "triangle", .1); },
       gold() { [0, .06, .12].forEach((t, i) => tone(1046 + i * 260, t, .14, "triangle", .12)); },
       boom() { noise(0, .8, .55); tone(140, 0, .7, "sawtooth", .25, 30); },
       thief() { [0, .09, .18, .27].forEach((t, i) => tone(620 - i * 110, t, .1, "square", .07)); },
       power() { [0, .05, .1, .15].forEach((t, i) => tone(660 * Math.pow(1.26, i), t, .12, "sine", .14)); },
       combo(n) { [0, .07, .14, .21].forEach((t, i) => tone(523 * Math.pow(1.19, i + Math.min(6, n / 10)), t, .2, "triangle", .14)); noise(0, .3, .08); },
-      shield() { tone(300, 0, .35, "sine", .2, 1000); },
-      item() { [0, .08, .16].forEach((t, i) => tone(880 * Math.pow(1.33, i), t, .2, "sine", .15)); },
+      shield() { tone(300, 0, .35, "sine", .2, 1000); }, item() { [0, .08, .16].forEach((t, i) => tone(880 * Math.pow(1.33, i), t, .2, "sine", .15)); },
+      level(n) { [0, .07, .14, .21].forEach((t, i) => tone(523 * Math.pow(1.19, i + Math.min(6, n)), t, .18, "triangle", .13)); },
+      lightning() { noise(0, .5, .6, 3000, 300); tone(90, .05, .5, "sawtooth", .2, 40); },
+      rock() { noise(0, .35, .45, 300, 80); tone(70, 0, .3, "sine", .3, 40); },
+      ufo() { const c = ctx(); if (!c) return; const o = c.createOscillator(), l = c.createOscillator(), lg = c.createGain(), g = c.createGain(), t0 = c.currentTime; o.type = "sine"; o.frequency.value = 520; l.frequency.value = 7; lg.gain.value = 120; l.connect(lg).connect(o.frequency); g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(.09, t0 + .2); g.gain.exponentialRampToValueAtTime(.0001, t0 + 1.4); o.connect(g).connect(c.destination); o.start(t0); l.start(t0); o.stop(t0 + 1.5); l.stop(t0 + 1.5); },
+      freeze() { [0, .05, .1, .15, .2].forEach((t, i) => tone(2000 - i * 250, t, .25, "sine", .07)); }, rain() { [0, .08, .16, .24].forEach((t, i) => tone(1300 + i * 180, t, .12, "triangle", .07)); },
+      fart() { const c = ctx(); if (!c) return; const o = c.createOscillator(), l = c.createOscillator(), lg = c.createGain(), g = c.createGain(), t0 = c.currentTime; o.type = "sawtooth"; o.frequency.setValueAtTime(95 + Math.random() * 30, t0); o.frequency.exponentialRampToValueAtTime(55, t0 + .45); l.frequency.value = 28 + Math.random() * 12; lg.gain.value = 40; l.connect(lg).connect(o.frequency); g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(.2, t0 + .03); g.gain.exponentialRampToValueAtTime(.0001, t0 + .5); o.connect(g).connect(c.destination); o.start(t0); l.start(t0); o.stop(t0 + .55); l.stop(t0 + .55); noise(0, .3, .08, 200, 90); },
+      boing() { tone(180, 0, .35, "sine", .2, 700); tone(700, .18, .25, "sine", .1, 300); }, whoosh() { noise(0, .45, .2, 600, 2500); },
+      bird() { [0, .09, .2].forEach(t => tone(2600, t, .07, "sine", .08, 3400)); }, drone() { const c = ctx(); if (!c) return; tone(220, 0, .6, "sawtooth", .05, 240); tone(223, 0, .6, "sawtooth", .05, 243); },
+      bully() { tone(120, 0, .35, "sawtooth", .16, 80); tone(90, .1, .35, "square", .1, 60); }, stomp() { noise(0, .25, .4, 150, 60); tone(55, 0, .25, "sine", .3, 35); },
+      stumble() { tone(300, 0, .2, "square", .08, 120); noise(0, .15, .15, 800, 300); }, land() { noise(0, .3, .3, 300, 100); }, crash() { noise(0, .7, .5); tone(160, 0, .6, "sawtooth", .22, 40); },
+      lane() { tone(500, 0, .05, "sine", .05, 650); }, jump() { tone(300, 0, .18, "square", .05, 700); }, slide() { noise(0, .18, .08); }, rainbow() { [0, .06, .12, .18, .24, .3].forEach((t, i) => tone(523 * Math.pow(1.122, i * 2), t, .18, "sine", .09)); },
+      win() { [0, .12, .24, .36, .6].forEach((t, i) => tone([523, 659, 784, 1046, 1318][i], t, .35, "triangle", .15)); }, heartbeat() { tone(60, 0, .12, "sine", .35, 40); tone(60, .18, .12, "sine", .25, 40); },
     };
+    // 🎵 מוזיקת רקע: לולאה פשוטה (בס + מנגינה + היי-האט) לכל משחק
+    const SONGS = {
+      bolts: { bpm: 124, bass: [48, 48, 55, 55, 53, 53, 50, 55], lead: [72, 76, 79, 76, 74, 77, 81, 77, 72, 76, 79, 84, 83, 79, 76, 74] },
+      run: { bpm: 148, bass: [45, 45, 52, 52, 48, 48, 50, 52], lead: [69, 72, 76, 72, 74, 77, 81, 77, 76, 72, 69, 72, 71, 74, 76, 79] },
+      sky: { bpm: 132, bass: [53, 53, 57, 57, 55, 55, 52, 55], lead: [77, 81, 84, 81, 79, 82, 86, 82, 81, 77, 74, 77, 79, 76, 72, 76] },
+      hard: { bpm: 172, bass: [40, 40, 40, 43, 41, 41, 39, 39], lead: [64, 67, 70, 67, 65, 68, 71, 68, 64, 67, 70, 73, 71, 68, 65, 62] },
+    };
+    let mus = null;
+    const mf = n => 440 * Math.pow(2, (n - 69) / 12);
+    function music(kind) {
+      stopMusic(); if (!kind || musOff()) return; const c = ctx(true); if (!c) return; const S = SONGS[kind] || SONGS.bolts, g = c.createGain(); g.gain.value = .55; g.connect(c.destination);
+      const st = 60 / S.bpm / 2; let next = c.currentTime + .1, i = 0;
+      const tick = () => { while (next < c.currentTime + .25) { const t = next - c.currentTime; if (i % 2 === 0) tone(mf(S.bass[(i / 2) % S.bass.length] - 12), t, st * 1.8, "square", .05, 0, g); tone(mf(S.lead[i % S.lead.length]), t, st * .9, "triangle", .045, 0, g); if (i % 2 === 1) noise(t, .04, .03, 8000, 0, g); next += st; i++; } };
+      tick(); mus = { timer: setInterval(tick, 60), g, kind };
+    }
+    function stopMusic() { if (mus) { clearInterval(mus.timer); try { mus.g.gain.setTargetAtTime(.0001, ac.currentTime, .1); setTimeout(() => { try { mus && mus.g.disconnect(); } catch (e) {} }, 400); } catch (e) {} mus = null; } }
+    const musicOn = () => !musOff(), toggleMusic = kind => { LS.set("roboMusic", musOff() ? null : "0"); if (musOff()) stopMusic(); else music(kind); return !musOff(); };
+    return Object.assign(fx, { music, stopMusic, musicOn, toggleMusic, fxOn: () => !fxOff(), toggleFx: () => X.SFX.toggle() });
   })();
+  const AU = SND;
+  // כפתורי 🎵/🔊 לשורה העליונה של משחק
+  const sndBtns = kind => `<button class="x gm-snd" type="button" data-snd="m" aria-label="מוזיקה">${SND.musicOn() ? "🎵" : "🔇"}</button><button class="x gm-snd" type="button" data-snd="f" aria-label="צלילים">${SND.fxOn() ? "🔊" : "🔈"}</button>`;
+  const wireSnd = (root, kind) => root.querySelectorAll("[data-snd]").forEach(b => b.onclick = e => { e.stopPropagation(); if (b.dataset.snd === "m") b.textContent = SND.toggleMusic(kind()) ? "🎵" : "🔇"; else b.textContent = SND.toggleFx() ? "🔊" : "🔈"; });
   // 🎨 ציורים מוכנים מראש (בהירים וזוהרים – רואים אותם טוב על כל טלפון)
   const SPR = {};
   function sprite(key, s, fn) { const k = key + "|" + s; if (SPR[k]) return SPR[k]; const dp = Math.min(2, window.devicePixelRatio || 1), P = s * 2, c = document.createElement("canvas"); c.width = c.height = Math.ceil(P * dp); const x = c.getContext("2d"); x.scale(dp, dp); x.translate(P / 2, P / 2); fn(x, s); return (SPR[k] = c); }
@@ -506,27 +544,68 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
   const POW_ICON = { magnet: (x, s) => { x.strokeStyle = "#f43f5e"; x.lineWidth = s * .16; x.beginPath(); x.arc(0, -s * .02, s * .2, Math.PI, 0); x.stroke(); x.fillStyle = "#e5e7eb"; x.fillRect(-s * .28, -s * .04, s * .16, s * .18); x.fillRect(s * .12, -s * .04, s * .16, s * .18); },
     shield: (x, s) => { x.fillStyle = "#38bdf8"; x.beginPath(); x.moveTo(0, -s * .3); x.lineTo(s * .26, -s * .18); x.quadraticCurveTo(s * .24, s * .2, 0, s * .32); x.quadraticCurveTo(-s * .24, s * .2, -s * .26, -s * .18); x.closePath(); x.fill(); x.strokeStyle = "#fff"; x.lineWidth = 2; x.stroke(); },
     slow: (x, s) => { x.fillStyle = "#22c55e"; x.beginPath(); x.ellipse(0, s * .04, s * .28, s * .2, 0, Math.PI, 0); x.fill(); x.fillRect(-s * .3, s * .04, s * .6, s * .06); x.beginPath(); x.arc(s * .32, s * .02, s * .08, 0, 7); x.fill(); },
-    double: (x, s) => { x.fillStyle = "#facc15"; x.beginPath(); x.moveTo(s * .06, -s * .34); x.lineTo(-s * .18, s * .04); x.lineTo(0, s * .04); x.lineTo(-s * .06, s * .34); x.lineTo(s * .2, -s * .06); x.lineTo(s * .02, -s * .06); x.closePath(); x.fill(); } };
+    double: (x, s) => { x.fillStyle = "#facc15"; x.beginPath(); x.moveTo(s * .06, -s * .34); x.lineTo(-s * .18, s * .04); x.lineTo(0, s * .04); x.lineTo(-s * .06, s * .34); x.lineTo(s * .2, -s * .06); x.lineTo(s * .02, -s * .06); x.closePath(); x.fill(); },
+    freeze: (x, s) => { x.fillStyle = "#67e8f9"; x.fillRect(-s * .2, -s * .24, s * .14, s * .48); x.fillRect(s * .06, -s * .24, s * .14, s * .48); },
+    rain: (x, s) => { x.fillStyle = "#e5e7eb"; x.beginPath(); x.arc(-s * .1, -s * .08, s * .16, 0, 7); x.arc(s * .1, -s * .1, s * .18, 0, 7); x.fill(); x.fillStyle = "#fde047"; for (const dx of [-.16, 0, .16]) { x.beginPath(); x.arc(dx * s, s * .2, s * .06, 0, 7); x.fill(); } },
+    triple: (x, s) => txt(x, "×3", s * .42, "#fb923c"),
+    bucket: (x, s) => { x.fillStyle = "#a3e635"; x.beginPath(); x.moveTo(-s * .26, -s * .16); x.lineTo(s * .26, -s * .16); x.lineTo(s * .18, s * .26); x.lineTo(-s * .18, s * .26); x.closePath(); x.fill(); x.strokeStyle = "#ecfccb"; x.lineWidth = 2; x.beginPath(); x.arc(0, -s * .16, s * .26, Math.PI, 0); x.stroke(); },
+    defuse: (x, s) => { x.fillStyle = "#ef4444"; x.fillRect(-s * .12, -s * .18, s * .24, s * .44); x.fillStyle = "#fff"; x.fillRect(-s * .12, -s * .02, s * .24, s * .08); x.fillStyle = "#1f2937"; x.fillRect(-s * .06, -s * .3, s * .12, s * .12); } };
   const powDraw = (p, k) => (x, s) => { halo(x, s, p.c); x.beginPath(); x.arc(0, 0, s * .5, 0, 7); x.fillStyle = "#0f172a"; x.fill(); x.lineWidth = 3.5; x.strokeStyle = p.c; x.stroke(); POW_ICON[k](x, s); };
 
   function gamePanel(body) {
     const S = X.S, bs = breakState(), g = S.game && S.game.d === R.ymd(Date.now()) ? S.game : { n: 0, it: 0 }, left = R.GAME_CAP - g.n, best = S.gameBest || 0;
     body.innerHTML = `${back}<div class="rp-h">🔩 ברגים נופלים</div>
-      <div class="gm-rules"><span>🔩 = 1</span><span>🌟 = 5</span><span>🎁 = אביזר (מהיר!)</span><span class="bad">💣 = כל הסיבוב נעלם!</span><span class="bad">🦹 גנב = לוקח חצי!</span><span class="bad">🔒 מעל 400 – אין יציאה עד 500 או פצצה!</span><span>⬆️ כל 50 ברגים = שלב קשה יותר</span><span>🧲 מגנט</span><span>🛡️ מגן</span><span>🐢 איטי</span><span>⚡ כפול</span><span>🔥 קומבו = בונוס</span></div>
+      <div class="gm-rules"><span>🔩 = 1</span><span>🌟 = 5</span><span>🎁 = אביזר (מהיר!)</span><span class="bad">💣 = כל הסיבוב נעלם!</span><span class="bad">🦹 גנב = לוקח חצי!</span><span class="bad">🔒 מעל 400 – אין יציאה עד 500 או פצצה!</span><span>⬆️ כל 50 ברגים = שלב קשה יותר</span><span>👾 בוס כל 100</span><span>🎲 ב-500: כפול או כלום!</span><span>🧲 מגנט</span><span>🛡️ מגן</span><span>🐢 איטי</span><span>⚡ כפול</span><span>×3</span><span>⏸️ הקפאה</span><span>🌧️ גשם זהב</span><span>🪣 רובוט ענק</span><span>🧯 מנטרל</span><span>🔥 קומבו = בונוס</span></div>
       <div class="rp-s">כל 50 ברגים עולים שלב – הכל נופל מהר יותר ויש יותר פצצות וגנבים 😈 אפשר לצאת עם הכסף מתי שרוצים (עד 400) ולהתחיל סיבוב חדש. אחרי 500 ביום – 🏋️ מצב אימון לשבור שיאים (בלי פרסים).</div>
       <div class="rbx" style="--c:#f59e0b"><div class="em">📊</div><div class="t"><b>היום: ${g.n}/${R.GAME_CAP} 🔩 · ${g.it}/${R.GAME_ITEMS} 🎁${best ? ` · 🏆 שיא: ${best}` : ""}${S.gamePract ? ` · 🏋️ שיא אימון: ${S.gamePract}` : ""}</b><small>${bs.free ? "אפשר לשחק עכשיו 🎉" : bs.open ? (bs.until != null ? `הפסקה! עד ${hhmm(bs.until)}` : "אפשר לשחק עכשיו 🎉") : `🔒 עכשיו שיעור – נפתח בהפסקה (${hhmm(bs.until)})`}</small></div></div>
-      <button class="rbtn" type="button" id="rpPlay" style="width:100%;font-size:18px;padding:14px" ${bs.open ? "" : "disabled"}>${!bs.open ? "🔒 רק בהפסקות" : left <= 0 ? "🏋️ אימון (בלי פרסים) – לשבור שיא!" : "▶️ לשחק!"}</button>
-      ${left <= 0 ? `<div class="rw-prog" style="text-align:center;margin-top:6px">💪 אספת את כל ה-${R.GAME_CAP} של היום! מחר אפשר שוב לאסוף ברגים</div>` : ""}
+      ${chalBox("bolts")}
+      <button class="rbtn" type="button" id="rpPlay" style="width:100%;font-size:18px;padding:14px" ${bs.open || left <= 0 ? "" : "disabled"}>${left <= 0 ? "🏋️ אימון (בלי פרסים) – לשבור שיא!" : !bs.open ? "🔒 רק בהפסקות" : "▶️ לשחק!"}</button>
+      ${left <= 0 ? `<div class="rw-prog" style="text-align:center;margin-top:6px">💪 אספת את כל ה-${R.GAME_CAP} של היום! אימון פתוח כל הזמן · מחר אפשר שוב לאסוף ברגים</div>` : ""}
+      <div class="lb-tools" style="margin-top:10px"><button class="rbtn sm alt" type="button" data-go="lb">🏆 טבלת השיאים</button><button class="rbtn sm alt" type="button" data-go="upg">🛒 שדרוגים</button></div>
       <p class="rw-prog" style="margin-top:12px">⏰ המשחק פתוח רק בהפסקות לפי המערכת שלך (עד 16:15). אחרי 16:15, בשישי ובחופשות – פתוח תמיד.</p>`;
     wireBack(body);
     const p = body.querySelector("#rpPlay"); if (p) p.onclick = () => play();
+    wireGo(body, "bolts");
+  }
+  // 🎯 קופסת "אתגר היום" + קיצורים לטבלה ולשדרוגים (משותף לשני המשחקים)
+  function chalBox(g) { const c = R.challenge(g), done = (X.S.chal || {})[g] === R.ymd(Date.now()); return `<div class="rbx" style="--c:#ec4899"><div class="em">🎯</div><div class="t"><b>אתגר היום: ${esc(c.n)}</b><small>${done ? "✅ הצלחת היום! קיבלת 💠" : "מצליחים → 💠 תיבת מגה (פעם ביום, לא באימון)"}</small></div></div>`; }
+  function wireGo(body, g) { body.querySelectorAll("[data-go]").forEach(b => b.onclick = () => b.dataset.go === "lb" ? lbPanel(body, g) : upgPanel(body, g)); }
+  // ================= 🏆 טבלת שיאים שבועית (השכבה) =================
+  async function postScore(g, v) {
+    v = Math.floor(v || 0); if (!v || !X.online()) return; const S = X.S, w = R.weekId(); if (!S.wk || S.wk.w !== w) S.wk = { w };
+    if (v <= (S.wk[g] || 0)) return; S.wk[g] = v; X.save(); try { await X.api({ op: "score", g, v }); } catch (e) {}
+  }
+  const GN = { bolts: "🔩 ברגים נופלים", run: "🏃 ריצת הרובוט" }, UNIT = { bolts: "ברגים", run: "מ'" };
+  async function lbPanel(body, g = "bolts") {
+    body.innerHTML = `${back}<div class="rp-h">🏆 טבלת השיאים של השבוע</div><div class="rp-seg">${Object.keys(GN).map(k => `<button type="button" data-g="${k}" class="${k === g ? "on" : ""}">${GN[k]}</button>`).join("")}</div><div class="rw-prog" style="text-align:center;padding:20px">⏳ טוען…</div>`;
+    body.querySelector(".rp-back").onclick = () => g === "run" && PANELS.run ? PANELS.run(body) : gamePanel(body);
+    body.querySelectorAll("[data-g]").forEach(b => b.onclick = () => lbPanel(body, b.dataset.g));
+    if (!X.online()) { body.querySelector(".rw-prog").textContent = window.__DEMO ? "בדמו אין טבלה 🙂" : "צריך להירשם קודם"; return; }
+    let j = null; try { j = await X.api({ op: "scores", g }); } catch (e) {}
+    if (!j || !j.ok || !Array.isArray(j.list)) { body.querySelector(".rw-prog").textContent = "אין חיבור כרגע 📶"; return; }
+    // 🎁 3 הראשונים בשבוע שעבר מקבלים תיבה גדולה (פעם אחת)
+    const S = X.S; S.lbClaim = S.lbClaim || {}; const lw = (j.last || []).findIndex(x => x.me);
+    if (lw >= 0 && lw < 3 && S.lbClaim[g] !== j.lastWeek) { S.lbClaim[g] = j.lastWeek; S.boxes.push("big"); X.save(); setTimeout(() => { X.SFX.gift(); X.toast(`🏆 <b>היית מקום ${lw + 1} בשבוע שעבר ב${GN[g]}!</b> קיבלת 🎁 תיבה גדולה`, ["לפתוח", () => X.openBoxes(["big"])], 10000); }, 400); }
+    const medal = i => ["🥇", "🥈", "🥉"][i] || `${i + 1}.`;
+    const el = document.createElement("div");
+    el.innerHTML = `<div class="rw-prog" style="text-align:center">השבוע · 3 הראשונים מקבלים 🎁 תיבה גדולה במוצאי שבת</div>` + (j.list.length ? j.list.map((x, i) => `<div class="rp-mk" style="--c:${i < 3 ? ["#facc15", "#cbd5e1", "#d97706"][i] : "#6366f1"}${x.me ? ";outline:2px solid #fde047" : ""}"><div style="font-size:24px;width:40px;text-align:center">${medal(i)}</div><div class="t"><b>${esc(x.kid)}${x.me ? " (אני)" : ""}</b><small>${esc(X.CLS_L(x.cls))}</small></div><b style="font-size:18px">${x.v} ${UNIT[g]}</b></div>`).join("") : `<div class="rw-prog" style="text-align:center;padding:16px">עוד אין שיאים השבוע – תהיה הראשון! 🚀</div>`)
+      + (j.me && !j.list.some(x => x.me) ? `<div class="rw-prog" style="text-align:center">המקום שלך: ${j.me.rank} · ${j.me.v} ${UNIT[g]}</div>` : "");
+    body.querySelector(".rw-prog").replaceWith(el);
+  }
+  // ================= 🛒 שדרוגים למשחקים =================
+  function upgPanel(body, g = "bolts") {
+    const S = X.S;
+    body.innerHTML = `${back}<div class="rp-h">🛒 שדרוגים למשחקים</div><div class="rp-s">שדרוג נשאר לתמיד! 🔩 יש לך ${X.bl()}</div>` + Object.entries(R.UPG).map(([k, U]) => { const l = R.upg(S, k), c = U.cost[l];
+      return `<div class="rbx" style="--c:${l >= 3 ? "#22c55e" : "#6366f1"}"><div class="em">${U.em}</div><div class="t"><b>${esc(U.n)} ${"⭐".repeat(l)}${"☆".repeat(3 - l)}</b><small>${esc(U.d)} · ${U.g === "both" ? "בשני המשחקים" : U.g === "run" ? "בריצה" : "בברגים נופלים"}</small></div>${l >= 3 ? "<b>מקסימום ✅</b>" : `<button class="rbtn sm" type="button" data-u="${k}" ${S.bolts < c ? "disabled" : ""}>🔩 ${c}</button>`}</div>`; }).join("");
+    body.querySelector(".rp-back").onclick = () => g === "run" && PANELS.run ? PANELS.run(body) : gamePanel(body);
+    body.querySelectorAll("[data-u]").forEach(b => b.onclick = () => { const r = R.buyUpg(X.S, b.dataset.u); if (!r.ok) { X.toast(r.error === "bolts" ? "חסרים ברגים 🔩" : "כבר במקסימום", null, 2500); return; } X.save(); X.SFX.coin(); X.vib(30); X.toast(`${R.UPG[b.dataset.u].em} שודרג לרמה ${r.lvl}!`, null, 2500); upgPanel(body, g); X.hubRefresh(); });
   }
   let game = null;
   async function play() {
     const d = X.dlg("roboGame", "game"); d.dataset.lock = "1";
-    d.innerHTML = `<div class="gm"><div class="gm-top"><button class="x" type="button" aria-label="סגור">✕</button><span id="gmR">🔩 0</span><span id="gmI">🎁 0</span><span id="gmL"></span><span style="flex:1"></span><span id="gmT"></span></div>
+    d.innerHTML = `<div class="gm"><div class="gm-top"><button class="x" type="button" aria-label="סגור">✕</button><span id="gmR">🔩 0</span><span id="gmI">🎁 0</span><span id="gmL"></span><span style="flex:1"></span><span id="gmT"></span>${sndBtns()}</div>
       <div class="gm-cv"><canvas></canvas></div><div class="gm-foot"><button class="rbtn gm-cash" type="button" id="gmCash">💰 לצאת עם הכסף</button><button class="rbtn alt gm-exit" type="button" id="gmExit">🚪 יציאה</button></div></div>`;
-    X.show(d);
+    X.show(d); wireSnd(d, () => (game && game.hard > 0 ? "hard" : "bolts"));
     const cv = d.querySelector("canvas"), box = d.querySelector(".gm-cv"), cx = cv.getContext("2d"), dpr = Math.min(2, window.devicePixelRatio || 1);
     // גודל המשחק: נמדד כל הזמן (טלפונים שהמסך שלהם משתנה / נפתח לאט) – אם משהו לא נמדד, משתמשים בגודל החלון
     let W = 0, H = 0;
@@ -542,7 +621,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     // ⬆️ שלב לפי כמה ברגים יש בסיבוב: כל 50 = שלב (עד 10)
     const lvl = () => Math.min(10, 1 + Math.floor(G.bolts / 50));
     const hud = () => {
-      d.querySelector("#gmR").textContent = `🔩 ${G.bolts}`; d.querySelector("#gmI").textContent = `🎁 ${G.items.length}`; d.querySelector("#gmL").textContent = `נשאר היום: ${Math.max(0, left() - G.bolts)}`;
+      d.querySelector("#gmR").textContent = `🔩 ${G.bolts}`; d.querySelector("#gmI").textContent = `🎁 ${G.items.length}`; d.querySelector("#gmL").textContent = `נשאר: ${Math.max(0, left() - G.bolts)}`;
       const L = locked(), cb = d.querySelector("#gmCash"), xb = d.querySelector(".x");
       cb.textContent = G.practice ? `🏁 לסיים אימון (${G.bolts})` : L ? `🔒 אין יציאה! עד ${left()} או פצצה 😈 (${G.bolts})` : `💰 לצאת עם הכסף (${G.bolts}${G.items.length ? " + " + G.items.length + " 🎁" : ""})`;
       if (G.practice) d.querySelector("#gmL").textContent = `🏋️ אימון · שיא ${Math.max(X.S.gamePract || 0, G.bolts)}`; cb.classList.toggle("lock", L); xb.classList.toggle("lock", L); xb.textContent = L ? "🔒" : "✕"; const eb = d.querySelector("#gmExit"); eb.classList.toggle("lock", L); eb.textContent = L ? "🔒" : "🚪 יציאה";
@@ -558,17 +637,20 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     box.addEventListener("pointerdown", move); box.addEventListener("pointermove", move); box.addEventListener("touchmove", e => { move(e); e.preventDefault(); }, { passive: false });
     const key = e => { if (e.key === "ArrowLeft") G.tx = Math.max(30, G.tx - 45); if (e.key === "ArrowRight") G.tx = Math.min(W - 30, G.tx + 45); }; addEventListener("keydown", key);
     const overlay = (html, btns) => new Promise(res => { const o = document.createElement("div"); o.className = "gm-ov"; o.innerHTML = `<div>${html}<div class="rd-btns">${btns.map((b, i) => `<button class="rbtn${i ? " alt" : ""}" type="button" data-i="${i}">${b}</button>`).join("")}</div></div>`; box.appendChild(o); o.querySelectorAll("button").forEach(b => b.onclick = () => { o.remove(); res(+b.dataset.i); }); });
-    const finish = () => { G.run = false; game = null; removeEventListener("keydown", key); removeEventListener("resize", fit); try { ro && ro.disconnect(); } catch (e) {} delete d.dataset.lock; d.close(); X.hubRefresh(); if (host && host.isConnected) gamePanel(host); };
-    const newRound = () => { G.practice = left() <= 0; G.lockAt = null; G.lvMax = 1; G.lvT = 0; Object.assign(G, { obj: [], parts: [], fx: [], bolts: 0, items: [], t: 0, nb: .35, nbomb: 1.6 + Math.random(), nthief: 7 + Math.random() * 4, npow: 6 + Math.random() * 5, nitem: 10 + Math.random() * 10, over: false, dead: false, fullShown: 0, combo: 0, bestCombo: 0, pw: {}, shield: false, shake: 0, stolen: 0 }); hud(); fit(); last = performance.now(); requestAnimationFrame(loop); };
+    const finish = () => { SND.stopMusic(); G.run = false; game = null; removeEventListener("keydown", key); removeEventListener("resize", fit); try { ro && ro.disconnect(); } catch (e) {} delete d.dataset.lock; d.close(); X.hubRefresh(); if (host && host.isConnected) gamePanel(host); };
+    const newRound = () => { G.practice = left() <= 0; G.lockAt = null; G.lvMax = 1; G.lvT = 0; G.peak = 0; G.asked = 0; G.boss = null; G.bossDone = 0; G.hard = 0; G.slowmo = 0; G.st = { lvl: 1, gold: 0, shieldUsed: false, combo: 0, boss: 0, t: 0, bolts: 0 }; SND.music("bolts"); Object.assign(G, { obj: [], parts: [], fx: [], bolts: 0, items: [], t: 0, nb: .35, nbomb: 1.6 + Math.random(), nthief: 7 + Math.random() * 4, npow: 6 + Math.random() * 5, nitem: 10 + Math.random() * 10, over: false, dead: false, fullShown: 0, combo: 0, bestCombo: 0, pw: {}, shield: Math.random() < [0, .35, .7, 1][R.upg(X.S, "shield")], shake: 0, stolen: 0 }); hud(); fit(); last = performance.now(); requestAnimationFrame(loop); };
+    // 📊 סוף סיבוב: אתגר יומי + שיא שבועי לטבלה
+    const roundStats = () => Object.assign(G.st, { lvl: Math.max(G.st.lvl, G.lvMax || 1), combo: Math.max(G.st.combo, G.bestCombo), t: G.t, bolts: Math.max(G.st.bolts, G.peak || 0) });
+    const afterRound = () => { if (!G.st) return; const st = roundStats(); postScore("bolts", st.bolts); if (!G.practice) { const c = R.challengeCheck(X.S, "bolts", st); if (c) { X.save(); setTimeout(() => { X.SFX.gift(); X.toast(`🎯 <b>אתגר יומי הושלם!</b> ${esc(c.n)} – קיבלת 💠 תיבת מגה`, ["לפתוח", () => X.openBoxes(["mega"])], 9000); }, 600); } } };
     const practEnd = async (why) => {
-      G.over = true; const sc = G.bolts, rec = sc > (X.S.gamePract || 0); if (rec) X.S.gamePract = sc; X.save(); if (rec) X.SFX.reveal(4);
-      const more = breakState().open;
+      G.over = true; SND.stopMusic(); const sc = Math.max(G.bolts, G.peak || 0), rec = sc > (X.S.gamePract || 0); if (rec) X.S.gamePract = sc; X.save(); if (rec) X.SFX.reveal(4); afterRound();
+      const more = true; // אימון – בכל זמן
       const i = await overlay(`<div class="big">${why === "boom" ? "💥" : rec ? "🏆" : "🏋️"}</div><h3>${rec ? "שיא אימון חדש!" : why === "boom" ? "בום! האימון נגמר" : "סוף האימון"}</h3><p>תפסת ${sc} ברגים · הגעת לשלב ${G.lvMax || 1} · ⏱️ ${Math.floor(G.t)} שניות</p><p>🏋️ זה אימון – בלי פרסים. מחר אפשר שוב לאסוף ${R.GAME_CAP} ברגים!</p>`, more && why !== "bell" ? ["🔄 עוד אימון", "סיום"] : ["סיום"]);
       if (more && why !== "bell" && i === 0) newRound(); else finish();
     };
     const bank = async (why) => {
       if (G.practice) return practEnd(why);
-      G.over = true; const caught = G.bolts, items = G.items.slice(), r = R.gameBank(X.S, G.bolts, items); if (r.bolts) X.trk("game"); if (caught >= 40) X.trk("game40");
+      G.over = true; SND.stopMusic(); afterRound(); const caught = G.bolts, items = G.items.slice(), r = R.gameBank(X.S, G.bolts, items); if (r.bolts) X.trk("game"); if (caught >= 40) X.trk("game40");
       if (caught > (X.S.gameBest || 0)) X.S.gameBest = caught;
       if (r.bolts || r.items.length) X.step(1); X.save(); X.SFX.coin(); X.vib(40);
       const it = r.items.map(g => `<div style="margin:4px 0">${R.ITEMS[g.id] ? `✨ ${esc(R.ITEMS[g.id].n)} ${X.rarTag(g.r)}${g.dup ? ` (כפול → +${g.dup} 🔩)` : ""}` : ""}</div>`).join("");
@@ -580,21 +662,23 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     const exitGame = () => {
       if (!G.run) return;
       if (locked()) { lockedMsg(); return; }
-      if (G.practice) { if (G.bolts > (X.S.gamePract || 0)) { X.S.gamePract = G.bolts; X.save(); } return finish(); }
+      if (G.hard > 0) { lockedMsg(); return; }
+      if (G.practice) { if (G.bolts > (X.S.gamePract || 0)) { X.S.gamePract = G.bolts; X.save(); } afterRound(); return finish(); }
+      if (!G.over && !G.dead) afterRound();
       if (!G.over && !G.dead && (G.bolts || G.items.length)) { const caught = G.bolts, r = R.gameBank(X.S, G.bolts, G.items.slice()); if (caught > (X.S.gameBest || 0)) X.S.gameBest = caught; if (r.bolts || r.items.length) X.step(1); X.save(); X.SFX.coin(); if (r.bolts || r.items.length) X.toast(`💰 שמרת ${r.bolts} ברגים${r.items.length ? ` + ${r.items.length} 🎁` : ""} מהמשחק`, null, 3500); }
       finish();
     };
     d.querySelector(".x").onclick = exitGame; d.querySelector("#gmExit").onclick = exitGame; d.oncancel = e => { e.preventDefault(); exitGame(); };
-    d.querySelector("#gmCash").onclick = () => { if (locked()) return lockedMsg(); if (!G.over && !G.dead && G.run) bank("cash"); };
+    d.querySelector("#gmCash").onclick = () => { if (locked() || G.hard > 0) return lockedMsg(); if (!G.over && !G.dead && G.run) bank("cash"); };
     let last = performance.now(), secT = 0;
     // ⚙️ קושי: הולך ועולה כל הזמן
-    const speedF = () => 1 + G.t / 45 + (lvl() - 1) * .17, slowF = () => (G.pw.slow > 0 ? .45 : 1), base = () => Math.max(.75, H / 640) * 175;
+    const speedF = () => G.hard > 0 ? 3.1 + (30 - G.hard) * .03 : 1 + G.t / 45 + (lvl() - 1) * .17, slowF = () => (G.pw.slow > 0 ? .45 : 1) * (G.slowmo > 0 ? .15 : 1), base = () => Math.max(.75, H / 640) * 175;
     const spawn = (k, x0) => {
       const x = x0 != null ? x0 : 30 + Math.random() * (W - 60), sp = base() * speedF();
       if (k === "bomb") G.obj.push({ k, x, y: -40, v: sp * (1.45 + Math.random() * .25), vx: G.t > 30 && Math.random() < .4 ? (Math.random() - .5) * 120 : 0, s: 30 });
       else if (k === "thief") G.obj.push({ k, x, x0: x, y: -40, v: sp * 1.35, ph: Math.random() * 6, amp: Math.min(110, 40 + G.t * 1.5), s: 32 });
       else if (k === "item") { let r = "r", x2 = Math.random() * 100; for (const [rr, w] of ITEM_R) { if ((x2 -= w) < 0) { r = rr; break; } } G.obj.push({ k, x, y: -40, v: sp * 2.3, s: 30, r }); }
-      else if (k === "pow") { const ks = Object.keys(POW), p = ks[Math.floor(Math.random() * ks.length)]; G.obj.push({ k, p, x, y: -40, v: sp * 1.05, s: 30 }); }
+      else if (k === "pow") { const ks = Object.keys(POW).filter(q => !(G.hard > 0 && q === "shield")), p = ks[Math.floor(Math.random() * ks.length)]; G.obj.push({ k, p, x, y: -40, v: sp * 1.05, s: 30 }); }
       else if (Math.random() < .06 + lvl() * .012) G.obj.push({ k: "gold", x, y: -40, v: sp * 1.2, s: 28 });
       else G.obj.push({ k: "bolt", x, y: -40, v: sp, s: 25 });
     };
@@ -605,10 +689,32 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       if (G.combo % 10 === 0) { const bonus = Math.min(Math.max(0, left() - G.bolts), 1 + G.combo / 5); G.bolts += bonus; AU.combo(G.combo); X.vib([30, 20, 60]); G.shake = .35; fxText(W / 2, H * .38, `🔥 קומבו ${G.combo}! +${bonus}`, "#fb923c", 1.6, 30); burst(G.px, H - 70, "#fb923c", 30, 260); burst(G.px, H - 70, "#fde047", 20, 200); }
     };
     const loseCombo = () => { G.combo = 0; };
+    // 👾 בוס: עב"מ ענק חוצה את המסך 10 שניות, מטיל פצצות וזהב. שורדים → בונוס
+    function startBoss() { G.bossDone = Math.floor(G.bolts / 100); G.boss = { t: 10, x: W / 2, ph: 0, nb: .6, ng: .35 }; AU.ufo(); X.vib([40, 30, 40]); G.shake = .3; fxText(W / 2, H * .3, "👾 בוס! תשרוד 10 שניות", "#c084fc", 2, 26); }
+    function bossEnd() { const bonus = G.practice ? 25 : Math.min(25, Math.max(0, left() - G.bolts)); G.bolts += bonus; G.st.boss++; G.boss = null; AU.win(); X.vib([30, 20, 30, 20, 90]); burst(W / 2, H * .2, "#c084fc", 40, 280); fxText(W / 2, H * .35, `🏆 ניצחת את הבוס! +${bonus}`, "#fde047", 2, 24); hud(); G.peak = Math.max(G.peak, G.bolts); if (!G.practice && G.bolts >= left() && G.bolts > lockAt()) askDouble(); }
+    // 🎲 כפול או כלום: הכל מאט, ואז שואלים
+    async function askDouble() {
+      if (G.asked) return; G.asked = 1; G.slowmo = 99; SND.heartbeat(); X.vib([60, 60, 60]); await X.sleep(1200);
+      G.over = true; SND.stopMusic();
+      const i = await overlay(`<div class="big">🎲</div><h3>הגעת ל-${G.bolts}! כפול או כלום?</h3><p>💰 לשמור עכשיו – ${G.bolts} ברגים בטוח.</p><p>🎲 להכפיל – <b>30 שניות של שלב רצח</b> 😈 שורד = <b>${G.bolts * 2}</b> ברגים. פצצה או גנב = <b>הכל נעלם</b>!</p>`, [`💰 לשמור ${G.bolts}`, `🎲 להכפיל ל-${G.bolts * 2}!`]);
+      G.slowmo = 0;
+      if (i === 0) { G.over = false; return bank("win"); }
+      // 😈 שלב הרצח
+      Object.assign(G, { hard: 30, over: false, obj: [], pw: {}, shield: false, boss: null, nb: .2, nbomb: .5, nthief: 1.5, npow: 99, nitem: 99 }); G.hardBase = G.bolts;
+      SND.music("hard"); fxText(W / 2, H * .35, "😈 שלב רצח! 30 שניות", "#f87171", 2, 28); G.shake = .5; last = performance.now(); requestAnimationFrame(loop);
+    }
+    async function hardWin() {
+      G.over = true; SND.stopMusic(); SND.win(); const items = G.items.slice(); R.gameBank(X.S, 0, items); const r = R.gameDouble(X.S, true); G.st.bolts = Math.max(G.st.bolts, G.hardBase); afterRound(); X.step(2); X.save(); X.vib([60, 40, 60, 40, 200]);
+      X.particles(box, "#facc15", 70, ["🔩", "⭐", "✨", "💰"]);
+      await overlay(`<div class="big">🏆</div><h3>שרדת! הכפלת!!!</h3><p>+${r.bolts} ברגים 🔩 נכנסו לך!</p>${items.length ? `<p>+ ${items.length} 🎁 אביזרים</p>` : ""}<p>אלוף אמיתי 😎</p>`, ["יש!!! 🤩"]);
+      finish();
+    }
     function hit(o) {
       const py = H - 60;
+      if (o.k === "bomb" && G.pw.defuse > 0 && G.hard <= 0) { const n = G.practice ? 3 : Math.min(3, Math.max(0, left() - G.bolts)); G.bolts += n; AU.shield(); burst(o.x, py - 20, "#f87171", 16, 180); fxText(o.x, py - 60, `🧯 נוטרל! +${n}`, "#fca5a5", 1, 20); hud(); return; }
       if (o.k === "bomb" || o.k === "thief") {
-        if (G.shield) { G.shield = false; AU.shield(); X.vib(40); burst(o.x, py - 20, "#38bdf8", 24, 220); fxText(G.px, py - 70, "🛡️ המגן הציל אותך!", "#7dd3fc", 1.3, 20); return; }
+        if (G.hard > 0) { boom(o); return; }
+        if (G.shield) { G.st.shieldUsed = true; G.shield = false; AU.shield(); X.vib(40); burst(o.x, py - 20, "#38bdf8", 24, 220); fxText(G.px, py - 70, "🛡️ המגן הציל אותך!", "#7dd3fc", 1.3, 20); return; }
         if (o.k === "thief") {
           const take = Math.ceil(G.bolts / 2); G.bolts -= take; G.stolen += take; loseCombo(); AU.thief(); X.vib([40, 30, 40, 30, 40]); G.shake = .3;
           fxText(G.px, py - 70, take ? `🦹 הגנב לקח ${take}!` : "🦹 הגנב לא מצא כלום 😅", "#e879f9", 1.4, 22); burst(o.x, py - 20, "#a855f7", 26, 240);
@@ -616,12 +722,16 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
         }
         boom(o); return;
       }
-      if (o.k === "pow") { const P = POW[o.p]; if (o.p === "shield") G.shield = true; else G.pw[o.p] = P.t; AU.power(); X.vib(30); burst(o.x, py - 20, P.c, 22, 220); fxText(G.px, py - 70, `${P.em} ${P.n}!`, P.c, 1.2, 22); comboUp(); return; }
+      if (o.k === "pow") { const P = POW[o.p]; if (o.p === "shield") G.shield = true; else G.pw[o.p] = P.t + (o.p === "magnet" ? R.upg(X.S, "magnet") * 3 : 0); if (o.p === "freeze") AU.freeze(); if (o.p === "rain") AU.rain(); AU.power(); X.vib(30); burst(o.x, py - 20, P.c, 22, 220); fxText(G.px, py - 70, `${P.em} ${P.n}!`, P.c, 1.2, 22); comboUp(); return; }
       if (o.k === "item") { G.items.push(o.r); AU.item(); X.vib(50); burst(o.x, py - 20, RC(o.r), 30, 240); fxText(o.x, py - 60, "✨ " + R.RAR[o.r].n + "!", RC(o.r), 1.3, 22); comboUp(); hud(); return; }
-      const mult = G.pw.double > 0 ? 2 : 1, n = G.practice ? (o.k === "gold" ? 5 : 1) * mult : Math.min((o.k === "gold" ? 5 : 1) * mult, Math.max(0, left() - G.bolts)); G.bolts += n;
+      if (o.k === "gold") G.st.gold++;
+      if (G.hard > 0) { burst(o.x, py - 20, "#fde047", 3, 120); AU.pick(G.combo); return; } // בשלב הרצח – רק לשרוד
+      const mult = G.pw.triple > 0 ? 3 : G.pw.double > 0 ? 2 : 1, n = G.practice ? (o.k === "gold" ? 5 : 1) * mult : Math.min((o.k === "gold" ? 5 : 1) * mult, Math.max(0, left() - G.bolts)); G.bolts += n;
       if (n) { o.k === "gold" ? AU.gold() : AU.pick(G.combo); burst(o.x, py - 20, o.k === "gold" ? "#fde047" : "#bae6fd", o.k === "gold" ? 8 : 3, 120); if (o.k === "gold" || n > 1) fxText(o.x, py - 50, "+" + n, "#fde047", .8, 22); }
-      comboUp(); hud();
-      if (!G.practice && G.bolts >= left() && G.bolts > lockAt()) { G.over = true; AU.combo(50); X.vib([60, 40, 60, 40, 160]); setTimeout(() => bank("win"), 50); return; } // 🏆 שרד עד המקסימום
+      comboUp(); hud(); G.peak = Math.max(G.peak || 0, G.bolts);
+      // 👾 בוס כל 100 ברגים
+      if (!G.boss && Math.floor(G.bolts / 100) > (G.bossDone || 0) && G.bolts < (G.practice ? 1e9 : left())) startBoss();
+      if (!G.practice && G.bolts >= left() && G.bolts > lockAt()) { askDouble(); return; } // 🏆 הגיע למקסימום → כפול או כלום
       if (!G.practice && G.bolts >= left() && !G.fullShown) { G.fullShown = 1; fxText(W / 2, H / 3, "הגעת למקסימום של היום! צא עם הכסף 💰", "#fde047", 3, 18); }
     }
     function loop(now) {
@@ -630,26 +740,39 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       if (W < 50 || H < 50) fit();
       const rdt = Math.min(.05, (now - last) / 1000); last = now; const dt = rdt * slowF();
       if (!G.dead) G.t += rdt;
+      if (G.hard > 0 && !G.dead) { G.hard -= rdt; if (G.hard <= 0) { G.hard = 0; hardWin(); return; } }
       for (const k of Object.keys(G.pw)) { G.pw[k] -= rdt; if (G.pw[k] <= 0) delete G.pw[k]; }
       // ⏰ ההפסקה נגמרה? שומרים אוטומטית
-      if ((secT += rdt) > 1 && !G.dead) { secT = 0; const bs = breakState(); if (!bs.open && !locked()) { bank("bell"); return; } const tl = d.querySelector("#gmT"); if (bs.until != null) { const n = new Date(), s = bs.until * 60 - (n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds()); tl.textContent = s > 0 ? `⏰ ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : ""; } else tl.textContent = ""; }
-      if (!G.dead) {
+      if ((secT += rdt) > 1 && !G.dead) { secT = 0; const bs = breakState(); if (!bs.open && !locked() && !G.practice && !(G.hard > 0) && !G.slowmo) { bank("bell"); return; } const tl = d.querySelector("#gmT"); if (bs.until != null) { const n = new Date(), s = bs.until * 60 - (n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds()); tl.textContent = s > 0 ? `⏰ ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : ""; } else tl.textContent = ""; }
+      if (!G.dead && G.hard > 0) {
+        if ((G.nb -= rdt) <= 0) { G.nb = .22; spawn("bolt"); }
+        if ((G.nbomb -= rdt) <= 0) { G.nbomb = Math.max(.16, .32 - (30 - G.hard) * .005); spawn("bomb"); }
+        if ((G.nthief -= rdt) <= 0) { G.nthief = 1.4 + Math.random(); spawn("thief"); }
+      } else if (!G.dead && G.boss) {
+        const B = G.boss; B.t -= rdt; B.ph += rdt; B.x = W / 2 + Math.sin(B.ph * 1.3) * (W / 2 - 50);
+        if ((B.nb -= rdt) <= 0) { B.nb = .45 + Math.random() * .3; spawn("bomb", B.x); const o = G.obj[G.obj.length - 1]; o.y = 70; o.vx = 0; }
+        if ((B.ng -= rdt) <= 0) { B.ng = .28; spawn("bolt", B.x + (Math.random() - .5) * 60); const o = G.obj[G.obj.length - 1]; o.y = 70; if (Math.random() < .35) { o.k = "gold"; o.s = 28; } }
+        if (B.t <= 0) bossEnd();
+      } else if (!G.dead) {
         const full = G.bolts >= left(), t = G.t;
         const L = lvl();
+        if (G.pw.rain > 0 && (G.nrain = (G.nrain || 0) - rdt) <= 0) { G.nrain = .14; spawn("bolt"); const o = G.obj[G.obj.length - 1]; o.k = "gold"; o.s = 28; }
         if ((G.nb -= rdt) <= 0) { G.nb = Math.max(.17, .48 - L * .028 - t * .002); if ((!full || G.practice) && G.obj.length < 11 + L) spawn("bolt"); }
         if ((G.nbomb -= rdt) <= 0) { G.nbomb = Math.max(.5, 2.1 - (L - 1) * .16 - t * .01) + Math.random() * .6; spawn("bomb"); if (L >= 7 && Math.random() < .25) spawn("bomb"); }
         if ((G.nthief -= rdt) <= 0) { G.nthief = Math.max(2, 9 - (L - 1) * .7 - t * .03) + Math.random() * 2; spawn("thief"); }
-        if ((G.npow -= rdt) <= 0) { G.npow = 14 + Math.random() * 8; spawn("pow"); }
+        if ((G.npow -= rdt) <= 0) { G.npow = 14 - R.upg(X.S, "luck") * 2.5 + Math.random() * 8; spawn("pow"); }
         if ((G.nitem -= rdt) <= 0) { G.nitem = 14 + Math.random() * 12; if (!G.practice && itemsLeft() > 0) spawn("item"); }
       }
       G.px += (G.tx - G.px) * Math.min(1, rdt * 16);
       const py = H - 60, mag = G.pw.magnet > 0;
+      const odt = G.pw.freeze > 0 ? 0 : dt, catchW = 44 * (1 + R.upg(X.S, "bucket") * .12) * (G.pw.bucket > 0 ? 1.8 : 1);
+      if (G.slowmo > 0 && G.slowmo < 99) G.slowmo = Math.max(0, G.slowmo - rdt);
       for (const o of G.obj) {
-        o.y += o.v * dt;
+        o.y += o.v * odt;
         if (o.k === "thief") o.x = Math.max(25, Math.min(W - 25, o.x0 + Math.sin(o.y / 55 + o.ph) * o.amp));
         if (o.vx) { o.x += o.vx * dt; if (o.x < 25 || o.x > W - 25) o.vx = -o.vx; }
         if (mag && (o.k === "bolt" || o.k === "gold" || o.k === "item") && o.y > H * .3) o.x += (G.px - o.x) * Math.min(1, dt * 5);
-        if (!G.dead && !o.hit && o.y > py - 40 && o.y < py + 22 && Math.abs(o.x - G.px) < (o.k === "bomb" || o.k === "thief" ? 36 : 44)) { o.hit = true; hit(o); if (G.dead || G.over) break; }
+        if (!G.dead && !G.slowmo && !o.hit && o.y > py - 40 && o.y < py + 22 && Math.abs(o.x - G.px) < (o.k === "bomb" || o.k === "thief" ? 36 * (G.pw.bucket > 0 ? 1.5 : 1) : catchW)) { o.hit = true; hit(o); if (G.dead || G.over) break; }
         if (!o.hit && o.y >= H + 30 && (o.k === "bolt" || o.k === "gold")) { o.hit = true; loseCombo(); }
       }
       G.obj = G.obj.filter(o => !o.hit && o.y < H + 40);
@@ -672,8 +795,14 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
         const sz = o.s * 2; cx.drawImage(spr, o.x - sz / 2, o.y - sz / 2, sz, sz);
         if (o.k === "thief" || o.k === "pow" || o.k === "bomb") { cx.font = "900 12px system-ui,sans-serif"; cx.textAlign = "center"; cx.textBaseline = "middle"; cx.lineWidth = 3; cx.strokeStyle = "rgba(0,0,0,.7)"; const l = o.k === "thief" ? "גנב!" : o.k === "bomb" ? "פצצה!" : POW[o.p].n; cx.strokeText(l, o.x, o.y + o.s * .95); cx.fillStyle = o.k === "pow" ? POW[o.p].c : o.k === "bomb" ? "#fca5a5" : "#f5d0fe"; cx.fillText(l, o.x, o.y + o.s * .95); }
       }
+      // 👾 הבוס
+      if (G.boss) { const B = G.boss, bx = B.x, by = 58 + Math.sin(B.ph * 4) * 6; cx.save(); cx.shadowColor = "#c084fc"; cx.shadowBlur = 25; cx.fillStyle = "#94a3b8"; cx.beginPath(); cx.ellipse(bx, by, 62, 18, 0, 0, 7); cx.fill(); cx.shadowBlur = 0; cx.fillStyle = "#a5f3fc"; cx.globalAlpha = .85; cx.beginPath(); cx.ellipse(bx, by - 12, 28, 20, 0, Math.PI, 0); cx.fill(); cx.globalAlpha = 1;
+        for (let i = 0; i < 6; i++) { cx.fillStyle = (Math.floor(B.ph * 8) + i) % 2 ? "#fde047" : "#f472b6"; cx.beginPath(); cx.arc(bx - 45 + i * 18, by + 4, 4, 0, 7); cx.fill(); }
+        cx.fillStyle = "rgba(192,132,252,.18)"; cx.beginPath(); cx.moveTo(bx - 30, by + 14); cx.lineTo(bx + 30, by + 14); cx.lineTo(bx + 70, H); cx.lineTo(bx - 70, H); cx.fill(); cx.restore();
+        cx.textAlign = "center"; cx.font = "900 15px system-ui,sans-serif"; cx.fillStyle = "#e9d5ff"; cx.fillText(`👾 בוס · ${Math.ceil(B.t)}`, W / 2, 40); }
+      if (G.pw.freeze > 0) { cx.fillStyle = "rgba(103,232,249,.12)"; cx.fillRect(0, 0, W, H); }
       // הרובוט (ואם התמונה לא נטענה – עיגול עם 🤖)
-      const py = H - 60, rs = 82;
+      const py = H - 60, rs = 82 * (G.pw.bucket > 0 ? 1.45 : 1) * (1 + R.upg(X.S, "bucket") * .05);
       if (G.combo >= 5) { const fg = cx.createRadialGradient(G.px, py + 10, 5, G.px, py + 10, 70); fg.addColorStop(0, "rgba(251,146,60,.8)"); fg.addColorStop(1, "rgba(251,146,60,0)"); cx.fillStyle = fg; cx.beginPath(); cx.arc(G.px, py + 10, 70, 0, 7); cx.fill(); }
       if (G.pw.magnet > 0) { cx.strokeStyle = "rgba(244,63,94,.6)"; cx.lineWidth = 2; cx.setLineDash([6, 6]); cx.beginPath(); cx.arc(G.px, py, 70 + Math.sin(G.t * 8) * 6, 0, 7); cx.stroke(); cx.setLineDash([]); }
       if (imgOk) cx.drawImage(img, G.px - rs / 2, py - rs / 2 - 4, rs, rs); else { cx.fillStyle = "#e0e7ff"; cx.beginPath(); cx.arc(G.px, py, 30, 0, 7); cx.fill(); cx.font = "36px sans-serif"; cx.textAlign = "center"; cx.textBaseline = "middle"; cx.fillText("🤖", G.px, py); }
@@ -693,6 +822,8 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       if (LV < 10) { const pr = (G.bolts % 50) / 50; cx.fillStyle = "rgba(255,255,255,.15)"; cx.fillRect(W - 110, 28, 100, 5); cx.fillStyle = lc; cx.fillRect(W - 10 - 100 * pr, 28, 100 * pr, 5); }
       // באנר שלב חדש
       if (G.lvT > 0) { G.lvT -= rdt; const a = Math.min(1, G.lvT * 2), sc = 1 + Math.max(0, G.lvT - 1.2) * 1.5; cx.save(); cx.globalAlpha = a; cx.translate(W / 2, H * .32); cx.scale(sc, sc); cx.textAlign = "center"; cx.font = "900 40px system-ui,sans-serif"; cx.lineWidth = 6; cx.strokeStyle = "rgba(0,0,0,.6)"; cx.strokeText(`שלב ${LV}!`, 0, 0); cx.fillStyle = G.lvCol || lc; cx.fillText(`שלב ${LV}!`, 0, 0); cx.font = "800 15px system-ui,sans-serif"; cx.fillStyle = "#fff"; cx.fillText(LV >= 8 ? "😈 מטורף!" : LV >= 5 ? "🔥 מהר יותר!" : "⚡ קצת יותר מהר", 0, 26); cx.restore(); cx.globalAlpha = 1; }
+      if (G.hard > 0) { cx.save(); cx.textAlign = "center"; cx.font = "900 46px system-ui,sans-serif"; cx.lineWidth = 6; cx.strokeStyle = "rgba(0,0,0,.6)"; const tt = Math.ceil(G.hard); cx.strokeText(`😈 ${tt}`, W / 2, H * .18); cx.fillStyle = tt <= 5 ? "#fde047" : "#f87171"; cx.fillText(`😈 ${tt}`, W / 2, H * .18); cx.font = "800 14px system-ui,sans-serif"; cx.fillStyle = "#fff"; cx.fillText(`שרוד! ${G.hardBase * 2} ברגים בסוף`, W / 2, H * .18 + 34); cx.restore(); cx.fillStyle = "rgba(239,68,68,.08)"; cx.fillRect(0, 0, W, H); }
+      if (G.slowmo > 0) { cx.fillStyle = "rgba(0,0,0,.25)"; cx.fillRect(0, 0, W, H); }
       if (G.combo >= 3) { cx.textAlign = "center"; cx.font = `900 ${Math.min(34, 18 + G.combo / 2)}px system-ui,sans-serif`; cx.fillStyle = G.combo >= 10 ? "#fb923c" : "#fde047"; cx.fillText(`🔥 ×${G.combo}`, W / 2, 22); }
       let px = 10; cx.textAlign = "left"; cx.font = "800 13px system-ui,sans-serif";
       for (const [k, v] of Object.entries(G.pw)) { const P = POW[k]; cx.fillStyle = P.c; cx.fillText(`${P.em} ${Math.ceil(v)}`, px, 18); px += 52; }
@@ -701,10 +832,12 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     }
     async function boom(o) {
       if (G.practice) { G.dead = true; X.vib([80, 40, 160]); AU.boom(); G.shake = .7; burst(o.x, H - 70, "#ef4444", 50, 320); burst(o.x, H - 70, "#fde047", 25, 200); fxText(W / 2, H * .4, "💥 בום!", "#f87171", 1, 44); await X.sleep(900); return practEnd("boom"); }
+      if (G.hard > 0) { G.dead = true; X.vib([80, 40, 160]); AU.boom(); G.shake = .8; burst(o.x, H - 70, "#ef4444", 60, 320); fxText(W / 2, H * .4, "💥 בום!", "#f87171", 1, 44); await X.sleep(900); G.over = true; SND.stopMusic(); const base = G.hardBase; R.gameDouble(X.S, false); afterRound(); X.save();
+        await overlay(`<div class="big">💀</div><h3>הפסדת את הכל!</h3><p>היו לך ${base} ברגים… והם נעלמו 😭</p><p>נשארו ${Math.ceil(G.hard)} שניות. בפעם הבאה! 💪</p><p>אפשר להמשיך ב-🏋️ אימון</p>`, ["סיום"]); return finish(); }
       G.dead = true; const lost = G.bolts, li = G.items.length; G.bolts = 0; G.items = []; G.combo = 0; hud(); X.vib([80, 40, 160]); AU.boom(); G.shake = .7;
       burst(o.x, H - 70, "#ef4444", 50, 320); burst(o.x, H - 70, "#f97316", 40, 260); burst(o.x, H - 70, "#fde047", 25, 200);
       fxText(W / 2, H * .4, "💥 בום!", "#f87171", 1, 44);
-      await X.sleep(900); G.over = true;
+      await X.sleep(900); G.over = true; SND.stopMusic(); afterRound();
       const more = breakState().open && left() > 0;
       const i = await overlay(`<div class="big">💥</div><h3>בום!</h3><p>${lost || li ? `הפסדת ${lost} ברגים${li ? ` ו-${li} 🎁` : ""} מהסיבוב 😭` : "פצצה! לא הפסדת כלום כי עוד לא תפסת 😅"}</p><p>⏱️ שרדת ${Math.floor(G.t)} שניות · 🔥 קומבו: ${G.bestCombo}</p><p>טיפ: צא עם הכסף לפני שזה נהיה מהיר מדי!</p>`, more ? ["🔄 סיבוב חדש", "סיום"] : ["סיום"]);
       if (more && i === 0) newRound(); else finish();
@@ -716,10 +849,10 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     fit(); G.px = G.tx = W / 2; newRound();
   }
 
-  const PANELS = { legend: legendPanel, wheel: wheelPanel, map: mapPanel, lab: labPanel, sets: setsPanel, market: marketPanel, bonus: bonusPanel, game: gamePanel };
+  const PANELS = { lb: lbPanel, upg: upgPanel, legend: legendPanel, wheel: wheelPanel, map: mapPanel, lab: labPanel, sets: setsPanel, market: marketPanel, bonus: bonusPanel, game: gamePanel };
 
   // ================= הפעלה =================
-  window.RoboPlus = { tab, breakState, mashovRewards, play: () => play(), panels: PANELS, _game: () => game };
+  window.RoboPlus = { tab, breakState, mashovRewards, play: () => play(), panels: PANELS, _game: () => game, snd: SND, sndBtns, wireSnd, chalBox, wireGo, postScore, lbPanel, upgPanel };
   // ⚡ תיבת בזק: הודעה קטנה כשנפתח חלון (פעם אחת לחלון)
   function flashCheck() {
     if (X.locked() || document.hidden || !X.profile() || document.querySelector("dialog[open]")) return;

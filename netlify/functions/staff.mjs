@@ -1131,7 +1131,7 @@ async function feed(req, S, ip, headers) {
   if (action === "robo") { // 🤖 אביזר "אולטרה אגדי" יצא בתיבה: כמות מוגבלת לכל הישיבה. נשמר רק מונה + קוד מכשיר מוצפן (בלי שם)
     if (await roboSeason(S, now) && !["me", "link", "day"].includes(b.op)) return reply(200, { ok: false, error: "locked", until: ROBO_RESET_AT }, headers);
     if (DEV_RE.test(device) && ["code", "me", "link", "day"].includes(b.op)) return reply(200, await roboOp(S, b, device, ip, now), headers);
-    if (DEV_RE.test(device) && ["pub", "class", "like", "gift", "inbox", "tradeNew", "tradeGet", "tradeSet", "tradeOk", "tradeCancel", "tradeDone", "marketList", "marketSell", "marketBuy", "marketCancel"].includes(b.op)) return reply(200, await roboSocial(S, b, device, ip, now), headers);
+    if (DEV_RE.test(device) && ["pub", "class", "like", "gift", "inbox", "tradeNew", "tradeGet", "tradeSet", "tradeOk", "tradeCancel", "tradeDone", "marketList", "marketSell", "marketBuy", "marketCancel", "score", "scores"].includes(b.op)) return reply(200, await roboSocial(S, b, device, ip, now), headers);
     if (!DEV_RE.test(device) || b.op !== "claim" || !Object.hasOwn(ROBO_CAPS, String(b.item))) return reply(400, { ok: false, error: "bad_request" }, headers);
     memRate("robo", ip, 3000);
     const pres = await S.get("presence"), k = devKey(device);
@@ -1740,6 +1740,20 @@ async function roboSocial(S, b, device, ip, now) {
     return { ok: true, left };
   }
   if (b.op === "inbox") { await S.update("roboInvHint", cur => { if (!cur || !cur[pid]) return undefined; const o = { ...cur }; delete o[pid]; return o; }); let box = []; await S.update("roboInbox", cur => { if (!cur || !cur[pid] || !cur[pid].length) return undefined; box = cur[pid]; const o = { ...cur }; delete o[pid]; return o; }); return { ok: true, inbox: box }; }
+  // ---- 🏆 טבלת שיאים שבועית למשחקים (לפי שכבה): שיא אחד לכל ילד לכל משחק בשבוע ----
+  if (b.op === "score" || b.op === "scores") {
+    const g = b.g === "run" ? "run" : b.g === "bolts" ? "bolts" : ""; if (!g) return { ok: false, error: "bad_request" };
+    const w = ilWeek(now);
+    if (b.op === "score") {
+      const v = Math.floor(+b.v || 0); if (v < 1 || v > (g === "run" ? 1e6 : 1e5)) return { ok: false, error: "bad_request" };
+      await S.update("roboScores", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; for (const x of Object.keys(o)) if (x < HC.add(w, -21)) delete o[x]; const W = { ...(o[w] || {}) }, T = { ...(W[g] || {}) }; if ((T[k] || {}).v >= v) return undefined; if (!T[k] && Object.keys(T).length >= 3000) return undefined; T[k] = { v, at: now }; W[g] = T; o[w] = W; return o; });
+      return { ok: true };
+    }
+    const all = (await S.get("roboScores")) || {}, grade = gradeOfCls(me.cls), last = HC.add(w, -7);
+    const rank = wk => Object.entries(((all[wk] || {})[g]) || {}).filter(([kk]) => pres[kk] && gradeOfCls(pres[kk].cls) === grade && !pres[kk].hide).sort((a, c) => c[1].v - a[1].v || a[1].at - c[1].at).map(([kk, x], i) => ({ kid: pres[kk].name || "", cls: pres[kk].cls, v: x.v, me: kk === k, rank: i + 1 }));
+    const now5 = rank(w), mine = now5.find(x => x.me);
+    return { ok: true, g, week: w, list: now5.slice(0, 20), me: mine || null, last: rank(last).slice(0, 3), lastWeek: last };
+  }
   // ---- 🕵️ שוק: מוכרים אביזר במחיר קבוע (בטווח של הדרגה), עד 5 בבת אחת. רק בתוך השכבה ----
   if (b.op === "marketList") {
     const m = (await S.get("roboMarket")) || {}, g = gradeOfCls(me.cls), pub = (await S.get("roboPub")) || {};
