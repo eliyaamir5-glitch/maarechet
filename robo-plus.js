@@ -408,7 +408,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     const move = e => { const r = box.getBoundingClientRect(), p = e.touches ? e.touches[0] : e; G.tx = Math.max(30, Math.min(W - 30, p.clientX - r.left)); };
     box.addEventListener("pointerdown", move); box.addEventListener("pointermove", move); box.addEventListener("touchmove", e => { move(e); e.preventDefault(); }, { passive: false });
     const key = e => { if (e.key === "ArrowLeft") G.tx = Math.max(30, G.tx - 45); if (e.key === "ArrowRight") G.tx = Math.min(W - 30, G.tx + 45); }; addEventListener("keydown", key);
-    const overlay = (html, btns) => new Promise(res => { const o = document.createElement("div"); o.className = "gm-ov"; o.innerHTML = `<div>${html}<div class="rd-btns">${btns.map((b, i) => `<button class="rbtn${i ? " alt" : ""}" type="button" data-i="${i}">${b}</button>`).join("")}</div></div>`; d.querySelector(".gm").appendChild(o); o.querySelectorAll("button").forEach(b => b.onclick = () => { o.remove(); res(+b.dataset.i); }); });
+    const overlay = (html, btns) => new Promise(res => { const o = document.createElement("div"); o.className = "gm-ov"; o.innerHTML = `<div>${html}<div class="rd-btns">${btns.map((b, i) => `<button class="rbtn${i ? " alt" : ""}" type="button" data-i="${i}">${b}</button>`).join("")}</div></div>`; box.appendChild(o); o.querySelectorAll("button").forEach(b => b.onclick = () => { o.remove(); res(+b.dataset.i); }); });
     const finish = () => { G.run = false; game = null; removeEventListener("keydown", key); removeEventListener("resize", fit); try { ro && ro.disconnect(); } catch (e) {} delete d.dataset.lock; d.close(); X.hubRefresh(); if (host && host.isConnected) gamePanel(host); };
     const newRound = () => { Object.assign(G, { obj: [], parts: [], fx: [], bolts: 0, items: [], t: 0, nb: .35, nbomb: 1.6 + Math.random(), nthief: 7 + Math.random() * 4, npow: 6 + Math.random() * 5, nitem: 10 + Math.random() * 10, over: false, dead: false, fullShown: 0, combo: 0, bestCombo: 0, pw: {}, shield: false, shake: 0, stolen: 0 }); hud(); fit(); last = performance.now(); requestAnimationFrame(loop); };
     const bank = async (why) => {
@@ -420,7 +420,13 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       const i = await overlay(`<div class="big">${why === "bell" ? "🔔" : "💰"}</div><h3>${why === "bell" ? "ההפסקה נגמרה!" : "שמרת!"}</h3><p>+${r.bolts} ברגים 🔩${r.bolts < caught ? ` (הגעת למקסימום של היום)` : ""}</p>${it}<p>⏱️ שרדת ${Math.floor(G.t)} שניות · 🔥 קומבו הכי גדול: ${G.bestCombo}${G.stolen ? ` · 🦹 נגנבו ${G.stolen}` : ""}</p><p>היום: ${R.GAME_CAP - r.left}/${R.GAME_CAP}</p>`, more && why !== "bell" ? ["🔄 עוד סיבוב", "סיום"] : ["סיום"]);
       if (more && why !== "bell" && i === 0) newRound(); else finish();
     };
-    d.querySelector(".x").onclick = () => { if (G.over || G.dead) return G.over ? finish() : null; if (G.bolts || G.items.length) bank("x"); else finish(); };
+    // ✕ / כפתור "חזור" בטלפון: יוצאים תמיד. אם תפסת משהו בסיבוב – נשמר אוטומטית
+    const exitGame = () => {
+      if (!G.run) return;
+      if (!G.over && !G.dead && (G.bolts || G.items.length)) { const caught = G.bolts, r = R.gameBank(X.S, G.bolts, G.items.slice()); if (caught > (X.S.gameBest || 0)) X.S.gameBest = caught; if (r.bolts || r.items.length) X.step(1); X.save(); X.SFX.coin(); if (r.bolts || r.items.length) X.toast(`💰 שמרת ${r.bolts} ברגים${r.items.length ? ` + ${r.items.length} 🎁` : ""} מהמשחק`, null, 3500); }
+      finish();
+    };
+    d.querySelector(".x").onclick = exitGame; d.oncancel = e => { e.preventDefault(); exitGame(); };
     d.querySelector("#gmCash").onclick = () => { if (!G.over && !G.dead && G.run) bank("cash"); };
     let last = performance.now(), secT = 0;
     // ⚙️ קושי: הולך ועולה כל הזמן
@@ -539,7 +545,8 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     }
     G.spawnAt = (k, x, y, extra) => { spawn(k, x); const o = G.obj[G.obj.length - 1]; if (y != null) o.y = y; Object.assign(o, extra || {}); return o; }; // לבדיקות
     hud();
-    await overlay(`<div class="big">🔩</div><h3>מוכן?</h3><p>תזיז את האצבע כדי להזיז את הרובוט.</p><div class="gm-rules" style="justify-content:center"><span>🔩 = 1</span><span>🌟 = 5</span><span>🎁 אביזר</span><span class="bad">💣 הכל נעלם</span><span class="bad">🦹 לוקח חצי</span><span>🧲🛡️🐢⚡ כוחות</span></div><p>ככל שהזמן עובר – יותר מהר! 😈</p>`, ["▶️ יאללה!"]);
+    await overlay(`<div class="big">🔩</div><h3>מוכן?</h3><p>תזיז את האצבע כדי להזיז את הרובוט.</p><div class="gm-rules" style="justify-content:center"><span>🔩 = 1</span><span>🌟 = 5</span><span>🎁 אביזר</span><span class="bad">💣 הכל נעלם</span><span class="bad">🦹 לוקח חצי</span><span>🧲🛡️🐢⚡ כוחות</span></div><p>ככל שהזמן עובר – יותר מהר! 😈</p>`, ["▶️ יאללה!", "יציאה"]).then(i => { if (i === 1) finish(); });
+    if (!G.run) return;
     fit(); G.px = G.tx = W / 2; newRound();
   }
 

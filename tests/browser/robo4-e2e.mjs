@@ -118,6 +118,16 @@ if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + "/10-resul
 const gs = await p.evaluate(() => Robo.state().game || { n: 0 });
 log(gs.n <= 300 && (await p.evaluate(() => Robo.state().bolts)) >= gb, "game: bolts banked (≤ 300 a day)", JSON.stringify(gs));
 await p.evaluate(() => { const bs = [...document.querySelectorAll(".gm-ov button")]; (bs.find(x => /סיום/.test(x.textContent)) || bs[0]).click(); }); await sleep(500);
+// ✕ ויציאה: תמיד אפשר לצאת (גם במסך "מוכן?", גם באמצע משחק – ואז הברגים נשמרים)
+await p.evaluate(() => { Robo.open("fun", "game"); }); await sleep(300);
+await p.evaluate(() => document.querySelector("#rpPlay").click()); await sleep(400);
+log(await p.evaluate(() => [...document.querySelectorAll(".gm-ov button")].some(b => /יציאה/.test(b.textContent))), "start screen has an exit button");
+await p.evaluate(() => document.querySelector("#roboGame .x").click()); await sleep(400);
+log(await p.evaluate(() => !document.querySelector("#roboGame[open]")), "✕ on the start screen closes the game");
+await p.evaluate(() => document.querySelector("#rpPlay").click()); await sleep(400);
+await p.evaluate(() => document.querySelector(".gm-ov button").click()); await sleep(800);
+const xb = await p.evaluate(async () => { const G = RoboPlus._game(), b0 = Robo.state().bolts; G.bolts = 3; document.querySelector("#roboGame .x").click(); await new Promise(r => setTimeout(r, 400)); return { open: !!document.querySelector("#roboGame[open]"), d: Robo.state().bolts - b0 }; });
+log(!xb.open && xb.d === 3, "✕ in the middle of a round closes and saves the bolts", JSON.stringify(xb));
 await p.evaluate(() => { const s = Robo.state(); s.game = { d: RoboCore.ymd(Date.now()), n: 300, it: 2 }; Robo.open("fun", "game"); }); await sleep(300);
 log(await p.evaluate(() => document.querySelector("#rpPlay").disabled), "game: after 300 bolts – done for today");
 // ✨ נוצץ + 🌍 אירוע + ⚡ בזק – בלי שגיאות
