@@ -48,14 +48,16 @@
 /* 🎮 משחק */
 dialog.robo.game{background:#070418}
 .gm{position:relative;height:100%;display:flex;flex-direction:column;touch-action:none;user-select:none;-webkit-user-select:none}
-.gm-top{display:flex;align-items:center;gap:6px;padding:10px 12px;background:#120c2e;font-weight:900;font-size:14px}
+.gm-top{display:flex;align-items:center;gap:6px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:#120c2e;font-weight:900;font-size:14px}
 .gm-top .x{border:0;background:rgba(255,255,255,.12);color:#fff;border-radius:10px;width:34px;height:34px;font-size:16px;cursor:pointer}
 .gm-top span{background:rgba(255,255,255,.08);border-radius:99px;padding:5px 10px;white-space:nowrap}.gm-top span:empty{display:none}
 dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
 .gm-cv{flex:1;position:relative;min-height:300px;overflow:hidden}
 .gm-rules{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 10px}.gm-rules span{background:rgba(255,255,255,.1);border-radius:99px;padding:4px 9px;font-size:12.5px;font-weight:800}.gm-rules span.bad{background:rgba(239,68,68,.25);color:#fecaca}.gm-cv canvas{position:absolute;inset:0;width:100%;height:100%}
-.gm-cash.lock,.gm-top .x.lock{background:linear-gradient(180deg,#fca5a5,#dc2626)!important;color:#fff!important;box-shadow:0 4px 0 #7f1d1d!important;animation:rBeat .8s infinite}
-.gm-cash{margin:10px 12px calc(12px + env(safe-area-inset-bottom));font-size:18px!important;padding:14px!important}
+.gm-cash.lock,.gm-exit.lock,.gm-top .x.lock{background:linear-gradient(180deg,#fca5a5,#dc2626)!important;color:#fff!important;box-shadow:0 4px 0 #7f1d1d!important;animation:rBeat .8s infinite}
+.gm-foot{display:flex;gap:8px;padding:10px 12px calc(12px + env(safe-area-inset-bottom))}
+.gm-cash{flex:1;font-size:17px!important;padding:14px 8px!important}
+.gm-exit{flex:0 0 auto;font-size:16px!important;padding:14px 14px!important}
 .gm-ov{position:absolute;inset:0;display:grid;place-items:center;background:rgba(5,2,15,.82);z-index:3;text-align:center;padding:20px}
 .gm-ov .big{font-size:64px}.gm-ov h3{font-size:24px;margin:6px 0}.gm-ov p{color:#d9d5ff;margin:4px 0 16px}
 .gm-ov .rd-btns{margin:0 auto}
@@ -393,7 +395,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
   async function play() {
     const d = X.dlg("roboGame", "game"); d.dataset.lock = "1";
     d.innerHTML = `<div class="gm"><div class="gm-top"><button class="x" type="button" aria-label="סגור">✕</button><span id="gmR">🔩 0</span><span id="gmI">🎁 0</span><span id="gmL"></span><span style="flex:1"></span><span id="gmT"></span></div>
-      <div class="gm-cv"><canvas></canvas></div><button class="rbtn gm-cash" type="button" id="gmCash">💰 לצאת עם הכסף</button></div>`;
+      <div class="gm-cv"><canvas></canvas></div><div class="gm-foot"><button class="rbtn gm-cash" type="button" id="gmCash">💰 לצאת עם הכסף</button><button class="rbtn alt gm-exit" type="button" id="gmExit">🚪 יציאה</button></div></div>`;
     X.show(d);
     const cv = d.querySelector("canvas"), box = d.querySelector(".gm-cv"), cx = cv.getContext("2d"), dpr = Math.min(2, window.devicePixelRatio || 1);
     // גודל המשחק: נמדד כל הזמן (טלפונים שהמסך שלהם משתנה / נפתח לאט) – אם משהו לא נמדד, משתמשים בגודל החלון
@@ -410,7 +412,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     const hud = () => {
       d.querySelector("#gmR").textContent = `🔩 ${G.bolts}`; d.querySelector("#gmI").textContent = `🎁 ${G.items.length}`; d.querySelector("#gmL").textContent = `נשאר היום: ${Math.max(0, left() - G.bolts)}`;
       const L = locked(), cb = d.querySelector("#gmCash"), xb = d.querySelector(".x");
-      cb.textContent = L ? `🔒 אין יציאה! עד ${left()} או פצצה 😈 (${G.bolts})` : `💰 לצאת עם הכסף (${G.bolts}${G.items.length ? " + " + G.items.length + " 🎁" : ""})`; cb.classList.toggle("lock", L); xb.classList.toggle("lock", L); xb.textContent = L ? "🔒" : "✕";
+      cb.textContent = L ? `🔒 אין יציאה! עד ${left()} או פצצה 😈 (${G.bolts})` : `💰 לצאת עם הכסף (${G.bolts}${G.items.length ? " + " + G.items.length + " 🎁" : ""})`; cb.classList.toggle("lock", L); xb.classList.toggle("lock", L); xb.textContent = L ? "🔒" : "✕"; const eb = d.querySelector("#gmExit"); eb.classList.toggle("lock", L); eb.textContent = L ? "🔒" : "🚪 יציאה";
       if (L && !G.lockShown) { G.lockShown = 1; AU.thief(); X.vib([60, 40, 60]); G.shake = .4; fxText(W / 2, H * .35, "🔒 עברת 250! אין יציאה – עד 300 או פצצה!", "#f87171", 2.6, 19); }
       if (!L) G.lockShown = 0;
     };
@@ -437,7 +439,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       if (!G.over && !G.dead && (G.bolts || G.items.length)) { const caught = G.bolts, r = R.gameBank(X.S, G.bolts, G.items.slice()); if (caught > (X.S.gameBest || 0)) X.S.gameBest = caught; if (r.bolts || r.items.length) X.step(1); X.save(); X.SFX.coin(); if (r.bolts || r.items.length) X.toast(`💰 שמרת ${r.bolts} ברגים${r.items.length ? ` + ${r.items.length} 🎁` : ""} מהמשחק`, null, 3500); }
       finish();
     };
-    d.querySelector(".x").onclick = exitGame; d.oncancel = e => { e.preventDefault(); exitGame(); };
+    d.querySelector(".x").onclick = exitGame; d.querySelector("#gmExit").onclick = exitGame; d.oncancel = e => { e.preventDefault(); exitGame(); };
     d.querySelector("#gmCash").onclick = () => { if (locked()) return lockedMsg(); if (!G.over && !G.dead && G.run) bank("cash"); };
     let last = performance.now(), secT = 0;
     // ⚙️ קושי: הולך ועולה כל הזמן
