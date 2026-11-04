@@ -422,8 +422,11 @@
   const eventNow = (now = Date.now()) => { const d = +ymd(now).slice(8, 10); return d >= 1 && d <= 3 ? { n: "🌍 סופש בונוס!", up: 1.6, until: 3 } : null; };
   // 🕵️ שוק: טווח מחירים לכל דרגה
   const PRICE = { c: [10, 80], r: [25, 200], s: [50, 400], e: [100, 800], m: [250, 2000], l: [500, 5000], u: [2000, 20000] };
-  // 🎮 משחק הברגים: עד 300 ברגים ו-2 אביזרים ביום
-  const GAME_CAP = 300, GAME_ITEMS = 2;
+  // 🎮 משחק הברגים: עד 500 ברגים ו-2 אביזרים ביום (אחרי זה – מצב אימון בלי פרסים)
+  const GAME_CAP = 500, GAME_ITEMS = 2;
+  // 🏃 ריצת הרובוט: עד 250 ברגים ביום (אחרי זה – אימון בלי פרסים)
+  const RUN_CAP = 250;
+  function runBank(S, n, now = Date.now()) { const d = ymd(now); if (!S.run || S.run.d !== d) S.run = { d, n: 0 }; const g = Math.max(0, Math.min(Math.floor(n), RUN_CAP - S.run.n)); S.run.n += g; S.bolts += g; return { bolts: g, left: RUN_CAP - S.run.n }; }
   function gameBank(S, n, items = [], now = Date.now()) {
     const d = ymd(now); if (!S.game || S.game.d !== d) S.game = { d, n: 0, it: 0 };
     const g = Math.max(0, Math.min(Math.floor(n), GAME_CAP - S.game.n)); S.game.n += g; S.bolts += g;
@@ -442,7 +445,7 @@
     game: { n: "לשמור ברגים במשחק", ev: "game", need: 1, b: 30, em: "🔩" }, game40: { n: "לתפוס 40 ברגים בסיבוב אחד", ev: "game40", need: 1, b: 50, em: "🏃" },
     learn: { n: "לקבל 20 ברגים מתרגול", ev: "learn", need: 20, b: 40, em: "📚" }, wear: { n: "להחליף 3 דברים לרובוט", ev: "wear", need: 3, b: 20, em: "👕" },
     like: { n: "לתת לייק לרובוט של חבר", ev: "like", need: 1, b: 25, em: "❤️" }, lab: { n: "להשתמש במעבדה", ev: "lab", need: 1, b: 40, em: "🔨" },
-    market: { n: "לבקר בשוק", ev: "market", need: 1, b: 15, em: "🕵️" }, steps: { n: "ללכת 4 צעדים במסע", ev: "step", need: 4, b: 25, em: "🗺️" },
+    market: { n: "לבקר בשוק", ev: "market", need: 1, b: 15, em: "🕵️" }, run: { n: "לרוץ 500 מטר בריצת הרובוט", ev: "run500", need: 1, b: 30, em: "🏃" }, steps: { n: "ללכת 4 צעדים במסע", ev: "step", need: 4, b: 25, em: "🗺️" },
   };
   function missions(S, now = Date.now()) {
     const d = ymd(now); if (S.ms && S.ms.d === d) return S.ms;
@@ -499,6 +502,6 @@
     const d = ymd(now); if (!S.earn || S.earn.d !== d) S.earn = { d, n: 0 };
     const g = Math.max(0, Math.min(n, EARN_CAP - S.earn.n)); S.earn.n += g; S.bolts += g; return g;
   }
-  const api = { MISSIONS, missions, track, claimMission, WORLDS, MAP_N, MAP_STEP, mapPrize, mapStep, mapClaim, SHINY, WHEEL, spinWheel, FLASH, flashNow, buyFlash, labCombine, SETS, setsCheck, eventNow, PRICE, GAME_CAP, GAME_ITEMS, gameBank, cleanName, achievements, RVAL, BVAL, offerValue, canGive, applyTrade, weekId, HEROES, EARN_CAP, earn, RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
+  const api = { RUN_CAP, runBank, MISSIONS, missions, track, claimMission, WORLDS, MAP_N, MAP_STEP, mapPrize, mapStep, mapClaim, SHINY, WHEEL, spinWheel, FLASH, flashNow, buyFlash, labCombine, SETS, setsCheck, eventNow, PRICE, GAME_CAP, GAME_ITEMS, gameBank, cleanName, achievements, RVAL, BVAL, offerValue, canGive, applyTrade, weekId, HEROES, EARN_CAP, earn, RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.RoboCore = api;
 })(typeof self !== "undefined" ? self : this);
