@@ -20,7 +20,7 @@ const b = await puppeteer.launch({ executablePath: CHROME, headless: true, args:
 const p = await b.newPage(); await p.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
 const errs = []; p.on("pageerror", e => errs.push(e.message));
 await p.evaluateOnNewDocument((me) => { if (sessionStorage.getItem("s")) return; sessionStorage.setItem("s", "1"); localStorage.setItem("profile", JSON.stringify({ first: "דני", last: "לוי", cls: "y1", dorm: "yes", eng: "hadad", math: "adir", major: "cs", since: "2026-09-01" }));
-  localStorage.setItem("deviceId", me); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); localStorage.setItem("asstGreeted", "1"); localStorage.setItem("updatesSeen", "[]"); localStorage.setItem("roboTest", "1"); localStorage.setItem("roboIntro", "1");
+  localStorage.setItem("deviceId", me); localStorage.setItem("introSeen", "1"); localStorage.setItem("seenVersion", "9999"); localStorage.setItem("asstGreeted", "1"); localStorage.setItem("updatesSeen", "[]"); localStorage.setItem("roboTest", "1"); localStorage.setItem("roboRunTut", "1"); localStorage.setItem("roboIntro", "1");
   localStorage.setItem("robo", JSON.stringify({ st: { n: 1, last: new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(new Date()), best: 1 }, g1000: 1, bolts: 2000 }));
   localStorage.setItem("tef", JSON.stringify({ d: new Date().toISOString().slice(0, 10), a: "yes" })); }, ME);
 await p.setRequestInterception(true);
@@ -262,6 +262,22 @@ const cr = await p.evaluate(async () => { const G = RoboRun._game(), w = ms => n
 log(cr.dead && /נתקעת|שיא/.test(cr.h || "") && await p.evaluate((b0, n) => Robo.state().bolts === b0 + n && Robo.state().run.n >= n, rb0, cr.b), "run: crash ends the run, collected bolts are saved", JSON.stringify(cr));
 await p.evaluate(() => { const bs = [...document.querySelectorAll("#roboRun .gm-ov button")]; (bs.find(x => /סיום/.test(x.textContent)) || bs[0]).click(); }); await sleep(400);
 log(await p.evaluate(() => !document.querySelector("#roboRun[open]") && Robo.state().runBest > 0), "run: closed, best distance saved");
+// 🎓 הדרכה בריצה הראשונה (ספסל → מוט → ארון), ובלי עונש כשטועים
+await p.evaluate(() => { localStorage.removeItem("roboRunTut"); Robo.open("fun", "run"); }); await sleep(300);
+await p.evaluate(() => document.querySelector("#rnPlay").click());
+await p.waitForSelector("#roboRun .gm-ov button", { timeout: 8000 }); await sleep(200);
+await p.evaluate(() => document.querySelector("#roboRun .gm-ov button").click()); await sleep(500);
+const tut = await p.evaluate(async () => { const G = RoboRun._game(), w = ms => new Promise(r => setTimeout(r, ms)), o = { start: G.tut === 1, mistakeOk: false };
+  let mist = false; for (let i = 0; i < 400 && G.tut; i++) { const T = G.tutO; if (T && T.z < 5 && T.z > 0) { if (!mist && T.k === "bench") { mist = true; await w(900); o.mistakeOk = !G.dead && G.tut === 1; continue; } if (T.k === "bench") G.act("U"); else if (T.k === "beam") G.act("D"); else G.act(G.lane === 1 ? "L" : "R"); await w(700); } await w(50); }
+  o.done = !G.tut && localStorage.getItem("roboRunTut") === "1" && !G.dead; return o; });
+log(tut.start && tut.mistakeOk && tut.done, "run: first-time tutorial (jump, duck, dodge), mistakes don't end the run", JSON.stringify(tut));
+// ⏸️ יציאה מהאפליקציה באמצע: המשחק נעצר, וכשחוזרים – "להמשיך"
+const pz = await p.evaluate(async () => { const G = RoboRun._game(), w = ms => new Promise(r => setTimeout(r, ms)); let hid = true; Object.defineProperty(document, "hidden", { configurable: true, get: () => hid });
+  document.dispatchEvent(new Event("visibilitychange")); await w(100); const d0 = G.dist; await w(700); const frozen = G.paused && G.dist === d0;
+  hid = false; document.dispatchEvent(new Event("visibilitychange")); await w(300); const ask = /המתנה/.test((document.querySelector("#roboRun .gm-ov h3") || {}).textContent || "");
+  document.querySelector("#roboRun .gm-ov button").click(); await w(600); const resumed = !G.paused && G.dist > d0; delete document.hidden; return { frozen, ask, resumed }; });
+log(pz.frozen && pz.ask && pz.resumed, "pause: leaving the app freezes the game, coming back shows 'continue'", JSON.stringify(pz));
+await p.evaluate(() => { const d = document.getElementById("roboRun"); document.querySelector("#rnExit").click(); }); await sleep(500);
 // ✨ נוצץ + 🌍 אירוע + ⚡ בזק – בלי שגיאות
 await p.evaluate(() => { const id = RoboCore.LIST.find(x => x.r === "s" && x.cat === "hat").id; Robo.give({ t: "item", id, r: "s", shiny: 1 }); Robo.state().eq.hat = id; Robo.open("wear"); document.querySelector('#roboUI [data-c="hat"]').click(); }); await sleep(400);
 log(await p.evaluate(() => !!document.querySelector("#roboUI .rc.shiny") && !!document.querySelector("#roboUI .rw-bot .rshiny")), "shiny item: gold card + sparkles on the robot", await p.evaluate(() => [!!document.querySelector("#roboUI .rc.shiny"), !!document.querySelector("#roboUI .rw-bot .rshiny"), JSON.stringify(Robo.state().shiny), JSON.stringify(Robo.state().eq)].join(" ")));

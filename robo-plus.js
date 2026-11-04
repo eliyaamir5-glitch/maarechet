@@ -106,7 +106,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
 .gm-exit{flex:0 0 auto;font-size:16px!important;padding:14px 14px!important}
 .gm-ov{position:absolute;inset:0;display:grid;place-items:center;background:rgba(5,2,15,.82);z-index:3;text-align:center;padding:20px}
 .gm-ov .big{font-size:64px}.gm-ov h3{font-size:24px;margin:6px 0}.gm-ov p{color:#d9d5ff;margin:4px 0 16px}
-.gm-ov .rd-btns{margin:0 auto}
+.gm-ov .rd-btns{margin:0 auto}.gm-ov .rk{min-height:1em;color:#fde68a!important;font-weight:800}.gm-ov .rk.on{animation:lbPop2 .5s cubic-bezier(.2,1.6,.4,1)}
 .gm.boom{animation:gmShake .5s}@keyframes gmShake{20%{transform:translate(-8px,4px)}40%{transform:translate(8px,-4px)}60%{transform:translate(-6px,2px)}80%{transform:translate(4px,0)}}
 `;
   if (!document.getElementById("roboPlusCss")) { const s = document.createElement("style"); s.id = "roboPlusCss"; s.textContent = CSS; (document.head || document.documentElement).appendChild(s); }
@@ -559,8 +559,8 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       <div class="rp-s">כל 50 ברגים עולים שלב – הכל נופל מהר יותר ויש יותר פצצות וגנבים 😈 אפשר לצאת עם הכסף מתי שרוצים (עד 400) ולהתחיל סיבוב חדש. אחרי 500 ביום – 🏋️ מצב אימון לשבור שיאים (בלי פרסים).</div>
       <div class="rbx" style="--c:#f59e0b"><div class="em">📊</div><div class="t"><b>היום: ${g.n}/${R.GAME_CAP} 🔩 · ${g.it}/${R.GAME_ITEMS} 🎁${best ? ` · 🏆 שיא: ${best}` : ""}${S.gamePract ? ` · 🏋️ שיא אימון: ${S.gamePract}` : ""}</b><small>${bs.free ? "אפשר לשחק עכשיו 🎉" : bs.open ? (bs.until != null ? `הפסקה! עד ${hhmm(bs.until)}` : "אפשר לשחק עכשיו 🎉") : `🔒 עכשיו שיעור – נפתח בהפסקה (${hhmm(bs.until)})`}</small></div></div>
       ${chalBox("bolts")}
-      <button class="rbtn" type="button" id="rpPlay" style="width:100%;font-size:18px;padding:14px" ${bs.open || left <= 0 ? "" : "disabled"}>${left <= 0 ? "🏋️ אימון (בלי פרסים) – לשבור שיא!" : !bs.open ? "🔒 רק בהפסקות" : "▶️ לשחק!"}</button>
-      ${left <= 0 ? `<div class="rw-prog" style="text-align:center;margin-top:6px">💪 אספת את כל ה-${R.GAME_CAP} של היום! אימון פתוח כל הזמן · מחר אפשר שוב לאסוף ברגים</div>` : ""}
+      <button class="rbtn" type="button" id="rpPlay" style="width:100%;font-size:18px;padding:14px" ${bs.open ? "" : "disabled"}>${!bs.open ? "🔒 רק בהפסקות" : left <= 0 ? "🏋️ אימון (בלי פרסים) – לשבור שיא!" : "▶️ לשחק!"}</button>
+      ${left <= 0 ? `<div class="rw-prog" style="text-align:center;margin-top:6px">💪 אספת את כל ה-${R.GAME_CAP} של היום! אפשר להתאמן בהפסקות · מחר אפשר שוב לאסוף ברגים</div>` : ""}
       <div class="lb-tools" style="margin-top:10px"><button class="rbtn sm alt" type="button" data-go="lb">🏆 טבלת השיאים</button><button class="rbtn sm alt" type="button" data-go="upg">🛒 שדרוגים</button></div>
       <p class="rw-prog" style="margin-top:12px">⏰ המשחק פתוח רק בהפסקות לפי המערכת שלך (עד 16:15). אחרי 16:15, בשישי ובחופשות – פתוח תמיד.</p>`;
     wireBack(body);
@@ -576,6 +576,10 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     if (v <= (S.wk[g] || 0)) return; S.wk[g] = v; X.save(); try { await X.api({ op: "score", g, v }); } catch (e) {}
   }
   const GN = { bolts: "🔩 ברגים נופלים", run: "🏃 ריצת הרובוט" }, UNIT = { bolts: "ברגים", run: "מ'" };
+  // 🏆 "אתה מקום X בשכבה השבוע" – ממלאים את <p class="rk"> במסך הסיום (אחרי ששלחנו את השיא)
+  async function rankLine(root, g, v) {
+    if (!X.online() || !root) return; try { await postScore(g, v); const j = await X.api({ op: "scores", g }); const el = root.querySelector(".rk"); if (!el || !j || !j.ok || !j.me) return;
+      el.innerHTML = j.me.rank <= 3 ? `🏆 <b>אתה מקום ${j.me.rank} בשכבה השבוע!</b> ${["🥇", "🥈", "🥉"][j.me.rank - 1]}` : `🏆 מקום ${j.me.rank} בשכבה השבוע · ${j.list[2] ? `למקום 3 חסר ${Math.max(1, j.list[2].v - j.me.v + 1)} ${UNIT[g]}` : ""}`; el.classList.add("on"); } catch (e) {} }
   async function lbPanel(body, g = "bolts") {
     body.innerHTML = `${back}<div class="rp-h">🏆 טבלת השיאים של השבוע</div><div class="rp-seg">${Object.keys(GN).map(k => `<button type="button" data-g="${k}" class="${k === g ? "on" : ""}">${GN[k]}</button>`).join("")}</div><div class="rw-prog" style="text-align:center;padding:20px">⏳ טוען…</div>`;
     body.querySelector(".rp-back").onclick = () => g === "run" && PANELS.run ? PANELS.run(body) : gamePanel(body);
@@ -637,15 +641,18 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     box.addEventListener("pointerdown", move); box.addEventListener("pointermove", move); box.addEventListener("touchmove", e => { move(e); e.preventDefault(); }, { passive: false });
     const key = e => { if (e.key === "ArrowLeft") G.tx = Math.max(30, G.tx - 45); if (e.key === "ArrowRight") G.tx = Math.min(W - 30, G.tx + 45); }; addEventListener("keydown", key);
     const overlay = (html, btns) => new Promise(res => { const o = document.createElement("div"); o.className = "gm-ov"; o.innerHTML = `<div>${html}<div class="rd-btns">${btns.map((b, i) => `<button class="rbtn${i ? " alt" : ""}" type="button" data-i="${i}">${b}</button>`).join("")}</div></div>`; box.appendChild(o); o.querySelectorAll("button").forEach(b => b.onclick = () => { o.remove(); res(+b.dataset.i); }); });
-    const finish = () => { SND.stopMusic(); G.run = false; game = null; removeEventListener("keydown", key); removeEventListener("resize", fit); try { ro && ro.disconnect(); } catch (e) {} delete d.dataset.lock; d.close(); X.hubRefresh(); if (host && host.isConnected) gamePanel(host); };
+    // ⏸️ יצאו מהאפליקציה באמצע (נעילת מסך / אפליקציה אחרת): עוצרים, משתיקים, וכשחוזרים – "להמשיך"
+    const onVis = async () => { if (!G.run || G.over || G.dead) return; if (document.hidden) { if (!G.paused) { G.paused = true; SND.stopMusic(); } } else if (G.paused && !G.pauseAsk) { G.pauseAsk = 1; await overlay(`<div class="big">⏸️</div><h3>המשחק בהמתנה</h3><p>יצאת מהאפליקציה – עצרנו בשבילך 🙂</p>`, ["▶️ להמשיך"]); G.pauseAsk = 0; G.paused = false; last = performance.now(); SND.music(G.hard > 0 ? "hard" : "bolts"); } };
+    document.addEventListener("visibilitychange", onVis);
+    const finish = () => { document.removeEventListener("visibilitychange", onVis); SND.stopMusic(); G.run = false; game = null; removeEventListener("keydown", key); removeEventListener("resize", fit); try { ro && ro.disconnect(); } catch (e) {} delete d.dataset.lock; d.close(); X.hubRefresh(); if (host && host.isConnected) gamePanel(host); };
     const newRound = () => { G.practice = left() <= 0; G.lockAt = null; G.lvMax = 1; G.lvT = 0; G.peak = 0; G.asked = 0; G.boss = null; G.bossDone = 0; G.hard = 0; G.slowmo = 0; G.st = { lvl: 1, gold: 0, shieldUsed: false, combo: 0, boss: 0, t: 0, bolts: 0 }; SND.music("bolts"); Object.assign(G, { obj: [], parts: [], fx: [], bolts: 0, items: [], t: 0, nb: .35, nbomb: 1.6 + Math.random(), nthief: 7 + Math.random() * 4, npow: 6 + Math.random() * 5, nitem: 10 + Math.random() * 10, over: false, dead: false, fullShown: 0, combo: 0, bestCombo: 0, pw: {}, shield: Math.random() < [0, .35, .7, 1][R.upg(X.S, "shield")], shake: 0, stolen: 0 }); hud(); fit(); last = performance.now(); requestAnimationFrame(loop); };
     // 📊 סוף סיבוב: אתגר יומי + שיא שבועי לטבלה
     const roundStats = () => Object.assign(G.st, { lvl: Math.max(G.st.lvl, G.lvMax || 1), combo: Math.max(G.st.combo, G.bestCombo), t: G.t, bolts: Math.max(G.st.bolts, G.peak || 0) });
-    const afterRound = () => { if (!G.st) return; const st = roundStats(); postScore("bolts", st.bolts); if (!G.practice) { const c = R.challengeCheck(X.S, "bolts", st); if (c) { X.save(); setTimeout(() => { X.SFX.gift(); X.toast(`🎯 <b>אתגר יומי הושלם!</b> ${esc(c.n)} – קיבלת 💠 תיבת מגה`, ["לפתוח", () => X.openBoxes(["mega"])], 9000); }, 600); } } };
+    const afterRound = () => { if (!G.st) return; const st = roundStats(); setTimeout(() => rankLine(box, "bolts", st.bolts), 300); if (!G.practice) { const c = R.challengeCheck(X.S, "bolts", st); if (c) { X.save(); setTimeout(() => { X.SFX.gift(); X.toast(`🎯 <b>אתגר יומי הושלם!</b> ${esc(c.n)} – קיבלת 💠 תיבת מגה`, ["לפתוח", () => X.openBoxes(["mega"])], 9000); }, 600); } } };
     const practEnd = async (why) => {
       G.over = true; SND.stopMusic(); const sc = Math.max(G.bolts, G.peak || 0), rec = sc > (X.S.gamePract || 0); if (rec) X.S.gamePract = sc; X.save(); if (rec) X.SFX.reveal(4); afterRound();
-      const more = true; // אימון – בכל זמן
-      const i = await overlay(`<div class="big">${why === "boom" ? "💥" : rec ? "🏆" : "🏋️"}</div><h3>${rec ? "שיא אימון חדש!" : why === "boom" ? "בום! האימון נגמר" : "סוף האימון"}</h3><p>תפסת ${sc} ברגים · הגעת לשלב ${G.lvMax || 1} · ⏱️ ${Math.floor(G.t)} שניות</p><p>🏋️ זה אימון – בלי פרסים. מחר אפשר שוב לאסוף ${R.GAME_CAP} ברגים!</p>`, more && why !== "bell" ? ["🔄 עוד אימון", "סיום"] : ["סיום"]);
+      const more = breakState().open && why !== "bell";
+      const i = await overlay(`<div class="big">${why === "boom" ? "💥" : rec ? "🏆" : "🏋️"}</div><h3>${rec ? "שיא אימון חדש!" : why === "boom" ? "בום! האימון נגמר" : "סוף האימון"}</h3><p>תפסת ${sc} ברגים · הגעת לשלב ${G.lvMax || 1} · ⏱️ ${Math.floor(G.t)} שניות</p><p>🏋️ זה אימון – בלי פרסים. מחר אפשר שוב לאסוף ${R.GAME_CAP} ברגים!</p><p class="rk"></p>`, more && why !== "bell" ? ["🔄 עוד אימון", "סיום"] : ["סיום"]);
       if (more && why !== "bell" && i === 0) newRound(); else finish();
     };
     const bank = async (why) => {
@@ -655,7 +662,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       if (r.bolts || r.items.length) X.step(1); X.save(); X.SFX.coin(); X.vib(40);
       const it = r.items.map(g => `<div style="margin:4px 0">${R.ITEMS[g.id] ? `✨ ${esc(R.ITEMS[g.id].n)} ${X.rarTag(g.r)}${g.dup ? ` (כפול → +${g.dup} 🔩)` : ""}` : ""}</div>`).join("");
       const more = breakState().open && r.left > 0;
-      const i = await overlay(`<div class="big">${why === "bell" ? "🔔" : why === "win" ? "🏆" : "💰"}</div><h3>${why === "bell" ? "ההפסקה נגמרה!" : why === "win" ? "ניצחת!!! שרדת עד הסוף!" : "שמרת!"}</h3><p>+${r.bolts} ברגים 🔩${r.bolts < caught ? ` (הגעת למקסימום של היום)` : ""}</p>${it}<p>⏱️ שרדת ${Math.floor(G.t)} שניות · 🔥 קומבו הכי גדול: ${G.bestCombo}${G.stolen ? ` · 🦹 נגנבו ${G.stolen}` : ""}</p><p>היום: ${R.GAME_CAP - r.left}/${R.GAME_CAP}</p>`, more && why !== "bell" ? ["🔄 עוד סיבוב", "סיום"] : ["סיום"]);
+      const i = await overlay(`<div class="big">${why === "bell" ? "🔔" : why === "win" ? "🏆" : "💰"}</div><h3>${why === "bell" ? "ההפסקה נגמרה!" : why === "win" ? "ניצחת!!! שרדת עד הסוף!" : "שמרת!"}</h3><p>+${r.bolts} ברגים 🔩${r.bolts < caught ? ` (הגעת למקסימום של היום)` : ""}</p>${it}<p>⏱️ שרדת ${Math.floor(G.t)} שניות · 🔥 קומבו הכי גדול: ${G.bestCombo}${G.stolen ? ` · 🦹 נגנבו ${G.stolen}` : ""}</p><p>היום: ${R.GAME_CAP - r.left}/${R.GAME_CAP}</p><p class="rk"></p>`, more && why !== "bell" ? ["🔄 עוד סיבוב", "סיום"] : ["סיום"]);
       if (more && why !== "bell" && i === 0) newRound(); else finish();
     };
     // ✕ / כפתור "חזור" בטלפון: יוצאים תמיד. אם תפסת משהו בסיבוב – נשמר אוטומטית
@@ -737,13 +744,14 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     function loop(now) {
       if (!G.run || G.over) return;
       if (!d.open) { finish(); return; }
+      if (G.paused) { last = now; requestAnimationFrame(loop); return; }
       if (W < 50 || H < 50) fit();
-      const rdt = Math.min(.05, (now - last) / 1000); last = now; const dt = rdt * slowF();
+      const rdt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now; const dt = rdt * slowF();
       if (!G.dead) G.t += rdt;
       if (G.hard > 0 && !G.dead) { G.hard -= rdt; if (G.hard <= 0) { G.hard = 0; hardWin(); return; } }
       for (const k of Object.keys(G.pw)) { G.pw[k] -= rdt; if (G.pw[k] <= 0) delete G.pw[k]; }
       // ⏰ ההפסקה נגמרה? שומרים אוטומטית
-      if ((secT += rdt) > 1 && !G.dead) { secT = 0; const bs = breakState(); if (!bs.open && !locked() && !G.practice && !(G.hard > 0) && !G.slowmo) { bank("bell"); return; } const tl = d.querySelector("#gmT"); if (bs.until != null) { const n = new Date(), s = bs.until * 60 - (n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds()); tl.textContent = s > 0 ? `⏰ ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : ""; } else tl.textContent = ""; }
+      if ((secT += rdt) > 1 && !G.dead) { secT = 0; const bs = breakState(); if (!bs.open && !locked() && !(G.hard > 0) && !G.slowmo) { bank("bell"); return; } const tl = d.querySelector("#gmT"); if (bs.until != null) { const n = new Date(), s = bs.until * 60 - (n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds()); tl.textContent = s > 0 ? `⏰ ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : ""; } else tl.textContent = ""; }
       if (!G.dead && G.hard > 0) {
         if ((G.nb -= rdt) <= 0) { G.nb = .22; spawn("bolt"); }
         if ((G.nbomb -= rdt) <= 0) { G.nbomb = Math.max(.16, .32 - (30 - G.hard) * .005); spawn("bomb"); }
@@ -839,7 +847,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       fxText(W / 2, H * .4, "💥 בום!", "#f87171", 1, 44);
       await X.sleep(900); G.over = true; SND.stopMusic(); afterRound();
       const more = breakState().open && left() > 0;
-      const i = await overlay(`<div class="big">💥</div><h3>בום!</h3><p>${lost || li ? `הפסדת ${lost} ברגים${li ? ` ו-${li} 🎁` : ""} מהסיבוב 😭` : "פצצה! לא הפסדת כלום כי עוד לא תפסת 😅"}</p><p>⏱️ שרדת ${Math.floor(G.t)} שניות · 🔥 קומבו: ${G.bestCombo}</p><p>טיפ: צא עם הכסף לפני שזה נהיה מהיר מדי!</p>`, more ? ["🔄 סיבוב חדש", "סיום"] : ["סיום"]);
+      const i = await overlay(`<div class="big">💥</div><h3>בום!</h3><p>${lost || li ? `הפסדת ${lost} ברגים${li ? ` ו-${li} 🎁` : ""} מהסיבוב 😭` : "פצצה! לא הפסדת כלום כי עוד לא תפסת 😅"}</p><p>⏱️ שרדת ${Math.floor(G.t)} שניות · 🔥 קומבו: ${G.bestCombo}</p><p>טיפ: צא עם הכסף לפני שזה נהיה מהיר מדי!</p><p class="rk"></p>`, more ? ["🔄 סיבוב חדש", "סיום"] : ["סיום"]);
       if (more && i === 0) newRound(); else finish();
     }
     G.spawnAt = (k, x, y, extra) => { spawn(k, x); const o = G.obj[G.obj.length - 1]; if (k === "bolt" || k === "gold") { o.k = k; o.s = k === "gold" ? 28 : 25; } if (y != null) o.y = y; Object.assign(o, extra || {}); return o; }; // לבדיקות
@@ -852,7 +860,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
   const PANELS = { lb: lbPanel, upg: upgPanel, legend: legendPanel, wheel: wheelPanel, map: mapPanel, lab: labPanel, sets: setsPanel, market: marketPanel, bonus: bonusPanel, game: gamePanel };
 
   // ================= הפעלה =================
-  window.RoboPlus = { tab, breakState, mashovRewards, play: () => play(), panels: PANELS, _game: () => game, snd: SND, sndBtns, wireSnd, chalBox, wireGo, postScore, lbPanel, upgPanel };
+  window.RoboPlus = { tab, breakState, mashovRewards, play: () => play(), panels: PANELS, _game: () => game, snd: SND, sndBtns, wireSnd, chalBox, wireGo, postScore, rankLine, lbPanel, upgPanel };
   // ⚡ תיבת בזק: הודעה קטנה כשנפתח חלון (פעם אחת לחלון)
   function flashCheck() {
     if (X.locked() || document.hidden || !X.profile() || document.querySelector("dialog[open]")) return;
