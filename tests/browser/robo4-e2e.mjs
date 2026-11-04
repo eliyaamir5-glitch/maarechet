@@ -57,11 +57,17 @@ log(await p.evaluate(b0 => { const s = Robo.state(); return s.map.c === 2 && s.b
 await p.evaluate(() => { const ids = RoboCore.LIST.filter(x => x.r === "c" && !x.free && x.cat !== "theme" && x.cat !== "page").slice(0, 5).map(x => x.id); ids.forEach(id => Robo.give({ t: "item", id, r: "c" })); window.__lab = ids; Robo.open("fun", "lab"); }); await sleep(400);
 for (let i = 0; i < 5; i++) { await p.evaluate(i => document.querySelector(`#roboUI .rc[data-id="${window.__lab[i]}"]`).click(), i); await sleep(120); }
 if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + "/4-lab.png" });
-log(await p.evaluate(() => !document.querySelector("#rpLab").disabled && document.querySelectorAll(".rp-slots i.f").length === 5), "lab: pick 5 commons → button ready");
-await p.evaluate(() => { window.confirm = () => true; document.querySelector("#rpLab").click(); }); await sleep(1800);
+log(await p.evaluate(() => !document.querySelector("#rpLab").disabled && document.querySelectorAll("#roboUI .lb-slot.f").length === 5 && document.querySelectorAll("#roboUI .lb-badge").length === 5), "lab: 5 items shown in the machine slots, button ready");
+await p.evaluate(() => document.querySelector("#roboUI .lb-slot.f").click()); await sleep(200);
+log(await p.evaluate(() => document.querySelectorAll("#roboUI .lb-slot.f").length === 4 && document.querySelector("#rpLab").disabled), "lab: tap an item in the machine → it comes out");
+await p.evaluate(() => document.querySelector(`#roboUI .rc[data-id="${window.__lab[0]}"]`).click()); await sleep(200);
+await p.evaluate(() => document.querySelector("#rpLab").click()); await sleep(1500);
+if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + "/5-labmix.png" });
+log(await p.evaluate(() => { const o = document.querySelector("#roboUI .rp-lab"); if (!o) return false; const r = o.getBoundingClientRect(), el = document.elementFromPoint(r.left + r.width / 2, r.top + 40); return o.contains(el) && document.querySelectorAll(".lx-it").length === 5; }), "lab: mixing animation is visible on top (5 items swirling)");
+await sleep(3000);
 if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + "/5-labresult.png" });
-log(await p.evaluate(() => !!document.querySelector(".rp-lab button") && window.__lab.every(id => !Robo.state().own[id])), "lab: the 5 are gone, new item revealed");
-await p.evaluate(() => document.querySelector(".rp-lab button").click()); await sleep(300);
+log(await p.evaluate(() => !!document.querySelector(".rp-lab .lx-card") && document.querySelectorAll(".lx-sum .lx-i").length === 6 && window.__lab.every(id => !Robo.state().own[id])), "lab: result screen shows what you put in (5) and what you got");
+await p.evaluate(() => document.querySelector('.rp-lab [data-a="close"]').click()); await sleep(300);
 // 🎭 סטים
 await p.evaluate(() => { const st = RoboCore.SETS.find(x => x.id === "gems"); window.__gb = Robo.state().bolts; st.ids.forEach(id => Robo.give({ t: "item", id })); }); await sleep(1500);
 log(await p.evaluate(() => Robo.state().sets && Robo.state().sets.gems && Robo.state().bolts >= window.__gb + 800), "full set (gems) → prize once (mega box + 800 bolts)");

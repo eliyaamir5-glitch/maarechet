@@ -38,12 +38,41 @@
 .rp-me{position:absolute;width:52px;height:52px;margin:-56px 0 0 -26px;z-index:3;transition:top .6s,left .6s;filter:drop-shadow(0 4px 6px rgba(0,0,0,.6))}
 .rp-bar{height:12px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;margin:6px 0 12px}.rp-bar i{display:block;height:100%;background:linear-gradient(90deg,#22c55e,#facc15);border-radius:99px}
 /* 🔨 מעבדה */
-.rp-rar{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px}.rp-rar button{border:0;border-radius:99px;padding:6px 12px;font:inherit;font-size:13px;font-weight:800;color:#fff;background:rgba(255,255,255,.1);cursor:pointer;white-space:nowrap}.rp-rar button.on{background:var(--c);color:#1a1040}
-.rc.pick{outline:3px solid #fde047;outline-offset:-3px;transform:scale(.96)}
-.rp-slots{display:flex;gap:6px;justify-content:center;margin:8px 0 12px}.rp-slots i{width:44px;height:44px;border-radius:12px;border:2px dashed rgba(255,255,255,.3);display:grid;place-items:center;font-style:normal;overflow:hidden}.rp-slots i.f{border-style:solid;border-color:#fde047;background:rgba(253,224,71,.12)}
-.rp-lab{position:fixed;inset:0;z-index:2147483600;display:grid;place-items:center;background:rgba(5,2,15,.92)}
-.rp-lab .it{position:absolute;width:70px;height:70px;transition:all .9s cubic-bezier(.5,0,.2,1)}
-.rp-lab .core{font-size:80px;animation:rBeat .4s infinite}
+.rp-rar{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px}.rp-rar button{border:0;border-radius:99px;padding:6px 12px;font:inherit;font-size:13px;font-weight:800;color:#fff;background:rgba(255,255,255,.1);cursor:pointer;white-space:nowrap}.rp-rar button.on{background:var(--c);color:#1a1040}.rp-rar button.few{opacity:.5}
+.rc.pick{outline:3px solid #fde047;outline-offset:-3px;transform:scale(.95)}.lb-badge{position:absolute;top:4px;left:4px;width:22px;height:22px;border-radius:50%;background:#fde047;color:#1a1040;font-weight:900;font-size:13px;display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.lb-steps{display:flex;gap:5px;margin:2px 0 10px}.lb-steps span{flex:1;text-align:center;font-size:12px;font-weight:800;padding:6px 2px;border-radius:10px;background:rgba(255,255,255,.07);color:#a5a1d6}.lb-steps span.on{background:linear-gradient(135deg,#5b6cff,#a259ff);color:#fff}
+.lb-mach{border-radius:22px;padding:10px 10px 12px;margin-bottom:10px;background:radial-gradient(90% 70% at 50% 35%,color-mix(in srgb,var(--c) 35%,#1a1040),#0b0820);border:1.5px solid color-mix(in srgb,var(--c) 60%,#fff 10%)}
+.lb-ring{position:relative;width:min(300px,82vw);aspect-ratio:1;margin:0 auto}
+.lb-slot{position:absolute;width:23%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:18px;border:2.5px dashed rgba(255,255,255,.35);background:rgba(255,255,255,.05);cursor:pointer;padding:0;color:#fff;font:inherit}
+.lb-slot .num{font-size:22px;font-weight:900;opacity:.45}.lb-slot.f{border:2.5px solid var(--c);background:color-mix(in srgb,var(--c) 30%,#1a1040);box-shadow:0 0 14px color-mix(in srgb,var(--c) 60%,transparent);animation:lbPop .3s cubic-bezier(.2,1.6,.4,1)}
+.lb-slot .pv{position:absolute;inset:4px 4px 14px}.lb-slot .nm{position:absolute;bottom:2px;left:2px;right:2px;font-size:9.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lb-slot .x{position:absolute;top:-7px;left:-7px;width:20px;height:20px;border-radius:50%;background:#ef4444;font-size:10px;display:grid;place-items:center}
+@keyframes lbPop{from{transform:translate(-50%,-50%) scale(.4)}}
+.lb-pot{position:absolute;left:50%;top:50%;width:34%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;background:#0b0820;border:3px solid color-mix(in srgb,var(--c) 70%,#fff 20%);box-shadow:inset 0 0 18px rgba(0,0,0,.6),0 0 22px color-mix(in srgb,var(--c) 50%,transparent);display:grid;place-items:center}
+.lb-pot .liq{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 70%,#fff 20%),var(--c));transition:height .4s}.lb-pot b{position:relative;font-size:20px;font-weight:900;text-shadow:0 2px 4px rgba(0,0,0,.6)}
+.lb-pot.ready{animation:lbReady 1s ease-in-out infinite}@keyframes lbReady{50%{box-shadow:inset 0 0 18px rgba(0,0,0,.6),0 0 40px var(--n)}}
+.bub{position:absolute;inset:0}.bub i{position:absolute;bottom:-8px;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.7);animation:lbBub 1.6s ease-in infinite}.bub i:nth-child(1){left:25%}.bub i:nth-child(2){left:55%;animation-delay:.5s}.bub i:nth-child(3){left:75%;animation-delay:1s}.bub i:nth-child(4){left:40%;animation-delay:.8s}
+@keyframes lbBub{to{transform:translateY(-120px);opacity:0}}
+.lb-arrow{text-align:center;font-weight:900;font-size:14px;margin:6px 0}
+.lb-out{display:flex;align-items:center;gap:12px;justify-content:center}.lb-out .q{width:58px;height:58px;border-radius:16px;display:grid;place-items:center;font-size:30px;font-weight:900;background:color-mix(in srgb,var(--n) 30%,#1a1040);border:2.5px solid var(--n);box-shadow:0 0 18px var(--n);animation:rBeat 1.4s infinite}.lb-out small{display:block;font-size:12px;color:#c7c3ff}
+.lb-tools{display:flex;gap:8px;margin-bottom:8px}.lb-tools .rbtn{flex:1}
+.rp-lab{position:fixed;inset:0;z-index:2147483600;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--c) 30%,#05020f),#05020f 70%);overflow:hidden;color:#fff;font-family:inherit;direction:rtl}
+.lx-t{font-size:24px;font-weight:900;margin-bottom:18px;animation:rBeat .6s infinite}
+.lx-stage{position:relative;width:300px;height:300px;--mix:var(--c)}
+.lx-glow{position:absolute;inset:20%;border-radius:50%;background:radial-gradient(circle,var(--mix),transparent 70%);filter:blur(10px);opacity:.8;transition:background .15s}
+.lx-pot{position:absolute;left:50%;top:50%;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;overflow:hidden;border:4px solid #fff;box-shadow:0 0 30px var(--mix),inset 0 0 20px rgba(0,0,0,.5);background:#0b0820}
+.lx-liq{position:absolute;inset:0;background:conic-gradient(from 0deg,var(--mix),var(--n),var(--c),var(--mix));animation:lxSpin 1s linear infinite;opacity:.85}@keyframes lxSpin{to{transform:rotate(360deg)}}
+.lx-it{position:absolute;left:50%;top:50%;width:76px;height:76px;margin:-38px 0 0 -38px;opacity:0;border-radius:18px;background:rgba(255,255,255,.08);box-shadow:0 0 16px var(--mix);transition:opacity .4s}
+.rp-lab.in .lx-it{opacity:1}
+.lx-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}.rp-lab.boom .lx-flash{animation:lxFlash .65s ease-out}.rp-lab.boom .lx-stage{animation:gmShake .5s}@keyframes lxFlash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+.rp-lab.res{justify-content:flex-start;overflow-y:auto;padding:calc(20px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));background:radial-gradient(circle at 50% 30%,color-mix(in srgb,var(--n) 45%,#05020f),#05020f 70%)}
+.lx-rays{position:fixed;left:50%;top:32%;width:900px;height:900px;margin:-450px 0 0 -450px;background:repeating-conic-gradient(color-mix(in srgb,var(--n) 35%,transparent) 0 10deg,transparent 10deg 20deg);animation:lxSpin 14s linear infinite;opacity:.6;pointer-events:none}
+.lx-res{position:relative;width:100%;max-width:360px;text-align:center}
+.lx-up{font-size:20px;font-weight:900;margin:6px 0 10px;animation:lbPop2 .5s cubic-bezier(.2,1.6,.4,1)}@keyframes lbPop2{from{transform:scale(.3);opacity:0}}
+.lx-card{border-radius:24px;padding:14px;background:linear-gradient(160deg,color-mix(in srgb,var(--c) 55%,#1a1040),#1a1040);border:3px solid var(--c);box-shadow:0 0 40px var(--c);animation:lxIn .7s cubic-bezier(.2,1.5,.4,1)}@keyframes lxIn{from{transform:scale(.1) rotate(-200deg);opacity:0}}
+.lx-card .pv{width:150px;height:150px;margin:0 auto}.lx-card .nm{font-size:22px;font-weight:900;margin:6px 0}.lx-card .sub{margin-top:8px;color:#fde68a;font-weight:800}
+.rp-lab.big .lx-card{animation:lxIn .9s cubic-bezier(.2,1.5,.4,1),rBeat 1.6s 1s infinite}
+.lx-sum{margin:14px 0;padding:10px;border-radius:18px;background:rgba(255,255,255,.06)}.lx-sum .lbl{font-size:12px;font-weight:800;color:#c7c3ff}.lx-sum .lx-row{display:flex;gap:6px;justify-content:center;margin:4px 0;background:none}.lx-i{display:block;width:44px;height:44px;border-radius:12px;overflow:hidden;background:rgba(255,255,255,.08);opacity:.75;filter:grayscale(.3)}.lx-i.got{width:62px;height:62px;opacity:1;filter:none;box-shadow:0 0 16px var(--n);background:rgba(255,255,255,.12)}.lx-sum .eq{font-size:18px}
+.rp-lab .rd-btns{margin:0 auto}
 /* 🕵️ שוק */
 .rp-mk{display:flex;align-items:center;gap:10px;border-radius:16px;padding:9px;margin-bottom:8px;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 45%,#000),#1a1040);border:1.5px solid color-mix(in srgb,var(--c) 60%,#fff 10%)}
 .rp-mk .pv{width:60px;height:60px;flex:0 0 60px}.rp-mk .t{flex:1;min-width:0}.rp-mk .t b{display:block;font-size:14px}.rp-mk .t small{font-size:12px;color:#d9d5ff}
@@ -193,33 +222,71 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
   }
 
   // ================= 🔨 מעבדה =================
+  // 1) בוחרים דרגה · 2) שמים 5 אביזרים במכונה · 3) מערבבים → כולם מסתחררים ומתמזגים → יוצא אביזר אחד מהדרגה הבאה
   let labR = "c", labSel = [];
   const labOk = it => X.S.own[it.id] && X.S.own[it.id] !== -1 && !it.free && it.cat !== "theme" && it.cat !== "page" && !(X.S.shiny && X.S.shiny[it.id]);
+  const LAB_RS = ["c", "r", "s", "e", "m"];
   function labPanel(body) {
-    const S = X.S, rs = ["c", "r", "s", "e", "m"], items = R.LIST.filter(x => x.r === labR && labOk(x));
+    const items = R.LIST.filter(x => x.r === labR && labOk(x));
     labSel = labSel.filter(id => items.some(x => x.id === id));
-    const nr = R.RK[R.RK.indexOf(labR) + 1];
-    body.innerHTML = `${back}<div class="rp-h">🔨 המעבדה</div><div class="rp-s">בוחרים 5 אביזרים מאותה דרגה → הם מתחברים לאביזר אחד מהדרגה הבאה! (אביזרים נוצצים ✨ לא נכנסים למעבדה)</div>
-      <div class="rp-rar">${rs.map(r => `<button type="button" data-r="${r}" class="${labR === r ? "on" : ""}" style="--c:${RC(r)}">${R.RAR[r].n} (${R.LIST.filter(x => x.r === r && labOk(x)).length})</button>`).join("")}</div>
-      <div class="rp-slots">${Array.from({ length: 5 }, (_, i) => labSel[i] ? `<i class="f">${X.preview(labSel[i])}</i>` : "<i></i>").join("")}</div>
-      <button class="rbtn" type="button" id="rpLab" style="width:100%;margin-bottom:12px" ${labSel.length === 5 ? "" : "disabled"}>🔨 לחבר 5 → 1 ${R.RAR[nr].n}</button>
-      ${items.length ? `<div class="rw-grid">${items.map(it => X.card(it)).join("")}</div>` : `<div class="rw-prog" style="text-align:center;padding:20px 0">אין לך אביזרים ${R.RAR[labR].n}ים שאפשר לחבר</div>`}`;
+    const nr = R.RK[R.RK.indexOf(labR) + 1], n = labSel.length, full = n === 5;
+    const slot = i => { const id = labSel[i], a = -90 + i * 72, x = 50 + 39 * Math.cos(a * Math.PI / 180), y = 50 + 39 * Math.sin(a * Math.PI / 180);
+      return `<button type="button" class="lb-slot${id ? " f" : ""}" data-slot="${i}" style="left:${x}%;top:${y}%;--c:${RC(labR)}">${id ? `<div class="pv">${X.preview(id)}</div><span class="nm">${esc(R.ITEMS[id].n)}</span><span class="x">✕</span>` : `<span class="num">${i + 1}</span>`}</button>`; };
+    body.innerHTML = `${back}<div class="rp-h">🔨 המעבדה</div>
+      <div class="lb-steps"><span class="${"on"}">1️⃣ בוחרים דרגה</span><span class="${n ? "on" : ""}">2️⃣ שמים 5 אביזרים</span><span class="${full ? "on" : ""}">3️⃣ מערבבים!</span></div>
+      <div class="rp-rar">${LAB_RS.map(r => { const c = R.LIST.filter(x => x.r === r && labOk(x)).length; return `<button type="button" data-r="${r}" class="${labR === r ? "on" : ""}${c < 5 ? " few" : ""}" style="--c:${RC(r)}">${R.RAR[r].n} · ${c}</button>`; }).join("")}</div>
+      <div class="lb-mach" style="--c:${RC(labR)};--n:${RC(nr)}">
+        <div class="lb-ring">${Array.from({ length: 5 }, (_, i) => slot(i)).join("")}
+          <div class="lb-pot${full ? " ready" : ""}"><div class="liq" style="height:${18 + n * 14}%"></div><div class="bub"><i></i><i></i><i></i></div><b>${n}/5</b></div></div>
+        <div class="lb-arrow">⬇️ יוצא:</div>
+        <div class="lb-out"><div class="q">?</div><div class="t"><b style="color:${RC(nr)}">אביזר ${R.RAR[nr].n} אקראי</b><small>מ-5 אביזרים ${R.RAR[labR].n}ים</small></div></div>
+      </div>
+      <div class="lb-tools"><button class="rbtn sm alt" type="button" id="lbAuto" ${items.length < 5 ? "disabled" : ""}>🎲 תבחר לי</button><button class="rbtn sm alt" type="button" id="lbClear" ${n ? "" : "disabled"}>🧹 לנקות</button></div>
+      <button class="rbtn" type="button" id="rpLab" style="width:100%;font-size:18px;padding:14px" ${full ? "" : "disabled"}>${full ? "⚗️ לערבב!" : `עוד ${5 - n} אביזרים ושאפשר לערבב`}</button>
+      <div class="rw-prog" style="text-align:center;margin-top:6px">⚠️ 5 האביזרים נעלמים, ובמקומם יוצא אביזר אחד נדיר יותר · אביזרים נוצצים ✨ לא נכנסים</div>
+      <div class="rw-sec">👇 האביזרים ה${R.RAR[labR].n}ים שלך <small>לחיצה = לשים במכונה / להוציא</small></div>
+      ${items.length ? `<div class="rw-grid">${items.map(it => X.card(it)).join("")}</div>` : `<div class="rw-prog" style="text-align:center;padding:20px 0">אין לך אביזרים ${R.RAR[labR].n}ים שאפשר לחבר – תנסה דרגה אחרת</div>`}`;
     wireBack(body);
     body.querySelectorAll("[data-r]").forEach(b => b.onclick = () => { labR = b.dataset.r; labSel = []; labPanel(body); });
-    body.querySelectorAll(".rc[data-id]").forEach(b => { if (labSel.includes(b.dataset.id)) b.classList.add("pick"); b.onclick = () => { const id = b.dataset.id; labSel = labSel.includes(id) ? labSel.filter(x => x !== id) : labSel.length < 5 ? [...labSel, id] : labSel; labPanel(body); }; });
-    body.querySelector("#rpLab").onclick = async () => {
-      if (labSel.length !== 5 || !confirm(`לחבר את 5 האביזרים? הם ייעלמו, ובמקומם תקבל אביזר ${R.RAR[nr].n} אחד`)) return;
-      const sel = labSel.slice(), r = R.labCombine(X.S, sel); if (!r.ok) { X.toast("משהו לא הסתדר 🤔", null, 3000); return; }
-      labSel = []; X.trk("lab"); X.step(1); X.save();
-      const ov = document.createElement("div"); ov.className = "rp-lab"; document.body.appendChild(ov);
-      ov.innerHTML = sel.map((id, i) => { const a = i / 5 * Math.PI * 2; return `<div class="it" style="left:calc(50% + ${Math.cos(a) * 120}px - 35px);top:calc(50% + ${Math.sin(a) * 120}px - 35px)">${X.preview(id)}</div>`; }).join("") + `<div class="core">⚗️</div>`;
-      X.SFX.up(1); await X.sleep(300); ov.querySelectorAll(".it").forEach(e => { e.style.left = "calc(50% - 35px)"; e.style.top = "calc(50% - 35px)"; e.style.opacity = ".2"; e.style.transform = "scale(.3) rotate(360deg)"; });
-      await X.sleep(1000); X.SFX.open(); X.vib([40, 30, 100]);
-      const it = R.ITEMS[r.got.id];
-      ov.innerHTML = `<div style="text-align:center"><div style="font-weight:900;font-size:16px;color:${RC(it.r)}">${R.RAR[it.r].n}!</div><div style="width:160px;height:160px;margin:8px auto">${X.preview(it.id, false)}</div><div style="font-size:22px;font-weight:900">${esc(it.n)}</div><div style="color:#d9d5ff;margin:6px 0 16px">${r.got.dup ? `כבר היה לך → +${r.got.dup} 🔩` : "✨ חדש באוסף!"}</div><button class="rbtn" type="button">יש! 🤩</button></div>`;
-      X.particles(ov, RC(it.r), 46); X.SFX.reveal(R.RAR[it.r].o);
-      await new Promise(res => { ov.querySelector("button").onclick = res; }); ov.remove(); labPanel(body); X.hubRefresh();
-    };
+    body.querySelectorAll("[data-slot]").forEach(b => b.onclick = () => { const id = labSel[+b.dataset.slot]; if (!id) return; labSel = labSel.filter(x => x !== id); X.SFX.tap(); labPanel(body); });
+    body.querySelectorAll(".rc[data-id]").forEach(b => { const k = labSel.indexOf(b.dataset.id); if (k >= 0) { b.classList.add("pick"); b.insertAdjacentHTML("beforeend", `<span class="lb-badge">${k + 1}</span>`); }
+      b.onclick = () => { const id = b.dataset.id; if (labSel.includes(id)) labSel = labSel.filter(x => x !== id); else if (labSel.length < 5) { labSel = [...labSel, id]; X.SFX.tap(); X.vib(12); } else { X.toast("המכונה מלאה – 5 זה המקסימום 🙂 לחץ על אביזר במכונה כדי להוציא", null, 2500); return; } const y = body.scrollTop; labPanel(body); body.scrollTop = y; }; });
+    body.querySelector("#lbAuto").onclick = () => { const pool = items.filter(x => !labSel.includes(x.id)).sort(() => Math.random() - .5); while (labSel.length < 5 && pool.length) labSel.push(pool.pop().id); X.SFX.tap(); labPanel(body); };
+    body.querySelector("#lbClear").onclick = () => { labSel = []; labPanel(body); };
+    body.querySelector("#rpLab").onclick = () => { if (labSel.length === 5) labMix(body); };
+  }
+  async function labMix(body) {
+    const sel = labSel.slice(), from = labR, r = R.labCombine(X.S, sel); if (!r.ok) { X.toast("משהו לא הסתדר 🤔", null, 3000); return; }
+    labSel = []; X.trk("lab"); X.step(1); X.save();
+    const PAL = ["#f472b6", "#38bdf8", "#facc15", "#4ade80", "#a78bfa"], it = R.ITEMS[r.got.id], cols = sel.map((id, i) => (R.ITEMS[id].sk || [])[1] || PAL[i]), out = RC(it.r);
+    const ov = document.createElement("div"); ov.className = "rp-lab"; ov.style.setProperty("--c", RC(from)); ov.style.setProperty("--n", out); (document.querySelector("#roboUI[open]") || document.body).appendChild(ov); // בתוך החלון של הרובוט – אחרת הוא מוסתר מאחוריו
+    ov.innerHTML = `<div class="lx-t">⚗️ מערבבים…</div><div class="lx-stage"><div class="lx-glow"></div><div class="lx-pot"><div class="lx-liq" style="background:conic-gradient(${cols.join(",")},${cols[0]})"></div><div class="bub"><i></i><i></i><i></i><i></i></div></div>
+      ${sel.map(id => `<div class="lx-it">${X.preview(id)}</div>`).join("")}</div><div class="lx-flash"></div>`;
+    const els = [...ov.querySelectorAll(".lx-it")], stage = ov.querySelector(".lx-stage"), pot = ov.querySelector(".lx-pot");
+    // 1) האביזרים נכנסים למעגל
+    const place = (t, rad, sc, spin) => els.forEach((e, i) => { const a = (i / 5) * Math.PI * 2 + spin - Math.PI / 2; e.style.transform = `translate(${Math.cos(a) * rad}px,${Math.sin(a) * rad}px) scale(${sc})`; e.style.opacity = String(Math.min(1, .25 + sc)); });
+    place(0, 130, 1, 0); await X.sleep(60); ov.classList.add("in"); X.SFX.up(1); await X.sleep(700);
+    // 2) מסתחררים מהר יותר ויותר, נשאבים פנימה, הצבעים מתערבבים
+    const T = X.REDUCED ? 300 : 2300, t0 = performance.now(); let lastTick = 0;
+    await new Promise(res => { const f = now => { const t = Math.min(1, (now - t0) / T), e = t * t * (3 - 2 * t), spin = e * Math.PI * 7, rad = 130 * (1 - e) + 6, sc = 1 - e * .8;
+      place(t, rad, sc, spin); pot.style.transform = `scale(${1 + Math.sin(now / 60) * .04 * t + t * .15}) rotate(${Math.sin(now / 40) * 6 * t}deg)`;
+      stage.style.setProperty("--mix", cols[Math.floor(now / 160) % cols.length]);
+      if (now - lastTick > 260 - t * 200) { lastTick = now; X.SFX.tap(); if (t > .4) X.vib(10); if (!X.REDUCED && Math.random() < .5) X.particles(stage, cols[Math.floor(Math.random() * 5)], 3); }
+      if (t < 1) requestAnimationFrame(f); else res(); }; requestAnimationFrame(f); });
+    // 3) בום!
+    els.forEach(e => e.remove()); ov.classList.add("boom"); X.SFX.open(); X.vib([40, 30, 120]); X.particles(stage, out, 60, ["✨", "⭐", "💫"]);
+    await X.sleep(650);
+    // 4) מה יצא
+    const wear = ["skin", "hat", "eyes", "held", "aura", "trail", "quote"].includes(it.cat);
+    ov.className = "rp-lab res" + (R.RAR[it.r].o >= 4 ? " big" : ""); ov.innerHTML = `<div class="lx-rays"></div><div class="lx-res">
+      <div class="lx-up">⬆️ שודרג מ${R.RAR[from].n} ל${R.RAR[it.r].n}!</div>
+      <div class="lx-card" style="--c:${out}"><div class="pv">${X.preview(it.id, false)}</div><div class="nm">${esc(it.n)}</div>${X.rarTag(it.r)}<div class="sub">${r.got.shinyNew ? "✨ גרסה נוצצת!" : r.got.dup ? `כבר היה לך → +${r.got.dup} 🔩` : "✨ חדש באוסף!"}</div></div>
+      <div class="lx-sum"><div class="lbl">שמת במכונה</div><div class="lx-row">${sel.map(id => `<i class="lx-i">${X.preview(id)}</i>`).join("")}</div><div class="eq">⬇️</div><div class="lbl">קיבלת</div><div class="lx-row"><i class="lx-i got">${X.preview(it.id)}</i></div></div>
+      <div class="rd-btns">${wear && !r.got.dup ? `<button class="rbtn" type="button" data-a="wear">👕 ללבוש עכשיו</button>` : ""}<button class="rbtn alt" type="button" data-a="again">🔨 עוד פעם</button><button class="rbtn alt" type="button" data-a="close">סגור</button></div></div>`;
+    X.SFX.reveal(R.RAR[it.r].o); X.particles(ov, out, R.RAR[it.r].o >= 4 ? 70 : 40, R.RAR[it.r].o >= 4 ? ["⭐", "✨", "💛"] : null);
+    const a = await new Promise(res => ov.querySelectorAll("[data-a]").forEach(b => b.onclick = () => res(b.dataset.a)));
+    if (a === "wear") { R.equip(X.S, it.id); X.trk("wear"); X.save(); X.toast(`👕 הרובוט לובש עכשיו ${esc(it.n)}!`, null, 2500); }
+    ov.remove(); labR = a === "again" ? from : labR; labPanel(body); X.hubRefresh(); try { X.draw(); } catch (e) {}
   }
 
   // ================= 🎭 סטים =================
