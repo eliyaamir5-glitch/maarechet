@@ -252,7 +252,8 @@ log(ex.drone && ex.rainbow && ex.bird, "run: sky – drone steals half, rainbow 
 log(ex.tramp && ex.ice, "run: trampoline jumps over a locker, ice blocks turning", JSON.stringify(ex));
 log(ex.bully && ex.bullyPass, "run: bully takes 20% (body/hand), safe lane passes", JSON.stringify(ex));
 log(ex.chase && ex.caught && /תפס/.test(ex.h), "run: stumble → giant robot chases → second stumble = caught", JSON.stringify(ex));
-await p.evaluate(() => { const bs = [...document.querySelectorAll("#roboRun .gm-ov button")]; (bs.find(x => /עוד ריצה/.test(x.textContent)) || bs[0]).click(); }); await sleep(600);
+await p.evaluate(() => { const bs = [...document.querySelectorAll("#roboRun .gm-ov button")]; (bs.find(x => /עוד ריצה/.test(x.textContent)) || bs[0]).click(); });
+await p.waitForFunction(() => { const G = RoboRun._game(); return G && G.cd <= 0 && G.dist > 3; }, { timeout: 9000 }).catch(() => {});
 if (process.env.SHOTS) { await p.evaluate(() => { const G = RoboRun._game(); G.dist = 520; G.wIdx = 1; G.obj = []; G.next = 999; G.spawnAt("bully", 0, 14, { base: 0, arm: 1 }); G.spawnAt("poop", -1, 9); G.spawnAt("tramp", 1, 30); }); await sleep(150); await p.screenshot({ path: process.env.SHOTS + "/run-world2.png" });
   await p.evaluate(() => { const G = RoboRun._game(); G.obj = []; G.fly = 8; G.alt = 1; [["bird", -1, 10], ["drone", 1, 16], ["sbolt", 0, 7], ["sbolt", 0, 9.5], ["sbolt", 0, 12], ["rainbow", 0, 22]].forEach(([k, l, z]) => G.spawnAt(k, l, z)); G.v = .01; G.puffs.push({ x: 200, y: 600, r: 18, a: 1, txt: true }); }); await sleep(150); await p.screenshot({ path: process.env.SHOTS + "/run-sky.png" });
   await p.evaluate(() => { const G = RoboRun._game(); G.fly = 0; G.alt = 0; G.obj = []; G.dist = 60; G.wIdx = 0; }); await sleep(400); }
@@ -268,7 +269,7 @@ await p.evaluate(() => document.querySelector("#rnPlay").click());
 await p.waitForSelector("#roboRun .gm-ov button", { timeout: 8000 }); await sleep(200);
 await p.evaluate(() => document.querySelector("#roboRun .gm-ov button").click()); await sleep(500);
 const tut = await p.evaluate(async () => { const G = RoboRun._game(), w = ms => new Promise(r => setTimeout(r, ms)), o = { start: G.tut === 1, mistakeOk: false };
-  let mist = false; for (let i = 0; i < 400 && G.tut; i++) { const T = G.tutO; if (T && T.z < 5 && T.z > 0) { if (!mist && T.k === "bench") { mist = true; await w(900); o.mistakeOk = !G.dead && G.tut === 1; continue; } if (T.k === "bench") G.act("U"); else if (T.k === "beam") G.act("D"); else G.act(G.lane === 1 ? "L" : "R"); await w(700); } await w(50); }
+  let mist = false; for (let i = 0; i < 900 && G.tut; i++) { const T = G.tutO; if (T && T.z < 5 && T.z > 0) { if (!mist && T.k === "bench") { mist = true; await w(900); o.mistakeOk = !G.dead && G.tut === 1; continue; } if (T.k === "bench") G.act("U"); else if (T.k === "beam") G.act("D"); else G.act(G.lane === 1 ? "L" : "R"); await w(700); } await w(50); }
   o.done = !G.tut && localStorage.getItem("roboRunTut") === "1" && !G.dead; return o; });
 log(tut.start && tut.mistakeOk && tut.done, "run: first-time tutorial (jump, duck, dodge), mistakes don't end the run", JSON.stringify(tut));
 // ⏸️ יציאה מהאפליקציה באמצע: המשחק נעצר, וכשחוזרים – "להמשיך"

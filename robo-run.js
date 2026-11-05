@@ -67,7 +67,8 @@
     const hud = () => { d.querySelector("#rnB").textContent = `🔩 ${G.bolts}`; d.querySelector("#rnD").textContent = `📏 ${Math.floor(G.dist)} מ'`; d.querySelector("#rnL").textContent = G.practice ? `🏋️ אימון · שיא ${Math.max(X.S.runBest || 0, Math.floor(G.dist))} מ'` : `נשאר: ${Math.max(0, left() - G.bolts)}`; };
     const newRun = () => {
       Object.assign(G, { practice: left() <= 0, over: false, dead: false, t: 0, dist: 0, v: 13, lane: 0, pl: 0, jt: -1, st: -1, obj: [], parts: [], fx: [], puffs: [], next: 30, rows: 0, bolts: 0, pw: {}, shield: Math.random() < [0, .35, .7, 1][R.upg(X.S, "shield")], shake: 0, lv: 1, lvT: 0, combo: 0, run500: false,
-        fly: 0, alt: 0, big: -1, ice: 0, chase: 0, chaseX: 0, lastStumble: -99, wIdx: 0, wT: 0, nPuff: 0, stats: { dist: 0, flights: 0, bolts: 0, cleanDist: 0, world: 1, bullyPass: 0 }, cleanFrom: 0 });
+        fly: 0, alt: 0, big: -1, ice: 0, chase: 0, chaseX: 0, lastStumble: -99, wIdx: 0, wT: 0, nPuff: 0, stats: { dist: 0, flights: 0, bolts: 0, cleanDist: 0, world: 1, bullyPass: 0 }, cleanFrom: 0,
+        cd: 3.2, slow: 0, deathT: -1, buf: null, laneT: -9, leanV: 0, flyers: [], landT: 0, lines: [], nearN: 0 });
       G.tut = LS.get("roboRunTut", "") ? 0 : 1; if (G.tut) { G.next = 9999; G.tutStep = 0; G.tutT = 1.5; }
       AU.music("run"); hud(); last = performance.now(); requestAnimationFrame(loop);
     };
@@ -100,8 +101,10 @@
     d.querySelector(".x").onclick = exitRun; d.querySelector("#rnExit").onclick = exitRun; d.oncancel = e => { e.preventDefault(); exitRun(); };
     // ---- שליטה: החלקות (וגם לחיצה על צד המסך) + מקלדת ----
     const act = a => { if (G.over || G.dead) return;
-      if (a === "L" || a === "R") { if (G.ice > 0) { fxText(W / 2, H * .5, "🧊 מחליק! אי אפשר לפנות", "#bae6fd", .7, 16); return; } const nl = Math.max(-1, Math.min(1, G.lane + (a === "R" ? 1 : -1))); if (nl !== G.lane) { G.lane = nl; AU.lane(); } }
+      if (G.cd > 0) return;
+      if (a === "L" || a === "R") { if (G.ice > 0) { fxText(W / 2, H * .5, "🧊 מחליק! אי אפשר לפנות", "#bae6fd", .7, 16); return; } const nl = Math.max(-1, Math.min(1, G.lane + (a === "R" ? 1 : -1))); if (nl !== G.lane) { G.leanV = nl - G.lane; G.lane = nl; G.laneT = G.t; AU.lane(); } else { G.shake = Math.max(G.shake, .08); } }
       else if (G.fly > 0) return; // באוויר – רק ימינה ושמאלה
+      else if (a === "U" && (G.jt >= 0 || G.big >= 0)) { G.buf = { a: "U", t: G.t }; } // 🕹️ זוכרים קפיצה שנלחצה מוקדם מדי
       else if (a === "U" && G.jt < 0 && G.big < 0) { G.jt = 0; G.st = -1; AU.jump(); }
       else if (a === "D") { if (G.jt >= 0) G.jt = Math.max(G.jt, .5); G.st = 0; AU.slide(); } };
     let sx0 = 0, sy0 = 0, sw = false;
@@ -139,9 +142,9 @@
     const burst = (x, y, col, n = 10, sp = 160) => { if (G.parts.length > 160) return; for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, v = sp * (.4 + Math.random()); G.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60, life: .5 + Math.random() * .4, a: 1, c: col, s: 2 + Math.random() * 3 }); } };
     const BIGT = 1.3;
     const jumpH = () => G.big >= 0 ? Math.sin(Math.PI * Math.min(1, G.big / BIGT)) * 3 : G.jt < 0 ? 0 : Math.sin(Math.PI * Math.min(1, G.jt / .62)) * 1.25, sliding = () => G.st >= 0 && G.st < .62;
-    const botX = () => sx(G.pl, 0), botY = () => GY() - 60 - G.alt * H * .32;
+    const botX = () => sx(G.pl, 0), botY = () => GY() - Math.min(W * .27, 112) * .75 - G.alt * H * .32 - jumpH() * H * .14;
     let last = performance.now(), secT = 0;
-    const addBolts = (n0, gold) => { const cap = G.practice ? Infinity : left(), mult = G.pw.double > 0 || G.rainbowT > 0 ? 2 : 1, n = Math.min(n0 * mult, Math.max(0, cap - G.bolts)); G.bolts += n; G.combo++; if (n) { gold ? AU.gold() : AU.coin(G.combo); burst(botX(), botY(), gold ? "#fde047" : "#bae6fd", gold ? 10 : 4, 140); if (gold || n > 1) fxText(botX(), botY() - 50, "+" + n, "#fde047", .8, 24); } hud(); };
+    const addBolts = (n0, gold) => { const cap = G.practice ? Infinity : left(), mult = G.pw.double > 0 || G.rainbowT > 0 ? 2 : 1, n = Math.min(n0 * mult, Math.max(0, cap - G.bolts)); G.bolts += n; G.combo++; if (n) { if (G.flyers.length < 14) G.flyers.push({ x: botX(), y: botY() - 20, t: 0, gold }); gold ? AU.gold() : AU.coin(G.combo); burst(botX(), botY(), gold ? "#fde047" : "#bae6fd", gold ? 10 : 4, 140); if (gold || n > 1) fxText(botX(), botY() - 50, "+" + n, "#fde047", .8, 24); } hud(); };
     // ---- 💩 עפיפה ----
     function startFly() {
       G.fly = 10 + R.upg(X.S, "flight") * 2; G.stats.flights++; AU.fart(); setTimeout(() => AU.fart(), 250); X.vib([40, 30, 40, 30, 80]); G.shake = .3;
@@ -160,21 +163,24 @@
       if (G.tut) { o.gone = 1; G.tutO = null; G.tutT = .8; AU.stumble(); fxText(W / 2, H * .45, "אופס! ננסה שוב 🙂", "#fde68a", 1.2, 22); return; }
       if (G.shield) { G.shield = false; AU.shield(); X.vib(40); burst(botX(), botY(), "#38bdf8", 26, 220); fxText(W / 2, H * .45, "🛡️ המגן הציל אותך!", "#7dd3fc", 1.3, 20); o.gone = 1; return; }
       o.gone = 1; G.stats.cleanDist = Math.max(G.stats.cleanDist, G.dist - G.cleanFrom); G.cleanFrom = G.dist;
-      if (G.chase > 0) { G.dead = true; G.shake = .8; AU.stomp(); AU.crash(); X.vib([80, 40, 160]); burst(botX(), botY(), "#ef4444", 40, 300); fxText(W / 2, H * .4, "🤖 הרובוט הענק תפס אותך!", "#f87171", 1.5, 22); setTimeout(() => end("caught", "הרובוט הענק תפס אותך!"), 1100); return; }
+      if (G.chase > 0) { G.dead = true; G.slow = .9; G.deathT = 0; G.shake = .8; AU.stomp(); AU.crash(); X.vib([80, 40, 160]); burst(botX(), botY(), "#ef4444", 40, 300); fxText(W / 2, H * .4, "🤖 הרובוט הענק תפס אותך!", "#f87171", 1.5, 22); setTimeout(() => end("caught", "הרובוט הענק תפס אותך!"), 1100); return; }
       G.chase = 7; G.chaseX = 0; G.v *= .7; AU.stumble(); setTimeout(() => AU.stomp(), 300); X.vib([40, 30, 60]); G.shake = .35; fxText(W / 2, H * .42, `😵 מעדת ב${what}! הרובוט הענק רודף אחריך!`, "#fdba74", 1.8, 17);
     }
     function crash() {
       if (G.pw.turbo > 0 || G.fly > 0) return false;
       if (G.tut) { if (G.tutO) G.tutO.gone = 1; G.tutO = null; G.tutT = .8; AU.stumble(); fxText(W / 2, H * .45, "אופס! עקוף אותו – ננסה שוב 🙂", "#fde68a", 1.2, 20); return false; }
       if (G.shield) { G.shield = false; AU.shield(); X.vib(40); burst(botX(), botY(), "#38bdf8", 26, 220); fxText(W / 2, H * .45, "🛡️ המגן הציל אותך!", "#7dd3fc", 1.3, 20); return false; }
-      G.dead = true; G.shake = .7; AU.crash(); X.vib([80, 40, 160]); burst(botX(), botY(), "#ef4444", 40, 300); burst(botX(), botY(), "#fde047", 25, 220);
-      setTimeout(() => end("crash"), 900); return true;
+      G.dead = true; G.slow = .9; G.deathT = 0; G.shake = .7; AU.crash(); X.vib([80, 40, 160]); burst(botX(), botY(), "#ef4444", 40, 300); burst(botX(), botY(), "#fde047", 25, 220);
+      setTimeout(() => end("crash"), 1300); return true;
     }
     function loop(now) {
       if (!G.run || G.over) return; if (!d.open) { finish(); return; }
       if (G.paused) { last = now; requestAnimationFrame(loop); return; }
       if (W < 50 || H < 50) fit();
-      const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now;
+      const raw = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now;
+      const dt = raw * (G.slow > 0 ? .3 : 1); if (G.slow > 0) G.slow -= raw; if (G.deathT >= 0) G.deathT += raw;
+      // ⏱️ ספירה לאחור 3-2-1
+      if (G.cd > 0) { const c0 = Math.ceil(G.cd); G.cd -= raw; const c1 = Math.ceil(G.cd); if (c1 !== c0) { c1 > 0 ? AU.coin(2) : AU.level(5); X.vib(c1 > 0 ? 15 : 40); } G.t += raw * .2; draw(raw); requestAnimationFrame(loop); return; }
       if (!G.dead) {
         G.t += dt;
         if ((secT += dt) > 1) { secT = 0; const bs = RP.breakState(); if (!bs.open) { end("bell"); return; } const tl = d.querySelector("#rnT"); if (bs.until != null && !G.practice) { const n = new Date(), s = bs.until * 60 - (n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds()); tl.textContent = s > 0 ? `⏰ ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : ""; } else tl.textContent = ""; }
@@ -185,9 +191,10 @@
         const dz = G.v * dt; G.dist += dz; if (G.dist >= 500) G.run500 = true;
         for (const k of Object.keys(G.pw)) { G.pw[k] -= dt; if (G.pw[k] <= 0) delete G.pw[k]; }
         if (G.rainbowT > 0) G.rainbowT -= dt;
-        if (G.jt >= 0) { G.jt += dt; if (G.jt > .62) G.jt = -1; }
+        if (G.jt >= 0) { G.jt += dt; if (G.jt > .62) { G.jt = -1; G.landT = .16; burst(botX(), GY() - 6, "#cbd5e1", 8, 90); if (G.buf && G.t - G.buf.t < .25) { G.buf = null; G.jt = 0; AU.jump(); } } }
         if (G.st >= 0) { G.st += dt; if (G.st > .62) G.st = -1; }
-        if (G.big >= 0) { G.big += dt; if (G.big > BIGT) { G.big = -1; AU.land(); burst(botX(), GY() - 10, "#d6d3d1", 14, 140); } }
+        if (G.big >= 0) { G.big += dt; if (G.big > BIGT) { G.big = -1; G.landT = .22; AU.land(); burst(botX(), GY() - 10, "#d6d3d1", 14, 140); if (G.buf && G.t - G.buf.t < .3) { G.buf = null; G.jt = 0; AU.jump(); } } }
+        if (G.landT > 0) G.landT -= dt; G.leanV *= Math.pow(.02, dt);
         if (G.ice > 0) G.ice -= dt;
         if (G.chase > 0) { G.chase -= dt; if (Math.floor(G.chase * 2) !== Math.floor((G.chase + dt) * 2)) AU.stomp(); if (G.chase <= 0) fxText(W / 2, H * .45, "😅 ברחת מהרובוט הענק!", "#86efac", 1.2, 20); }
         // 💩 עפיפה: גובה, פלוצים
@@ -203,6 +210,8 @@
           if ((mag || turbo) && (o.k === "bolt" || o.k === "gold" || o.k === "sbolt") && o.z < 22 && o.z > 0) { o.lane += (G.pl - o.lane) * Math.min(1, dt * 6); o.h += (jh - o.h) * Math.min(1, dt * 6); }
           if (o.gone || !(pz > 0 && o.z <= .6)) continue;
           const same = Math.abs(o.lane - G.pl) < .5;
+          // 😎 כמעט! עקפת מכשול ממש ברגע האחרון
+          if (!same && !o.near && ["locker", "bench", "beam"].includes(o.k) && G.t - G.laneT < .4 && Math.abs(o.lane - G.pl) < 1.3 && G.fly <= 0) { o.near = 1; G.nearN++; AU.whoosh(); addBolts(2, false); fxText(W / 2, H * .5, "😎 כמעט! +2", "#86efac", .9, 24); G.shake = Math.max(G.shake, .12); }
           if (o.k === "bolt" || o.k === "gold") { if (same && G.fly <= 0 && (turbo || Math.abs(o.h - jh) < .75 || (high && o.h > .5))) { o.gone = 1; addBolts(o.k === "gold" ? 5 : 1, o.k === "gold"); } }
           else if (o.k === "sbolt") { if (same && G.fly > 0) { o.gone = 1; addBolts(1, false); } }
           else if (o.k === "pow") { if (same && G.fly <= 0) { o.gone = 1; const P = POW[o.p]; if (o.p === "shield") G.shield = true; else G.pw[o.p] = P.t + (o.p === "magnet" ? R.upg(X.S, "magnet") * 3 : 0); AU.power(); X.vib(30); burst(botX(), botY(), P.c, 24, 220); fxText(W / 2, H * .42, `${P.em} ${P.n}!`, P.c, 1.2, 26); } }
@@ -230,6 +239,7 @@
       }
       for (const p of G.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 420 * dt; p.a -= dt / p.life; } G.parts = G.parts.filter(p => p.a > 0);
       for (const q of G.puffs) { q.a -= dt * .7; q.r += dt * 18; q.y += dt * 60; } G.puffs = G.puffs.filter(q => q.a > 0);
+      for (const q of G.flyers) q.t += raw * 1.6; G.flyers = G.flyers.filter(q => q.t < 1);
       G.shake = Math.max(0, G.shake - dt); if (Math.floor(G.dist) % 5 === 0) hud();
       draw(dt); requestAnimationFrame(loop);
     }
@@ -238,11 +248,21 @@
       cx.setTransform(dpr, 0, 0, dpr, 0, 0); cx.save();
       if (G.shake > 0) cx.translate((Math.random() - .5) * G.shake * 30, (Math.random() - .5) * G.shake * 30);
       const hy = HOR(), lc = LV_COL[G.lv - 1], turbo = G.pw.turbo > 0, Wd = world(), sky = G.alt;
+      // 🎥 מצלמה: נוטה לכיוון הפנייה וזזה קצת עם הרובוט (כמו במשחקי ריצה גדולים)
+      cx.save(); cx.translate(W / 2, H * .75); cx.rotate(-G.leanV * .045); cx.translate(-W / 2 - G.pl * W * .035, -H * .75);
       if (sky > .5) drawSky(dt); else drawGround(Wd, turbo);
+      // 🌫️ ערפל באופק – הדברים מופיעים בהדרגה מהמרחק
+      if (sky <= .5) { const fg = cx.createLinearGradient(0, hy - 10, 0, hy + H * .12); fg.addColorStop(0, Wd.sky[1]); fg.addColorStop(1, "rgba(0,0,0,0)"); cx.globalAlpha = .75; cx.fillStyle = fg; cx.fillRect(-40, hy - 10, W + 80, H * .12); cx.globalAlpha = 1; }
       // אובייקטים מהרחוק לקרוב
       const objs = G.obj.filter(o => o.z > -1.5 && o.z < 92 && (sky > .5 ? SKY(o.k) : !SKY(o.k))).sort((a, b) => b.z - a.z);
-      for (const o of objs) drawObj(o, sky > .5);
+      for (const o of objs) { cx.globalAlpha = Math.max(0, Math.min(1, (94 - o.z) / 22)); if (sky <= .5 && ["locker", "bench", "beam", "bully", "poop", "tramp"].includes(o.k)) { const s2 = sc(o.z); cx.fillStyle = "rgba(0,0,0,.28)"; cx.beginPath(); cx.ellipse(sx(o.lane, o.z), sy(o.z), W * .13 * s2, W * .025 * s2, 0, 0, 7); cx.fill(); } drawObj(o, sky > .5); } cx.globalAlpha = 1;
       drawChaser();
+      cx.restore();
+      // 💨 קווי מהירות
+      if ((G.v > 24 || turbo || G.fly > 0) && !G.dead) { if (G.lines.length < 26 && Math.random() < .7) { const a = Math.random() * 6.28; G.lines.push({ a, r: 40 + Math.random() * 60, l: 30 + Math.random() * 50 }); } }
+      cx.strokeStyle = turbo ? "rgba(233,213,255,.55)" : "rgba(255,255,255,.35)"; cx.lineWidth = 2; const vx0 = W / 2, vy0 = hy;
+      for (const q of G.lines) { q.r += dt * (900 + G.v * 30); const x1 = vx0 + Math.cos(q.a) * q.r, y1 = vy0 + Math.sin(q.a) * q.r * .8, x2 = vx0 + Math.cos(q.a) * (q.r + q.l), y2 = vy0 + Math.sin(q.a) * (q.r + q.l) * .8; if (Math.hypot(x1 - vx0, y1 - vy0) > W * .25) { cx.beginPath(); cx.moveTo(x1, y1); cx.lineTo(x2, y2); cx.stroke(); } }
+      G.lines = G.lines.filter(q => q.r < W * 1.2);
       drawBot();
       for (const q of G.puffs) { cx.globalAlpha = Math.max(0, q.a) * .8; cx.fillStyle = "#a3a380"; cx.beginPath(); cx.arc(q.x, q.y, q.r, 0, 7); cx.fill(); cx.fillStyle = "#c7c7a1"; cx.beginPath(); cx.arc(q.x - q.r * .3, q.y - q.r * .3, q.r * .6, 0, 7); cx.fill(); if (q.txt) { cx.fillStyle = "#713f12"; cx.font = "900 15px system-ui,sans-serif"; cx.textAlign = "center"; cx.fillText("פפפט!", q.x, q.y + 4); } } cx.globalAlpha = 1;
       for (const p of G.parts) { cx.globalAlpha = Math.max(0, p.a); cx.fillStyle = p.c; cx.fillRect(p.x, p.y, p.s, p.s); } cx.globalAlpha = 1;
@@ -260,7 +280,12 @@
       if (G.chase > 0) { cx.textAlign = "center"; cx.font = "900 15px system-ui,sans-serif"; cx.fillStyle = "#fca5a5"; cx.fillText(`🤖 רודף! עוד ${Math.ceil(G.chase)} – אל תמעד!`, W / 2, 62); }
       if (G.lvT > 0) { G.lvT -= dt; const a = Math.min(1, G.lvT * 2); cx.save(); cx.globalAlpha = a; cx.translate(W / 2, H * .2); cx.textAlign = "center"; cx.font = "900 38px system-ui,sans-serif"; cx.lineWidth = 6; cx.strokeStyle = "rgba(0,0,0,.6)"; cx.strokeText(`קצב ${G.lv}!`, 0, 0); cx.fillStyle = lc; cx.fillText(`קצב ${G.lv}!`, 0, 0); cx.font = "800 14px system-ui,sans-serif"; cx.fillStyle = "#fff"; cx.fillText(G.lv >= 7 ? "😈 מטורף!" : G.lv >= 4 ? "🔥 מהר יותר!" : "⚡ מאיץ", 0, 24); cx.restore(); }
       if (G.tut && G.tutO && G.tutO.z < 30) { const T = TUT[G.tutStep], pulse = 1 + Math.sin(G.t * 8) * .06; cx.save(); cx.translate(W / 2, H * .5); cx.scale(pulse, pulse); cx.textAlign = "center"; cx.font = "900 26px system-ui,sans-serif"; cx.lineWidth = 6; cx.strokeStyle = "rgba(0,0,0,.7)"; cx.strokeText(T.txt, 0, 0); cx.fillStyle = "#fde047"; cx.fillText(T.txt, 0, 0); cx.font = "800 14px system-ui,sans-serif"; cx.fillStyle = "#fff"; cx.fillText(`הדרכה ${G.tutStep + 1}/3`, 0, 26); cx.restore(); }
-      if (G.t < 3 && !G.dead && !G.tut) { cx.globalAlpha = Math.max(0, 1 - G.t / 3); cx.textAlign = "center"; cx.font = "800 15px system-ui,sans-serif"; cx.fillStyle = "#fff"; cx.fillText("⬅️ ➡️ להחליק · ⬆️ לקפוץ · ⬇️ להתכופף", W / 2, H * .55); cx.globalAlpha = 1; }
+      // 🔩 ברגים שעפים למונה למעלה
+      for (const q of G.flyers) { const e = q.t * q.t, tx = W - 64, ty = -6, x = q.x + (tx - q.x) * e, y = q.y + (ty - q.y) * e - Math.sin(q.t * Math.PI) * 60, r = 9 * (1 - q.t * .5); cx.fillStyle = q.gold ? "#fbbf24" : "#e2e8f0"; cx.beginPath(); for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i + q.t * 6; cx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } cx.fill(); }
+      // ⏱️ 3-2-1-יאללה
+      if (G.cd > 0) { const n = Math.ceil(G.cd), fr = G.cd - Math.floor(G.cd), sc2 = 1 + fr * .8; cx.save(); cx.fillStyle = "rgba(0,0,0,.25)"; cx.fillRect(0, 0, W, H); cx.translate(W / 2, H * .42); cx.scale(sc2, sc2); cx.globalAlpha = Math.min(1, fr * 2.5 + .2); cx.textAlign = "center"; cx.font = "900 90px system-ui,sans-serif"; cx.lineWidth = 10; cx.strokeStyle = "rgba(0,0,0,.6)"; const t = n > 3 ? "3" : n >= 1 ? String(n) : ""; cx.strokeText(t, 0, 0); cx.fillStyle = ["#22c55e", "#facc15", "#f97316"][Math.max(0, Math.min(2, n - 1))]; cx.fillText(t, 0, 0); cx.restore(); cx.globalAlpha = 1; }
+      else if (G.t < 1.2 && !G.dead) { const a = 1 - G.t / 1.2; cx.save(); cx.globalAlpha = a; cx.translate(W / 2, H * .42); cx.scale(1 + G.t, 1 + G.t); cx.textAlign = "center"; cx.font = "900 64px system-ui,sans-serif"; cx.lineWidth = 8; cx.strokeStyle = "rgba(0,0,0,.6)"; cx.strokeText("יאללה!", 0, 0); cx.fillStyle = "#fde047"; cx.fillText("יאללה!", 0, 0); cx.restore(); cx.globalAlpha = 1; }
+      if (G.t < 3 && !G.dead && !G.tut && G.cd <= 0) { cx.globalAlpha = Math.max(0, 1 - G.t / 3); cx.textAlign = "center"; cx.font = "800 15px system-ui,sans-serif"; cx.fillStyle = "#fff"; cx.fillText("⬅️ ➡️ להחליק · ⬆️ לקפוץ · ⬇️ להתכופף", W / 2, H * .55); cx.globalAlpha = 1; }
       cx.restore();
     }
     function drawGround(Wd, turbo) {
@@ -340,23 +365,67 @@
     }
     // 🤖 הרובוט הענק שרודף (אחרי מעידה)
     function drawChaser() {
-      if (!(G.chase > 0) || G.alt > .5) return; const a = Math.min(1, G.chase, (7 - G.chase) * 3), x = W / 2 + Math.sin(G.t * 3) * W * .2, y = H + 20, s = Math.min(W * .6, 260), bob = Math.abs(Math.sin(G.t * 8)) * 12;
+      if (!(G.chase > 0) || G.alt > .5) return; const a = Math.min(1, G.chase, (7 - G.chase) * 3), x = W / 2 + (G.pl < 0 ? 1 : -1) * W * .26 + Math.sin(G.t * 3) * W * .04, y = H + Math.min(W * .5, 210) * .3, s = Math.min(W * .5, 210), bob = Math.abs(Math.sin(G.t * 8)) * 12;
       cx.save(); cx.globalAlpha = a * .95; cx.fillStyle = "#475569"; cx.beginPath(); cx.roundRect ? cx.roundRect(x - s / 2, y - s * .62 - bob, s, s * .6, 30) : cx.rect(x - s / 2, y - s * .62 - bob, s, s * .6); cx.fill();
       cx.fillStyle = "#0f172a"; cx.fillRect(x - s * .38, y - s * .55 - bob, s * .76, s * .3); cx.fillStyle = "#ef4444"; cx.shadowColor = "#ef4444"; cx.shadowBlur = 20; cx.beginPath(); cx.arc(x - s * .16, y - s * .42 - bob, s * .06, 0, 7); cx.arc(x + s * .16, y - s * .42 - bob, s * .06, 0, 7); cx.fill(); cx.shadowBlur = 0;
       cx.strokeStyle = "#ef4444"; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x - s * .26, y - s * .53 - bob); cx.lineTo(x - s * .08, y - s * .48 - bob); cx.moveTo(x + s * .26, y - s * .53 - bob); cx.lineTo(x + s * .08, y - s * .48 - bob); cx.stroke();
       cx.fillStyle = "#94a3b8"; cx.fillRect(x - s * .03, y - s * .78 - bob, s * .06, s * .16); cx.fillStyle = "#ef4444"; cx.beginPath(); cx.arc(x, y - s * .8 - bob, s * .05, 0, 7); cx.fill(); cx.restore();
     }
+    // 🤖 הרובוט: ראש (עם הבגדים של הילד) + גוף עם ידיים ורגליים שזזים – ריצה, קפיצה, החלקה, תעופה ונפילה
+    const skinIt = R.ITEMS[(X.S.eq || {}).skin] || {}, BODY = (skinIt.sk && skinIt.sk[1]) || "#c7d2fe", BODY2 = (skinIt.sk && skinIt.sk[2]) || "#818cf8";
+    function limb(x1, y1, a1, l1, a2, l2, w, col, joint) { const kx = x1 + Math.sin(a1) * l1, ky = y1 + Math.cos(a1) * l1, fx = kx + Math.sin(a1 + a2) * l2, fy = ky + Math.cos(a1 + a2) * l2;
+      cx.strokeStyle = col; cx.lineWidth = w; cx.lineCap = "round"; cx.beginPath(); cx.moveTo(x1, y1); cx.lineTo(kx, ky); cx.lineTo(fx, fy); cx.stroke(); cx.fillStyle = joint; cx.beginPath(); cx.arc(kx, ky, w * .45, 0, 7); cx.fill(); return [fx, fy]; }
     function drawBot() {
-      const x = botX(), gy = GY(), jh = jumpH(), sl = sliding(), size = Math.min(W * .26, 110), bob = G.dead || G.alt > 0 ? Math.sin(G.t * 4) * 6 * G.alt : Math.abs(Math.sin(G.t * 12)) * 5;
-      if (G.alt < .9) { cx.fillStyle = "rgba(0,0,0,.35)"; cx.beginPath(); cx.ellipse(x, gy - 4, size * .38 * (1 - Math.min(.8, jh * .2 + G.alt)), size * .1, 0, 0, 7); cx.fill(); }
-      const y = gy - size * .95 - jh * H * .14 - bob - G.alt * H * .32, h = sl ? size * .55 : size, yy = sl ? gy - h - 4 : y;
-      if (G.ice > 0) { cx.fillStyle = "rgba(186,230,253,.5)"; for (let i = 0; i < 3; i++) cx.fillRect(x - size * .4 + i * size * .3, yy + h, size * .1, 12 + Math.random() * 10); }
-      if (G.pw.turbo > 0) { for (let i = 0; i < 3; i++) { cx.fillStyle = ["#a855f7", "#f472b6", "#fde047"][i]; cx.globalAlpha = .6; cx.beginPath(); cx.moveTo(x - size * .18 + i * size * .18, yy + h * .9); cx.lineTo(x - size * .1 + i * size * .18, yy + h * .9 + 30 + Math.random() * 20); cx.lineTo(x - size * .02 + i * size * .18, yy + h * .9); cx.fill(); } cx.globalAlpha = 1; }
-      cx.save(); if (G.alt > 0) { cx.translate(x, yy + h / 2); cx.rotate(Math.sin(G.t * 5) * .12 * G.alt); cx.translate(-x, -(yy + h / 2)); }
-      if (imgOk) cx.drawImage(img, x - size / 2, yy, size, h); else { cx.fillStyle = "#e0e7ff"; cx.beginPath(); cx.arc(x, yy + h / 2, size * .35, 0, 7); cx.fill(); }
+      const gy = GY(), jh = jumpH(), sl = sliding(), size = Math.min(W * .27, 112), x = botX();
+      const flying = G.alt > .05, air = jh > .05 && !flying, ph = G.t * (7 + G.v * .32), run = !G.dead && !air && !flying && !sl && G.cd <= 0;
+      const lift = jh * H * .14 + G.alt * H * .32;
+      // צל על הרצפה – קטן יותר כשגבוה
+      if (G.alt < .9) { const k = Math.max(.25, 1 - lift / (H * .35)); cx.fillStyle = `rgba(0,0,0,${.35 * k})`; cx.beginPath(); cx.ellipse(x, gy - 2, size * .34 * k, size * .09 * k, 0, 0, 7); cx.fill(); }
+      const bob = run ? Math.abs(Math.sin(ph)) * size * .05 : flying ? Math.sin(G.t * 4) * 6 : 0;
+      const legL = size * .26, torsoH = size * .3, headS = size * .7;
+      // מתיחה/כיווץ: נחיתה = מתכווץ, עלייה בקפיצה = נמתח
+      const sq = G.landT > 0 ? 1 - G.landT * 1.2 : air && G.jt >= 0 && G.jt < .25 ? 1.08 : 1, sqx = 1 / Math.sqrt(sq);
+      const hip = gy - 4 - legL * (sl ? .25 : 1) - lift + (run ? -bob : -bob);
+      cx.save(); cx.translate(x, gy - lift);
+      // נטייה: קדימה בריצה, לצד בפנייה, סיבוב בנפילה
+      let rot = (run ? .06 : 0) + G.leanV * -.32 + (G.ice > 0 ? Math.sin(G.t * 20) * .05 : 0);
+      if (G.deathT >= 0) rot = -G.deathT * 7;
+      cx.rotate(rot); cx.scale(sqx, sq);
+      if (G.deathT >= 0) cx.translate(-G.deathT * 120, -Math.sin(Math.min(1, G.deathT * 1.3) * Math.PI) * 90);
+      cx.translate(-x, -(gy - lift));
+      // טורבו: להבות
+      if (G.pw.turbo > 0) for (let i = 0; i < 3; i++) { cx.fillStyle = ["#a855f7", "#f472b6", "#fde047"][i]; cx.globalAlpha = .7; cx.beginPath(); cx.moveTo(x - size * .14 + i * size * .14, hip); cx.lineTo(x - size * .07 + i * size * .14, hip + 26 + Math.random() * 24); cx.lineTo(x + i * size * .14, hip); cx.fill(); } cx.globalAlpha = 1;
+      const metal = "#94a3b8", joint = "#475569", lw = Math.max(5, size * .085);
+      // רגליים
+      let la, lb, ra, rb;
+      if (sl) { la = -1.35; lb = .25; ra = -1.2; rb = .35; }                         // החלקה: רגליים קדימה
+      else if (flying) { la = .25 + Math.sin(G.t * 6) * .15; lb = .5; ra = -.15 + Math.sin(G.t * 6 + 1) * .15; rb = .6; } // מרחף: רגליים מתנדנדות
+      else if (air) { la = .9; lb = -1.4; ra = -.5; rb = .9; }                         // קפיצה: רגל מקופלת
+      else if (run) { la = Math.sin(ph) * .75; lb = Math.max(0, -Math.cos(ph)) * 1.1; ra = -Math.sin(ph) * .75; rb = Math.max(0, Math.cos(ph)) * 1.1; }
+      else { la = .05; lb = 0; ra = -.05; rb = 0; }
+      const back = (a, b, off) => limb(x + off, hip, a, legL * .52, b, legL * .52, lw, metal, joint);
+      const fL = back(la, lb, -size * .08), fR = back(ra, rb, size * .08);
+      cx.fillStyle = "#1f2937"; for (const [fx, fy] of [fL, fR]) { cx.beginPath(); cx.ellipse(fx + 3, fy, size * .07, size * .035, 0, 0, 7); cx.fill(); }
+      // גוף (בצבע החליפה)
+      const ty = hip - torsoH * (sl ? .7 : 1), tw = size * .42;
+      const tg = cx.createLinearGradient(x - tw / 2, ty, x + tw / 2, hip); tg.addColorStop(0, "#fff"); tg.addColorStop(.35, BODY); tg.addColorStop(1, BODY2); cx.fillStyle = tg;
+      cx.beginPath(); cx.roundRect ? cx.roundRect(x - tw / 2, ty, tw, hip - ty + 4, size * .1) : cx.rect(x - tw / 2, ty, tw, hip - ty + 4); cx.fill(); cx.strokeStyle = "rgba(255,255,255,.6)"; cx.lineWidth = 2; cx.stroke();
+      cx.fillStyle = "#0f172a"; cx.beginPath(); cx.arc(x, ty + (hip - ty) * .45, size * .055, 0, 7); cx.fill(); cx.fillStyle = G.pw.double > 0 || G.rainbowT > 0 ? "#fde047" : "#7cf5ff"; cx.beginPath(); cx.arc(x, ty + (hip - ty) * .45, size * .03 + Math.abs(Math.sin(G.t * 5)) * 2, 0, 7); cx.fill();
+      // ידיים: מתנדנדות הפוך לרגליים
+      let aa, ab;
+      if (flying) { aa = 2.1; ab = .4; } else if (air) { aa = 2.6; ab = .3; } else if (sl) { aa = -1.9; ab = .2; } else if (run) { aa = -Math.sin(ph) * .9; ab = -.9; } else { aa = .2; ab = -.3; }
+      limb(x - tw / 2, ty + size * .05, run ? aa : aa, size * .16, ab, size * .15, lw * .85, metal, joint);
+      limb(x + tw / 2, ty + size * .05, run ? -aa : -aa, size * .16, -ab, size * .15, lw * .85, metal, joint);
+      // ראש (התמונה עם הבגדים)
+      const hx = x - headS / 2, hy2 = ty - headS * .86 + (run ? Math.sin(ph * 2) * 1.5 : 0);
+      if (imgOk) cx.drawImage(img, hx, hy2, headS, headS); else { cx.fillStyle = "#e0e7ff"; cx.beginPath(); cx.arc(x, hy2 + headS / 2, headS * .4, 0, 7); cx.fill(); }
       cx.restore();
-      if (G.shield) { cx.strokeStyle = "#7dd3fc"; cx.lineWidth = 4; cx.globalAlpha = .6 + Math.sin(G.t * 6) * .2; cx.beginPath(); cx.arc(x, yy + h / 2, size * .62, 0, 7); cx.stroke(); cx.globalAlpha = 1; }
-      if (G.pw.magnet > 0) { cx.strokeStyle = "rgba(244,63,94,.6)"; cx.lineWidth = 2; cx.setLineDash([6, 6]); cx.beginPath(); cx.arc(x, yy + h / 2, size * .75 + Math.sin(G.t * 8) * 5, 0, 7); cx.stroke(); cx.setLineDash([]); }
+      if (G.ice > 0) { cx.fillStyle = "rgba(186,230,253,.55)"; for (let i = 0; i < 4; i++) cx.fillRect(x - size * .3 + i * size * .2, gy - 6, size * .06, 10 + Math.random() * 12); }
+      // אבק מהרגליים בריצה
+      if (run && Math.random() < .25 && G.parts.length < 120) G.parts.push({ x: x + (Math.random() - .5) * size * .3, y: gy - 4, vx: (Math.random() - .5) * 40, vy: -20 - Math.random() * 30, life: .4, a: .7, c: "rgba(203,213,225,.8)", s: 3 + Math.random() * 3 });
+      const cy = hip - torsoH * .5 - headS * .3;
+      if (G.shield) { cx.strokeStyle = "#7dd3fc"; cx.lineWidth = 4; cx.globalAlpha = .6 + Math.sin(G.t * 6) * .2; cx.beginPath(); cx.arc(x, cy, size * .72, 0, 7); cx.stroke(); cx.fillStyle = "rgba(56,189,248,.08)"; cx.fill(); cx.globalAlpha = 1; }
+      if (G.pw.magnet > 0) { cx.strokeStyle = "rgba(244,63,94,.6)"; cx.lineWidth = 2; cx.setLineDash([6, 6]); cx.beginPath(); cx.arc(x, cy, size * .85 + Math.sin(G.t * 8) * 5, 0, 7); cx.stroke(); cx.setLineDash([]); }
     }
     G.spawnAt = (k, lane, z, extra) => { add(Object.assign({ k, lane, z }, extra || {})); return G.obj[G.obj.length - 1]; }; // לבדיקות
     G.act = act;
