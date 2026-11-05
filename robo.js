@@ -385,6 +385,7 @@ dialog.robo.fr .frc{height:100%;overflow-y:auto;padding-bottom:calc(20px + env(s
 .ann>*{position:relative}.ann .t{font-size:30px;font-weight:900;background:linear-gradient(90deg,#fde047,#f472b6,#a5f3fc,#fde047);background-size:300%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:rGrad 1.4s linear infinite}
 .ann .bot{width:190px;height:190px;animation:frIn 1s cubic-bezier(.2,1.3,.4,1) both}.ann .bot .abot{width:100%;height:100%}.ann .w{font-size:19px;font-weight:900;margin-top:6px}.ann .l{font-size:15px;margin-top:8px;color:#fde68a}display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:8px}
 .rw-chips span{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);border-radius:99px;padding:5px 11px;font-size:13px;font-weight:800}
+.rw-ttl{border:0;margin:4px auto 0;display:block;padding:3px 12px;border-radius:99px;font:inherit;font-size:12px;font-weight:800;color:#1a1040;background:linear-gradient(135deg,#fde68a,#facc15);cursor:pointer;box-shadow:0 2px 8px rgba(250,204,21,.4)}
 .rw-tabs{display:flex;gap:2px;padding:8px 6px;overflow-x:auto;scrollbar-width:none;background:#120c2e;border-bottom:1px solid rgba(255,255,255,.08)}
 .rw-tabs button{flex:1 0 auto;border:0;border-radius:12px;padding:9px 5px;font:inherit;font-size:12.5px;white-space:nowrap;font-weight:800;color:#c7c3ff;background:transparent;cursor:pointer;position:relative}
 .rw-tabs button.on{background:linear-gradient(135deg,#5b6cff,#a259ff);color:#fff;box-shadow:0 4px 14px rgba(91,108,255,.4)}
@@ -575,13 +576,14 @@ dialog.robo.open{background:#05020f}
     const p = profile() || {}, pr = R.progress(S), nb = S.boxes.length, rc = RC(topRar()), inboxN = 0;
     const newIn = c => S.news.some(id => R.ITEMS[id] && R.ITEMS[id].cat === c);
     d.innerHTML = `<div class="rw"><div class="rw-top" style="--rc:${rc}"><button class="rw-x" type="button" aria-label="סגור">✕</button>${muteBtn("rw-mute")}
-      <div class="rw-bot" id="rwBot">${svg()}</div><div class="rw-name">${S.name ? esc(S.name) : `הרובוט של ${esc(p.first || "")}`} <button type="button" class="rw-edit" id="rwName" aria-label="שם לרובוט">✏️</button></div>${S.name ? `<div class="rw-sub">של ${esc(p.first || "")}</div>` : ""}
+      <div class="rw-bot" id="rwBot">${svg()}</div><div class="rw-name">${S.name ? esc(S.name) : `הרובוט של ${esc(p.first || "")}`} <button type="button" class="rw-edit" id="rwName" aria-label="שם לרובוט">✏️</button></div>${S.name ? `<div class="rw-sub">של ${esc(p.first || "")}</div>` : ""}<button type="button" class="rw-ttl" id="rwTtl">${R.titleText && R.titleText(S) ? esc(R.titleText(S)) : "🏅 לבחור תואר"}</button>
       <div class="rw-chips"><span>🔥 רצף ${S.st.n}</span><span>🔩 ${bl()}</span><span>🏆 ${pr.have}/${pr.all}</span></div></div>
       <div class="rw-tabs">${[["wear", "👕 ארון"], ["fun", "🎮 כיף", funDot()], ["boxes", "🎁 תיבות", nb], ["friends", "👥 חברים", inboxN], ["shop", "🛒 חנות"], ["streak", "🔥 רצף"]].map(([k, l, n]) => `<button type="button" data-t="${k}" class="${tab === k ? "on" : ""}">${l}${n ? `<span class="dot">${n}</span>` : ""}</button>`).join("")}</div>
       <div class="rw-body" id="rwBody"></div></div>`;
     d.querySelector(".rw-x").onclick = () => d.close(); wireMute(d);
     d.querySelector("#rwName").onclick = () => { const v = prompt("איך קוראים לרובוט שלך? (עד 14 תווים)", S.name || ""); if (v == null) return; const c = R.cleanName(v); if (v.trim() && !c) { toast("השם הזה לא מתאים 🙈 נסה שם אחר", null, 3000); return; } S.name = c; save(); publishSoon(); draw(); };
     d.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); });
+    const tt = d.querySelector("#rwTtl"); if (tt) tt.onclick = () => { tab = "fun"; funSub = "titles"; draw(); };
     const body = d.querySelector("#rwBody");
     if (tab === "wear") {
       const items = R.LIST.filter(x => x.cat === cat).sort((a, b) => R.RAR[a.r].o - R.RAR[b.r].o);
@@ -1003,7 +1005,7 @@ dialog.robo.open{background:#05020f}
   const myStats = () => { const pr = R.progress(S); return { n: S.st.n, best: S.st.best, have: pr.have, all: pr.all, opened: S.opened || 0 }; };
   const topRare = () => R.LIST.filter(x => S.own[x.id] && S.own[x.id] !== -1 && !x.free).sort((a, b) => R.RAR[b.r].o - R.RAR[a.r].o).slice(0, 3).map(x => x.id);
   let pubT = 0, myLikes = +LS.get("roboMyLikes", "0") || 0;
-  async function publish() { if (!online() || locked()) return; try { const pj = await api({ op: "pub", rn: S.name || "", eq: S.eq, st: myStats(), rare: topRare(), ach: R.achievements(S, myLikes), hide: !!S.hide }); if (pj && pj.pid) LS.set("roboPid", pj.pid); LS.set("roboPubAt", String(Date.now())); } catch (e) {} }
+  async function publish() { if (!online() || locked()) return; try { const pj = await api({ op: "pub", title: R.titleText ? R.titleText(S) : "", rn: S.name || "", eq: S.eq, st: myStats(), rare: topRare(), ach: R.achievements(S, myLikes), hide: !!S.hide }); if (pj && pj.pid) LS.set("roboPid", pj.pid); LS.set("roboPubAt", String(Date.now())); } catch (e) {} }
   // ⚡ הזמנה לטרייד מגיעה מהר: הפיד (שנבדק כל 20 שניות) אומר אם מחכה לי משהו
   let hintAt = 0;
   function inviteHint(list) { const me = LS.get("roboPid", ""); if (!me || !list.includes(me) || Date.now() - hintAt < 8000) return; hintAt = Date.now(); checkInbox(); }
@@ -1032,7 +1034,7 @@ dialog.robo.open{background:#05020f}
     const medal = i => key(list[i]) > 0 ? ["🥇", "🥈", "🥉"][i] || "" : "";
     body.innerHTML = `<div class="fr-bat"><b>⚔️ קרב הכיתות השבוע</b><div class="fr-bar"><span class="a" style="flex:${Math.max(A.pts, tot * .15)}">${CLS_L(A.cls)} · ${A.pts}</span><span class="b" style="flex:${Math.max(B.pts, tot * .15)}">${B.pts} · ${CLS_L(B.cls)}</span></div><small>כל כניסה יומית ❤️ וכל לייק = נקודה לכיתה. המנצחת מקבלת 🎁 תיבה גדולה במוצאי שבת</small></div>
       <div class="fr-row">${bat.map(x => `<button type="button" data-cls="${x.cls}" class="${x.cls === j.cls ? "on" : ""}">${CLS_L(x.cls)}${x.cls === j.myCls ? " (שלי)" : ""}</button>`).join("")}<span style="flex:1"></span>${[["likes", "❤️"], ["streak", "🔥"], ["have", "🏆"]].map(([k, l]) => `<button type="button" data-so="${k}" class="${fSort === k ? "on" : ""}">${l}</button>`).join("")}</div>
-      ${list.length ? `<div class="fr-grid">${list.map((x, i) => `<button type="button" class="fc${x.me ? " me" : ""}" data-pid="${x.pid}" style="animation-delay:${Math.min(i, 20) * 40}ms">${medal(i) ? `<span class="medal">${medal(i)}</span>` : ""}<div class="pv">${svg("", Object.assign({ skin: "skin:classic" }, x.eq), { still: true, noHoli: true })}</div><div class="rn">${esc(x.rn || "רובוט")}</div><div class="kid">${esc(x.kid)}${x.me ? " (אני)" : ""}</div><div class="lk">❤️ ${x.likes} · 🔥 ${(x.st || {}).n || 0}</div></button>`).join("")}</div>` : `<div class="rw-prog" style="text-align:center;padding:20px 0">עוד אין כאן רובוטים 🤖 תגיד לחברים להיכנס!</div>`}
+      ${list.length ? `<div class="fr-grid">${list.map((x, i) => `<button type="button" class="fc${x.me ? " me" : ""}" data-pid="${x.pid}" style="animation-delay:${Math.min(i, 20) * 40}ms">${medal(i) ? `<span class="medal">${medal(i)}</span>` : ""}<div class="pv">${svg("", Object.assign({ skin: "skin:classic" }, x.eq), { still: true, noHoli: true })}</div><div class="rn">${esc(x.rn || "רובוט")}</div><div class="kid">${esc(x.kid)}${x.me ? " (אני)" : ""}</div>${x.title ? `<div class="kid" style="color:#fde68a">${esc(x.title)}</div>` : ""}<div class="lk">❤️ ${x.likes} · 🔥 ${(x.st || {}).n || 0}</div></button>`).join("")}</div>` : `<div class="rw-prog" style="text-align:center;padding:20px 0">עוד אין כאן רובוטים 🤖 תגיד לחברים להיכנס!</div>`}
       <label class="fr-tog"><input type="checkbox" id="frHide" ${S.hide ? "" : "checked"}> להציג את הרובוט שלי לשכבה</label>`;
     body.querySelectorAll("[data-cls]").forEach(b => b.onclick = () => { fCls = b.dataset.cls; fData = null; friendsTab(body); });
     body.querySelectorAll("[data-so]").forEach(b => b.onclick = () => { fSort = b.dataset.so; drawFriends(body); });
@@ -1044,7 +1046,7 @@ dialog.robo.open{background:#05020f}
     if (!x) return;
     const d = dlg("roboFriend", "fr"), best = (x.rare || []).filter(id => R.ITEMS[id]), rc = best[0] ? RC(R.ITEMS[best[0]].r) : "#7c3aed", st = x.st || {};
     d.innerHTML = `<div class="frc"><div class="frc-top" style="--rc:${rc}"><button class="rw-x" type="button" aria-label="סגור">✕</button>
-      <div class="frc-bot">${svg("", Object.assign({ skin: "skin:classic" }, x.eq), { noHoli: true })}</div><div class="frc-rn">${esc(x.rn || "רובוט")}</div><div class="frc-kid">של ${esc(x.kid)}</div>
+      <div class="frc-bot">${svg("", Object.assign({ skin: "skin:classic" }, x.eq), { noHoli: true })}</div><div class="frc-rn">${esc(x.rn || "רובוט")}</div><div class="frc-kid">של ${esc(x.kid)}</div>${x.title ? `<div class="frc-kid" style="color:#fde68a;font-weight:900">${esc(x.title)}</div>` : ""}
       <div class="frc-st"><span>❤️ ${x.likes}</span><span>🔥 רצף ${st.n || 0}</span><span>🏆 ${st.have || 0}/${st.all || R.LIST.length}</span><span>📦 ${st.opened || 0} תיבות</span></div></div>
       <div class="frc-in"><div class="rw-sec">🏅 ההישגים</div>${(x.ach || []).length ? `<div class="ach">${x.ach.map((a, i) => `<div style="animation-delay:${200 + i * 90}ms"><b>${esc(a.e)}</b>${esc(a.n)}</div>`).join("")}</div>` : `<div class="rw-prog">עוד אין הישגים – הכל לפניו 💪</div>`}
       ${best.length ? `<div class="rw-sec">⭐ הכי נדירים שלו</div><div class="rw-grid">${best.map(id => { const it = R.ITEMS[id]; return `<div class="rc ${it.r === "l" ? "leg" : ""} ${it.r === "u" ? "ult" : ""}" style="--c:${RC(it.r)};cursor:default"><div class="pv">${it.cat === "theme" || it.cat === "page" || it.cat === "trail" || it.cat === "quote" ? preview(id) : svg("", Object.assign({ skin: "skin:classic" }, { [it.cat]: id }), { still: true, noHoli: true })}</div><div class="nm">${esc(it.n)}</div><div class="rr">${R.RAR[it.r].n}</div></div>`; }).join("")}</div>` : ""}

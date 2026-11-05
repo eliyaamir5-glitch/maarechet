@@ -14,6 +14,7 @@ const call = async (body) => { const r = await mod.default(new Request("http://l
 const ME = "device-robo4-0001", FRIEND = "device-robo4-0002";
 await call({ action: "hello", device: ME, name: "דני לוי", cls: "y1", ver: "x" });
 await call({ action: "hello", device: FRIEND, name: "יוסי כהן", cls: "y2", ver: "x" });
+await call({ action: "robo", device: FRIEND, op: "goalAdd", n: 900 }); // 🤝 מטרת השכבה – חבר מאותה שכבה כבר תרם
 const listed = await call({ action: "robo", device: FRIEND, op: "marketSell", item: "hat:tiara", r: "e", price: 150 });
 
 const b = await puppeteer.launch({ executablePath: CHROME, headless: true, args: CHROME_ARGS });
@@ -37,7 +38,7 @@ log(await p.evaluate(() => !!window.RoboPlus && typeof Asst.todayLessons === "fu
 // לשונית כיף
 await p.evaluate(() => Robo.open("fun")); await sleep(500);
 if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + "/1-fun.png" });
-log(await p.evaluate(() => document.querySelectorAll("#roboUI .rp-t").length === 10), "fun tab: 10 tiles (game, run, wheel, map, lab, market, leaderboard, upgrades, sets, bonuses)");
+log(await p.evaluate(() => document.querySelectorAll("#roboUI .rp-t").length === 12), "fun tab: 12 tiles (game, run, wheel, map, lab, market, leaderboard, upgrades, sets, bonuses, titles, photo booth)");
 // 🎰 גלגל
 await p.evaluate(() => document.querySelector('#roboUI [data-p="wheel"]').click()); await sleep(300);
 const s0 = await p.evaluate(() => { const s = Robo.state(); return { b: s.bolts, x: s.boxes.length }; });
@@ -288,6 +289,25 @@ await p.evaluate(() => Robo.open("shop")); await sleep(300);
 log(await p.evaluate(() => { Robo.give({ t: "item", id: "theme:goldx" }); Theme.setTheme("goldx"); const on = !!document.getElementById("gxFx") && getComputedStyle(document.documentElement).getPropertyValue("--accent").trim().length > 0 && /gxDiamond/.test(document.getElementById("themeStyle").textContent); Theme.setTheme("purple"); return on && !document.getElementById("gxFx"); }), "💎 gold & diamonds theme: turns on (gold + diamond buttons + sparkles) and off cleanly");
 const gx = await call({ action: "robo", device: FRIEND, op: "claim", item: "theme:goldx" });
 log(gx.ok && gx.granted && gx.cap === 3, "server: gold theme is capped at 3 in the school", JSON.stringify(gx));
+// 🕎 חנוכה + 🤝 מטרת שכבה + 🏅 תארים + 📸 צלם רובוט
+await p.evaluate(() => { RoboCore.setHanukkahTest(3); document.querySelectorAll("dialog[open]").forEach(d => { delete d.dataset.lock; d.close(); }); Robo.open("fun"); }); await sleep(1500);
+log(await p.evaluate(() => !!document.querySelector(".hk-card #hkLight")), "hanukkah: menorah card in the fun tab");
+log(await p.evaluate(() => { const m = ((document.querySelector("#glCard") || {}).innerText || "").replace(/,/g, "").match(/השבוע: (\d+) \/ (\d+)/); return !!m && +m[1] >= 900 && +m[2] >= 3000; }), "grade goal: card shows the grade's total and target", await p.evaluate(() => (document.querySelector("#glCard") || {}).innerText));
+await p.evaluate(() => document.querySelector("#hkLight").click()); await sleep(400);
+await p.evaluate(() => document.querySelector(".rw-reward").click()); await sleep(1500);
+log(await p.evaluate(() => (Robo.state().hk || {}).lit[3] === 1 && /קיבלת/.test(document.querySelector(".rw-reward").innerText)), "hanukkah: lighting candle 3 gives a reward once");
+await p.evaluate(() => document.querySelector(".rw-reward [data-a]").click()); await sleep(500);
+await p.evaluate(() => { Robo.state().wheel = null; Robo.open("fun", "wheel"); }); await sleep(400);
+log(await p.evaluate(() => /סביבון/.test(document.querySelector("#roboUI").innerText)), "hanukkah: the wheel becomes a dreidel");
+await p.evaluate(() => Robo.open("fun", "titles")); await sleep(400);
+await p.evaluate(() => { Robo.state().runBest = 1300; Robo.open("fun", "titles"); }); await sleep(300);
+await p.evaluate(() => document.querySelector('[data-tt="runner"]').click()); await sleep(400);
+log(await p.evaluate(() => Robo.state().title === "runner" && /רץ למרחקים/.test(document.querySelector("#rwTtl").textContent)), "titles: pick a title, shown under the robot name");
+await p.evaluate(() => Robo.open("fun", "booth")); await sleep(1200);
+await p.evaluate(() => { document.querySelector('[data-k="pose"] [data-i="2"]').click(); document.querySelector('[data-s="👑"]').click(); }); await sleep(400);
+log(await p.evaluate(() => { const c = document.querySelector("#pbCv"); return !!c && c.getContext("2d").getImageData(540, 700, 1, 1).data[3] > 0; }), "photo booth: draws the robot picture");
+await p.screenshot({ path: path.join(ROOT, "tests/browser/robo4-booth.png") });
+await p.evaluate(() => RoboCore.setHanukkahTest(0));
 log(!errs.length, "no errors", errs.join(" | "));
 await p.screenshot({ path: path.join(ROOT, "tests/browser/robo4-shop.png") });
 console.log(`errors: ${JSON.stringify(errs)} ${res.filter(Boolean).length}/${res.length} passed`);

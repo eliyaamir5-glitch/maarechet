@@ -1131,7 +1131,7 @@ async function feed(req, S, ip, headers) {
   if (action === "robo") { // 🤖 אביזר "אולטרה אגדי" יצא בתיבה: כמות מוגבלת לכל הישיבה. נשמר רק מונה + קוד מכשיר מוצפן (בלי שם)
     if (await roboSeason(S, now) && !["me", "link", "day"].includes(b.op)) return reply(200, { ok: false, error: "locked", until: ROBO_RESET_AT }, headers);
     if (DEV_RE.test(device) && ["code", "me", "link", "day"].includes(b.op)) return reply(200, await roboOp(S, b, device, ip, now), headers);
-    if (DEV_RE.test(device) && ["pub", "class", "like", "gift", "inbox", "tradeNew", "tradeGet", "tradeSet", "tradeOk", "tradeCancel", "tradeDone", "marketList", "marketSell", "marketBuy", "marketCancel", "score", "scores"].includes(b.op)) return reply(200, await roboSocial(S, b, device, ip, now), headers);
+    if (DEV_RE.test(device) && ["pub", "class", "like", "gift", "inbox", "tradeNew", "tradeGet", "tradeSet", "tradeOk", "tradeCancel", "tradeDone", "marketList", "marketSell", "marketBuy", "marketCancel", "score", "scores", "goalAdd", "goal"].includes(b.op)) return reply(200, await roboSocial(S, b, device, ip, now), headers);
     if (!DEV_RE.test(device) || b.op !== "claim" || !Object.hasOwn(ROBO_CAPS, String(b.item))) return reply(400, { ok: false, error: "bad_request" }, headers);
     memRate("robo", ip, 3000);
     const pres = await S.get("presence"), k = devKey(device);
@@ -1703,7 +1703,7 @@ async function roboSocial(S, b, device, ip, now) {
   if (b.op === "pub") { // מפרסמים את הרובוט שלי (מה לובש + הישגים)
     const st = b.st && typeof b.st === "object" ? b.st : {}, num = (v, m) => Math.max(0, Math.min(m, Math.floor(+v || 0)));
     const rec = { pid, rn: clean(b.rn, 14), eq: cleanEq(b.eq), st: { n: num(st.n, 5000), best: num(st.best, 5000), have: num(st.have, 2000), all: num(st.all, 2000), opened: num(st.opened, 100000) },
-      rare: (Array.isArray(b.rare) ? b.rare : []).map(String).filter(x => ITEM_RE.test(x)).slice(0, 3), ach: (Array.isArray(b.ach) ? b.ach : []).slice(0, 16).map(a => ({ e: clean(a && a.e, 4), n: clean(a && a.n, 20) })), hide: !!b.hide, at: now };
+      rare: (Array.isArray(b.rare) ? b.rare : []).map(String).filter(x => ITEM_RE.test(x)).slice(0, 3), ach: (Array.isArray(b.ach) ? b.ach : []).slice(0, 16).map(a => ({ e: clean(a && a.e, 4), n: clean(a && a.n, 20) })), title: clean(b.title, 24), hide: !!b.hide, at: now };
     await S.update("roboPub", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; if (!o[k] && Object.keys(o).length >= 3000) return undefined; o[k] = rec; return o; });
     return { ok: true, pid };
   }
@@ -1712,7 +1712,7 @@ async function roboSocial(S, b, device, ip, now) {
     const pub = (await S.get("roboPub")) || {}, likes = (await S.get("roboLikes")) || {}, day = (await S.get("roboLikeDay")) || {}, bat = (await S.get("roboBattle")) || {};
     const today = israelDay(now), liked = new Set(day.d === today ? (day.pairs || []).filter(x => x.startsWith(pid + ">")).map(x => x.split(">")[1]) : []);
     const list = Object.entries(pub).filter(([kk, p]) => pres[kk] && pres[kk].cls === cls && (!p.hide || kk === k) && !pres[kk].hide && now - (pres[kk].last || 0) < 60 * 864e5)
-      .map(([kk, p]) => ({ pid: p.pid, me: kk === k, kid: pres[kk].name || "", rn: p.rn, eq: p.eq, st: p.st, rare: p.rare, ach: p.ach, likes: (likes[p.pid] || {}).n || 0, liked: liked.has(p.pid) }));
+      .map(([kk, p]) => ({ pid: p.pid, me: kk === k, kid: pres[kk].name || "", rn: p.rn, title: p.title || "", eq: p.eq, st: p.st, rare: p.rare, ach: p.ach, likes: (likes[p.pid] || {}).n || 0, liked: liked.has(p.pid) }));
     const w = ilWeek(now), last = HC.add(w, -7), cl = Object.keys(CLASSES_GRADE(me.cls));
     const battle = { week: w, now: cl.map(c => ({ cls: c, pts: ((bat[w] || {})[c]) || 0 })), last: cl.map(c => ({ cls: c, pts: ((bat[last] || {})[c]) || 0 })), lastWeek: last };
     return { ok: true, cls, myCls: me.cls, list, battle };
@@ -1749,10 +1749,19 @@ async function roboSocial(S, b, device, ip, now) {
       await S.update("roboScores", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; for (const x of Object.keys(o)) if (x < HC.add(w, -21)) delete o[x]; const W = { ...(o[w] || {}) }, T = { ...(W[g] || {}) }; if ((T[k] || {}).v >= v) return undefined; if (!T[k] && Object.keys(T).length >= 3000) return undefined; T[k] = { v, at: now }; W[g] = T; o[w] = W; return o; });
       return { ok: true };
     }
-    const all = (await S.get("roboScores")) || {}, grade = gradeOfCls(me.cls), last = HC.add(w, -7);
-    const rank = wk => Object.entries(((all[wk] || {})[g]) || {}).filter(([kk]) => pres[kk] && gradeOfCls(pres[kk].cls) === grade && !pres[kk].hide).sort((a, c) => c[1].v - a[1].v || a[1].at - c[1].at).map(([kk, x], i) => ({ kid: pres[kk].name || "", cls: pres[kk].cls, v: x.v, me: kk === k, rank: i + 1 }));
+    const all = (await S.get("roboScores")) || {}, grade = gradeOfCls(me.cls), last = HC.add(w, -7), pubT = (await S.get("roboPub")) || {};
+    const rank = wk => Object.entries(((all[wk] || {})[g]) || {}).filter(([kk]) => pres[kk] && gradeOfCls(pres[kk].cls) === grade && !pres[kk].hide).sort((a, c) => c[1].v - a[1].v || a[1].at - c[1].at).map(([kk, x], i) => ({ kid: pres[kk].name || "", cls: pres[kk].cls, title: (pubT[kk] || {}).title || "", v: x.v, me: kk === k, rank: i + 1 }));
     const now5 = rank(w), mine = now5.find(x => x.me);
     return { ok: true, g, week: w, list: now5.slice(0, 20), me: mine || null, last: rank(last).slice(0, 3), lastWeek: last };
+  }
+  // ---- 🤝 מטרה משותפת לשכבה: כל הברגים מהמשחקים של כל השכבה השבוע. היעד לפי כמה ילדים פעילים ----
+  if (b.op === "goalAdd" || b.op === "goal") {
+    const w = ilWeek(now), grade = gradeOfCls(me.cls);
+    if (b.op === "goalAdd") { const n = Math.floor(+b.n || 0); if (n < 1 || n > 1200) return { ok: false, error: "bad_request" };
+      await S.update("roboGoal", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; for (const x of Object.keys(o)) if (x < HC.add(w, -14)) delete o[x]; const W = { ...(o[w] || {}) }, Gr = { n: 0, kids: {}, ...(W[grade] || {}) }; Gr.kids = { ...Gr.kids, [k]: (Gr.kids[k] || 0) + n }; Gr.n += n; W[grade] = Gr; o[w] = W; return o; }); }
+    const all = (await S.get("roboGoal")) || {}, Gr = ((all[w] || {})[grade]) || { n: 0, kids: {} }, active = Object.values(pres).filter(p => p && gradeOfCls(p.cls) === grade && now - (p.last || 0) < 7 * 864e5).length;
+    const target = Math.max(3000, Math.round(active * 300 / 500) * 500), last = ((all[HC.add(w, -7)] || {})[grade]) || null;
+    return { ok: true, week: w, n: Gr.n, target, mine: Gr.kids[k] || 0, helpers: Object.keys(Gr.kids).length, done: Gr.n >= target };
   }
   // ---- 🕵️ שוק: מוכרים אביזר במחיר קבוע (בטווח של הדרגה), עד 5 בבת אחת. רק בתוך השכבה ----
   if (b.op === "marketList") {

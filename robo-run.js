@@ -63,7 +63,8 @@
     const HOR = () => H * .26, GY = () => H * .9, f = z => 1 / (1 + Math.max(-.9, z) / 11);
     const sy = z => HOR() + (GY() - HOR()) * f(z), sx = (lane, z) => W / 2 + lane * W * .3 * f(z), sc = z => f(z);
     const LV_COL = ["#38bdf8", "#22c55e", "#a3e635", "#facc15", "#fb923c", "#f97316", "#ef4444", "#e11d48", "#a855f7", "#fde047"];
-    const world = () => WORLDS[Math.max(0, Math.floor(G.dist / 500)) % WORLDS.length];
+    const HK_WORLD = { n: "🕎 ליל חנוכה", sky: ["#020617", "#1e3a8a"], wall: ["#1d4ed8", "#2563eb", "#1e40af"], floor: ["#1e293b", "#334155"], decor: "menorah", ceil: 0 };
+    const world = () => { const i = Math.max(0, Math.floor(G.dist / 500)); if (i % 2 === 0 && window.RoboFest && RoboFest.hkDay() > 0) return HK_WORLD; return WORLDS[i % WORLDS.length]; };
     const hud = () => { d.querySelector("#rnB").textContent = `🔩 ${G.bolts}`; d.querySelector("#rnD").textContent = `📏 ${Math.floor(G.dist)} מ'`; d.querySelector("#rnL").textContent = G.practice ? `🏋️ אימון · שיא ${Math.max(X.S.runBest || 0, Math.floor(G.dist))} מ'` : `נשאר: ${Math.max(0, left() - G.bolts)}`; };
     const newRun = () => {
       Object.assign(G, { practice: left() <= 0, over: false, dead: false, t: 0, dist: 0, v: 13, lane: 0, pl: 0, jt: -1, st: -1, obj: [], parts: [], fx: [], puffs: [], next: 30, rows: 0, bolts: 0, pw: {}, shield: Math.random() < [0, .35, .7, 1][R.upg(X.S, "shield")], shake: 0, lv: 1, lvT: 0, combo: 0, run500: false,
@@ -86,7 +87,7 @@
     const end = async (why, msg) => {
       if (G.over) return; G.over = true; AU.stopMusic();
       const m = Math.floor(G.dist), rec = m > (X.S.runBest || 0); if (rec) X.S.runBest = m;
-      let got = 0; if (!G.practice && G.bolts) { const r = R.runBank(X.S, G.bolts); got = r.bolts; if (got) X.step(1); }
+      let got = 0; if (!G.practice && G.bolts) { const r = R.runBank(X.S, G.bolts); got = r.bolts; if (got) { X.step(1); RP.goalAdd && RP.goalAdd(got); } }
       if (G.run500) X.trk("run500");
       const st = Object.assign(G.stats, { dist: m, bolts: G.bolts, cleanDist: Math.max(G.stats.cleanDist, G.dist - G.cleanFrom) });
       setTimeout(() => RP.rankLine(box, "run", m), 300);
@@ -291,7 +292,7 @@
     function drawGround(Wd, turbo) {
       const hy = HOR();
       const bg = cx.createLinearGradient(0, 0, 0, hy); bg.addColorStop(0, Wd.sky[0]); bg.addColorStop(1, turbo ? "#7c3aed" : Wd.sky[1]); cx.fillStyle = bg; cx.fillRect(-20, -20, W + 40, hy + 22);
-      if (!Wd.ceil) { if (Wd.decor === "rail") { cx.fillStyle = "#fff"; for (const st of stars) { cx.globalAlpha = .3 + Math.abs(Math.sin(G.t * 2 + st.x * 9)) * .6; cx.fillRect(st.x * W, st.y * hy, st.s, st.s); } cx.globalAlpha = 1; cx.fillStyle = "#fef3c7"; cx.beginPath(); cx.arc(W * .8, hy * .35, 18, 0, 7); cx.fill(); }
+      if (!Wd.ceil) { if (Wd.decor === "rail" || Wd.decor === "menorah") { cx.fillStyle = "#fff"; for (const st of stars) { cx.globalAlpha = .3 + Math.abs(Math.sin(G.t * 2 + st.x * 9)) * .6; cx.fillRect(st.x * W, st.y * hy, st.s, st.s); } cx.globalAlpha = 1; cx.fillStyle = "#fef3c7"; cx.beginPath(); cx.arc(W * .8, hy * .35, 18, 0, 7); cx.fill(); }
         else { cx.fillStyle = "rgba(255,255,255,.8)"; for (let i = 0; i < 4; i++) { const x = ((i * 130 - G.dist * .6) % (W + 200) + W + 200) % (W + 200) - 100; cx.beginPath(); cx.ellipse(x, hy * (.3 + (i % 2) * .25), 40, 13, 0, 0, 7); cx.ellipse(x + 22, hy * (.3 + (i % 2) * .25) - 8, 24, 12, 0, 0, 7); cx.fill(); } } }
       cx.fillStyle = Wd.ceil ? "#0f172a" : "rgba(0,0,0,.25)"; cx.beginPath(); cx.moveTo(-20, H + 20); cx.lineTo(sx(-1.5, 90), hy); cx.lineTo(-20, hy - 40); cx.fill(); cx.beginPath(); cx.moveTo(W + 20, H + 20); cx.lineTo(sx(1.5, 90), hy); cx.lineTo(W + 20, hy - 40); cx.fill();
       // קישוטים בצדדים לפי העולם
@@ -299,6 +300,7 @@
         if (Wd.decor === "trees") { cx.fillStyle = "#78350f"; cx.fillRect(x - w * .12, y - h * .5, w * .24, h * .5); cx.fillStyle = Wd.wall[i % 3]; cx.beginPath(); cx.arc(x, y - h * .62, w * .9, 0, 7); cx.fill(); }
         else if (Wd.decor === "tables") { cx.fillRect(x - w * .8, y - h * .35, w * 1.6, h * .08); cx.fillStyle = "#451a03"; cx.fillRect(x - w * .6, y - h * .27, w * .1, h * .27); cx.fillRect(x + w * .5, y - h * .27, w * .1, h * .27); cx.fillStyle = "#fde68a"; cx.beginPath(); cx.arc(x, y - h * .4, w * .18, 0, 7); cx.fill(); }
         else if (Wd.decor === "doors") { cx.fillRect(x - w / 2, y - h * .8, w, h * .8); cx.fillStyle = "rgba(255,255,255,.75)"; cx.font = `900 ${Math.max(6, Math.round(14 * s))}px system-ui`; cx.textAlign = "center"; cx.fillText(String(100 + i), x, y - h * .65); cx.fillStyle = "#facc15"; cx.fillRect(x + side * -w * .3, y - h * .4, w * .1, h * .05); }
+        else if (Wd.decor === "menorah") { cx.fillStyle = "#facc15"; cx.fillRect(x - w * .04, y - h * .45, w * .08, h * .45); cx.fillRect(x - w * .7, y - h * .45, w * 1.4, h * .04); for (let k = -3; k <= 3; k++) { const fx = x + k * w * .2, fy = y - h * .5; cx.fillStyle = "#fde68a"; cx.fillRect(fx - w * .03, fy, w * .06, h * .06); cx.fillStyle = Math.sin(G.t * 12 + k + i) > 0 ? "#fb923c" : "#fde047"; cx.beginPath(); cx.ellipse(fx, fy - h * .03, w * .035, h * .035, 0, 0, 7); cx.fill(); } }
         else if (Wd.decor === "rail") { cx.fillStyle = "#64748b"; cx.fillRect(x - w * .05, y - h * .25, w * .1, h * .25); cx.fillRect(x - w * .8, y - h * .25, w * 1.6, h * .03); }
         else { cx.fillRect(x - w / 2, y - h, w, h); cx.fillStyle = "rgba(255,255,255,.25)"; cx.fillRect(x - w * .3, y - h * .8, w * .6, Math.max(1, h * .03)); cx.fillRect(x - w * .3, y - h * .72, w * .6, Math.max(1, h * .03)); } } } cx.globalAlpha = 1;
       if (Wd.ceil) for (let i = 0; i < 12; i++) { const z = ((i * 8 - G.dist) % 96 + 96) % 96, s = sc(z), y = hy - hy * .92 * s; cx.fillStyle = turbo ? "#f0abfc" : "#e0f2fe"; cx.globalAlpha = .25 + s * .6; cx.fillRect(W / 2 - W * .16 * s, y, W * .32 * s, Math.max(1, 6 * s)); } cx.globalAlpha = 1;

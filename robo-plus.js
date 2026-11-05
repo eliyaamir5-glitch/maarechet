@@ -145,18 +145,21 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     body.innerHTML = (R.eventNow() ? `<div class="rev"><b>${R.eventNow().n}</b> פי ${R.eventNow().up} סיכוי שהתיבות ישתדרגו!</div>` : "")
       + `<div class="rp-msb"><div class="rp-msh">📋 משימות היום <small>${ms.all ? "✅ השלמת הכל! קיבלת 🎁" : "כל ה-3 = 🎁 תיבה גדולה"}</small></div>${ms.ids.map(mRow).join("")}</div>`
       + `<button type="button" class="rp-legend" data-p="legend"><div class="lg-bot">${X.svg("", { skin: "skin:legend" }, { still: false, noHoli: true })}</div><div class="t"><b>👑 האגדה</b><small>${legendTaken ? "נלקחה! מישהו אסף את כל הגיבורים 🔒" : "הראשון שאוסף את כל הגיבורים מקבל – רק אחד בכל הישיבה!"}</small><div class="rp-bar" style="margin:6px 0 0"><i style="width:${hHave / heroes.ids.length * 100}%"></i></div><small>🦸 ${hHave}/${heroes.ids.length} גיבורים</small></div></button>`
+      + (window.RoboPlus && RoboPlus.top || []).map(f => { try { return f() || ""; } catch (e) { return ""; } }).join("")
       + `<div class="rp-menu">
       ${tile("game", "🔩", "#f59e0b", "ברגים נופלים", bs.open ? (g.n >= R.GAME_CAP ? "סיימת להיום 💪" : `משחק להפסקה · עוד ${R.GAME_CAP - g.n} 🔩 היום`) : `🔒 נפתח ב-${hhmm(bs.until)}`, bs.open && g.n < R.GAME_CAP ? "!" : "", true)}
       ${PANELS.run ? (() => { const rn = S.run && S.run.d === R.ymd(Date.now()) ? S.run.n : 0; return tile("run", "🏃", "#0ea5e9", "ריצת הרובוט", bs.open ? (rn >= R.RUN_CAP ? "🏋️ אימון – שבור שיא!" : `ריצה במסדרון · עוד ${R.RUN_CAP - rn} 🔩 היום`) : `🔒 נפתח ב-${hhmm(bs.until)}`, bs.open && rn < R.RUN_CAP ? "חדש!" : "", true); })() : ""}
-      ${tile("wheel", "🎰", "#ec4899", "גלגל מזל", wheelOk ? "סיבוב חינם היום!" : "חוזר מחר 🌙", wheelOk ? "1" : "")}
+      ${window.RoboFest && RoboFest.hkDay() > 0 ? tile("wheel", "🌀", "#2563eb", "סביבון חנוכה", wheelOk ? "סיבוב חינם היום!" : "חוזר מחר 🕎", wheelOk ? "1" : "") : tile("wheel", "🎰", "#ec4899", "גלגל מזל", wheelOk ? "סיבוב חינם היום!" : "חוזר מחר 🌙", wheelOk ? "1" : "")}
       ${tile("map", "🗺️", "#22c55e", "המסע", ready > 0 ? "יש אוצר שמחכה! 💰" : `תחנה ${mp.c}/${R.MAP_N}`, ready > 0 ? ready : "")}
       ${tile("lab", "🔨", "#38bdf8", "מעבדה", "5 אביזרים → 1 נדיר יותר")}
       ${tile("market", "🕵️", "#a855f7", "שוק", "קונים ומוכרים בברגים")}
+      ${(window.RoboPlus && RoboPlus.tiles || []).map(f => { try { return f(tile) || ""; } catch (e) { return ""; } }).join("")}
       ${tile("lb", "🏆", "#eab308", "טבלת שיאים", "הכי טובים בשכבה השבוע")}
       ${tile("upg", "🛒", "#6366f1", "שדרוגים", "מגנט, מגן, קקי עוצמתי…")}
       ${tile("sets", "🎭", "#f97316", "סטים", `השלמת ${sets}/${R.SETS.length}`)}
       ${tile("bonus", "📚", "#14b8a6", "בונוסים", "ציון טוב · שבוע בלי איחורים")}</div>`;
     body.querySelectorAll("[data-p]").forEach(b => b.onclick = () => PANELS[b.dataset.p](body));
+    (window.RoboPlus && RoboPlus.wireTop || []).forEach(f => { try { f(body); } catch (e) {} });
     body.querySelectorAll("[data-mc]").forEach(b => b.onclick = async () => { const before = X.S.bolts, M = R.MISSIONS[b.dataset.mc], r = R.claimMission(X.S, b.dataset.mc); if (!r.ok) return; X.save();
       const open = await rewardShow({ title: "📋 משימה הושלמה!", sub: `${M.em} ${M.n}${r.box ? " · וגם בונוס על כל 3 המשימות!" : ""}`, got: [{ t: "bolts", n: r.bolts }, ...(r.box ? [{ t: "box", box: r.box }] : [])], before });
       tab(body); X.hubRefresh(); if (open && r.box) X.openBoxes([r.box]); });
@@ -184,8 +187,29 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       return `<path d="M100 100L${x1} ${y1}A96 96 0 0 1 ${x2} ${y2}Z" fill="${SLICE_C[i % SLICE_C.length]}" stroke="#1a1040" stroke-width="2"/><text x="${tx}" y="${ty}" font-size="${w.t === "box" ? 22 : 13}" font-weight="900" fill="#fff" text-anchor="middle" dominant-baseline="middle" transform="rotate(${(i + .5) * 360 / n} ${tx} ${ty})">${wLabel(w)}</text>`; }).join("")}<circle cx="100" cy="100" r="97" fill="none" stroke="#facc15" stroke-width="4"/></svg>`;
   }
   let spinning = false;
+  // 🌀 סביבון (בחנוכה במקום הגלגל): אותם פרסים, אות לפי הפרס – ש/נ/ה/ג (גימל = הכי גדול)
+  const DR_L = i => i >= 6 ? "ג" : i >= 4 ? "ה" : i >= 2 ? "נ" : "ש";
+  const dreidelSvg = l => `<svg viewBox="0 0 130 170" aria-hidden="true"><defs><linearGradient id="drg" x1="0" x2="1"><stop offset="0" stop-color="#1d4ed8"/><stop offset=".5" stop-color="#60a5fa"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient></defs><rect x="58" y="4" width="14" height="34" rx="6" fill="#facc15"/><path d="M20 38h90v70L65 166 20 108z" fill="url(#drg)" stroke="#fde68a" stroke-width="4"/><text x="65" y="96" font-size="54" font-weight="900" text-anchor="middle" fill="#fde047">${l}</text></svg>`;
   function wheelPanel(body) {
     const S = X.S, ok = S.wheel !== R.ymd(Date.now());
+    if (window.RoboFest && RoboFest.hkDay() > 0) {
+      body.innerHTML = `${back}<div class="rp-h">🌀 סביבון חנוכה</div><div class="rp-s">סיבוב אחד כל יום! ש = ברגים · נ = תיבה · ה = יותר ברגים / תיבה גדולה · <b>ג = גימל! מגה או ענק</b> 🕎</div>
+        <div class="dr-wrap"><div class="dr" id="drD">${dreidelSvg("ג")}</div></div><div id="drRes"></div>
+        <button class="rbtn" type="button" id="rpSpin" style="width:100%;font-size:18px;padding:14px" ${ok ? "" : "disabled"}>${ok ? "🌀 לסובב את הסביבון!" : "כבר סובבת היום – נתראה מחר 🕎"}</button>`;
+      wireBack(body);
+      body.querySelector("#rpSpin").onclick = async () => {
+        if (spinning) return; const r = R.spinWheel(X.S); if (!r) return; spinning = true; X.trk("wheel"); X.step(1); X.save();
+        const b = body.querySelector("#rpSpin"), dd = body.querySelector("#drD"); b.disabled = true; b.textContent = "מסתובב… 🌀";
+        dd.classList.add("spin"); let k = 0; const tick = setInterval(() => { if (++k > 24) return clearInterval(tick); X.SFX.tap(); }, 120);
+        await X.sleep(X.REDUCED ? 200 : 3300); clearInterval(tick); const L = DR_L(r.i); dd.innerHTML = dreidelSvg(L); dd.classList.remove("spin");
+        const g = R.grant(X.S, r.prize); X.save(); spinning = false; X.vib([40, 30, 90]);
+        body.querySelector("#drRes").innerHTML = `<div class="dr-res">${L}!</div><div class="rw-prog" style="text-align:center;font-size:15px">${g.t === "box" ? `זכית ב${R.BOX[g.box].n} ${R.BOX[g.box].em}` : `זכית ב-${g.n} ברגים 🔩`}</div>`;
+        X.particles(body.querySelector(".dr-wrap"), "#facc15", 40, ["🕎", "✨", "🍩"]);
+        if (g.t === "box") { X.SFX.gift(); X.toast(`🌀 ${L}! זכית ב${R.BOX[g.box].n} ${R.BOX[g.box].em}`, ["לפתוח", () => X.openBoxes([g.box])], 9000); } else X.SFX.coin();
+        b.textContent = "כבר סובבת היום – נתראה מחר 🕎"; X.hubRefresh();
+      };
+      return;
+    }
     body.innerHTML = `${back}<div class="rp-h">🎰 גלגל מזל</div><div class="rp-s">סיבוב חינם אחד כל יום! אפשר לזכות בברגים או בתיבות – עד 💎 תיבת ענק</div>
       <div class="rp-wheel"><div class="rp-pin">🔻</div>${wheelSvg()}<div class="rp-hub">🤖</div></div>
       <button class="rbtn" type="button" id="rpSpin" style="width:100%;font-size:18px;padding:14px" ${ok ? "" : "disabled"}>${ok ? "🎰 לסובב!" : "כבר סובבת היום – נתראה מחר 🌙"}</button>
@@ -571,6 +595,8 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
   function chalBox(g) { const c = R.challenge(g), done = (X.S.chal || {})[g] === R.ymd(Date.now()); return `<div class="rbx" style="--c:#ec4899"><div class="em">🎯</div><div class="t"><b>אתגר היום: ${esc(c.n)}</b><small>${done ? "✅ הצלחת היום! קיבלת 💠" : "מצליחים → 💠 תיבת מגה (פעם ביום, לא באימון)"}</small></div></div>`; }
   function wireGo(body, g) { body.querySelectorAll("[data-go]").forEach(b => b.onclick = () => b.dataset.go === "lb" ? lbPanel(body, g) : upgPanel(body, g)); }
   // ================= 🏆 טבלת שיאים שבועית (השכבה) =================
+  // 🤝 כל ברג שנשמר במשחקים נספר למטרה של השכבה
+  async function goalAdd(n) { n = Math.floor(n || 0); if (n < 1 || !X.online()) return; try { await X.api({ op: "goalAdd", n: Math.min(1200, n) }); } catch (e) {} }
   async function postScore(g, v) {
     v = Math.floor(v || 0); if (!v || !X.online()) return; const S = X.S, w = R.weekId(); if (!S.wk || S.wk.w !== w) S.wk = { w };
     if (v <= (S.wk[g] || 0)) return; S.wk[g] = v; X.save(); try { await X.api({ op: "score", g, v }); } catch (e) {}
@@ -589,10 +615,10 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     if (!j || !j.ok || !Array.isArray(j.list)) { body.querySelector(".rw-prog").textContent = "אין חיבור כרגע 📶"; return; }
     // 🎁 3 הראשונים בשבוע שעבר מקבלים תיבה גדולה (פעם אחת)
     const S = X.S; S.lbClaim = S.lbClaim || {}; const lw = (j.last || []).findIndex(x => x.me);
-    if (lw >= 0 && lw < 3 && S.lbClaim[g] !== j.lastWeek) { S.lbClaim[g] = j.lastWeek; S.boxes.push("big"); X.save(); setTimeout(() => { X.SFX.gift(); X.toast(`🏆 <b>היית מקום ${lw + 1} בשבוע שעבר ב${GN[g]}!</b> קיבלת 🎁 תיבה גדולה`, ["לפתוח", () => X.openBoxes(["big"])], 10000); }, 400); }
+    if (lw >= 0 && lw < 3 && S.lbClaim[g] !== j.lastWeek) { S.lbClaim[g] = j.lastWeek; if (lw === 0) S.lbWins = (S.lbWins || 0) + 1; S.boxes.push("big"); X.save(); setTimeout(() => { X.SFX.gift(); X.toast(`🏆 <b>היית מקום ${lw + 1} בשבוע שעבר ב${GN[g]}!</b> קיבלת 🎁 תיבה גדולה`, ["לפתוח", () => X.openBoxes(["big"])], 10000); }, 400); }
     const medal = i => ["🥇", "🥈", "🥉"][i] || `${i + 1}.`;
     const el = document.createElement("div");
-    el.innerHTML = `<div class="rw-prog" style="text-align:center">השבוע · 3 הראשונים מקבלים 🎁 תיבה גדולה במוצאי שבת</div>` + (j.list.length ? j.list.map((x, i) => `<div class="rp-mk" style="--c:${i < 3 ? ["#facc15", "#cbd5e1", "#d97706"][i] : "#6366f1"}${x.me ? ";outline:2px solid #fde047" : ""}"><div style="font-size:24px;width:40px;text-align:center">${medal(i)}</div><div class="t"><b>${esc(x.kid)}${x.me ? " (אני)" : ""}</b><small>${esc(X.CLS_L(x.cls))}</small></div><b style="font-size:18px">${x.v} ${UNIT[g]}</b></div>`).join("") : `<div class="rw-prog" style="text-align:center;padding:16px">עוד אין שיאים השבוע – תהיה הראשון! 🚀</div>`)
+    el.innerHTML = `<div class="rw-prog" style="text-align:center">השבוע · 3 הראשונים מקבלים 🎁 תיבה גדולה במוצאי שבת</div>` + (j.list.length ? j.list.map((x, i) => `<div class="rp-mk" style="--c:${i < 3 ? ["#facc15", "#cbd5e1", "#d97706"][i] : "#6366f1"}${x.me ? ";outline:2px solid #fde047" : ""}"><div style="font-size:24px;width:40px;text-align:center">${medal(i)}</div><div class="t"><b>${esc(x.kid)}${x.me ? " (אני)" : ""}</b><small>${esc(X.CLS_L(x.cls))}${x.title ? ` · ${esc(x.title)}` : ""}</small></div><b style="font-size:18px">${x.v} ${UNIT[g]}</b></div>`).join("") : `<div class="rw-prog" style="text-align:center;padding:16px">עוד אין שיאים השבוע – תהיה הראשון! 🚀</div>`)
       + (j.me && !j.list.some(x => x.me) ? `<div class="rw-prog" style="text-align:center">המקום שלך: ${j.me.rank} · ${j.me.v} ${UNIT[g]}</div>` : "");
     body.querySelector(".rw-prog").replaceWith(el);
   }
@@ -659,7 +685,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       if (G.practice) return practEnd(why);
       G.over = true; SND.stopMusic(); afterRound(); const caught = G.bolts, items = G.items.slice(), r = R.gameBank(X.S, G.bolts, items); if (r.bolts) X.trk("game"); if (caught >= 40) X.trk("game40");
       if (caught > (X.S.gameBest || 0)) X.S.gameBest = caught;
-      if (r.bolts || r.items.length) X.step(1); X.save(); X.SFX.coin(); X.vib(40);
+      if (r.bolts || r.items.length) X.step(1); X.save(); X.SFX.coin(); X.vib(40); goalAdd(r.bolts);
       const it = r.items.map(g => `<div style="margin:4px 0">${R.ITEMS[g.id] ? `✨ ${esc(R.ITEMS[g.id].n)} ${X.rarTag(g.r)}${g.dup ? ` (כפול → +${g.dup} 🔩)` : ""}` : ""}</div>`).join("");
       const more = breakState().open && r.left > 0;
       const i = await overlay(`<div class="big">${why === "bell" ? "🔔" : why === "win" ? "🏆" : "💰"}</div><h3>${why === "bell" ? "ההפסקה נגמרה!" : why === "win" ? "ניצחת!!! שרדת עד הסוף!" : "שמרת!"}</h3><p>+${r.bolts} ברגים 🔩${r.bolts < caught ? ` (הגעת למקסימום של היום)` : ""}</p>${it}<p>⏱️ שרדת ${Math.floor(G.t)} שניות · 🔥 קומבו הכי גדול: ${G.bestCombo}${G.stolen ? ` · 🦹 נגנבו ${G.stolen}` : ""}</p><p>היום: ${R.GAME_CAP - r.left}/${R.GAME_CAP}</p><p class="rk"></p>`, more && why !== "bell" ? ["🔄 עוד סיבוב", "סיום"] : ["סיום"]);
@@ -672,7 +698,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       if (G.hard > 0) { lockedMsg(); return; }
       if (G.practice) { if (G.bolts > (X.S.gamePract || 0)) { X.S.gamePract = G.bolts; X.save(); } afterRound(); return finish(); }
       if (!G.over && !G.dead) afterRound();
-      if (!G.over && !G.dead && (G.bolts || G.items.length)) { const caught = G.bolts, r = R.gameBank(X.S, G.bolts, G.items.slice()); if (caught > (X.S.gameBest || 0)) X.S.gameBest = caught; if (r.bolts || r.items.length) X.step(1); X.save(); X.SFX.coin(); if (r.bolts || r.items.length) X.toast(`💰 שמרת ${r.bolts} ברגים${r.items.length ? ` + ${r.items.length} 🎁` : ""} מהמשחק`, null, 3500); }
+      if (!G.over && !G.dead && (G.bolts || G.items.length)) { const caught = G.bolts, r = R.gameBank(X.S, G.bolts, G.items.slice()); if (caught > (X.S.gameBest || 0)) X.S.gameBest = caught; if (r.bolts || r.items.length) X.step(1); X.save(); goalAdd(r.bolts); X.SFX.coin(); if (r.bolts || r.items.length) X.toast(`💰 שמרת ${r.bolts} ברגים${r.items.length ? ` + ${r.items.length} 🎁` : ""} מהמשחק`, null, 3500); }
       finish();
     };
     d.querySelector(".x").onclick = exitGame; d.querySelector("#gmExit").onclick = exitGame; d.oncancel = e => { e.preventDefault(); exitGame(); };
@@ -711,7 +737,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       SND.music("hard"); fxText(W / 2, H * .35, "😈 שלב רצח! 30 שניות", "#f87171", 2, 28); G.shake = .5; last = performance.now(); requestAnimationFrame(loop);
     }
     async function hardWin() {
-      G.over = true; SND.stopMusic(); SND.win(); const items = G.items.slice(); R.gameBank(X.S, 0, items); const r = R.gameDouble(X.S, true); G.st.bolts = Math.max(G.st.bolts, G.hardBase); afterRound(); X.step(2); X.save(); X.vib([60, 40, 60, 40, 200]);
+      G.over = true; SND.stopMusic(); SND.win(); const items = G.items.slice(); R.gameBank(X.S, 0, items); const r = R.gameDouble(X.S, true); X.S.dblWins = (X.S.dblWins || 0) + 1; goalAdd(r.bolts); G.st.bolts = Math.max(G.st.bolts, G.hardBase); afterRound(); X.step(2); X.save(); X.vib([60, 40, 60, 40, 200]);
       X.particles(box, "#facc15", 70, ["🔩", "⭐", "✨", "💰"]);
       await overlay(`<div class="big">🏆</div><h3>שרדת! הכפלת!!!</h3><p>+${r.bolts} ברגים 🔩 נכנסו לך!</p>${items.length ? `<p>+ ${items.length} 🎁 אביזרים</p>` : ""}<p>אלוף אמיתי 😎</p>`, ["יש!!! 🤩"]);
       finish();
@@ -860,7 +886,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
   const PANELS = { lb: lbPanel, upg: upgPanel, legend: legendPanel, wheel: wheelPanel, map: mapPanel, lab: labPanel, sets: setsPanel, market: marketPanel, bonus: bonusPanel, game: gamePanel };
 
   // ================= הפעלה =================
-  window.RoboPlus = { tab, breakState, mashovRewards, play: () => play(), panels: PANELS, _game: () => game, snd: SND, sndBtns, wireSnd, chalBox, wireGo, postScore, rankLine, lbPanel, upgPanel };
+  window.RoboPlus = { top: [], tiles: [], wireTop: [], goalAdd, rewardShow, back, wireBackTo: (body, fn) => { const b = body.querySelector(".rp-back"); if (b) b.onclick = fn; }, tab, breakState, mashovRewards, play: () => play(), panels: PANELS, _game: () => game, snd: SND, sndBtns, wireSnd, chalBox, wireGo, postScore, rankLine, lbPanel, upgPanel };
   // ⚡ תיבת בזק: הודעה קטנה כשנפתח חלון (פעם אחת לחלון)
   function flashCheck() {
     if (X.locked() || document.hidden || !X.profile() || document.querySelector("dialog[open]")) return;

@@ -7,7 +7,7 @@ const ROOT = path.join(__dirname, "..");
 const OUT = path.join(ROOT, "_site");
 
 const FILES = [
-  "index.html", "about.html", "parent.html", "theme.js", "holidays-core.js", "holidays.js", "robo-core.js", "robo.js", "robo-plus.js", "robo-run.js", "qrcode.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png","absences.html", "cards.html", "calc.html", "phones.html", "shichrur.html", "staff.html", "owner.html", "demo.html",
+  "index.html", "about.html", "parent.html", "theme.js", "holidays-core.js", "holidays.js", "robo-core.js", "robo.js", "robo-plus.js", "robo-run.js", "robo-fest.js", "qrcode.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png","absences.html", "cards.html", "calc.html", "phones.html", "shichrur.html", "staff.html", "owner.html", "demo.html",
   "data.js", "board.js", "sets.js", "card-editor.js", "calc-engine.js", "calc-topics.js", "calc-practice.js", "calc-sci.js", "calc-tools.js", "assistant.js", "mashov.js", "absences.js", "timetable-image.js", "updates.js", "demo-shim.js", "sw.js",
   "mashov-schools.json",
 ];

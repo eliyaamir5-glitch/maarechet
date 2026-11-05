@@ -119,4 +119,15 @@ for (const t of ["box", "big", "mega", "giant"]) { let tot = 0; const N = 1500; 
 { const t = at("2026-11-04T10:00:00+02:00"), S = R.fresh(), c = R.challenge("run", t); ok("daily challenge: same all day", R.challenge("run", at("2026-11-04T20:00:00+02:00")).id === c.id);
   ok("daily challenge: fail → nothing", R.challengeCheck(S, "run", {}, t) === null && !S.boxes.length);
   const big = { dist: 9999, flights: 9, bolts: 999, cleanDist: 9999, world: 9, bullyPass: 9 }; ok("daily challenge: success → mega box once a day", R.challengeCheck(S, "run", big, t) && S.boxes.join() === "mega" && R.challengeCheck(S, "run", big, t) === null); }
+// ---- 🕎 חנוכה + 🏅 תארים ----
+{ const t = d => at(d + "T10:00:00+02:00"); ok("Hanukkah 2026: day 1 = 5.12, day 8 = 12.12, not on 4.12/13.12", R.hanukkahDay(t("2026-12-05")) === 1 && R.hanukkahDay(t("2026-12-12")) === 8 && !R.hanukkahDay(t("2026-12-04")) && !R.hanukkahDay(t("2026-12-13")));
+  ok("Hanukkah countdown: 30 days from 5.11", R.hanukkahIn(t("2026-11-05")) === 30);
+  let S = R.fresh(); ok("candle outside Hanukkah: refused", !R.lightCandle(S, t("2026-11-05")).ok);
+  const r1 = R.lightCandle(S, t("2026-12-05")); ok("candle day 1 → gift, once a day", r1.ok && r1.day === 1 && !R.lightCandle(S, t("2026-12-05")).ok && S.bolts === 150);
+  for (let i = 6; i <= 12; i++) R.lightCandle(S, t("2026-12-" + String(i).padStart(2, "0")));
+  ok("all 8 candles → the Shamash (legendary) + title", S.own["skin:shamash"] && S.hk.all && R.titlesOf(S).some(x => x.id === "candles"));
+  S = R.fresh(); for (let i = 5; i <= 12; i++) if (i !== 8) R.lightCandle(S, t("2026-12-" + String(i).padStart(2, "0"))); ok("missed a day → no Shamash", !S.own["skin:shamash"]);
+  R.setHanukkahTest(0); let hk = 0, n = 0; for (let i = 0; i < 400; i++) { const S2 = R.fresh(); for (const p of R.roll(S2, "mega")) if (p.id && R.ITEMS[p.id].ev) hk++; } ok("Hanukkah items don't drop outside Hanukkah", hk === 0);
+  R.setHanukkahTest(3); for (let i = 0; i < 400; i++) { const S2 = R.fresh(); for (const p of R.roll(S2, "mega")) if (p.id && R.ITEMS[p.id].ev) n++; } R.setHanukkahTest(0); ok("Hanukkah items drop during Hanukkah", n > 0, n); }
+{ const S = R.fresh(); ok("titles: none at start", R.titlesOf(S).length === 0); S.runBest = 1200; S.labs = 12; S.title = "runner"; ok("titles unlock from achievements", R.titlesOf(S).map(x => x.id).join() === "runner,lab" && R.titleText(S) === "🏃 רץ למרחקים"); S.title = "meteor"; ok("can't show a locked title", R.titleText(S) === ""); }
 console.log(bad ? `❌ ${bad} problems` : "all robo tests passed");

@@ -48,3 +48,11 @@ r = await R(1, { op: "scores", g: "bolts" }); ok("leaderboard: my grade only, be
 ok("leaderboard: no device ids", !JSON.stringify(r).includes("device-mrkt"));
 r = await R(1, { op: "score", g: "nope", v: 5 }); ok("bad game refused", !r.ok);
 r = await R(1, { op: "scores", g: "run" }); ok("empty run board", r.ok && r.list.length === 0 && Array.isArray(r.last));
+// ---- 🤝 מטרה משותפת לשכבה + 🏅 תארים ----
+r = await R(1, { op: "goal" }); ok("grade goal: starts at 0 with a target", r.ok && r.n === 0 && r.target >= 3000 && !r.done);
+await R(1, { op: "goalAdd", n: 1200 }); await R(2, { op: "goalAdd", n: 1200 }); await R(3, { op: "goalAdd", n: 1200 });
+r = await R(1, { op: "goal" }); ok("grade goal: counts only my grade, tracks my share", r.n === 2400 && r.mine === 1200 && r.helpers === 2, JSON.stringify(r));
+r = await R(1, { op: "goalAdd", n: 5000 }); ok("grade goal: too big a chunk refused", !r.ok);
+await R(1, { op: "goalAdd", n: 700 }); r = await R(2, { op: "goal" }); ok("grade goal: done when reaching the target", r.done === (r.n >= r.target) && r.n === 3100);
+await R(1, { op: "pub", rn: "x", eq: {}, st: {}, title: "🏃 רץ למרחקים" });
+r = await R(2, { op: "scores", g: "bolts" }); ok("leaderboard shows the kid's title", r.list.some(x => x.kid === "דני כהן" && x.title === "🏃 רץ למרחקים"));

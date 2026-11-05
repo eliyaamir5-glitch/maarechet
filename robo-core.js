@@ -207,11 +207,18 @@
     ["page:calc:ice", "page", "מחשבון – קרח", "s", { pg: "calc", grad: "linear-gradient(135deg,#0c4a6e 0%,#38bdf8 50%,#e0f2fe 100%)" }],
     ["page:absences:galaxy", "page", "נוכחות – גלקסיה", "m", { pg: "absences", grad: "linear-gradient(135deg,#0f0a2e 0%,#6d28d9 50%,#ec4899 100%)" }],
     ["page:phones:candy", "page", "ספר טלפונים – ממתקים", "r", { pg: "phones", grad: "linear-gradient(135deg,#db2777 0%,#f9a8d4 50%,#c4b5fd 100%)" }],
+    // 🕎 חנוכה: יוצאים בתיבות רק בזמן חנוכה (ev). השמש = מי שמדליק את כל 8 הנרות
+    ["skin:sufgania", "skin", "סופגנייה 🍩", "e", { ev: "hanukkah", sk: ["#fde68a", "#d97706", "#7c2d12"], e: "#fff7ed", tw: 1 }],
+    ["skin:maccabi", "skin", "מכבי ⚔️", "m", { ev: "hanukkah", sk: ["#dbeafe", "#1d4ed8", "#1e1b4b"], e: "#fde047", shine: 1, mk: "✡" }],
+    ["hat:menorah", "hat", "חנוכייה על הראש 🕎", "m", { ev: "hanukkah", em: "🕎" }], ["held:sufgania", "held", "סופגנייה 🍩", "r", { ev: "hanukkah", em: "🍩" }],
+    ["held:oil", "held", "כד השמן 🫙", "s", { ev: "hanukkah", em: "🫙" }], ["aura:candles", "aura", "נרות חנוכה 🕯️", "e", { ev: "hanukkah", fl: ["🕯️", "✨"] }],
+    ["trail:donuts", "trail", "סופגניות 🍩", "r", { ev: "hanukkah", em: ["🍩", "✨"] }], ["quote:nes", "quote", "נס גדול היה פה! 🕎", "c", { ev: "hanukkah" }],
+    ["skin:shamash", "skin", "השמש 🕯️", "l", { x: 1, sk: ["#fffbeb", "#facc15", "#1e3a8a"], e: "#ffffff", shine: 1, tw: 1, mk: "🕯", how: "להדליק את כל 8 הנרות בחנוכה" }],
     ["page:cards:lava", "page", "כרטיסיות – לבה", "e", { pg: "cards", grad: "linear-gradient(135deg,#1c1917 0%,#dc2626 50%,#f97316 100%)" }],
   ];
   const ITEMS = {}; I.forEach(([id, cat, n, r, o]) => { ITEMS[id] = Object.assign({ id, cat, n, r }, o || {}); });
   const LIST = Object.values(ITEMS);
-  const DROP = r => LIST.filter(x => x.r === r && !x.x && !x.free && !x.hero);
+  const DROP = r => LIST.filter(x => x.r === r && !x.x && !x.free && !x.hero && (!x.ev || evOn(x.ev)));
   const HEROES = r => LIST.filter(x => x.r === r && x.hero);
 
   // ---- תיבות: כמה פרסים בכל תיבה, וסיכוי לכל דרגה (באחוזים, לכל פרס) ----
@@ -234,6 +241,26 @@
   // ---- תאריכים (שעון ישראל) ----
   const ymd = t => { const p = {}; for (const x of new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(t))) p[x.type] = x.value; return `${p.year}-${p.month}-${p.day}`; };
   const tOf = d => Date.parse(d + "T12:00:00Z"), add = (d, n) => new Date(tOf(d) + n * 864e5).toISOString().slice(0, 10), dow = d => new Date(tOf(d)).getUTCDay();
+  // 🕎 איזה יום של חנוכה היום (1–8), או 0
+  let hkTest = 0; const setHanukkahTest = n => { hkTest = n | 0; };
+  function hanukkahDay(now = Date.now()) {
+    if (hkTest) return hkTest; const H = typeof HolidaysCore !== "undefined" ? HolidaysCore : root.HolidaysCore; if (!H) return 0;
+    const d = ymd(now), h = H.list(add(d, -9), 12).find(x => x.key === "hanukkah"); if (!h || d < h.start || d > h.end) return 0;
+    return Math.round((tOf(d) - tOf(h.start)) / 864e5) + 1;
+  }
+  function hanukkahIn(now = Date.now()) { const H = typeof HolidaysCore !== "undefined" ? HolidaysCore : root.HolidaysCore; if (!H) return -1; const d = ymd(now), h = H.list(d, 40).find(x => x.key === "hanukkah" && x.start > d); return h ? Math.round((tOf(h.start) - tOf(d)) / 864e5) : -1; }
+  let evMemo = { m: -1, v: 0 }; // נבדק פעם בדקה (החישוב איטי, ו-DROP נקרא הרבה)
+  const evOn = ev => { if (ev !== "hanukkah") return false; if (hkTest) return true; const m = Math.floor(Date.now() / 60000); if (evMemo.m !== m) evMemo = { m, v: hanukkahDay() > 0 }; return evMemo.v; };
+  // 🕯️ נר לכל יום של חנוכה – מתנה כל יום, ועל כל 8 = "השמש" (אגדי)
+  const CANDLE = [[{ t: "bolts", n: 150 }], [{ t: "box", box: "big" }], [{ t: "bolts", n: 250 }], [{ t: "box", box: "mega" }], [{ t: "bolts", n: 400 }], [{ t: "box", box: "big" }, { t: "bolts", n: 200 }], [{ t: "box", box: "mega" }], [{ t: "box", box: "giant" }]];
+  function lightCandle(S, now = Date.now()) {
+    const day = hanukkahDay(now); if (!day) return { ok: false, error: "off" }; const y = add(ymd(now), -(day - 1)); // מזהה החג = היום הראשון שלו
+    if (!S.hk || S.hk.y !== y) S.hk = { y, lit: {} };
+    if (S.hk.lit[day]) return { ok: false, error: "done" }; S.hk.lit[day] = 1;
+    const got = CANDLE[day - 1].map(p => grant(S, p)); let shamash = false;
+    if (Object.keys(S.hk.lit).length === 8 && !S.own["skin:shamash"]) { got.push(grant(S, { t: "item", id: "skin:shamash", r: "l" })); shamash = true; S.hk.all = 1; }
+    return { ok: true, day, got, shamash };
+  }
   // ימים שלא שוברים רצף: שבת ויום טוב (בישיבה אין טלפונים)
   function restDay(d) {
     if (dow(d) === 6) return true;
@@ -489,6 +516,26 @@
     m.got[id] = 1; S.bolts += M.b; let box = null; if (m.ids.every(k => m.got[k]) && !m.all) { m.all = 1; box = "big"; S.boxes.push(box); }
     return { ok: true, bolts: M.b, box };
   }
+  // 🏅 תארים ליד השם – נפתחים על הישגים, הילד בוחר איזה להציג
+  const TITLES = [
+    { id: "runner", t: "🏃 רץ למרחקים", how: "לרוץ 1000 מטר בריצה אחת", ok: S => (S.runBest || 0) >= 1000 },
+    { id: "meteor", t: "🚀 מטאור", how: "לרוץ 3000 מטר בריצה אחת", ok: S => (S.runBest || 0) >= 3000 },
+    { id: "hunter", t: "🔩 צייד ברגים", how: "לתפוס 300 ברגים בסיבוב אחד", ok: S => (S.gameBest || 0) >= 300 },
+    { id: "brave", t: "🎲 אמיץ", how: "לנצח בכפול או כלום", ok: S => (S.dblWins || 0) >= 1 },
+    { id: "lab", t: "🔨 מלך המעבדה", how: "להשתמש במעבדה 10 פעמים", ok: S => (S.labs || 0) >= 10 },
+    { id: "heroes", t: "🦸 אספן גיבורים", how: "לאסוף 10 גיבורים", ok: S => LIST.filter(x => x.hero && S.own[x.id] && S.own[x.id] !== -1).length >= 10 },
+    { id: "streak", t: "🔥 רצף ברזל", how: "רצף של 14 ימים", ok: S => ((S.st || {}).best || 0) >= 14 },
+    { id: "smart", t: "📚 תלמיד חכם", how: "לקבל 3 תיבות על ציונים טובים", ok: S => (S.gBox || 0) >= 3 },
+    { id: "champ", t: "🏆 אלוף השבוע", how: "להיות מקום ראשון בשכבה בטבלת השיאים", ok: S => (S.lbWins || 0) >= 1 },
+    { id: "explorer", t: "🗺️ חוקר", how: "להגיע לתחנה 20 במסע", ok: S => ((S.map || {}).c || 0) >= 20 },
+    { id: "sets", t: "🎭 אספן סטים", how: "להשלים 5 סטים", ok: S => Object.keys(S.sets || {}).length >= 5 },
+    { id: "team", t: "🤝 שחקן קבוצה", how: "לעזור לשכבה להשיג 3 מטרות", ok: S => (S.goalHelps || 0) >= 3 },
+    { id: "candles", t: "🕎 שומר הנרות", how: "להדליק את כל 8 הנרות בחנוכה", ok: S => !!(S.hk && S.hk.all) },
+    { id: "gold", t: "💎 בעל זהב", how: "להשיג את עיצוב הזהב והיהלומים", ok: S => !!S.own["theme:goldx"] && S.own["theme:goldx"] !== -1 },
+    { id: "legend", t: "👑 האגדה", how: "להיות האגדה", ok: S => !!S.own["skin:legend"] && S.own["skin:legend"] !== -1 },
+  ];
+  const titlesOf = S => TITLES.filter(x => x.ok(S));
+  const titleText = S => { const x = TITLES.find(q => q.id === S.title); return x && x.ok(S) ? x.t : ""; };
   // ---- 🏷️ שם לרובוט (עם סינון מילים לא יפות) ----
   const BAD = ["זונה", "שרמוט", "כוס", "זין", "מזדיין", "חרא", "מניאק", "בן זונה", "אידיוט", "מפגר", "דביל", "מטומטם", "fuck", "shit", "bitch", "dick", "ass", "sex", "porn", "nazi", "נאצי", "היטלר", "hitler"];
   function cleanName(n) { const t = String(n || "").replace(/[<>&"'`\u0000-\u001f]/g, "").replace(/\s+/g, " ").trim().slice(0, 14); const low = t.toLowerCase().replace(/[^a-zא-ת]/g, ""); return BAD.some(w => low.includes(w.replace(/\s/g, ""))) ? "" : t; }
@@ -530,6 +577,6 @@
     const d = ymd(now); if (!S.earn || S.earn.d !== d) S.earn = { d, n: 0 };
     const g = Math.max(0, Math.min(n, EARN_CAP - S.earn.n)); S.earn.n += g; S.bolts += g; return g;
   }
-  const api = { gameDouble, UPG, upg, buyUpg, CHAL, challenge, challengeCheck, RUN_CAP, runBank, MISSIONS, missions, track, claimMission, WORLDS, MAP_N, MAP_STEP, mapPrize, mapStep, mapClaim, SHINY, WHEEL, spinWheel, FLASH, flashNow, buyFlash, labCombine, SETS, setsCheck, eventNow, PRICE, GAME_CAP, GAME_ITEMS, gameBank, cleanName, achievements, RVAL, BVAL, offerValue, canGive, applyTrade, weekId, HEROES, EARN_CAP, earn, RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
+  const api = { hanukkahDay, hanukkahIn, setHanukkahTest, evOn, CANDLE, lightCandle, TITLES, titlesOf, titleText, gameDouble, UPG, upg, buyUpg, CHAL, challenge, challengeCheck, RUN_CAP, runBank, MISSIONS, missions, track, claimMission, WORLDS, MAP_N, MAP_STEP, mapPrize, mapStep, mapClaim, SHINY, WHEEL, spinWheel, FLASH, flashNow, buyFlash, labCombine, SETS, setsCheck, eventNow, PRICE, GAME_CAP, GAME_ITEMS, gameBank, cleanName, achievements, RVAL, BVAL, offerValue, canGive, applyTrade, weekId, HEROES, EARN_CAP, earn, RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.RoboCore = api;
 })(typeof self !== "undefined" ? self : this);
