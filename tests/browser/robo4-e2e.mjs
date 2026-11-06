@@ -289,6 +289,14 @@ await p.evaluate(() => Robo.open("shop")); await sleep(300);
 log(await p.evaluate(() => { Robo.give({ t: "item", id: "theme:goldx" }); Theme.setTheme("goldx"); const on = !!document.getElementById("gxFx") && getComputedStyle(document.documentElement).getPropertyValue("--accent").trim().length > 0 && /gxDiamond/.test(document.getElementById("themeStyle").textContent); Theme.setTheme("purple"); return on && !document.getElementById("gxFx"); }), "💎 gold & diamonds theme: turns on (gold + diamond buttons + sparkles) and off cleanly");
 const gx = await call({ action: "robo", device: FRIEND, op: "claim", item: "theme:goldx" });
 log(gx.ok && gx.granted && gx.cap === 3, "server: gold theme is capped at 3 in the school", JSON.stringify(gx));
+// 🏁 מרדף בטבלה בזמן הריצה: רואים מי מעליך, עקיפה = אנימציה, מקום ראשון = כתר
+for (const [i, nm, v] of [[11, "אבי בר", 5000], [12, "נועם שקד", 9000]]) { const dv = `device-robo4-00${i}`; await call({ action: "hello", device: dv, name: nm, cls: "y2", ver: "x" }); await call({ action: "robo", device: dv, op: "score", g: "run", v }); }
+await p.evaluate(() => { document.querySelectorAll("dialog[open]").forEach(d => { delete d.dataset.lock; d.close(); }); Robo.open("fun", "run"); }); await sleep(300);
+await p.evaluate(() => document.querySelector("#rnPlay").click()); await sleep(500); await p.evaluate(() => { const b = document.querySelector("#roboRun .gm-ov button"); b && b.click(); }); await sleep(1500);
+const ch = await p.evaluate(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), G = RoboRun._game(), bar = () => (document.querySelector("#roboRun .ch-bar") || {}).innerText || "", o = { start: bar() };
+  G.dist = 4990; await w(2000); G.dist = 5001; await w(600); o.pop = (document.querySelector("#roboRun .ch-pop") || {}).innerText || ""; o.after = bar(); G.dist = 9001; await w(700); o.crown = !!document.querySelector("#roboRun .ch-crown"); return o; });
+log(/⬆️/.test(ch.start) && /עקפת את אבי בר/.test(ch.pop) && /נועם שקד/.test(ch.after) && ch.crown, "run: live grade chase – shows who's above, overtake pop, crown for 1st place", JSON.stringify(ch));
+await p.evaluate(() => document.querySelector("#rnExit").click()); await sleep(500);
 // 🕎 חנוכה + 🤝 מטרת שכבה + 🏅 תארים + 📸 צלם רובוט
 await p.evaluate(() => { RoboCore.setHanukkahTest(3); document.querySelectorAll("dialog[open]").forEach(d => { delete d.dataset.lock; d.close(); }); Robo.open("fun"); }); await sleep(1500);
 log(await p.evaluate(() => !!document.querySelector(".hk-card #hkLight")), "hanukkah: menorah card in the fun tab");

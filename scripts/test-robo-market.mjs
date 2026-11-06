@@ -56,3 +56,4 @@ r = await R(1, { op: "goalAdd", n: 5000 }); ok("grade goal: too big a chunk refu
 await R(1, { op: "goalAdd", n: 700 }); r = await R(2, { op: "goal" }); ok("grade goal: done when reaching the target", r.done === (r.n >= r.target) && r.n === 3100);
 await R(1, { op: "pub", rn: "x", eq: {}, st: {}, title: "🏃 רץ למרחקים" });
 r = await R(2, { op: "scores", g: "bolts" }); ok("leaderboard shows the kid's title", r.list.some(x => x.kid === "דני כהן" && x.title === "🏃 רץ למרחקים"));
+r = await R(2, { op: "scores", g: "bolts", full: 1 }); ok("full leaderboard for the in-game chase", r.ok && Array.isArray(r.list) && r.list.length === 2);

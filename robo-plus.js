@@ -108,6 +108,30 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
 .gm-ov .big{font-size:64px}.gm-ov h3{font-size:24px;margin:6px 0}.gm-ov p{color:#d9d5ff;margin:4px 0 16px}
 .gm-ov .rd-btns{margin:0 auto}.gm-ov .rk{min-height:1em;color:#fde68a!important;font-weight:800}.gm-ov .rk.on{animation:lbPop2 .5s cubic-bezier(.2,1.6,.4,1)}
 .gm.boom{animation:gmShake .5s}@keyframes gmShake{20%{transform:translate(-8px,4px)}40%{transform:translate(8px,-4px)}60%{transform:translate(-6px,2px)}80%{transform:translate(4px,0)}}
+.ch-bar{position:absolute;top:8px;left:8px;z-index:2;max-width:64%;min-width:150px;display:flex;align-items:center;gap:7px;background:rgba(10,6,30,.78);border:2px solid rgba(255,255,255,.18);border-radius:16px;padding:6px 9px 6px 7px;color:#fff;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:border-color .3s,background .3s}
+.ch-bar.off{display:none}.ch-r{flex:0 0 auto;min-width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font:900 17px system-ui,sans-serif;background:linear-gradient(180deg,#818cf8,#4f46e5);box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
+.ch-t{flex:1;min-width:0;font-size:12.5px;font-weight:800;line-height:1.25}.ch-t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}.ch-t small{display:block;color:#c7d2fe;font-weight:800;font-size:11.5px}
+.ch-p{height:6px;border-radius:9px;background:rgba(255,255,255,.15);margin-top:3px;overflow:hidden}.ch-p i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,#22d3ee,#a3e635);transition:width .25s}
+.ch-bar.near{border-color:#fb923c;animation:chNear .6s infinite alternate}.ch-bar.near .ch-p i{background:linear-gradient(90deg,#f97316,#facc15)}@keyframes chNear{to{box-shadow:0 0 18px #fb923c}}
+.ch-bar.flip .ch-r{animation:chFlip .6s cubic-bezier(.2,1.6,.4,1)}@keyframes chFlip{0%{transform:rotateX(0) scale(1)}40%{transform:rotateX(90deg) scale(1.3);background:#22c55e}100%{transform:rotateX(0) scale(1)}}
+.ch-bar.top{border-color:#facc15;background:linear-gradient(135deg,rgba(120,53,15,.9),rgba(30,20,5,.85))}.ch-bar.top .ch-r{background:linear-gradient(180deg,#fde047,#f59e0b);color:#422006}
+.ch-pop{position:absolute;left:50%;top:24%;z-index:2;transform:translate(-50%,0);text-align:center;pointer-events:none;white-space:nowrap;animation:chPop 1.7s cubic-bezier(.2,1.4,.4,1) forwards}
+.ch-pop b{display:block;font:900 25px system-ui,sans-serif;color:#fff;text-shadow:0 3px 0 #000,0 0 18px #22d3ee;letter-spacing:.3px}.ch-pop span{display:inline-block;margin-top:6px;font:900 19px system-ui,sans-serif;color:#052e16;background:linear-gradient(180deg,#bbf7d0,#22c55e);border-radius:99px;padding:4px 14px;box-shadow:0 4px 0 #14532d}
+.ch-pop.pb b{text-shadow:0 3px 0 #000,0 0 18px #f97316}.ch-pop.pb span{background:linear-gradient(180deg,#fed7aa,#f97316);color:#431407;box-shadow:0 4px 0 #7c2d12}
+.ch-pop::before{content:"";position:absolute;inset:-10px -40px;z-index:-1;background:linear-gradient(90deg,transparent,rgba(34,211,238,.35),transparent);animation:chSwoosh .7s ease-out;border-radius:30px}
+@keyframes chPop{0%{opacity:0;transform:translate(60%,0) scale(.6) skewX(-15deg)}18%{opacity:1;transform:translate(-50%,0) scale(1.15) skewX(5deg)}30%{transform:translate(-50%,0) scale(1)}80%{opacity:1;transform:translate(-50%,-10px) scale(1)}100%{opacity:0;transform:translate(-50%,-40px) scale(.9)}}
+@keyframes chSwoosh{from{transform:translateX(120%);opacity:1}to{transform:translateX(-120%);opacity:0}}
+.ch-crown{position:absolute;inset:0;z-index:2;pointer-events:none;display:grid;place-items:center;overflow:hidden;animation:chFade 3s forwards}
+.ch-crown::before{content:"";position:absolute;inset:-50%;background:repeating-conic-gradient(rgba(253,224,71,.28) 0 10deg,transparent 10deg 20deg);animation:chSpin 3s linear}
+.ch-crown::after{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(253,224,71,.65),rgba(253,224,71,0) 60%);animation:chFlash .6s ease-out}
+.ch-crown .in{position:relative;z-index:1;text-align:center;animation:chIn .7s cubic-bezier(.2,1.7,.4,1)}.ch-crown .cr{font-size:92px;line-height:1;filter:drop-shadow(0 6px 14px rgba(0,0,0,.5));animation:chDrop .9s cubic-bezier(.3,1.8,.5,1)}
+.ch-crown h3{margin:4px 0 0;font:900 30px system-ui,sans-serif;background:linear-gradient(90deg,#fde047,#fff7ae,#f59e0b,#fde047);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:chShine 1s linear infinite;filter:drop-shadow(0 3px 0 #000)}
+.ch-crown p{margin:2px 0 0;font:800 16px system-ui,sans-serif;color:#fff;text-shadow:0 2px 0 #000}
+.ch-crown i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;animation:chConf linear forwards}
+@keyframes chFade{0%,80%{opacity:1}100%{opacity:0}}@keyframes chSpin{to{transform:rotate(90deg)}}@keyframes chFlash{from{opacity:1}to{opacity:0}}
+@keyframes chIn{from{transform:scale(.2)}to{transform:scale(1)}}@keyframes chDrop{0%{transform:translateY(-220px) rotate(-30deg)}100%{transform:none}}@keyframes chShine{to{background-position:-200% 0}}
+@keyframes chConf{to{transform:translateY(110vh) rotate(720deg)}}
+@media (prefers-reduced-motion:reduce){.ch-pop,.ch-crown,.ch-crown *,.ch-bar{animation-duration:.01s!important}}
 `;
   if (!document.getElementById("roboPlusCss")) { const s = document.createElement("style"); s.id = "roboPlusCss"; s.textContent = CSS; (document.head || document.documentElement).appendChild(s); }
 
@@ -606,6 +630,50 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
   async function rankLine(root, g, v) {
     if (!X.online() || !root) return; try { await postScore(g, v); const j = await X.api({ op: "scores", g }); const el = root.querySelector(".rk"); if (!el || !j || !j.ok || !j.me) return;
       el.innerHTML = j.me.rank <= 3 ? `🏆 <b>אתה מקום ${j.me.rank} בשכבה השבוע!</b> ${["🥇", "🥈", "🥉"][j.me.rank - 1]}` : `🏆 מקום ${j.me.rank} בשכבה השבוע · ${j.list[2] ? `למקום 3 חסר ${Math.max(1, j.list[2].v - j.me.v + 1)} ${UNIT[g]}` : ""}`; el.classList.add("on"); } catch (e) {} }
+  // ================= 🏁 מרדף בטבלה בזמן המשחק =================
+  // תמיד רואים מי מעליך בטבלת השכבה השבוע וכמה חסר לו. כל עקיפה = אנימציה, שיא אישי = אפקט, ומקום ראשון = אפקט ענק עם כתר.
+  function chase(d, g) {
+    const host = d.querySelector(".gm-cv"); if (!host) return { update() {} };
+    host.querySelectorAll(".ch-bar,.ch-pop,.ch-crown").forEach(e => e.remove());
+    const el = document.createElement("div"); el.className = "ch-bar off"; host.appendChild(el);
+    const U = g === "run" ? "מ'" : "ברגים", fmt = n => Math.floor(n).toLocaleString("he-IL");
+    const C = { others: null, best: 0, v: 0, passed: -1, pend: [], timer: 0, pb: false, top: false };
+    const draw = () => {
+      if (!C.others) return; const o = C.others, v = C.v, n = o.length, p = o.filter(x => v > x.v).length, rank = n - p + 1, nx = o[n - p - 1], lo = (o[n - p] || {}).v || 0;
+      el.classList.remove("off"); el.classList.toggle("top", !nx && v > 0);
+      if (!n) { el.innerHTML = `<span class="ch-r">🏁</span><span class="ch-t"><b>${v > 0 ? "👑 אתה מוביל בשכבה!" : "עוד אף אחד לא שיחק השבוע"}</b><small>${v > 0 ? `📏 ${fmt(v)} ${U}` : "תהיה הראשון בטבלה!"}</small></span>`; return; }
+      if (!nx) { const gap = v - o[0].v; el.classList.remove("near"); el.innerHTML = `<span class="ch-r">👑</span><span class="ch-t"><b>מקום 1 בשכבה!</b><small>${fmt(gap)} ${U} לפני ${esc(o[0].kid)}</small></span>`; return; }
+      const need = nx.v - v + 1, pct = Math.max(0, Math.min(100, (v - lo) / Math.max(1, nx.v + 1 - lo) * 100)), near = need <= Math.max(3, nx.v * .08);
+      el.classList.toggle("near", near);
+      el.innerHTML = `<span class="ch-r">#${rank}</span><span class="ch-t"><b>⬆️ ${esc(nx.kid)}</b><small>${near ? "🔥 כמעט! " : ""}עוד ${fmt(need)} ${U} · מקום ${rank - 1}</small><div class="ch-p"><i style="width:${pct}%"></i></div></span>`;
+    };
+    const pop = (html, cls) => { host.querySelectorAll(".ch-pop").forEach(e => e.remove()); const e = document.createElement("div"); e.className = "ch-pop" + (cls ? " " + cls : ""); e.innerHTML = html; host.appendChild(e); setTimeout(() => e.remove(), 1800); };
+    const flush = () => {
+      C.timer = 0; const list = C.pend; C.pend = []; if (!list.length || !C.others) return; const n = C.others.length, rank = n - C.passed + 1;
+      el.classList.remove("flip"); void el.offsetWidth; el.classList.add("flip"); X.vib([25, 30, 45]);
+      if (rank === 1 && !C.top) { C.top = true; crown(list[list.length - 1]); return; }
+      AU.whoosh(); AU.level(Math.min(6, list.length + 2));
+      pop(`<b>⚡ ${list.length > 1 ? `עקפת ${list.length} ילדים!` : `עקפת את ${esc(list[0].kid)}!`}</b><span>⬆️ מקום ${rank}</span>`);
+    };
+    function crown(who) {
+      AU.win(); setTimeout(() => AU.gold(), 350); X.vib([60, 40, 60, 40, 200]); host.querySelectorAll(".ch-pop,.ch-crown").forEach(e => e.remove());
+      const c = document.createElement("div"); c.className = "ch-crown"; const cols = ["#fde047", "#f472b6", "#22d3ee", "#a3e635", "#fb923c", "#c084fc", "#fff"];
+      c.innerHTML = `<div class="in"><div class="cr">👑</div><h3>מקום ראשון בשכבה!</h3><p>עקפת את ${esc(who.kid)} – עכשיו כולם רודפים אחריך 😎</p></div>` + Array.from({ length: X.REDUCED ? 0 : 36 }, (_, i) => `<i style="left:${Math.random() * 100}%;background:${cols[i % cols.length]};animation-duration:${1.6 + Math.random() * 1.6}s;animation-delay:${Math.random() * .5}s"></i>`).join("");
+      host.appendChild(c); setTimeout(() => c.remove(), 3100);
+    }
+    C.update = v => {
+      v = Math.floor(v || 0); if (v <= C.v && C.passed >= 0) return; C.v = Math.max(C.v, v); if (!C.others) return;
+      const p = C.others.filter(x => C.v > x.v).length;
+      if (C.passed >= 0 && p > C.passed) { const n = C.others.length; for (let i = n - C.passed - 1; i >= n - p; i--) C.pend.push(C.others[i]); if (!C.timer) C.timer = setTimeout(flush, 350); }
+      else if (!C.pb && C.best > 0 && C.v > C.best && C.passed >= 0 && !C.timer) { C.pb = true; AU.power(); pop(`<b>🔥 שיא אישי חדש!</b><span>${fmt(C.v)} ${U}</span>`, "pb"); }
+      if (C.best > 0 && C.v > C.best) C.pb = true; C.passed = p; draw();
+    };
+    if (X.online()) X.api({ op: "scores", g, full: 1 }).then(j => {
+      if (!j || !j.ok || !el.isConnected) return; C.others = (j.list || []).filter(x => !x.me).map(x => ({ kid: x.kid || "?", v: +x.v || 0 })).sort((a, b) => b.v - a.v);
+      C.best = (j.me && j.me.v) || (X.S.wk && X.S.wk.w === R.weekId() && X.S.wk[g]) || 0; C.passed = C.others.filter(x => C.v > x.v).length; C.top = C.v > 0 && C.passed === C.others.length && C.others.length > 0; draw();
+    }).catch(() => {});
+    return C;
+  }
   async function lbPanel(body, g = "bolts") {
     body.innerHTML = `${back}<div class="rp-h">🏆 טבלת השיאים של השבוע</div><div class="rp-seg">${Object.keys(GN).map(k => `<button type="button" data-g="${k}" class="${k === g ? "on" : ""}">${GN[k]}</button>`).join("")}</div><div class="rw-prog" style="text-align:center;padding:20px">⏳ טוען…</div>`;
     body.querySelector(".rp-back").onclick = () => g === "run" && PANELS.run ? PANELS.run(body) : gamePanel(body);
@@ -651,6 +719,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     // ⬆️ שלב לפי כמה ברגים יש בסיבוב: כל 50 = שלב (עד 10)
     const lvl = () => Math.min(10, 1 + Math.floor(G.bolts / 50));
     const hud = () => {
+      if (G.ch) G.ch.update(Math.max(G.bolts, G.peak || 0));
       d.querySelector("#gmR").textContent = `🔩 ${G.bolts}`; d.querySelector("#gmI").textContent = `🎁 ${G.items.length}`; d.querySelector("#gmL").textContent = `נשאר: ${Math.max(0, left() - G.bolts)}`;
       const L = locked(), cb = d.querySelector("#gmCash"), xb = d.querySelector(".x");
       cb.textContent = G.practice ? `🏁 לסיים אימון (${G.bolts})` : L ? `🔒 אין יציאה! עד ${left()} או פצצה 😈 (${G.bolts})` : `💰 לצאת עם הכסף (${G.bolts}${G.items.length ? " + " + G.items.length + " 🎁" : ""})`;
@@ -671,7 +740,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     const onVis = async () => { if (!G.run || G.over || G.dead) return; if (document.hidden) { if (!G.paused) { G.paused = true; SND.stopMusic(); } } else if (G.paused && !G.pauseAsk) { G.pauseAsk = 1; await overlay(`<div class="big">⏸️</div><h3>המשחק בהמתנה</h3><p>יצאת מהאפליקציה – עצרנו בשבילך 🙂</p>`, ["▶️ להמשיך"]); G.pauseAsk = 0; G.paused = false; last = performance.now(); SND.music(G.hard > 0 ? "hard" : "bolts"); } };
     document.addEventListener("visibilitychange", onVis);
     const finish = () => { document.removeEventListener("visibilitychange", onVis); SND.stopMusic(); G.run = false; game = null; removeEventListener("keydown", key); removeEventListener("resize", fit); try { ro && ro.disconnect(); } catch (e) {} delete d.dataset.lock; d.close(); X.hubRefresh(); if (host && host.isConnected) gamePanel(host); };
-    const newRound = () => { G.practice = left() <= 0; G.lockAt = null; G.lvMax = 1; G.lvT = 0; G.peak = 0; G.asked = 0; G.boss = null; G.bossDone = 0; G.hard = 0; G.slowmo = 0; G.st = { lvl: 1, gold: 0, shieldUsed: false, combo: 0, boss: 0, t: 0, bolts: 0 }; SND.music("bolts"); Object.assign(G, { obj: [], parts: [], fx: [], bolts: 0, items: [], t: 0, nb: .35, nbomb: 1.6 + Math.random(), nthief: 7 + Math.random() * 4, npow: 6 + Math.random() * 5, nitem: 10 + Math.random() * 10, over: false, dead: false, fullShown: 0, combo: 0, bestCombo: 0, pw: {}, shield: Math.random() < [0, .35, .7, 1][R.upg(X.S, "shield")], shake: 0, stolen: 0 }); hud(); fit(); last = performance.now(); requestAnimationFrame(loop); };
+    const newRound = () => { G.practice = left() <= 0; G.lockAt = null; G.lvMax = 1; G.lvT = 0; G.peak = 0; G.asked = 0; G.boss = null; G.bossDone = 0; G.hard = 0; G.slowmo = 0; G.st = { lvl: 1, gold: 0, shieldUsed: false, combo: 0, boss: 0, t: 0, bolts: 0 }; SND.music("bolts"); Object.assign(G, { obj: [], parts: [], fx: [], bolts: 0, items: [], t: 0, nb: .35, nbomb: 1.6 + Math.random(), nthief: 7 + Math.random() * 4, npow: 6 + Math.random() * 5, nitem: 10 + Math.random() * 10, over: false, dead: false, fullShown: 0, combo: 0, bestCombo: 0, pw: {}, shield: Math.random() < [0, .35, .7, 1][R.upg(X.S, "shield")], shake: 0, stolen: 0 }); G.ch = chase(d, "bolts"); hud(); fit(); last = performance.now(); requestAnimationFrame(loop); };
     // 📊 סוף סיבוב: אתגר יומי + שיא שבועי לטבלה
     const roundStats = () => Object.assign(G.st, { lvl: Math.max(G.st.lvl, G.lvMax || 1), combo: Math.max(G.st.combo, G.bestCombo), t: G.t, bolts: Math.max(G.st.bolts, G.peak || 0) });
     const afterRound = () => { if (!G.st) return; const st = roundStats(); setTimeout(() => rankLine(box, "bolts", st.bolts), 300); if (!G.practice) { const c = R.challengeCheck(X.S, "bolts", st); if (c) { X.save(); setTimeout(() => { X.SFX.gift(); X.toast(`🎯 <b>אתגר יומי הושלם!</b> ${esc(c.n)} – קיבלת 💠 תיבת מגה`, ["לפתוח", () => X.openBoxes(["mega"])], 9000); }, 600); } } };
@@ -886,7 +955,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
   const PANELS = { lb: lbPanel, upg: upgPanel, legend: legendPanel, wheel: wheelPanel, map: mapPanel, lab: labPanel, sets: setsPanel, market: marketPanel, bonus: bonusPanel, game: gamePanel };
 
   // ================= הפעלה =================
-  window.RoboPlus = { top: [], tiles: [], wireTop: [], goalAdd, rewardShow, back, wireBackTo: (body, fn) => { const b = body.querySelector(".rp-back"); if (b) b.onclick = fn; }, tab, breakState, mashovRewards, play: () => play(), panels: PANELS, _game: () => game, snd: SND, sndBtns, wireSnd, chalBox, wireGo, postScore, rankLine, lbPanel, upgPanel };
+  window.RoboPlus = { top: [], tiles: [], wireTop: [], goalAdd, rewardShow, back, wireBackTo: (body, fn) => { const b = body.querySelector(".rp-back"); if (b) b.onclick = fn; }, tab, breakState, mashovRewards, play: () => play(), panels: PANELS, _game: () => game, snd: SND, sndBtns, wireSnd, chalBox, wireGo, postScore, rankLine, lbPanel, upgPanel, chase };
   // ⚡ תיבת בזק: הודעה קטנה כשנפתח חלון (פעם אחת לחלון)
   function flashCheck() {
     if (X.locked() || document.hidden || !X.profile() || document.querySelector("dialog[open]")) return;

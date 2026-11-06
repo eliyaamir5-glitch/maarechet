@@ -71,7 +71,7 @@
         fly: 0, alt: 0, big: -1, ice: 0, chase: 0, chaseX: 0, lastStumble: -99, wIdx: 0, wT: 0, nPuff: 0, stats: { dist: 0, flights: 0, bolts: 0, cleanDist: 0, world: 1, bullyPass: 0 }, cleanFrom: 0,
         cd: 3.2, slow: 0, deathT: -1, buf: null, laneT: -9, leanV: 0, flyers: [], landT: 0, lines: [], nearN: 0 });
       G.tut = LS.get("roboRunTut", "") ? 0 : 1; if (G.tut) { G.next = 9999; G.tutStep = 0; G.tutT = 1.5; }
-      AU.music("run"); hud(); last = performance.now(); requestAnimationFrame(loop);
+      AU.music("run"); G.ch = RP.chase(d, "run"); hud(); last = performance.now(); requestAnimationFrame(loop);
     };
     // 🎓 הדרכה בריצה הראשונה: ספסל (לקפוץ) → מוט (להתכופף) → ארון (לעקוף), לאט ועם חיצים גדולים
     const TUT = [{ k: "bench", txt: "⬆️ החלק למעלה = קפיצה!", need: "U" }, { k: "beam", txt: "⬇️ החלק למטה = התכופפות!", need: "D" }, { k: "locker", txt: "⬅️ ➡️ החלק הצידה = לעקוף!", need: "LR" }];
@@ -189,7 +189,7 @@
         const wi = Math.floor(G.dist / 500); if (wi > G.wIdx) { G.wIdx = wi; G.wT = 2.2; G.stats.world = Math.max(G.stats.world, wi + 1); AU.rainbow(); fxText(W / 2, H * .3, `🌍 עולם חדש: ${world().n}!`, "#fff", 2.2, 24); }
         tutTick(dt);
         G.v = G.tut ? 9 : Math.min(36, 13 + G.dist * .012) * (G.pw.turbo > 0 ? 1.7 : 1) * (G.ice > 0 ? 1.35 : 1) * (G.fly > 0 ? 1.15 : 1);
-        const dz = G.v * dt; G.dist += dz; if (G.dist >= 500) G.run500 = true;
+        const dz = G.v * dt; G.dist += dz; if (G.ch && !G.tut) G.ch.update(G.dist); if (G.dist >= 500) G.run500 = true;
         for (const k of Object.keys(G.pw)) { G.pw[k] -= dt; if (G.pw[k] <= 0) delete G.pw[k]; }
         if (G.rainbowT > 0) G.rainbowT -= dt;
         if (G.jt >= 0) { G.jt += dt; if (G.jt > .62) { G.jt = -1; G.landT = .16; burst(botX(), GY() - 6, "#cbd5e1", 8, 90); if (G.buf && G.t - G.buf.t < .25) { G.buf = null; G.jt = 0; AU.jump(); } } }

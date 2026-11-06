@@ -1752,7 +1752,7 @@ async function roboSocial(S, b, device, ip, now) {
     const all = (await S.get("roboScores")) || {}, grade = gradeOfCls(me.cls), last = HC.add(w, -7), pubT = (await S.get("roboPub")) || {};
     const rank = wk => Object.entries(((all[wk] || {})[g]) || {}).filter(([kk]) => pres[kk] && gradeOfCls(pres[kk].cls) === grade && !pres[kk].hide).sort((a, c) => c[1].v - a[1].v || a[1].at - c[1].at).map(([kk, x], i) => ({ kid: pres[kk].name || "", cls: pres[kk].cls, title: (pubT[kk] || {}).title || "", v: x.v, me: kk === k, rank: i + 1 }));
     const now5 = rank(w), mine = now5.find(x => x.me);
-    return { ok: true, g, week: w, list: now5.slice(0, 20), me: mine || null, last: rank(last).slice(0, 3), lastWeek: last };
+    return { ok: true, g, week: w, list: now5.slice(0, b.full ? 200 : 20), me: mine || null, last: rank(last).slice(0, 3), lastWeek: last };
   }
   // ---- 🤝 מטרה משותפת לשכבה: כל הברגים מהמשחקים של כל השכבה השבוע. היעד לפי כמה ילדים פעילים ----
   if (b.op === "goalAdd" || b.op === "goal") {
