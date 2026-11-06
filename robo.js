@@ -430,7 +430,8 @@ dialog.robo.fr .frc{height:100%;overflow-y:auto;padding-bottom:calc(20px + env(s
 .rl{border-radius:12px;padding:8px 4px;text-align:center;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);font-size:12px}
 .rl b{display:block;font-size:13px}.rl .g{font-size:22px;margin:3px 0}.rl.done{opacity:.45}.rl.today{border-color:#facc15;background:rgba(250,204,21,.15);animation:rGlow 1.4s ease-in-out infinite}.rl.big{border-color:#a855f7}
 @keyframes rGlow{50%{box-shadow:0 0 18px rgba(250,204,21,.6)}}
-.rtoast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9500;background:linear-gradient(135deg,#1a1040,#3b1d7a);color:#fff;border:1.5px solid #a855f7;border-radius:18px;padding:11px 14px;font-size:14px;font-weight:700;box-shadow:0 14px 34px rgba(0,0,0,.45);display:flex;gap:10px;align-items:center;max-width:92vw;animation:rIn .35s cubic-bezier(.2,1.3,.4,1);direction:rtl}
+.rtoast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9500;background:linear-gradient(135deg,#1a1040,#3b1d7a);color:#fff;border:1.5px solid #a855f7;border-radius:18px;padding:11px 14px;font-size:14px;font-weight:700;box-shadow:0 14px 34px rgba(0,0,0,.45);display:flex;gap:10px;align-items:center;width:max-content;max-width:min(92vw,440px);box-sizing:border-box;animation:rIn .35s cubic-bezier(.2,1.3,.4,1);direction:rtl}
+.rtoast>.rbtn{flex:0 0 auto;white-space:nowrap}
 
 /* פתיחת תיבה */
 dialog.robo.open{background:#05020f}
