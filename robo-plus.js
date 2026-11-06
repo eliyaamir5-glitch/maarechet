@@ -115,21 +115,21 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
 .ch-bar.near{border-color:#fb923c;animation:chNear .6s infinite alternate}.ch-bar.near .ch-p i{background:linear-gradient(90deg,#f97316,#facc15)}@keyframes chNear{to{box-shadow:0 0 18px #fb923c}}
 .ch-bar.flip .ch-r{animation:chFlip .6s cubic-bezier(.2,1.6,.4,1)}@keyframes chFlip{0%{transform:rotateX(0) scale(1)}40%{transform:rotateX(90deg) scale(1.3);background:#22c55e}100%{transform:rotateX(0) scale(1)}}
 .ch-bar.top{border-color:#facc15;background:linear-gradient(135deg,rgba(120,53,15,.9),rgba(30,20,5,.85))}.ch-bar.top .ch-r{background:linear-gradient(180deg,#fde047,#f59e0b);color:#422006}
-.ch-pop{position:absolute;left:50%;top:24%;z-index:2;transform:translate(-50%,0);text-align:center;pointer-events:none;white-space:nowrap;animation:chPop 1.7s cubic-bezier(.2,1.4,.4,1) forwards}
-.ch-pop b{display:block;font:900 25px system-ui,sans-serif;color:#fff;text-shadow:0 3px 0 #000,0 0 18px #22d3ee;letter-spacing:.3px}.ch-pop span{display:inline-block;margin-top:6px;font:900 19px system-ui,sans-serif;color:#052e16;background:linear-gradient(180deg,#bbf7d0,#22c55e);border-radius:99px;padding:4px 14px;box-shadow:0 4px 0 #14532d}
-.ch-pop.pb b{text-shadow:0 3px 0 #000,0 0 18px #f97316}.ch-pop.pb span{background:linear-gradient(180deg,#fed7aa,#f97316);color:#431407;box-shadow:0 4px 0 #7c2d12}
-.ch-pop::before{content:"";position:absolute;inset:-10px -40px;z-index:-1;background:linear-gradient(90deg,transparent,rgba(34,211,238,.35),transparent);animation:chSwoosh .7s ease-out;border-radius:30px}
-@keyframes chPop{0%{opacity:0;transform:translate(60%,0) scale(.6) skewX(-15deg)}18%{opacity:1;transform:translate(-50%,0) scale(1.15) skewX(5deg)}30%{transform:translate(-50%,0) scale(1)}80%{opacity:1;transform:translate(-50%,-10px) scale(1)}100%{opacity:0;transform:translate(-50%,-40px) scale(.9)}}
-@keyframes chSwoosh{from{transform:translateX(120%);opacity:1}to{transform:translateX(-120%);opacity:0}}
-.ch-crown{position:absolute;inset:0;z-index:2;pointer-events:none;display:grid;place-items:center;overflow:hidden;animation:chFade 3s forwards}
-.ch-crown::before{content:"";position:absolute;inset:-50%;background:repeating-conic-gradient(rgba(253,224,71,.28) 0 10deg,transparent 10deg 20deg);animation:chSpin 3s linear}
-.ch-crown::after{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(253,224,71,.65),rgba(253,224,71,0) 60%);animation:chFlash .6s ease-out}
-.ch-crown .in{position:relative;z-index:1;text-align:center;animation:chIn .7s cubic-bezier(.2,1.7,.4,1)}.ch-crown .cr{font-size:92px;line-height:1;filter:drop-shadow(0 6px 14px rgba(0,0,0,.5));animation:chDrop .9s cubic-bezier(.3,1.8,.5,1)}
-.ch-crown h3{margin:4px 0 0;font:900 30px system-ui,sans-serif;background:linear-gradient(90deg,#fde047,#fff7ae,#f59e0b,#fde047);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:chShine 1s linear infinite;filter:drop-shadow(0 3px 0 #000)}
-.ch-crown p{margin:2px 0 0;font:800 16px system-ui,sans-serif;color:#fff;text-shadow:0 2px 0 #000}
-.ch-crown i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;animation:chConf linear forwards}
-@keyframes chFade{0%,80%{opacity:1}100%{opacity:0}}@keyframes chSpin{to{transform:rotate(90deg)}}@keyframes chFlash{from{opacity:1}to{opacity:0}}
-@keyframes chIn{from{transform:scale(.2)}to{transform:scale(1)}}@keyframes chDrop{0%{transform:translateY(-220px) rotate(-30deg)}100%{transform:none}}@keyframes chShine{to{background-position:-200% 0}}
+.ch-pop{position:absolute;top:66px;left:8px;z-index:2;max-width:64%;pointer-events:none;display:flex;align-items:center;gap:6px;background:linear-gradient(90deg,rgba(22,163,74,.95),rgba(21,128,61,.9));border:2px solid #86efac;border-radius:14px;padding:5px 10px;box-shadow:0 4px 14px rgba(0,0,0,.35),0 0 16px rgba(134,239,172,.5);animation:chPop 1.9s cubic-bezier(.2,1.4,.4,1) forwards;overflow:hidden}
+.ch-pop b{font:900 14px system-ui,sans-serif;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 0 rgba(0,0,0,.4)}.ch-pop span{flex:0 0 auto;font:900 12.5px system-ui,sans-serif;color:#14532d;background:#dcfce7;border-radius:99px;padding:2px 8px}
+.ch-pop.pb{background:linear-gradient(90deg,rgba(234,88,12,.95),rgba(194,65,12,.9));border-color:#fdba74;box-shadow:0 4px 14px rgba(0,0,0,.35),0 0 16px rgba(253,186,116,.5)}.ch-pop.pb span{color:#7c2d12;background:#ffedd5}
+.ch-pop::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55),transparent 70%);transform:translateX(-120%);animation:chShineX .8s .15s ease-out forwards}
+@keyframes chPop{0%{opacity:0;transform:translateX(-30px) scale(.8)}14%{opacity:1;transform:translateX(0) scale(1.08)}24%{transform:scale(1)}82%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-8px)}}
+@keyframes chShineX{to{transform:translateX(120%)}}
+.ch-crown{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;animation:chFade 3s forwards}
+.ch-crown::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 50px 8px rgba(253,224,71,.75);animation:chFlash 1.4s ease-out forwards}
+.ch-crown .in{position:absolute;top:66px;left:8px;max-width:72%;display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#fde047,#f59e0b);border:2px solid #fff7ae;border-radius:16px;padding:6px 12px 6px 8px;box-shadow:0 6px 18px rgba(0,0,0,.4),0 0 24px rgba(253,224,71,.8);animation:chIn .6s cubic-bezier(.2,1.7,.4,1)}
+.ch-crown .cr{font-size:34px;line-height:1;animation:chDrop .8s cubic-bezier(.3,1.8,.5,1)}
+.ch-crown h3{margin:0;font:900 17px system-ui,sans-serif;color:#422006;white-space:nowrap}
+.ch-crown p{margin:0;font:800 12px system-ui,sans-serif;color:#713f12;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-crown i{position:absolute;top:-16px;width:7px;height:11px;border-radius:2px;opacity:.9;animation:chConf linear forwards}
+@keyframes chFade{0%,82%{opacity:1}100%{opacity:0}}@keyframes chFlash{0%{opacity:1}100%{opacity:0}}
+@keyframes chIn{from{transform:translateX(-40px) scale(.5);opacity:0}to{transform:none;opacity:1}}@keyframes chDrop{0%{transform:translateY(-60px) rotate(-30deg)}100%{transform:none}}
 @keyframes chConf{to{transform:translateY(110vh) rotate(720deg)}}
 @media (prefers-reduced-motion:reduce){.ch-pop,.ch-crown,.ch-crown *,.ch-bar{animation-duration:.01s!important}}
 `;
@@ -658,7 +658,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     function crown(who) {
       AU.win(); setTimeout(() => AU.gold(), 350); X.vib([60, 40, 60, 40, 200]); host.querySelectorAll(".ch-pop,.ch-crown").forEach(e => e.remove());
       const c = document.createElement("div"); c.className = "ch-crown"; const cols = ["#fde047", "#f472b6", "#22d3ee", "#a3e635", "#fb923c", "#c084fc", "#fff"];
-      c.innerHTML = `<div class="in"><div class="cr">👑</div><h3>מקום ראשון בשכבה!</h3><p>עקפת את ${esc(who.kid)} – עכשיו כולם רודפים אחריך 😎</p></div>` + Array.from({ length: X.REDUCED ? 0 : 36 }, (_, i) => `<i style="left:${Math.random() * 100}%;background:${cols[i % cols.length]};animation-duration:${1.6 + Math.random() * 1.6}s;animation-delay:${Math.random() * .5}s"></i>`).join("");
+      c.innerHTML = `<div class="in"><div class="cr">👑</div><div><h3>מקום ראשון בשכבה!</h3><p>עקפת את ${esc(who.kid)} 😎</p></div></div>` + Array.from({ length: X.REDUCED ? 0 : 24 }, (_, i) => `<i style="left:${Math.random() * 100}%;background:${cols[i % cols.length]};animation-duration:${1.6 + Math.random() * 1.6}s;animation-delay:${Math.random() * .5}s"></i>`).join("");
       host.appendChild(c); setTimeout(() => c.remove(), 3100);
     }
     C.update = v => {
