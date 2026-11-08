@@ -120,6 +120,12 @@ log(await p.evaluate(() => !!Robo.state().own["hat:tiara"]), "cancel → item ba
 // 🎮 ברגים נופלים: נעילה בשיעור
 const lock = await p.evaluate(() => { const d = new Date("2026-11-09T12:00:00"); const t = Asst.todayLessons(d); if (!t || !t.L.length) return "no lessons"; const [h, m] = t.L[0].s.split(":").map(Number); d.setHours(h, m + 5, 0, 0); const a = RoboPlus.breakState(d.getTime()); const e = new Date(d); e.setHours(17, 0); const c = RoboPlus.breakState(e.getTime()); const f = new Date("2026-11-13T10:00:00"); return [a.open, c.open, RoboPlus.breakState(f.getTime()).open]; });
 log(JSON.stringify(lock) === "[false,true,true]", "game: locked during a lesson, open after 16:15 and on Friday", JSON.stringify(lock));
+// 📚 בזמן שיעור: אפשר לשחק בלי פרסים (השיא נכנס לטבלה)
+const les = await p.evaluate(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), d = new Date("2026-11-09T12:00:00"), t = Asst.todayLessons(d); const [h, m] = t.L[0].s.split(":").map(Number); d.setHours(h, m + 5, 0, 0);
+  const real = Date.now, off = d.getTime() - real(); Date.now = () => real() + off; localStorage.removeItem("roboGameOpen"); const o = {};
+  try { Robo.open("fun", "game"); await w(300); const b = document.querySelector("#rpPlay"); o.btn = !!b && !b.disabled && /שיעור/.test(b.textContent); b.click(); await w(400); const ov = document.querySelector(".gm-ov button"); ov && ov.click(); await w(600); const G = RoboPlus._game(); o.practice = !!G && G.practice === true; await w(1500); o.still = !!RoboPlus._game() && !RoboPlus._game().over;
+    const ex = document.querySelector("#gmExit"); ex && ex.click(); await w(600); const fin = document.querySelectorAll(".gm-ov button"); fin.length && fin[fin.length - 1].click(); await w(500); o.closed = !RoboPlus._game(); } finally { Date.now = real; localStorage.setItem("roboGameOpen", "1"); } return o; });
+log(les.btn && les.practice && les.still, "lesson time: games open in no-rewards mode (not closed by the bell)", JSON.stringify(les));
 // משחק (פותחים בכוח לבדיקה)
 await p.evaluate(() => { localStorage.setItem("roboGameOpen", "1"); Robo.open("fun", "game"); }); await sleep(300);
 await p.evaluate(() => document.querySelector("#rpPlay").click()); await sleep(400);

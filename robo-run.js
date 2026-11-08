@@ -25,9 +25,9 @@
       <div class="rn-hero"><div class="rd"></div><div class="poo">💩💨</div><div class="bot">${X.svg("", null, { still: true })}</div></div>
       <div class="rn-ctl"><div><b>⬅️➡️</b>החלקה = מסלול</div><div><b>⬆️</b>קפיצה מעל ספסל</div><div><b>⬇️</b>התכופפות מתחת למוט</div><div><b>🚪</b>ארון = לעקוף!</div></div>
       <div class="gm-rules"><span>💩 קקי קסם = עפים!</span><span class="bad">🐦 ציפור מפילה</span><span class="bad">🛸 רחפן גונב חצי</span><span>🌈 קשת = ×2</span><span>🤸 טרמפולינה</span><span>🧊 קרח מחליק</span><span class="bad">😠 ביריון לוקח ברגים</span><span class="bad">🤖 מעדת? רובוט ענק רודף!</span><span>🌍 עולם חדש כל 500 מ'</span><span>🧲🛡️×2🚀 כוחות</span></div>
-      <div class="rbx" style="--c:#0ea5e9"><div class="em">📊</div><div class="t"><b>היום: ${today().n}/${R.RUN_CAP} 🔩${S.runBest ? ` · 🏆 שיא: ${S.runBest} מ'` : ""}</b><small>${bs.free ? "אפשר לרוץ עכשיו 🎉" : bs.open ? (bs.until != null ? `הפסקה! עד ${hhmm(bs.until)}` : "אפשר לרוץ עכשיו 🎉") : `🔒 עכשיו שיעור – נפתח בהפסקה (${hhmm(bs.until)})`}</small></div></div>
+      <div class="rbx" style="--c:#0ea5e9"><div class="em">📊</div><div class="t"><b>היום: ${today().n}/${R.RUN_CAP} 🔩${S.runBest ? ` · 🏆 שיא: ${S.runBest} מ'` : ""}</b><small>${bs.free ? "אפשר לרוץ עכשיו 🎉" : bs.open ? (bs.until != null ? `הפסקה! עד ${hhmm(bs.until)}` : "אפשר לרוץ עכשיו 🎉") : `📚 עכשיו שיעור – רצים בלי פרסים (השיא נכנס לטבלה!). ברגים – בהפסקה (${hhmm(bs.until)})`}</small></div></div>
       ${RP.chalBox("run")}
-      <button class="rbtn" type="button" id="rnPlay" style="width:100%;font-size:18px;padding:14px" ${bs.open ? "" : "disabled"}>${!bs.open ? "🔒 רק בהפסקות" : left <= 0 ? "🏋️ אימון (בלי פרסים) – לשבור שיא!" : "▶️ לרוץ!"}</button>
+      <button class="rbtn" type="button" id="rnPlay" style="width:100%;font-size:18px;padding:14px" >${!bs.open ? "🏋️ עכשיו שיעור – לרוץ בלי פרסים, לשבור שיא!" : left <= 0 ? "🏋️ אימון (בלי פרסים) – לשבור שיא!" : "▶️ לרוץ!"}</button>
       ${left <= 0 ? `<div class="rw-prog" style="text-align:center;margin-top:6px">💪 אספת את כל ה-${R.RUN_CAP} של היום! מחר אפשר שוב לאסוף ברגים</div>` : ""}
       <div class="lb-tools" style="margin-top:10px"><button class="rbtn sm alt" type="button" data-go="lb">🏆 טבלת השיאים</button><button class="rbtn sm alt" type="button" data-go="upg">🛒 שדרוגים</button></div>
       <p class="rw-prog" style="margin-top:12px">⏰ פתוח בהפסקות לפי המערכת שלך (עד 16:15). אחרי 16:15, בשישי ובחופשות – פתוח תמיד.</p>`;
@@ -67,7 +67,7 @@
     const world = () => { const i = Math.max(0, Math.floor(G.dist / 500)); if (i % 2 === 0 && window.RoboFest && RoboFest.hkDay() > 0) return HK_WORLD; return WORLDS[i % WORLDS.length]; };
     const hud = () => { d.querySelector("#rnB").textContent = `🔩 ${G.bolts}`; d.querySelector("#rnD").textContent = `📏 ${Math.floor(G.dist)} מ'`; d.querySelector("#rnL").textContent = G.practice ? `🏋️ אימון · שיא ${Math.max(X.S.runBest || 0, Math.floor(G.dist))} מ'` : `נשאר: ${Math.max(0, left() - G.bolts)}`; };
     const newRun = () => {
-      Object.assign(G, { practice: left() <= 0, over: false, dead: false, t: 0, dist: 0, v: 13, lane: 0, pl: 0, jt: -1, st: -1, obj: [], parts: [], fx: [], puffs: [], next: 30, rows: 0, bolts: 0, pw: {}, shield: Math.random() < [0, .35, .7, 1][R.upg(X.S, "shield")], shake: 0, lv: 1, lvT: 0, combo: 0, run500: false,
+      Object.assign(G, { practice: left() <= 0 || !RP.breakState().open, over: false, dead: false, t: 0, dist: 0, v: 13, lane: 0, pl: 0, jt: -1, st: -1, obj: [], parts: [], fx: [], puffs: [], next: 30, rows: 0, bolts: 0, pw: {}, shield: Math.random() < [0, .35, .7, 1][R.upg(X.S, "shield")], shake: 0, lv: 1, lvT: 0, combo: 0, run500: false,
         fly: 0, alt: 0, big: -1, ice: 0, chase: 0, chaseX: 0, lastStumble: -99, wIdx: 0, wT: 0, nPuff: 0, stats: { dist: 0, flights: 0, bolts: 0, cleanDist: 0, world: 1, bullyPass: 0 }, cleanFrom: 0,
         cd: 3.2, slow: 0, deathT: -1, buf: null, laneT: -9, leanV: 0, flyers: [], landT: 0, lines: [], nearN: 0 });
       G.tut = LS.get("roboRunTut", "") ? 0 : 1; if (G.tut) { G.next = 9999; G.tutStep = 0; G.tutT = 1.5; }
@@ -94,7 +94,7 @@
       if (!G.practice) { const c = R.challengeCheck(X.S, "run", st); if (c) setTimeout(() => { X.SFX.gift(); X.toast(`🎯 <b>אתגר יומי הושלם!</b> ${esc(c.n)} – קיבלת 💠 תיבת מגה`, ["לפתוח", () => X.openBoxes(["mega"])], 9000); }, 600); }
       X.save(); X.SFX.coin();
       if (why === "x") { if (got) X.toast(`🏃 שמרת ${got} ברגים מהריצה`, null, 3000); return finish(); }
-      const more = RP.breakState().open && why !== "bell";
+      const more = true;
       const i = await overlay(`<div class="big">${why === "bell" ? "🔔" : rec ? "🏆" : why === "caught" ? "🤖" : "💥"}</div><h3>${why === "bell" ? "ההפסקה נגמרה!" : msg || (rec ? "שיא חדש!" : "נתקעת!")}</h3>${rec && msg ? "<p><b>🏆 שיא חדש!</b></p>" : ""}<p>📏 ${m} מטר · ⬆️ קצב ${G.lv} · ${world().n}</p><p>${G.practice ? "🏋️ אימון – בלי פרסים" : `+${got} ברגים 🔩${got < G.bolts ? " (הגעת למקסימום של היום)" : ""}`}</p>${X.S.runBest ? `<p>🏆 השיא שלך: ${X.S.runBest} מ'</p>` : ""}<p class="rk"></p>`, more ? ["🔄 עוד ריצה", "סיום"] : ["סיום"]);
       if (more && i === 0) newRun(); else finish();
     };
@@ -184,7 +184,7 @@
       if (G.cd > 0) { const c0 = Math.ceil(G.cd); G.cd -= raw; const c1 = Math.ceil(G.cd); if (c1 !== c0) { c1 > 0 ? AU.coin(2) : AU.level(5); X.vib(c1 > 0 ? 15 : 40); } G.t += raw * .2; draw(raw); requestAnimationFrame(loop); return; }
       if (!G.dead) {
         G.t += dt;
-        if ((secT += dt) > 1) { secT = 0; const bs = RP.breakState(); if (!bs.open) { end("bell"); return; } const tl = d.querySelector("#rnT"); if (bs.until != null && !G.practice) { const n = new Date(), s = bs.until * 60 - (n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds()); tl.textContent = s > 0 ? `⏰ ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : ""; } else tl.textContent = ""; }
+        if ((secT += dt) > 1) { secT = 0; const bs = RP.breakState(); if (!bs.open && !G.practice) { end("bell"); return; } const tl = d.querySelector("#rnT"); if (bs.until != null && !G.practice) { const n = new Date(), s = bs.until * 60 - (n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds()); tl.textContent = s > 0 ? `⏰ ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : ""; } else tl.textContent = ""; }
         const lv = Math.min(10, 1 + Math.floor(G.dist / 250)); if (lv > G.lv) { G.lv = lv; G.lvT = 1.6; AU.level(lv); X.vib([30, 20, 60]); burst(W / 2, H * .35, LV_COL[lv - 1], 30, 260); }
         const wi = Math.floor(G.dist / 500); if (wi > G.wIdx) { G.wIdx = wi; G.wT = 2.2; G.stats.world = Math.max(G.stats.world, wi + 1); AU.rainbow(); fxText(W / 2, H * .3, `🌍 עולם חדש: ${world().n}!`, "#fff", 2.2, 24); }
         tutTick(dt);
