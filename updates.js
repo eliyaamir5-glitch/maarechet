@@ -154,30 +154,31 @@
     render(box, cls, preview) {
       const list = preview ? sorted(preview) : this.forClass(cls);
       const rOn = !preview && this.who && this.reactOn && this.reactOn(), mine = loadObj("myReacts");
-      const sig = JSON.stringify([list.map(u => [u.id, u.text, u.video, u.urgent, u.expiresAt, rOn ? [u.reacts, mine[u.id]] : 0]), [...(this._flying || [])]]);
+      const seenNow = loadArr(SEEN), sig = JSON.stringify([list.map(u => [u.id, u.text, u.video, u.urgent, u.expiresAt, rOn ? [u.reacts, mine[u.id]] : 0, seenNow.includes(u.id)]), [...(this._flying || [])], !!box.__open, this._landed || []]);
       if (!preview && box.__sig === sig && box.childElementCount) return;
       box.__sig = preview ? null : sig;
       const flying = new Set(this._flying || []);
       box.textContent = "";
       if (!list.length) { box.hidden = true; return; }
       box.hidden = false;
-      const head = el("div", "upd-head");
-      head.append(el("span", "", "📢 עדכונים"), el("small", "", list.length > 1 ? `${list.length} עדכונים פעילים` : ""));
-      box.append(head);
-      const SHOW = 3;
-      list.forEach((u, i) => {
-        const c = card(u, (i >= SHOW ? "more" : "") + (flying.has(u.id) ? " waiting" : ""));
-        if (rOn && u.reacts && typeof u.reacts === "object") c.append(this.reactBar(u, mine[u.id] || "")); // רק כשהשרת כבר תומך בתגובות
-        if (i >= SHOW) c.hidden = true;
-        box.append(c);
-      });
-      if (list.length > SHOW) {
-        const more = el("button", "upd-more", `הצג עוד ${list.length - SHOW}`);
-        more.type = "button";
-        more.onclick = () => { box.querySelectorAll(".upd.more").forEach(c => c.hidden = false); more.remove(); box.__open = true; };
-        if (box.__open) more.click();
-        box.append(more);
+      const card2 = (u, cls) => { const c = card(u, cls); if (rOn && u.reacts && typeof u.reacts === "object") c.append(this.reactBar(u, mine[u.id] || "")); return c; }; // רק כשהשרת כבר תומך בתגובות
+      if (preview) { // תצוגה מקדימה בדף הצוות – הכל פתוח
+        const head = el("div", "upd-head"); head.append(el("span", "", "📢 עדכונים")); box.append(head);
+        list.forEach(u => box.append(card2(u, ""))); return;
       }
+      // 📥 מגירה: עדכון שכבר ראית (אחרי "הבנתי") נכנס למגירה, כדי לא לתפוס את מרכז המסך. עדכון שעוד לא ראית – פתוח למעלה
+      const seen = new Set(loadArr(SEEN)), fresh = list.filter(u => !seen.has(u.id) && !flying.has(u.id)), kept = list.filter(u => !fresh.includes(u));
+      fresh.forEach(u => box.append(card2(u, "")));
+      if (!kept.length) return;
+      const open = !!box.__open, newN = kept.filter(u => (this._landed || []).includes(u.id)).length;
+      const dr = el("button", "upd-drawer" + (open ? " open" : "") + (newN ? " fresh" : ""));
+      dr.type = "button"; dr.setAttribute("aria-expanded", open ? "true" : "false");
+      dr.append(el("span", "upd-dr-ic", "📥"), el("span", "upd-dr-t", `עדכונים מהצוות · ${kept.length}`), el("small", "upd-dr-s", open ? "לחצו לסגור" : newN ? "העדכון נשמר כאן – לחצו לפתוח" : "לחצו לפתוח ולקרוא"), el("span", "upd-dr-ch", "▾"));
+      if (newN) dr.append(el("b", "upd-dr-new", newN > 1 ? `${newN} חדשים` : "חדש"));
+      const inner = el("div", "upd-dr-in"); inner.hidden = !open;
+      kept.forEach(u => inner.append(card2(u, flying.has(u.id) ? "waiting" : "")));
+      dr.onclick = () => { box.__open = !box.__open; this._landed = []; box.__sig = null; this.render(box, cls); };
+      box.append(dr, inner);
     },
 
     // ---- תגובות באימוג'י: כל תלמיד מגיב פעם אחת (אפשר להחליף); השולח והמנהל רואים מי הגיב ----
@@ -268,7 +269,7 @@
         ov.remove();
         document.documentElement.classList.remove("upd-lock");
         this._popping = false;
-        if (this._flying.length) { this._flying = []; this.render(box, cls); }
+        this._flying = []; box.__sig = null; this.render(box, cls);
       }
     },
     // אנימציית "מעוף": הכרטיס הגדול מתכווץ ועף בדיוק למקום שלו ברשימה
@@ -276,7 +277,7 @@
       window.scrollTo({ top: 0 });
       if (!c.animate) { const r = box.querySelector(`.upd[data-id="${CSS.escape(id)}"]`); if (r) r.classList.remove("waiting"); return; } // דפדפן ישן: בלי אנימציה
       let target = box.querySelector(`.upd[data-id="${CSS.escape(id)}"]`);
-      if (target && target.hidden) target = box.querySelector(".upd-more") || box;
+      if (!target || target.hidden || target.closest("[hidden]")) target = box.querySelector(".upd-drawer") || box;
       const a = c.getBoundingClientRect(), b = (target || box).getBoundingClientRect();
       const dx = (b.left + b.width / 2) - (a.left + a.width / 2), dy = (b.top + b.height / 2) - (a.top + a.height / 2);
       const sx = b.width / a.width, sy = b.height / a.height;
@@ -295,6 +296,7 @@
       c.style.visibility = "hidden";
       const real = box.querySelector(`.upd[data-id="${CSS.escape(id)}"]`);
       if (real) { real.classList.remove("waiting"); real.classList.add("landed"); setTimeout(() => real.classList.remove("landed"), 1200); }
+      this._landed = [...new Set([...(this._landed || []), id])]; const dr = box.querySelector(".upd-drawer"); if (dr && (!real || real.closest("[hidden]"))) { dr.classList.remove("landed"); void dr.offsetWidth; dr.classList.add("landed"); }
     },
 
     // מציג מהמטמון מיד, מרענן מהשרת, וממשיך לרענן כל דקה ובכל חזרה לאפליקציה.
@@ -317,6 +319,13 @@
 
   const css = document.createElement("style");
   css.textContent = `#updates{margin-bottom:12px}
+  .upd-drawer{display:flex;align-items:center;gap:10px;width:100%;text-align:start;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:16px;padding:11px 14px;font:inherit;cursor:pointer;margin-bottom:8px;box-shadow:0 2px 8px rgba(0,0,0,.05);position:relative;flex-wrap:wrap}
+  .upd-dr-ic{font-size:22px}.upd-dr-t{font-weight:900;font-size:15px;flex:1}.upd-dr-s{flex-basis:100%;order:5;color:var(--muted);font-size:12px;margin-top:-4px;padding-inline-start:34px}.upd-dr-ch{transition:transform .25s;color:var(--muted)}
+  .upd-drawer.open .upd-dr-ch{transform:rotate(180deg)}.upd-dr-new{background:var(--accent);color:#fff;border-radius:99px;font-size:11px;padding:2px 8px;animation:updNew 1.2s ease-in-out infinite alternate}
+  .upd-drawer.fresh{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+  .upd-drawer.landed{animation:updDrop .7s cubic-bezier(.2,1.6,.4,1)}.upd-drawer.landed .upd-dr-ic{animation:updIc .7s}
+  .upd-dr-in{margin-bottom:6px}
+  @keyframes updNew{to{transform:scale(1.12)}}@keyframes updDrop{0%{transform:scale(1)}35%{transform:scale(1.06)}60%{transform:scale(.97)}100%{transform:none}}@keyframes updIc{40%{transform:translateY(5px) scale(1.3)}}
   .upd-head{display:flex;justify-content:space-between;align-items:baseline;font-weight:900;font-size:16px;margin:0 4px 8px}
   .upd-head small{font-weight:400;color:var(--muted);font-size:12px}
   .upd{background:var(--card);border:1.5px solid var(--line);border-inline-start:5px solid var(--accent);border-radius:16px;padding:12px 14px;margin-bottom:8px;animation:updin .45s cubic-bezier(.2,.8,.2,1) both;transition:box-shadow .4s}

@@ -95,7 +95,7 @@ ok("saving costs more for a longer streak, max 400", R.saveCost(5) < R.saveCost(
 { const S = R.fresh(); const st = R.SETS.find(x => x.id === "gems"); st.ids.forEach(id => S.own[id] = 1); const d = R.setsCheck(S); ok("set completed once", d.length === 1 && d[0].id === "gems" && R.setsCheck(S).length === 0); ok("all sets have items", R.SETS.every(x => x.ids.length >= 4), R.SETS.map(x => x.id + ":" + x.ids.length).join(" ")); }
 { ok("world event on days 1–3 only", !!R.eventNow(at("2026-12-02T10:00:00+02:00")) && !R.eventNow(at("2026-12-04T10:00:00+02:00"))); }
 { const S = R.fresh(), t = at("2026-11-03T10:00:00+02:00"); let a = R.gameBank(S, 300, [], t), b = R.gameBank(S, 300, ["r", "s", "e"], t);
-  ok("game: 500 bolts a day, max 2 items", a.bolts === 300 && b.bolts === 200 && b.items.length === 2 && S.game.it === 2 && R.gameBank(S, 10, ["c"], t).bolts === 0 && R.gameBank(S, 10, [], at("2026-11-04T10:00:00+02:00")).bolts === 10); }
+  ok("game: 400 bolts a day, max 2 items", a.bolts === 300 && b.bolts === 100 && b.items.length === 2 && S.game.it === 2 && R.gameBank(S, 10, ["c"], t).bolts === 0 && R.gameBank(S, 10, [], at("2026-11-04T10:00:00+02:00")).bolts === 10); }
 { const S = R.fresh(); const id = R.LIST.find(x => x.r === "e").id; S.own[id] = 1; const g = R.grant(S, { t: "item", id, r: "e", shiny: 1 }); ok("shiny of an item you own = shiny version (not a duplicate)", g.shinyNew && S.shiny[id] && !g.dup); const g2 = R.grant(S, { t: "item", id, r: "e", shiny: 1 }); ok("second shiny of the same = duplicate", g2.dup > 0); }
 { const S = R.fresh(); ok("map: 10 steps = a station", R.mapStep(S, 9) === 0 && R.mapStep(S, 1) === 1 && R.mapClaim(S).i === 1 && R.mapClaim(S) === null); R.mapStep(S, 9999); ok("map: capped at the last station, final prize = giant + 3000", S.map.p === R.MAP_N * R.MAP_STEP && R.mapPrize(R.MAP_N).some(p => p.box === "giant") && R.mapPrize(R.MAP_N).some(p => p.n === 3000)); }
 // ---- כלכלה: תיבה אף פעם לא מחזירה יותר ברגים ממה שהיא עולה (גם כשיש כמעט הכל) ----
@@ -110,11 +110,11 @@ for (const t of ["box", "big", "mega", "giant"]) { let tot = 0; const N = 1500; 
 { let leg = 0; for (let i = 0; i < 3000; i++) { const S = R.fresh(); for (const p of R.roll(S, "giant")) if (p.id === "skin:legend") leg++; } ok("'the legend' never drops from boxes", leg === 0); ok("legend is one-of-a-kind ultra", R.ITEMS["skin:legend"].cap === 1 && R.ITEMS["skin:legend"].x === 1);
   ok("heroes set = all non-ultra heroes (" + R.SETS.find(x => x.id === "heroes").ids.length + ")", R.SETS.find(x => x.id === "heroes").ids.length >= 25); }
 { ok("💎 gold & diamonds theme: ultra, only 3 in the school, can drop from boxes", R.ITEMS["theme:goldx"].r === "u" && R.ITEMS["theme:goldx"].cap === 3 && !R.ITEMS["theme:goldx"].x); }
-{ const S = R.fresh(), t = at("2026-11-04T10:00:00+02:00"); const a = R.runBank(S, 200, t), b = R.runBank(S, 200, t); ok("run: 250 bolts a day", a.bolts === 200 && b.bolts === 50 && b.left === 0 && R.runBank(S, 10, at("2026-11-05T10:00:00+02:00")).bolts === 10); }
+{ const S = R.fresh(), t = at("2026-11-04T10:00:00+02:00"); const a = R.runBank(S, 300, t), b = R.runBank(S, 300, t); ok("run: 400 bolts a day (same as the bolts game)", a.bolts === 300 && b.bolts === 100 && b.left === 0 && R.runBank(S, 10, at("2026-11-05T10:00:00+02:00")).bolts === 10); }
 // ---- משחקים: כפול או כלום, שדרוגים, אתגר יומי ----
-{ const t = at("2026-11-04T10:00:00+02:00"); let S = R.fresh(); const w = R.gameDouble(S, true, t); ok("double or nothing: win = 1000, done for today", w.bolts === 1000 && S.bolts === 1000 && S.game.n === R.GAME_CAP && R.gameBank(S, 50, [], t).bolts === 0);
+{ const t = at("2026-11-04T10:00:00+02:00"); let S = R.fresh(); const w = R.gameDouble(S, true, t); ok("double or nothing: win = 800, done for today", w.bolts === 800 && S.bolts === 800 && S.game.n === R.GAME_CAP && R.gameBank(S, 50, [], t).bolts === 0);
   S = R.fresh(); const l = R.gameDouble(S, false, t); ok("double or nothing: lose = nothing, done for today", l.bolts === 0 && S.bolts === 0 && S.game.n === R.GAME_CAP); }
-{ const S = R.fresh(); S.bolts = 300; ok("upgrade: buy level 1 magnet (250)", R.buyUpg(S, "magnet").ok && R.upg(S, "magnet") === 1 && S.bolts === 50); ok("upgrade: not enough bolts", R.buyUpg(S, "magnet").error === "bolts");
+{ const S = R.fresh(); S.bolts = 150; ok("upgrade: buy level 1 magnet (120)", R.buyUpg(S, "magnet").ok && R.upg(S, "magnet") === 1 && S.bolts === 30); ok("upgrade: not enough bolts", R.buyUpg(S, "magnet").error === "bolts");
   S.bolts = 1e6; R.buyUpg(S, "magnet"); R.buyUpg(S, "magnet"); ok("upgrade: max level 3", R.buyUpg(S, "magnet").error === "max" && R.upg(S, "magnet") === 3); }
 { const t = at("2026-11-04T10:00:00+02:00"), S = R.fresh(), c = R.challenge("run", t); ok("daily challenge: same all day", R.challenge("run", at("2026-11-04T20:00:00+02:00")).id === c.id);
   ok("daily challenge: fail → nothing", R.challengeCheck(S, "run", {}, t) === null && !S.boxes.length);
@@ -130,4 +130,12 @@ for (const t of ["box", "big", "mega", "giant"]) { let tot = 0; const N = 1500; 
   R.setHanukkahTest(0); let hk = 0, n = 0; for (let i = 0; i < 400; i++) { const S2 = R.fresh(); for (const p of R.roll(S2, "mega")) if (p.id && R.ITEMS[p.id].ev) hk++; } ok("Hanukkah items don't drop outside Hanukkah", hk === 0);
   R.setHanukkahTest(3); for (let i = 0; i < 400; i++) { const S2 = R.fresh(); for (const p of R.roll(S2, "mega")) if (p.id && R.ITEMS[p.id].ev) n++; } R.setHanukkahTest(0); ok("Hanukkah items drop during Hanukkah", n > 0, n); }
 { const S = R.fresh(); ok("titles: none at start", R.titlesOf(S).length === 0); S.runBest = 1200; S.labs = 12; S.title = "runner"; ok("titles unlock from achievements", R.titlesOf(S).map(x => x.id).join() === "runner,lab" && R.titleText(S) === "🏃 רץ למרחקים"); S.title = "meteor"; ok("can't show a locked title", R.titleText(S) === ""); }
+// ---- 👑 האגדה: 4 אתגרים, גיבורים מטרייד לא נספרים ----
+{ const S = R.fresh(), hs = R.SETS.find(x => x.id === "heroes").ids; for (const id of hs) R.grant(S, { t: "item", id });
+  ok("legend: heroes alone are not enough", !R.legendReady(S) && R.legendReq(S).find(x => x.id === "heroes").ok);
+  S.st.best = 30; S.runBest = 2000; S.sets = { a: 1, b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, heroes: 1, newheroes: 1 }; ok("legend: 7 sets (+ hero sets) are not enough", !R.legendReady(S));
+  S.sets.h = 1; ok("legend: all 4 challenges → ready", R.legendReady(S));
+  const T = R.fresh(); R.applyTrade(T, {}, { items: [hs[0]] }); ok("legend: a hero from a trade doesn't count", R.legendReq(T).find(x => x.id === "heroes").have === 0 && T.tr[hs[0]]);
+  R.grant(T, { t: "item", id: hs[0] }); ok("legend: same hero later from a box → counts", R.legendReq(T).find(x => x.id === "heroes").have === 1); }
+{ const S = R.fresh(); S.allTop = { run: 4 }; ok("all-time top 5 title", R.titlesOf(S).some(x => x.id === "top5") && !R.titlesOf(S).some(x => x.id === "allking")); S.allTop.bolts = 1; ok("all-time #1 title", R.titlesOf(S).some(x => x.id === "allking")); }
 console.log(bad ? `❌ ${bad} problems` : "all robo tests passed");

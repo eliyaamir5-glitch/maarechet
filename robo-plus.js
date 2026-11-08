@@ -108,6 +108,9 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
 .gm-ov .big{font-size:64px}.gm-ov h3{font-size:24px;margin:6px 0}.gm-ov p{color:#d9d5ff;margin:4px 0 16px}
 .gm-ov .rd-btns{margin:0 auto}.gm-ov .rk{min-height:1em;color:#fde68a!important;font-weight:800}.gm-ov .rk.on{animation:lbPop2 .5s cubic-bezier(.2,1.6,.4,1)}
 .gm.boom{animation:gmShake .5s}@keyframes gmShake{20%{transform:translate(-8px,4px)}40%{transform:translate(8px,-4px)}60%{transform:translate(-6px,2px)}80%{transform:translate(4px,0)}}
+.rc[data-tr]::after{content:"🔁";position:absolute;top:4px;left:4px;font-size:15px;background:rgba(0,0,0,.55);border-radius:99px;padding:1px 3px}.lg-req.ok{opacity:.85}
+.lb-hof{text-align:center;margin:6px 0 10px;padding:12px;border-radius:18px;background:linear-gradient(135deg,#78350f,#1e1b4b);border:2px solid #facc15;box-shadow:0 0 22px rgba(250,204,21,.35)}.lb-hof b{display:block;font-size:19px;color:#fde047}.lb-hof small{color:#fef3c7;font-weight:700}.lb-crown{font-size:40px;animation:rBeat 1.6s infinite}
+.rp-mk.lb-top{box-shadow:0 0 0 2px var(--c),0 6px 18px rgba(0,0,0,.3)}.lb-mode{margin-top:6px}
 .ch-bar{position:absolute;top:8px;left:8px;z-index:2;max-width:64%;min-width:150px;display:flex;align-items:center;gap:7px;background:rgba(10,6,30,.78);border:2px solid rgba(255,255,255,.18);border-radius:16px;padding:6px 9px 6px 7px;color:#fff;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:border-color .3s,background .3s}
 .ch-bar.off{display:none}.ch-r{flex:0 0 auto;min-width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font:900 17px system-ui,sans-serif;background:linear-gradient(180deg,#818cf8,#4f46e5);box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
 .ch-t{flex:1;min-width:0;font-size:12.5px;font-weight:800;line-height:1.25}.ch-t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}.ch-t small{display:block;color:#c7d2fe;font-weight:800;font-size:11.5px}
@@ -164,11 +167,11 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     const wheelOk = S.wheel !== R.ymd(Date.now()), bs = breakState(), g = S.game && S.game.d === R.ymd(Date.now()) ? S.game : { n: 0, it: 0 };
     const mp = S.map || { p: 0, c: 0 }, ready = Math.min(R.MAP_N, Math.floor(mp.p / R.MAP_STEP)) - mp.c, sets = R.SETS.filter(x => (S.sets || {})[x.id]).length;
     const tile = (k, e, c, t, s, dot, wide) => `<button type="button" class="rp-t${wide ? " wide" : ""}" data-p="${k}" style="--c:${c}">${dot ? `<span class="dot">${dot}</span>` : ""}<div class="e">${e}</div><b>${t}</b><small>${s}</small></button>`;
-    const ms = R.missions(S), heroes = R.SETS.find(x => x.id === "heroes"), hHave = heroes.ids.filter(id => S.own[id] && S.own[id] !== -1).length, legendTaken = ((JSON.parse(LS.get("roboRare", "{}") || "{}") || {})["skin:legend"] || {}).n >= 1;
+    const ms = R.missions(S), heroes = R.SETS.find(x => x.id === "heroes"), lq = R.legendReq(S), lqDone = lq.filter(x => x.ok).length, lqPct = lq.reduce((a, x) => a + Math.min(1, x.have / x.need), 0) / lq.length, legendTaken = ((JSON.parse(LS.get("roboRare", "{}") || "{}") || {})["skin:legend"] || {}).n >= 1;
     const mRow = id => { const M = R.MISSIONS[id], p = ms.p[id] || 0, done = p >= M.need, got = ms.got[id]; return `<div class="rp-ms${got ? " got" : done ? " done" : ""}"><span class="e">${M.em}</span><div class="t"><b>${esc(M.n)}</b><div class="rp-bar" style="margin:4px 0 0;height:7px"><i style="width:${p / M.need * 100}%"></i></div></div>${got ? "✅" : done ? `<button class="rbtn sm" type="button" data-mc="${id}">🔩 ${M.b}</button>` : `<small>${p}/${M.need}</small>`}</div>`; };
     body.innerHTML = (R.eventNow() ? `<div class="rev"><b>${R.eventNow().n}</b> פי ${R.eventNow().up} סיכוי שהתיבות ישתדרגו!</div>` : "")
       + `<div class="rp-msb"><div class="rp-msh">📋 משימות היום <small>${ms.all ? "✅ השלמת הכל! קיבלת 🎁" : "כל ה-3 = 🎁 תיבה גדולה"}</small></div>${ms.ids.map(mRow).join("")}</div>`
-      + `<button type="button" class="rp-legend" data-p="legend"><div class="lg-bot">${X.svg("", { skin: "skin:legend" }, { still: false, noHoli: true })}</div><div class="t"><b>👑 האגדה</b><small>${legendTaken ? "נלקחה! מישהו אסף את כל הגיבורים 🔒" : "הראשון שאוסף את כל הגיבורים מקבל – רק אחד בכל הישיבה!"}</small><div class="rp-bar" style="margin:6px 0 0"><i style="width:${hHave / heroes.ids.length * 100}%"></i></div><small>🦸 ${hHave}/${heroes.ids.length} גיבורים</small></div></button>`
+      + `<button type="button" class="rp-legend" data-p="legend"><div class="lg-bot">${X.svg("", { skin: "skin:legend" }, { still: false, noHoli: true })}</div><div class="t"><b>👑 האגדה</b><small>${legendTaken ? "נלקחה! מישהו השלים את כל האתגרים 🔒" : `4 אתגרים קשים – הראשון שמשלים את כולם מקבל. רק אחד בכל הישיבה! (${lqDone}/4)`}</small><div class="rp-bar" style="margin:6px 0 0"><i style="width:${lqPct * 100}%"></i></div><small>${lq.map(x => `${x.ok ? "✅" : x.em} ${x.have}/${x.need}`).join(" · ")}</small></div></button>`
       + (window.RoboPlus && RoboPlus.top || []).map(f => { try { return f() || ""; } catch (e) { return ""; } }).join("")
       + `<div class="rp-menu">
       ${tile("game", "🔩", "#f59e0b", "ברגים נופלים", bs.open ? (g.n >= R.GAME_CAP ? "סיימת להיום 💪" : `משחק להפסקה · עוד ${R.GAME_CAP - g.n} 🔩 היום`) : `🏋️ בלי פרסים עכשיו · 🔩 ב-${hhmm(bs.until)}`, bs.open && g.n < R.GAME_CAP ? "!" : "", true)}
@@ -190,15 +193,16 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
   }
   // ================= 👑 האגדה: אוסף הגיבורים =================
   function legendPanel(body) {
-    const S = X.S, st = R.SETS.find(x => x.id === "heroes"), have = st.ids.filter(id => S.own[id] && S.own[id] !== -1), mine = !!S.own["skin:legend"];
+    const S = X.S, st = R.SETS.find(x => x.id === "heroes"), mine = !!S.own["skin:legend"], lq = R.legendReq(S), tr = S.tr || {};
     const taken = ((JSON.parse(LS.get("roboRare", "{}") || "{}") || {})["skin:legend"] || {}).n >= 1;
     body.innerHTML = `${back}<div class="rp-lghero"><div class="lg-big">${X.svg("", { skin: "skin:legend" }, { noHoli: true })}</div><div class="rp-h">👑 האגדה</div>
-      <div class="rp-s">הסקין הכי נדיר במשחק – <b>רק אחד בכל הישיבה!</b> מי שאוסף ראשון את כל ${st.ids.length} הגיבורים 🦸 מקבל אותו אוטומטית, וכל הישיבה מקבלת הכרזה.</div>
-      <div class="rbx" style="--c:#facc15"><div class="em">${mine ? "👑" : taken ? "🔒" : "⏳"}</div><div class="t"><b>${mine ? "היא שלך! אתה האגדה 👑" : taken ? "כבר נלקחה – מישהו הגיע ראשון" : "עוד לא נלקחה – המירוץ פתוח!"}</b><small>יש לך ${have.length} מתוך ${st.ids.length} גיבורים</small></div></div></div>
-      <div class="rw-sec">🦸 הגיבורים <small>מתיבת ענק 💎 (ולפעמים ממגה), מטרייד ומהשוק</small></div>
-      <div class="rw-grid">${st.ids.map(id => X.card(R.ITEMS[id])).join("")}</div>`;
+      <div class="rp-s">הסקין הכי נדיר במשחק – <b>רק אחד בכל הישיבה!</b> מי שמשלים ראשון את <b>כל 4 האתגרים</b> מקבל אותו אוטומטית, וכל הישיבה מקבלת הכרזה.</div>
+      <div class="rbx" style="--c:#facc15"><div class="em">${mine ? "👑" : taken ? "🔒" : "⏳"}</div><div class="t"><b>${mine ? "היא שלך! אתה האגדה 👑" : taken ? "כבר נלקחה – מישהו הגיע ראשון" : "עוד לא נלקחה – המירוץ פתוח!"}</b><small>השלמת ${lq.filter(x => x.ok).length} מתוך 4 אתגרים</small></div></div></div>
+      ${lq.map(x => `<div class="rbx lg-req${x.ok ? " ok" : ""}" style="--c:${x.ok ? "#22c55e" : "#facc15"}"><div class="em">${x.ok ? "✅" : x.em}</div><div class="t"><b>${esc(x.n)}</b><small>${esc(x.how)}</small><div class="rp-bar" style="margin:5px 0 0;height:7px"><i style="width:${Math.min(100, x.have / x.need * 100)}%"></i></div></div><b style="white-space:nowrap">${x.have}/${x.need}</b></div>`).join("")}
+      <div class="rw-sec">🦸 הגיבורים <small>מתיבת ענק 💎 (ולפעמים ממגה). 🔁 = קיבלת בטרייד/בשוק – לא נספר לאגדה</small></div>
+      <div class="rw-grid">${st.ids.map(id => X.card(R.ITEMS[id]).replace('class="rc', tr[id] && S.own[id] ? 'data-tr="1" class="rc' : 'class="rc')).join("")}</div>`;
     wireBack(body);
-    body.querySelectorAll(".rc[data-id]").forEach(b => b.onclick = () => { const it = R.ITEMS[b.dataset.id]; X.toast(`${esc(it.n)} ${X.rarTag(it.r)} – ${S.own[it.id] ? "יש לך ✅" : "עוד אין לך"}`, null, 2500); });
+    body.querySelectorAll(".rc[data-id]").forEach(b => b.onclick = () => { const it = R.ITEMS[b.dataset.id]; X.toast(`${esc(it.n)} ${X.rarTag(it.r)} – ${S.own[it.id] ? (tr[it.id] ? "יש לך, אבל מטרייד/שוק 🔁 – לא נספר לאגדה" : "יש לך ✅ (נספר)") : "עוד אין לך"}`, null, 2800); });
   }
   const wireBack = body => { const b = body.querySelector(".rp-back"); if (b) b.onclick = () => tab(body); };
 
@@ -416,7 +420,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
         if (!confirm(`לקנות "${it.n}" מ${x.kid} ב-${x.price} ברגים?`)) return;
         b.disabled = true; let r; try { r = await X.api({ op: "marketBuy", id: x.id }); } catch (e) { r = { ok: false, error: "net" }; }
         if (!r || !r.ok) { X.toast(r && r.error === "gone" ? "אוי, מישהו קנה את זה לפניך 😅" : "לא הצלחתי – נסה שוב 📶", null, 3500); marketPanel(body); return; }
-        X.S.bolts -= x.price; R.grant(X.S, { t: "item", id: x.item, r: it.r }); X.step(1); X.save(); X.SFX.coin(); X.celebrateItem(x.item); marketPanel(body);
+        X.S.bolts -= x.price; const had = !!X.S.own[x.item] && X.S.own[x.item] !== -1; R.grant(X.S, { t: "item", id: x.item, r: it.r, bought: 1 }); if (!had) (X.S.tr = X.S.tr || {})[x.item] = 1; X.step(1); X.save(); X.SFX.coin(); X.celebrateItem(x.item); marketPanel(body);
       });
     } else {
       const canSell = R.LIST.filter(mkOk);
@@ -628,7 +632,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
   const GN = { bolts: "🔩 ברגים נופלים", run: "🏃 ריצת הרובוט" }, UNIT = { bolts: "ברגים", run: "מ'" };
   // 🏆 "אתה מקום X בשכבה השבוע" – ממלאים את <p class="rk"> במסך הסיום (אחרי ששלחנו את השיא)
   async function rankLine(root, g, v) {
-    if (!X.online() || !root) return; try { await postScore(g, v); const j = await X.api({ op: "scores", g }); const el = root.querySelector(".rk"); if (!el || !j || !j.ok || !j.me) return;
+    if (!X.online() || !root) return; try { await postScore(g, v); const j = await X.api({ op: "scores", g }); const el = root.querySelector(".rk"); if (j && j.ok) allTopCheck(g, j.allMe); if (!el || !j || !j.ok || !j.me) return;
       el.innerHTML = j.me.rank <= 3 ? `🏆 <b>אתה מקום ${j.me.rank} בשכבה השבוע!</b> ${["🥇", "🥈", "🥉"][j.me.rank - 1]}` : `🏆 מקום ${j.me.rank} בשכבה השבוע · ${j.list[2] ? `למקום 3 חסר ${Math.max(1, j.list[2].v - j.me.v + 1)} ${UNIT[g]}` : ""}`; el.classList.add("on"); } catch (e) {} }
   // ================= 🏁 מרדף בטבלה בזמן המשחק =================
   // תמיד רואים מי מעליך בטבלת השכבה השבוע וכמה חסר לו. כל עקיפה = אנימציה, שיא אישי = אפקט, ומקום ראשון = אפקט ענק עם כתר.
@@ -637,12 +641,16 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     host.querySelectorAll(".ch-bar,.ch-pop,.ch-crown").forEach(e => e.remove());
     const el = document.createElement("div"); el.className = "ch-bar off"; host.appendChild(el);
     const U = g === "run" ? "מ'" : "ברגים", fmt = n => Math.floor(n).toLocaleString("he-IL");
-    const C = { others: null, best: 0, v: 0, passed: -1, pend: [], timer: 0, pb: false, top: false };
+    const C = { others: null, allO: [], ap: -1, best: 0, v: 0, passed: -1, pend: [], timer: 0, pb: false, top: false, atop: false };
     const draw = () => {
       if (!C.others) return; const o = C.others, v = C.v, n = o.length, p = o.filter(x => v > x.v).length, rank = n - p + 1, nx = o[n - p - 1], lo = (o[n - p] || {}).v || 0;
       el.classList.remove("off"); el.classList.toggle("top", !nx && v > 0);
       if (!n) { el.innerHTML = `<span class="ch-r">🏁</span><span class="ch-t"><b>${v > 0 ? "👑 אתה מוביל בשכבה!" : "עוד אף אחד לא שיחק השבוע"}</b><small>${v > 0 ? `📏 ${fmt(v)} ${U}` : "תהיה הראשון בטבלה!"}</small></span>`; return; }
-      if (!nx) { const gap = v - o[0].v; el.classList.remove("near"); el.innerHTML = `<span class="ch-r">👑</span><span class="ch-t"><b>מקום 1 בשכבה!</b><small>${fmt(gap)} ${U} לפני ${esc(o[0].kid)}</small></span>`; return; }
+      if (!nx) { const A = C.allO, an = A.length, ap = A.filter(x => v > x.v).length, ax = A[an - ap - 1];
+        if (ax) { const need = ax.v - v + 1, alo = (A[an - ap] || o[0]).v, pct = Math.max(0, Math.min(100, (v - alo) / Math.max(1, ax.v + 1 - alo) * 100)), near = need <= Math.max(3, ax.v * .08); el.classList.toggle("near", near);
+          el.innerHTML = `<span class="ch-r">👑</span><span class="ch-t"><b>🏛️ כל הזמנים: ⬆️ ${esc(ax.kid)}</b><small>${near ? "🔥 כמעט! " : ""}עוד ${fmt(need)} ${U} · מקום ${an - ap} בהיסטוריה</small><div class="ch-p"><i style="width:${pct}%"></i></div></span>`; return; }
+        if (an && v > A[0].v) { el.classList.remove("near"); el.innerHTML = `<span class="ch-r">🏛️</span><span class="ch-t"><b>שיא כל הזמנים!</b><small>${fmt(v - A[0].v)} ${U} מעל השיא הקודם</small></span>`; return; }
+        const gap = v - o[0].v; el.classList.remove("near"); el.innerHTML = `<span class="ch-r">👑</span><span class="ch-t"><b>מקום 1 בשכבה!</b><small>${fmt(gap)} ${U} לפני ${esc(o[0].kid)}</small></span>`; return; }
       const need = nx.v - v + 1, pct = Math.max(0, Math.min(100, (v - lo) / Math.max(1, nx.v + 1 - lo) * 100)), near = need <= Math.max(3, nx.v * .08);
       el.classList.toggle("near", near);
       el.innerHTML = `<span class="ch-r">#${rank}</span><span class="ch-t"><b>⬆️ ${esc(nx.kid)}</b><small>${near ? "🔥 כמעט! " : ""}עוד ${fmt(need)} ${U} · מקום ${rank - 1}</small><div class="ch-p"><i style="width:${pct}%"></i></div></span>`;
@@ -661,34 +669,66 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       c.innerHTML = `<div class="in"><div class="cr">👑</div><div><h3>מקום ראשון בשכבה!</h3><p>עקפת את ${esc(who.kid)} 😎</p></div></div>` + Array.from({ length: X.REDUCED ? 0 : 24 }, (_, i) => `<i style="left:${Math.random() * 100}%;background:${cols[i % cols.length]};animation-duration:${1.6 + Math.random() * 1.6}s;animation-delay:${Math.random() * .5}s"></i>`).join("");
       host.appendChild(c); setTimeout(() => c.remove(), 3100);
     }
+    function crownAll() {
+      AU.win(); setTimeout(() => { AU.gold(); AU.win(); }, 400); X.vib([80, 40, 80, 40, 300]); host.querySelectorAll(".ch-pop,.ch-crown").forEach(e => e.remove());
+      const c = document.createElement("div"); c.className = "ch-crown"; const cols = ["#fde047", "#fff", "#facc15", "#f59e0b", "#fef3c7"];
+      c.innerHTML = `<div class="in"><div class="cr">🏛️</div><div><h3>שיא כל הזמנים!</h3><p>נכנסת להיכל התהילה של השכבה 👑</p></div></div>` + Array.from({ length: X.REDUCED ? 0 : 30 }, (_, i) => `<i style="left:${Math.random() * 100}%;background:${cols[i % cols.length]};animation-duration:${1.6 + Math.random() * 1.6}s;animation-delay:${Math.random() * .5}s"></i>`).join("");
+      host.appendChild(c); setTimeout(() => c.remove(), 3100);
+    }
     C.update = v => {
       v = Math.floor(v || 0); if (v <= C.v && C.passed >= 0) return; C.v = Math.max(C.v, v); if (!C.others) return;
       const p = C.others.filter(x => C.v > x.v).length;
+      // 🏛️ אחרי מקום 1 השבוע ממשיכים לעקוף את שיאי כל הזמנים
+      const ap = C.allO.filter(x => C.v > x.v).length;
+      if (C.ap >= 0 && ap > C.ap && p >= C.others.length && !C.timer) { if (ap === C.allO.length && !C.atop) { C.atop = true; crownAll(); } else { const who = C.allO[C.allO.length - ap]; AU.whoosh(); AU.level(6); pop(`<b>🏛️ עקפת את ${esc(who.kid)} בכל הזמנים!</b><span>מקום ${C.allO.length - ap + 1}</span>`); } }
+      if (!(C.timer && ap > C.ap)) C.ap = ap;
       if (C.passed >= 0 && p > C.passed) { const n = C.others.length; for (let i = n - C.passed - 1; i >= n - p; i--) C.pend.push(C.others[i]); if (!C.timer) C.timer = setTimeout(flush, 350); }
       else if (!C.pb && C.best > 0 && C.v > C.best && C.passed >= 0 && !C.timer) { C.pb = true; AU.power(); pop(`<b>🔥 שיא אישי חדש!</b><span>${fmt(C.v)} ${U}</span>`, "pb"); }
       if (C.best > 0 && C.v > C.best) C.pb = true; C.passed = p; draw();
     };
     if (X.online()) X.api({ op: "scores", g, full: 1 }).then(j => {
       if (!j || !j.ok || !el.isConnected) return; C.others = (j.list || []).filter(x => !x.me).map(x => ({ kid: x.kid || "?", v: +x.v || 0 })).sort((a, b) => b.v - a.v);
-      C.best = (j.me && j.me.v) || (X.S.wk && X.S.wk.w === R.weekId() && X.S.wk[g]) || 0; C.passed = C.others.filter(x => C.v > x.v).length; C.top = C.v > 0 && C.passed === C.others.length && C.others.length > 0; draw();
+      C.best = (j.me && j.me.v) || (X.S.wk && X.S.wk.w === R.weekId() && X.S.wk[g]) || 0; C.passed = C.others.filter(x => C.v > x.v).length; C.top = C.v > 0 && C.passed === C.others.length && C.others.length > 0;
+      C.allO = (j.all || []).filter(x => !x.me).map(x => ({ kid: x.kid || "?", v: +x.v || 0 })).sort((a, b) => b.v - a.v); C.ap = C.allO.filter(x => C.v > x.v).length; C.atop = C.allO.length > 0 && C.ap === C.allO.length; draw();
     }).catch(() => {});
     return C;
   }
-  async function lbPanel(body, g = "bolts") {
-    body.innerHTML = `${back}<div class="rp-h">🏆 טבלת השיאים של השבוע</div><div class="rp-seg">${Object.keys(GN).map(k => `<button type="button" data-g="${k}" class="${k === g ? "on" : ""}">${GN[k]}</button>`).join("")}</div><div class="rw-prog" style="text-align:center;padding:20px">⏳ טוען…</div>`;
+  // 👑 נכנסת לטופ 5 של כל הזמנים (או עלית בו) → חגיגה גדולה, נשמר בטלפון (לתואר)
+  function allTopCheck(g, allMe) {
+    if (!allMe || allMe.rank > 5) return; const S = X.S; S.allTop = S.allTop || {}; const prev = S.allTop[g] || 99; if (allMe.rank >= prev) return;
+    S.allTop[g] = allMe.rank; X.save(); X.SFX.gift(); X.vib([60, 40, 60, 40, 200]);
+    X.toast(allMe.rank === 1 ? `👑 <b>שיאן כל הזמנים ב${GN[g]}!</b> אתה מקום ראשון בהיסטוריה של השכבה – קיבלת את התואר "👑 שיאן כל הזמנים"` : `🏅 <b>נכנסת לטבלת כל הזמנים – מקום ${allMe.rank}!</b> ${GN[g]} · קיבלת את התואר "🏅 בטופ 5 של כל הזמנים"`, null, 10000);
+  }
+  async function lbPanel(body, g = "bolts", mode = "week") {
+    body.innerHTML = `${back}<div class="rp-h">🏆 טבלת השיאים</div><div class="rp-seg">${Object.keys(GN).map(k => `<button type="button" data-g="${k}" class="${k === g ? "on" : ""}">${GN[k]}</button>`).join("")}</div>
+      <div class="rp-seg lb-mode"><button type="button" data-m="week" class="${mode === "week" ? "on" : ""}">📅 השבוע</button><button type="button" data-m="all" class="${mode === "all" ? "on" : ""}">👑 כל הזמנים</button></div><div class="rw-prog lb-load" style="text-align:center;padding:20px">⏳ טוען…</div>`;
     body.querySelector(".rp-back").onclick = () => g === "run" && PANELS.run ? PANELS.run(body) : gamePanel(body);
-    body.querySelectorAll("[data-g]").forEach(b => b.onclick = () => lbPanel(body, b.dataset.g));
-    if (!X.online()) { body.querySelector(".rw-prog").textContent = window.__DEMO ? "בדמו אין טבלה 🙂" : "צריך להירשם קודם"; return; }
+    body.querySelectorAll("[data-g]").forEach(b => b.onclick = () => lbPanel(body, b.dataset.g, mode));
+    body.querySelectorAll("[data-m]").forEach(b => b.onclick = () => lbPanel(body, g, b.dataset.m));
+    const ld = body.querySelector(".lb-load");
+    if (!X.online()) { ld.textContent = window.__DEMO ? "בדמו אין טבלה 🙂" : "צריך להירשם קודם"; return; }
     let j = null; try { j = await X.api({ op: "scores", g }); } catch (e) {}
-    if (!j || !j.ok || !Array.isArray(j.list)) { body.querySelector(".rw-prog").textContent = "אין חיבור כרגע 📶"; return; }
+    if (!j || !j.ok || !Array.isArray(j.list)) { ld.textContent = "אין חיבור כרגע 📶"; return; }
     // 🎁 3 הראשונים בשבוע שעבר מקבלים תיבה גדולה (פעם אחת)
     const S = X.S; S.lbClaim = S.lbClaim || {}; const lw = (j.last || []).findIndex(x => x.me);
     if (lw >= 0 && lw < 3 && S.lbClaim[g] !== j.lastWeek) { S.lbClaim[g] = j.lastWeek; if (lw === 0) S.lbWins = (S.lbWins || 0) + 1; S.boxes.push("big"); X.save(); setTimeout(() => { X.SFX.gift(); X.toast(`🏆 <b>היית מקום ${lw + 1} בשבוע שעבר ב${GN[g]}!</b> קיבלת 🎁 תיבה גדולה`, ["לפתוח", () => X.openBoxes(["big"])], 10000); }, 400); }
-    const medal = i => ["🥇", "🥈", "🥉"][i] || `${i + 1}.`;
+    allTopCheck(g, j.allMe);
+    const medal = i => ["🥇", "🥈", "🥉"][i] || `${i + 1}.`, row = (x, i, big) => `<div class="rp-mk${big ? " lb-top" : ""}" style="--c:${i < 3 ? ["#facc15", "#cbd5e1", "#d97706"][i] : i < 5 && big ? "#a855f7" : "#6366f1"}${x.me ? ";outline:2px solid #fde047" : ""}"><div style="font-size:24px;width:40px;text-align:center">${medal(i)}</div><div class="t"><b>${esc(x.kid)}${x.me ? " (אני)" : ""}</b><small>${esc(X.CLS_L(x.cls))}${x.title ? ` · ${esc(x.title)}` : ""}</small></div><b style="font-size:18px">${x.v} ${UNIT[g]}</b></div>`;
     const el = document.createElement("div");
-    el.innerHTML = `<div class="rw-prog" style="text-align:center">השבוע · 3 הראשונים מקבלים 🎁 תיבה גדולה במוצאי שבת</div>` + (j.list.length ? j.list.map((x, i) => `<div class="rp-mk" style="--c:${i < 3 ? ["#facc15", "#cbd5e1", "#d97706"][i] : "#6366f1"}${x.me ? ";outline:2px solid #fde047" : ""}"><div style="font-size:24px;width:40px;text-align:center">${medal(i)}</div><div class="t"><b>${esc(x.kid)}${x.me ? " (אני)" : ""}</b><small>${esc(X.CLS_L(x.cls))}${x.title ? ` · ${esc(x.title)}` : ""}</small></div><b style="font-size:18px">${x.v} ${UNIT[g]}</b></div>`).join("") : `<div class="rw-prog" style="text-align:center;padding:16px">עוד אין שיאים השבוע – תהיה הראשון! 🚀</div>`)
-      + (j.me && !j.list.some(x => x.me) ? `<div class="rw-prog" style="text-align:center">המקום שלך: ${j.me.rank} · ${j.me.v} ${UNIT[g]}</div>` : "");
-    body.querySelector(".rw-prog").replaceWith(el);
+    if (mode === "all") {
+      const L = Array.isArray(j.all) ? j.all : [], top = L.slice(0, 5), rest = L.slice(5), wk1 = j.list[0], rec = L[0];
+      const chase = wk1 && rec && !wk1.me && wk1.v < rec.v ? `🔥 המוביל השבוע (${esc(wk1.kid)}) צריך עוד ${rec.v - wk1.v + 1} ${UNIT[g]} כדי לשבור את שיא כל הזמנים` : "";
+      el.innerHTML = `<div class="lb-hof"><div class="lb-crown">👑</div><b>היכל התהילה</b><small>השיאים הכי גבוהים אי פעם בשכבה. מי שעוקף שיא בשבוע – נכנס לכאן לתמיד!</small></div>`
+        + (top.length ? top.map((x, i) => row(x, i, 1)).join("") : `<div class="rw-prog" style="text-align:center;padding:16px">עוד אין שיאים – תהיה הראשון בהיסטוריה! 🚀</div>`)
+        + (chase ? `<div class="rw-prog" style="text-align:center">${chase}</div>` : "")
+        + (rest.length ? `<div class="rp-s" style="margin-top:10px">כל השאר</div>` + rest.map((x, i) => row(x, i + 5)).join("") : "")
+        + (j.allMe && !L.some(x => x.me) ? `<div class="rw-prog" style="text-align:center">המקום שלך בכל הזמנים: ${j.allMe.rank} · ${j.allMe.v} ${UNIT[g]}</div>` : "")
+        + (top[4] && (!j.allMe || j.allMe.rank > 5) ? `<div class="rw-prog" style="text-align:center">כדי להיכנס ל-5 הגדולים צריך יותר מ-${top[4].v} ${UNIT[g]} בסיבוב אחד 💪</div>` : "");
+    } else {
+      el.innerHTML = `<div class="rw-prog" style="text-align:center">השבוע · 3 הראשונים מקבלים 🎁 תיבה גדולה במוצאי שבת${j.all && j.all[0] ? `<br>👑 שיא כל הזמנים: ${j.all[0].v} ${UNIT[g]} (${esc(j.all[0].kid)})` : ""}</div>` + (j.list.length ? j.list.map((x, i) => row(x, i)).join("") : `<div class="rw-prog" style="text-align:center;padding:16px">עוד אין שיאים השבוע – תהיה הראשון! 🚀</div>`)
+        + (j.me && !j.list.some(x => x.me) ? `<div class="rw-prog" style="text-align:center">המקום שלך: ${j.me.rank} · ${j.me.v} ${UNIT[g]}</div>` : "");
+    }
+    if (ld.isConnected) ld.replaceWith(el);
   }
   // ================= 🛒 שדרוגים למשחקים =================
   function upgPanel(body, g = "bolts") {
@@ -714,7 +754,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     const G = game = { run: true, px: W / 2, tx: W / 2, obj: [], fx: [], parts: [], bolts: 0, items: [], t: 0, over: false, dead: false, combo: 0, bestCombo: 0, pw: {}, shield: false, shake: 0, stolen: 0 };
     const S = X.S, today = () => (S.game && S.game.d === R.ymd(Date.now()) ? S.game : { n: 0, it: 0 });
     const left = () => R.GAME_CAP - today().n, itemsLeft = () => R.GAME_ITEMS - today().it - G.items.length;
-    // 🔒 מעל 80% ממה שנשאר היום (400 מתוך 500): אין יציאה – חייבים להמשיך עד הסוף (נשמר לבד) או עד פצצה. באימון אין נעילה
+    // 🔒 מעל 80% ממה שנשאר היום (320 מתוך 400): אין יציאה – חייבים להמשיך עד הסוף (נשמר לבד) או עד פצצה. באימון אין נעילה
     const lockAt = () => (G.lockAt != null ? G.lockAt : (G.lockAt = left() >= 200 ? Math.floor(left() * .8) : Infinity)), LOCK = 0, locked = () => !G.practice && G.bolts > lockAt() && !G.over && !G.dead;
     // ⬆️ שלב לפי כמה ברגים יש בסיבוב: כל 50 = שלב (עד 10)
     const lvl = () => Math.min(10, 1 + Math.floor(G.bolts / 50));

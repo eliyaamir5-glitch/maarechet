@@ -1668,7 +1668,7 @@ export async function streakTick(now = Date.now()) {
 const pidOf = k => crypto.createHash("sha256").update("robo|" + k).digest("hex").slice(0, 12);
 // 🔄 עונה חדשה לרובוט (בקשת מנהל המערכת, 4.11.2026): עד 5.11 07:00 הכל נעול, ואז מוחקים פעם אחת את כל מה שהשרת שומר על הרובוטים
 // (ספירת אולטרה, פרופילים, לייקים, קרב כיתות, שוק, טריידים, הכרזות, הודעות) – כדי שכולם יתחילו שווה. הטלפונים מתאפסים לבד (robo.js)
-let ROBO_RESET_AT = Date.parse("2026-11-04T07:30:00+02:00"); const ROBO_RESET_ID = "2026-11-05", ROBO_BLOBS = ["roboRare", "roboPub", "roboLikes", "roboLikeDay", "roboGiftDay", "roboBattle", "roboMarket", "roboTrades", "roboNews", "roboInbox", "roboInvHint"];
+let ROBO_RESET_AT = Date.parse("2026-11-04T07:30:00+02:00"); const ROBO_RESET_ID = "2026-11-05", ROBO_BLOBS = ["roboRare", "roboPub", "roboLikes", "roboLikeDay", "roboGiftDay", "roboBattle", "roboMarket", "roboTrades", "roboNews", "roboInbox", "roboAll", "roboInvHint"];
 let roboSeasonDone = false;
 export function __setRoboReset(ms) { ROBO_RESET_AT = ms; roboSeasonDone = false; } // לבדיקות
 async function roboSeason(S, now) { // true = עדיין נעול
@@ -1747,12 +1747,17 @@ async function roboSocial(S, b, device, ip, now) {
     if (b.op === "score") {
       const v = Math.floor(+b.v || 0); if (v < 1 || v > (g === "run" ? 1e6 : 1e5)) return { ok: false, error: "bad_request" };
       await S.update("roboScores", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; for (const x of Object.keys(o)) if (x < HC.add(w, -21)) delete o[x]; const W = { ...(o[w] || {}) }, T = { ...(W[g] || {}) }; if ((T[k] || {}).v >= v) return undefined; if (!T[k] && Object.keys(T).length >= 3000) return undefined; T[k] = { v, at: now }; W[g] = T; o[w] = W; return o; });
+      // 🏆 טבלת כל הזמנים: השיא הכי טוב אי פעם של כל מכשיר (מוצפן), בלי קשר לשבוע
+      await S.update("roboAll", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}, T = { ...(o[g] || {}) }; if ((T[k] || {}).v >= v) return undefined; if (!T[k] && Object.keys(T).length >= 5000) return undefined; T[k] = { v, at: now }; o[g] = T; return o; });
       return { ok: true };
     }
     const all = (await S.get("roboScores")) || {}, grade = gradeOfCls(me.cls), last = HC.add(w, -7), pubT = (await S.get("roboPub")) || {};
     const rank = wk => Object.entries(((all[wk] || {})[g]) || {}).filter(([kk]) => pres[kk] && gradeOfCls(pres[kk].cls) === grade && !pres[kk].hide).sort((a, c) => c[1].v - a[1].v || a[1].at - c[1].at).map(([kk, x], i) => ({ kid: pres[kk].name || "", cls: pres[kk].cls, title: (pubT[kk] || {}).title || "", v: x.v, me: kk === k, rank: i + 1 }));
     const now5 = rank(w), mine = now5.find(x => x.me);
-    return { ok: true, g, week: w, list: now5.slice(0, b.full ? 200 : 20), me: mine || null, last: rank(last).slice(0, 3), lastWeek: last };
+    // כל הזמנים = השיא הכי גבוה מבין roboAll וכל השבועות שעוד שמורים
+    const best = { ...(((await S.get("roboAll")) || {})[g] || {}) }; for (const wk of Object.keys(all)) for (const [kk, x] of Object.entries((all[wk] || {})[g] || {})) if (!best[kk] || x.v > best[kk].v) best[kk] = x;
+    const ever = Object.entries(best).filter(([kk]) => pres[kk] && gradeOfCls(pres[kk].cls) === grade && !pres[kk].hide).sort((a, c) => c[1].v - a[1].v || a[1].at - c[1].at).map(([kk, x], i) => ({ kid: pres[kk].name || "", cls: pres[kk].cls, title: (pubT[kk] || {}).title || "", v: x.v, me: kk === k, rank: i + 1 }));
+    return { ok: true, g, week: w, list: now5.slice(0, b.full ? 200 : 20), me: mine || null, last: rank(last).slice(0, 3), lastWeek: last, all: ever.slice(0, b.full ? 200 : 50), allMe: ever.find(x => x.me) || null };
   }
   // ---- 🤝 מטרה משותפת לשכבה: כל הברגים מהמשחקים של כל השכבה השבוע. היעד לפי כמה ילדים פעילים ----
   if (b.op === "goalAdd" || b.op === "goal") {

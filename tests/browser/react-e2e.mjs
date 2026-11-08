@@ -36,16 +36,20 @@ const P = await page(stud("יוסי", "y2"));
 await P.goto("http://localhost:8787/index.html", { waitUntil: "networkidle2" }); await sleep(2500);
 // סוגרים חלון "עדכון חדש" אם קפץ
 for (let i = 0; i < 3; i++) { const okb = await P.$(".upd-ok"); if (okb) { await okb.click(); await sleep(900); } }
+// 📥 העדכון שראינו נכנס למגירה – פותחים אותה
+log(!!(await P.$("#updates .upd-drawer")), "seen update goes into the drawer");
+await P.evaluate(() => { const d = document.querySelector("#updates .upd-drawer"); if (d && d.getAttribute("aria-expanded") !== "true") d.click(); }); await sleep(400);
 log(!!(await P.$("#updates .upd-radd")), "update shows the react button");
 await P.click("#updates .upd-radd"); await sleep(300);
 log(!!(await P.$(".upd-pick")), "emoji picker opens");
 await P.evaluate(() => [...document.querySelectorAll(".upd-pgrid button")].find(b => b.textContent === "🔥").click()); await sleep(900);
 log((await P.$eval("#updates .upd-rc.mine", e => e.textContent)).includes("🔥 1"), "my reaction shows as 🔥 1");
-await P.reload({ waitUntil: "networkidle2" }); await sleep(2200);
+await P.reload({ waitUntil: "networkidle2" }); await sleep(2200); await P.evaluate(() => { const d = document.querySelector("#updates .upd-drawer"); if (d && d.getAttribute("aria-expanded") !== "true") d.click(); }); await sleep(400);
 log((await P.$eval("#updates .upd-rc.mine", e => e.textContent).catch(() => "")).includes("🔥 1"), "reaction survives reload (from server)");
 const Q = await page(stud("דנה", "y1"));
 await Q.goto("http://localhost:8787/index.html", { waitUntil: "networkidle2" }); await sleep(2500);
 for (let i = 0; i < 3; i++) { const okb = await Q.$(".upd-ok"); if (okb) { await okb.click(); await sleep(900); } }
+await Q.evaluate(() => { const d = document.querySelector("#updates .upd-drawer"); if (d && d.getAttribute("aria-expanded") !== "true") d.click(); }); await sleep(400);
 await Q.click("#updates .upd-radd"); await sleep(300);
 await Q.screenshot({ path: "rx-picker.png" });
 await Q.type(".upd-prow input", "abc"); await Q.click(".upd-pgo"); await sleep(200);
@@ -71,7 +75,7 @@ await P.evaluate(() => document.querySelector("#qaBox details").open = true); aw
 await P.click("#askBtn"); await sleep(300); await P.type("#askText", "מתי המבחן בתנ\"ך?"); await P.click("#askSend"); await sleep(800);
 const ql = await api({ action: "qList" }, tok); const qq = ql.questions.find(q => q.text.includes("תנ"));
 await api({ action: "qAnswer", id: qq.id, answer: "ביום שלישי." }, tok);
-await P.reload({ waitUntil: "networkidle2" }); await sleep(2500);
+await P.reload({ waitUntil: "networkidle2" }); await sleep(2500); await P.evaluate(() => { const d = document.querySelector("#updates .upd-drawer"); if (d && d.getAttribute("aria-expanded") !== "true") d.click(); }); await sleep(400);
 let ex = await P.$eval("#extras", e => e.innerText);
 await P.screenshot({ path: "rx-student.png" });
 log(ex.includes("הצוות ענה על השאלה שלך") && ex.includes("ביום שלישי"), "asker gets 'staff answered your question' at the top");

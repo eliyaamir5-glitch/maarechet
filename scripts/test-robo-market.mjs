@@ -57,3 +57,7 @@ await R(1, { op: "goalAdd", n: 700 }); r = await R(2, { op: "goal" }); ok("grade
 await R(1, { op: "pub", rn: "x", eq: {}, st: {}, title: "🏃 רץ למרחקים" });
 r = await R(2, { op: "scores", g: "bolts" }); ok("leaderboard shows the kid's title", r.list.some(x => x.kid === "דני כהן" && x.title === "🏃 רץ למרחקים"));
 r = await R(2, { op: "scores", g: "bolts", full: 1 }); ok("full leaderboard for the in-game chase", r.ok && Array.isArray(r.list) && r.list.length === 2);
+// ---- 🏆 טבלת כל הזמנים ----
+r = await R(1, { op: "scores", g: "bolts" }); ok("all-time board: my grade, best ever, sorted", Array.isArray(r.all) && r.all.length === 2 && r.all[0].v === 450 && r.allMe && r.allMe.v === 320 && r.allMe.rank === 2, JSON.stringify(r.all));
+await R(1, { op: "score", g: "bolts", v: 500 }); r = await R(2, { op: "scores", g: "bolts" }); ok("beating #1 moves you to the top of the all-time board", r.all[0].kid === "דני כהן" && r.all[0].v === 500 && r.allMe.rank === 2);
+ok("all-time board: no device ids", !JSON.stringify(r.all).includes("device-mrkt"));

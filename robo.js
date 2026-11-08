@@ -15,7 +15,7 @@
   function save() {
     // 🎭 סט שלם → פרס (פעם אחת)
     const sets = R.setsCheck(S); for (const st of sets) { for (const p of st.prize) R.grant(S, p); setTimeout(() => { toast(`🎭 <b>השלמת את הסט ${esc(st.n)}!</b> קיבלת ${esc(st.prize.map(giftText).join(" + "))}`, st.prize.some(p => p.t === "box") ? ["לפתוח", () => openBoxes(st.prize.filter(p => p.t === "box").map(p => p.box))] : null, 9000); SFX.gift(); }, 900); }
-    if (S.sets && S.sets.heroes && !S.legendTry && !legendBusy && !locked()) setTimeout(legendClaim, 1500);
+    if (R.legendReady(S) && !S.legendTry && !legendBusy && !locked()) setTimeout(legendClaim, 1500);
     LS.set("robo", JSON.stringify(S)); try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {} applyBubble(); homeBtn(); }
   // כפתור "🤖 הרובוט שלי" במסך הראשי – עם מספר התיבות שמחכות
   // 📋 משימות יומיות: מעדכנים התקדמות ומודיעים כשמשימה הושלמה
@@ -494,6 +494,15 @@ dialog.robo.open{background:#05020f}
 .rd.brk .rd-fl{filter:grayscale(1) drop-shadow(0 0 10px #64748b);animation:rCrack .5s 2}@keyframes rCrack{25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
 .rd-n{font-size:64px;font-weight:900;line-height:1;margin-top:4px;background:linear-gradient(180deg,#fff7c2,#facc15 50%,#f97316);-webkit-background-clip:text;background-clip:text;color:transparent}
 .rd-t{font-size:22px;font-weight:900;margin-top:4px}.rd-s{font-size:14px;color:#e0d9ff;margin-top:6px;line-height:1.5}
+#roboDayCard{display:flex;align-items:center;gap:12px;border-radius:16px;padding:11px 14px;margin-bottom:12px;cursor:pointer;color:#fff;order:3;position:relative;overflow:hidden}
+#roboDayCard.wait{order:1;background:linear-gradient(110deg,#7c2d12,#be123c 55%,#7e22ce);box-shadow:0 0 0 2px #fde047,0 0 22px rgba(253,224,71,.45);animation:rdcPulse 1.6s ease-in-out infinite}
+#roboDayCard.wait::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.28),transparent 65%);transform:translateX(-120%);animation:rdcShine 2.6s ease-in-out infinite}
+#roboDayCard.done{background:linear-gradient(90deg,#3a1a55,#5a2a3a);box-shadow:0 0 14px rgba(255,140,40,.3)}
+#roboDayCard .rdc-f{font-size:30px;animation:flick 1.6s ease-in-out infinite}#roboDayCard .rdc-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}#roboDayCard b{font-size:15.5px}
+#roboDayCard small{font-size:12.5px;opacity:.92;line-height:1.35}#roboDayCard .rdc-tm{font-variant-numeric:tabular-nums;font-size:13px;color:#fde68a}
+#roboDayCard .rdc-go{flex:0 0 auto;background:#fde047;color:#422006;font-weight:900;border-radius:99px;padding:8px 14px;box-shadow:0 3px 0 #a16207;animation:rBeat 1s infinite}
+.rd-tm{margin-top:14px;font-size:12.5px;opacity:.85;max-width:340px;text-align:center;line-height:1.5}
+@keyframes rdcPulse{50%{box-shadow:0 0 0 3px #fde047,0 0 32px rgba(253,224,71,.7)}}@keyframes rdcShine{60%,100%{transform:translateX(120%)}}
 .rd-week{display:flex;gap:6px;justify-content:center;margin:20px 0 16px;width:100%;max-width:420px}
 .rd-week .rl{flex:1;min-width:0;padding:7px 2px}.rd-week .rl .g{font-size:20px}
 .rd-btns{display:flex;flex-direction:column;gap:10px;align-items:center;width:100%;max-width:320px}.rd-btns .rbtn{width:100%;font-size:17px;padding:14px}
@@ -626,12 +635,13 @@ dialog.robo.open{background:#05020f}
       const n = S.st.n, from = Math.max(1, n - 2), days = Array.from({ length: 18 }, (_, i) => from + i);
       const miles = [7, 10, 14, 21, 30, 50, 75, 100, 150, 200].filter(m => m > n).slice(0, 4);
       body.innerHTML = `<div class="rbx" style="--c:#f97316"><div class="em">🔥</div><div class="t"><b>רצף של ${n} ${n === 1 ? "יום" : "ימים"}</b><small>השיא שלך: ${S.st.best} · כל יום שנכנסים לאפליקציה = מתנה. שבת וחג לא שוברים את הרצף 🙂</small></div></div>
+        ${(() => { const i = stInfo(), now = Date.now(); return i.got ? `<div class="rbx" style="--c:#22c55e"><div class="em">⏳</div><div class="t"><b>אספת היום ✅ המתנה הבאה בעוד ${hms(i.next - now)}</b><small>חייבים להיכנס ולאסוף ${i.reqName} עד 23:59 – אחרת הרצף נשבר (נשאר ${hms(i.deadline - now)})</small></div></div>` : `<div class="rbx" style="--c:#ef4444"><div class="em">🎁</div><div class="t"><b>עוד לא אספת היום!</b><small>${i.rest ? "היום שבת/חג – אפשר לאסוף, והרצף לא נשבר" : `נשאר ${hms(i.deadline - now)} עד שהרצף נשבר`}</small></div><button class="rbtn sm" type="button" id="rwCollect">לאסוף</button></div>`; })()}
         <div class="rw-sec">🎁 המתנות הבאות</div><div class="rladder">${days.map(d => dayTile(d, n)).join("")}</div>
         <div class="rw-sec">🏆 יעדים גדולים</div>${miles.map(m => `<div class="rbx" style="--c:${m >= 50 ? "#facc15" : m >= 30 ? "#ef4444" : "#a855f7"}"><div class="em">${m >= 100 ? "👑" : m >= 50 ? "⭐" : "💠"}</div><div class="t"><b>יום ${m}</b><small>${R.dayGift(m).map(giftText).join(" + ")}</small></div><b>עוד ${m - n}</b></div>`).join("")}
         <div class="rw-sec">📚 רצף במקצוע <small>שיעורים ברצף בלי חיסור (ממשוב)</small></div>
         <div class="rw-prog">10 → 📦 תיבה · 30 → 🎁 תיבה גדולה · 50 → 💠 מגה · 100 → 💠 מגה + 🥇 מדליית מקצוע</div>
         <div style="text-align:center;margin-top:14px"><button class="rbtn alt" type="button" id="rwShare">📸 להראות לחברים</button></div>`;
-      body.querySelector("#rwShare").onclick = share;
+      body.querySelector("#rwShare").onclick = share; const cl = body.querySelector("#rwCollect"); if (cl) cl.onclick = () => { d.close(); daily(); };
     }
   }
   // הצלת רצף שנשבר היום (מהחנות)
@@ -797,7 +807,7 @@ dialog.robo.open{background:#05020f}
   // ---------- 👑 האגדה: מי שאוסף ראשון את כל הגיבורים ----------
   let legendBusy = false;
   async function legendClaim() {
-    if (legendBusy || S.legendTry || !S.sets || !S.sets.heroes || locked() || window.__DEMO) return; legendBusy = true;
+    if (legendBusy || S.legendTry || !R.legendReady(S) || locked() || window.__DEMO) return; legendBusy = true;
     try {
       const base = (typeof SERVER_BASE !== "undefined" && SERVER_BASE) || "";
       const r = await fetch(base + "/api/feed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "robo", op: "claim", item: "skin:legend", device: dev() }) });
@@ -810,8 +820,8 @@ dialog.robo.open{background:#05020f}
   }
   function legendShow(won) {
     const d = dlg("roboAnn");
-    d.innerHTML = won ? `<div class="ann"><div class="t">👑 אתה האגדה!!!</div><div class="bot">${svg("", { skin: "skin:legend" }, { noHoli: true })}</div><div class="w">אספת ראשון בישיבה את כל הגיבורים 🦸</div><div class="l">קיבלת את "האגדה" – הסקין הכי נדיר במשחק. רק אחד בכל הישיבה, והוא שלך!</div><div class="rd-btns" style="margin-top:18px"><button class="rbtn" type="button" id="annOk">👑 ללבוש עכשיו</button></div></div>`
-      : `<div class="ann"><div class="t">🦸 אספת את כל הגיבורים!</div><div class="bot">${svg()}</div><div class="w">כל הכבוד – זה הישג ענק!</div><div class="l">"האגדה" 👑 כבר נלקחה – מישהו הגיע לפניך. אבל אתה בין הבודדים שאספו הכל!</div><div class="rd-btns" style="margin-top:18px"><button class="rbtn" type="button" id="annOk">וואו 🤩</button></div></div>`;
+    d.innerHTML = won ? `<div class="ann"><div class="t">👑 אתה האגדה!!!</div><div class="bot">${svg("", { skin: "skin:legend" }, { noHoli: true })}</div><div class="w">השלמת ראשון בישיבה את כל 4 האתגרים של האגדה 🦸</div><div class="l">קיבלת את "האגדה" – הסקין הכי נדיר במשחק. רק אחד בכל הישיבה, והוא שלך!</div><div class="rd-btns" style="margin-top:18px"><button class="rbtn" type="button" id="annOk">👑 ללבוש עכשיו</button></div></div>`
+      : `<div class="ann"><div class="t">👑 השלמת את כל 4 האתגרים!</div><div class="bot">${svg()}</div><div class="w">כל הכבוד – זה הישג ענק!</div><div class="l">"האגדה" 👑 כבר נלקחה – מישהו הגיע לפניך. אבל אתה בין הבודדים שאספו הכל!</div><div class="rd-btns" style="margin-top:18px"><button class="rbtn" type="button" id="annOk">וואו 🤩</button></div></div>`;
     show(d); if (won) { SFX.ultra(); setTimeout(() => SFX.reveal(6), 900); setTimeout(() => particles(d.querySelector(".ann"), "#facc15", 80, ["👑", "⭐", "✨", "💛"]), 400); vib([80, 60, 80, 60, 300]); }
     d.querySelector("#annOk").onclick = () => { if (won) { R.equip(S, "skin:legend"); save(); publishSoon(); } d.close(); };
   }
@@ -894,9 +904,34 @@ dialog.robo.open{background:#05020f}
   }
 
   // ---------- רצף כניסות יומי ----------
+  // ⏳ טיימרים של הרצף: מתי נפתחת המתנה הבאה, ועד מתי חייבים להיכנס כדי שהרצף לא יישבר
+  const endOf = ds => { const [y, m, dd] = ds.split("-").map(Number); return new Date(y, m - 1, dd, 23, 59, 59, 999).getTime(); };
+  const hms = ms => { const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600); return `${h}:${String(Math.floor(s % 3600 / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; };
+  const DAYN = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+  function stInfo(now = Date.now()) {
+    const today = R.ymd(now), pend = S.dpend && S.dpend.d === today, got = S.st.last === today && !pend;
+    let req = got ? R.add(today, 1) : today; while (R.restDay(req)) req = R.add(req, 1); // היום הבא שחייבים להיכנס בו (שבת וחג לא נחשבים)
+    const broken = !got && !pend && !!S.st.last && S.st.n > 0 && S.st.last !== today && R.missed(S.st.last, today) > 0;
+    const willN = got || pend ? S.st.n : !S.st.last || S.st.n <= 0 || broken ? 1 : S.st.n + 1;
+    return { got, pend, today, req, deadline: endOf(req), reqName: req === today ? "היום" : req === R.add(today, 1) ? "מחר" : `ביום ${DAYN[R.dow(req)]}`, next: endOf(today) + 1, willN, broken, rest: R.restDay(today) };
+  }
+  // 🔥 כרטיס רצף בדף הבית: אם עוד לא אספת – מזכיר ומראה איך; אם אספת – מתי המתנה הבאה ועד מתי להיכנס
+  function dayCard() {
+    if (page !== "index" || !profile() || locked() || window.__DEMO_NOROBO) return;
+    let el = document.getElementById("roboDayCard");
+    if (!el) { const anchor = document.getElementById("streakPill") || document.getElementById("content"); if (!anchor || !anchor.parentNode) return; el = document.createElement("div"); el.id = "roboDayCard"; el.setAttribute("role", "button"); el.tabIndex = 0; anchor.parentNode.insertBefore(el, anchor); el.onclick = () => { const i = stInfo(); if (!i.got) daily(); else open("streak"); }; }
+    const i = stInfo(), now = Date.now(), gift = R.dayGift(i.willN).map(giftText).join(" + ");
+    el.className = i.got ? "done" : "wait";
+    el.innerHTML = i.got
+      ? `<span class="rdc-f">🔥</span><span class="rdc-t"><b>רצף ${S.st.n} · ✅ אספת היום</b><small>🎁 המתנה הבאה (יום ${S.st.n + 1}) נפתחת בעוד <b class="rdc-tm">${hms(i.next - now)}</b></small><small>כדי לא לשבור את הרצף – להיכנס ${i.reqName} עד 23:59 ⏳ ${hms(i.deadline - now)}</small></span>`
+      : `<span class="rdc-f">🎁</span><span class="rdc-t"><b>${i.broken ? "💔 הרצף נשבר – אפשר להציל אותו!" : `המתנה של יום ${i.willN} מחכה לך!`}</b><small>${esc(gift)}</small><small class="rdc-how">👆 לחצו כאן ואז על "🎁 לקבל" · ${i.rest ? "היום שבת/חג – הרצף לא נשבר 🙂" : `נשאר להיום: <b class="rdc-tm">${hms(i.deadline - now)}</b> – אחר כך הרצף נשבר!`}</small></span><span class="rdc-go">לאסוף</span>`;
+  }
+  setInterval(() => { if (!document.hidden && document.getElementById("roboDayCard")) dayCard(); }, 1000);
+
   async function daily(force) {
     if (!profile() || locked()) return;
-    const c = R.checkIn(S); if (!c && !force) return; if (c) step(3); save();
+    const today = R.ymd(Date.now()), pend = S.dpend && S.dpend.d === today ? S.dpend : null;
+    const c = pend ? null : R.checkIn(S); if (!c && !pend) { if (force) open("streak"); return; } if (c) { step(3); S.dpend = { d: today, g: c.gift }; } save(); dayCard();
     if (c && !window.__DEMO) api({ op: "day", n: S.st.n }).catch(() => {}); // בשביל התזכורת לפני שהרצף נשבר
     const d = dlg("roboDay"); d.dataset.lock = "1";
     if (c && c.broken) {
@@ -907,11 +942,12 @@ dialog.robo.open{background:#05020f}
       const choice = await new Promise(res => { const s = d.querySelector("#rdSave"); if (s) s.onclick = () => res("save"); d.querySelector("#rdNew").onclick = () => res("new"); });
       if (choice === "save") { const r = R.saveStreak(S); if (r.ok) { save(); c.n = r.n; c.gift = r.gift; c.saved = true; } }
     }
-    const n = S.st.n, gift = c ? c.gift : R.dayGift(n);
+    const n = S.st.n, gift = c ? c.gift : pend.g || R.dayGift(n); if (c && c.saved) S.dpend.g = gift;
     d.innerHTML = `<div class="rd"><div class="rd-fl">🔥</div><div class="rd-n" id="rdN">${Math.max(0, n - 1)}</div><div class="rd-t">${c && c.saved ? "הרצף ניצל! 🎉" : n === 1 ? "יום 1 – מתחילים רצף!" : `רצף של ${n} ימים!`}</div>
       <div class="rd-s">כל יום שנכנסים = מתנה. ככל שהרצף ארוך יותר – המתנות שוות יותר 💪<br>שבת וחג לא שוברים את הרצף.</div>
       <div class="rd-week">${Array.from({ length: 5 }, (_, i) => n - 1 + i).filter(x => x >= 1).slice(0, 5).map(x => dayTile(x, n)).join("")}</div>
-      <div class="rd-btns"><button class="rbtn" type="button" id="rdGo">🎁 לקבל: ${esc(gift.map(giftText).join(" + "))}</button></div></div>`;
+      <div class="rd-btns"><button class="rbtn" type="button" id="rdGo">🎁 לקבל: ${esc(gift.map(giftText).join(" + "))}</button></div>
+      <div class="rd-tm">⏳ המתנה הבאה נפתחת מחר ב-00:00 · כדי שהרצף לא יישבר צריך להיכנס ולאסוף <b>כל יום</b> (עד 23:59). שבת וחג – חופש 🙂</div></div>`;
     show(d);
     const nEl = d.querySelector("#rdN"); setTimeout(() => { nEl.textContent = n; nEl.animate && nEl.animate([{ transform: "scale(1.6)" }, { transform: "scale(1)" }], { duration: 500, easing: "cubic-bezier(.2,1.6,.4,1)" }); vib(30); }, 450);
     await new Promise(res => d.querySelector("#rdGo").onclick = res); SFX.gift();
@@ -921,7 +957,7 @@ dialog.robo.open{background:#05020f}
       else if (g.t === "guar") { const p = R.guaranteed(S, g.r); const x = R.grant(S, p); toast(`⭐ <b>${esc(R.ITEMS[x.id].n)}</b> ${rarTag(x.r)}${x.dup ? ` (כפול → +${x.dup} 🔩)` : ""}`, null, 5000); }
       else { const x = R.grant(S, g); if (x.t === "item") celebrateItem(x.id); else if (x.t === "bolts") toast(`🔩 +${x.n} ברגים!`, null, 2500); }
     }
-    save(); delete d.dataset.lock; d.close(); hubRefresh();
+    delete S.dpend; save(); delete d.dataset.lock; d.close(); hubRefresh(); dayCard();
     if (boxes.length) openBoxes(boxes);
   }
 
@@ -1215,7 +1251,7 @@ dialog.robo.open{background:#05020f}
     // 👋 פעם אחת: "חדש! אפשר להלביש אותי" – אחרי שהכל נרגע
     const intro = () => { if (LS.get("roboIntro", "") || page !== "index") return; if (busy() || S.st.last !== R.ymd(Date.now())) { setTimeout(intro, 4000); return; } LS.set("roboIntro", "1"); toast("🤖 <b>חדש!</b> אפשר להלביש אותי 👕 יש לי ארון, תיבות וחנות. אפשר גם לכתוב לי \"תלביש אותך\"", ["לארון", () => open("wear")], 9000); };
     if (!(navigator.webdriver && !LS.get("roboTest", ""))) setTimeout(intro, 9000);
-    tick = () => { if (S.st.last === R.ymd(Date.now())) return; if (busy()) { calm = 0; if (++tries < 120) setTimeout(tick, 2000); return; } if (++calm < 2) { setTimeout(tick, 1500); return; } daily(); };
+    tick = () => { dayCard(); if (S.st.last === R.ymd(Date.now()) && !(S.dpend && S.dpend.d === R.ymd(Date.now()))) return; if (busy()) { calm = 0; if (++tries < 120) setTimeout(tick, 2000); return; } if (++calm < 2) { setTimeout(tick, 1500); return; } daily(); };
     setTimeout(tick, page === "index" ? 3500 : 2000);
   };
   let tick = () => {}, tries = 0, lastTouch = 0;

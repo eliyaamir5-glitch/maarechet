@@ -321,7 +321,7 @@
     if (p.t === "item") {
       if (!ITEMS[p.id]) return { t: "bolts", n: 0 };
       if (p.shiny) { S.shiny = S.shiny || {}; if (!S.shiny[p.id]) { const had = !!S.own[p.id]; S.shiny[p.id] = 1; if (!S.own[p.id]) { S.own[p.id] = Date.now(); S.got++; } S.news.push(p.id); return Object.assign({}, p, { shinyNew: 1, had }); } }
-      if (S.own[p.id]) { const n = RAR[ITEMS[p.id].r].dup; S.bolts += n; return Object.assign({}, p, { dup: n }); }
+      if (S.own[p.id]) { const n = RAR[ITEMS[p.id].r].dup; S.bolts += n; if (S.tr && S.tr[p.id] && !p.bought) delete S.tr[p.id]; return Object.assign({}, p, { dup: n }); } // יצא לך בעצמך → נחשב "מצאתי בעצמי"
       S.own[p.id] = Date.now(); S.news.push(p.id); S.got++; return p;
     }
     return p;
@@ -449,9 +449,9 @@
   const eventNow = (now = Date.now()) => { const d = +ymd(now).slice(8, 10); return d >= 1 && d <= 3 ? { n: "🌍 סופש בונוס!", up: 1.6, until: 3 } : null; };
   // 🕵️ שוק: טווח מחירים לכל דרגה
   const PRICE = { c: [10, 80], r: [25, 200], s: [50, 400], e: [100, 800], m: [250, 2000], l: [500, 5000], u: [2000, 20000] };
-  // 🎮 משחק הברגים: עד 500 ברגים ו-2 אביזרים ביום (אחרי זה – מצב אימון בלי פרסים)
-  const GAME_CAP = 500, GAME_ITEMS = 2;
-  // 🎲 כפול או כלום (ברגים נופלים, כשמגיעים ל-500): ניצחון = 500 נשמרים + עוד 500, הפסד = כלום (וגמרת להיום)
+  // 🎮 משחק הברגים: עד 400 ברגים (שווה לריצה – 8.11) ו-2 אביזרים ביום (אחרי זה – מצב אימון בלי פרסים)
+  const GAME_CAP = 400, GAME_ITEMS = 2;
+  // 🎲 כפול או כלום (ברגים נופלים, כשמגיעים ל-400): ניצחון = 400 נשמרים + עוד 400, הפסד = כלום (וגמרת להיום)
   function gameDouble(S, win, now = Date.now()) {
     const d = ymd(now); if (!S.game || S.game.d !== d) S.game = { d, n: 0, it: 0 };
     const base = Math.max(0, GAME_CAP - S.game.n); S.game.n = GAME_CAP; S.game.dbl = win ? 1 : -1;
@@ -459,11 +459,11 @@
   }
   // 🛒 שדרוגים קבועים למשחקים (3 רמות לכל אחד)
   const UPG = {
-    magnet: { n: "מגנט חזק", em: "🧲", g: "both", d: "המגנט מחזיק יותר זמן (+3 שניות לכל רמה)", cost: [250, 700, 1800] },
-    shield: { n: "מגן בהתחלה", em: "🛡️", g: "both", d: "סיכוי להתחיל עם מגן: 35% → 70% → תמיד", cost: [400, 1000, 2500] },
-    luck: { n: "מזל", em: "🍀", g: "both", d: "יותר כוחות ופריטים נופלים", cost: [350, 900, 2200] },
-    bucket: { n: "רובוט רחב", em: "🪣", g: "bolts", d: "ב\"ברגים נופלים\" – תופסים רחב יותר", cost: [300, 800, 2000] },
-    flight: { n: "קקי עוצמתי", em: "💩", g: "run", d: "בריצה – עפים יותר זמן (+2 שניות לכל רמה)", cost: [300, 800, 2000] },
+    magnet: { n: "מגנט חזק", em: "🧲", g: "both", d: "המגנט מחזיק יותר זמן (+3 שניות לכל רמה)", cost: [120, 350, 800] },
+    shield: { n: "מגן בהתחלה", em: "🛡️", g: "both", d: "סיכוי להתחיל עם מגן: 35% → 70% → תמיד", cost: [150, 400, 900] },
+    luck: { n: "מזל", em: "🍀", g: "both", d: "יותר כוחות ופריטים נופלים", cost: [150, 400, 900] },
+    bucket: { n: "רובוט רחב", em: "🪣", g: "bolts", d: "ב\"ברגים נופלים\" – תופסים רחב יותר", cost: [120, 350, 800] },
+    flight: { n: "קקי עוצמתי", em: "💩", g: "run", d: "בריצה – עפים יותר זמן (+2 שניות לכל רמה)", cost: [120, 350, 800] },
   };
   const upg = (S, k) => Math.min(3, (S.upg || {})[k] || 0);
   function buyUpg(S, k) { const U = UPG[k], l = upg(S, k); if (!U) return { ok: false, error: "bad" }; if (l >= 3) return { ok: false, error: "max" }; const c = U.cost[l]; if (S.bolts < c) return { ok: false, error: "bolts", cost: c }; S.bolts -= c; S.upg = Object.assign({}, S.upg, { [k]: l + 1 }); return { ok: true, lvl: l + 1, cost: c }; }
@@ -479,8 +479,8 @@
     const d = ymd(now), c = challenge(game, now); S.chal = S.chal || {}; if (S.chal[game] === d || !c.ok(stats || {})) return null;
     S.chal[game] = d; S.boxes.push("mega"); return c;
   }
-  // 🏃 ריצת הרובוט: עד 250 ברגים ביום (אחרי זה – אימון בלי פרסים)
-  const RUN_CAP = 250;
+  // 🏃 ריצת הרובוט: עד 400 ברגים ביום (שווה לברגים נופלים) (אחרי זה – אימון בלי פרסים)
+  const RUN_CAP = 400;
   function runBank(S, n, now = Date.now()) { const d = ymd(now); if (!S.run || S.run.d !== d) S.run = { d, n: 0 }; const g = Math.max(0, Math.min(Math.floor(n), RUN_CAP - S.run.n)); S.run.n += g; S.bolts += g; return { bolts: g, left: RUN_CAP - S.run.n }; }
   function gameBank(S, n, items = [], now = Date.now()) {
     const d = ymd(now); if (!S.game || S.game.d !== d) S.game = { d, n: 0, it: 0 };
@@ -527,6 +527,8 @@
     { id: "streak", t: "🔥 רצף ברזל", how: "רצף של 14 ימים", ok: S => ((S.st || {}).best || 0) >= 14 },
     { id: "smart", t: "📚 תלמיד חכם", how: "לקבל 3 תיבות על ציונים טובים", ok: S => (S.gBox || 0) >= 3 },
     { id: "champ", t: "🏆 אלוף השבוע", how: "להיות מקום ראשון בשכבה בטבלת השיאים", ok: S => (S.lbWins || 0) >= 1 },
+    { id: "top5", t: "🏅 בטופ 5 של כל הזמנים", how: "להיכנס ל-5 הראשונים בטבלת כל הזמנים של השכבה", ok: S => Object.values(S.allTop || {}).some(r => r <= 5) },
+    { id: "allking", t: "👑 שיאן כל הזמנים", how: "להיות מקום ראשון בטבלת כל הזמנים של השכבה", ok: S => Object.values(S.allTop || {}).some(r => r === 1) },
     { id: "explorer", t: "🗺️ חוקר", how: "להגיע לתחנה 20 במסע", ok: S => ((S.map || {}).c || 0) >= 20 },
     { id: "sets", t: "🎭 אספן סטים", how: "להשלים 5 סטים", ok: S => Object.keys(S.sets || {}).length >= 5 },
     { id: "team", t: "🤝 שחקן קבוצה", how: "לעזור לשכבה להשיג 3 מטרות", ok: S => (S.goalHelps || 0) >= 3 },
@@ -534,6 +536,19 @@
     { id: "gold", t: "💎 בעל זהב", how: "להשיג את עיצוב הזהב והיהלומים", ok: S => !!S.own["theme:goldx"] && S.own["theme:goldx"] !== -1 },
     { id: "legend", t: "👑 האגדה", how: "להיות האגדה", ok: S => !!S.own["skin:legend"] && S.own["skin:legend"] !== -1 },
   ];
+  // 👑 האגדה (8.11 – יותר קשה): כל הגיבורים שמצאת בעצמך (לא מטרייד/שוק) + רצף 30 יום + 8 סטים + ריצה של 2000 מ'
+  const LEGEND_REQ = { streak: 30, sets: 8, run: 2000 };
+  function legendReq(S) {
+    const hs = (SETS.find(x => x.id === "heroes") || { ids: [] }).ids, tr = S.tr || {}, mine = hs.filter(id => S.own[id] && S.own[id] !== -1 && !tr[id]).length;
+    const sets = Object.keys(S.sets || {}).filter(k => k !== "heroes" && k !== "newheroes").length;
+    return [
+      { id: "heroes", em: "🦸", n: "כל הגיבורים – שמצאת בעצמך", how: "גיבור שקיבלת בטרייד או קנית בשוק לא נספר (אם יוצא לך בעצמך מתיבה – הוא נספר)", have: mine, need: hs.length },
+      { id: "streak", em: "🔥", n: `רצף של ${LEGEND_REQ.streak} ימים`, how: "השיא שלך ברצף הכניסות", have: Math.min(LEGEND_REQ.streak, ((S.st || {}).best || 0)), need: LEGEND_REQ.streak },
+      { id: "sets", em: "🎭", n: `${LEGEND_REQ.sets} סטים מלאים`, how: "בלי סטי הגיבורים", have: Math.min(LEGEND_REQ.sets, sets), need: LEGEND_REQ.sets },
+      { id: "run", em: "🏃", n: `ריצה של ${LEGEND_REQ.run} מ'`, how: "בריצה אחת בריצת הרובוט", have: Math.min(LEGEND_REQ.run, S.runBest || 0), need: LEGEND_REQ.run },
+    ].map(x => Object.assign(x, { ok: x.have >= x.need }));
+  }
+  const legendReady = S => legendReq(S).every(x => x.ok);
   const titlesOf = S => TITLES.filter(x => x.ok(S));
   const titleText = S => { const x = TITLES.find(q => q.id === S.title); return x && x.ok(S) ? x.t : ""; };
   // ---- 🏷️ שם לרובוט (עם סינון מילים לא יפות) ----
@@ -564,7 +579,7 @@
     for (const id of give.items || []) { delete S.own[id]; for (const k of Object.keys(S.eq)) if (S.eq[k] === id) delete S.eq[k]; }
     for (const b of give.boxes || []) { const i = S.boxes.indexOf(b); if (i >= 0) S.boxes.splice(i, 1); }
     S.bolts = Math.max(0, S.bolts - Math.max(0, Math.floor(+give.bolts || 0)));
-    for (const id of get.items || []) if (ITEMS[id]) { if (!S.own[id] || S.own[id] === -1) { S.own[id] = Date.now(); S.news.push(id); } else S.bolts += RAR[ITEMS[id].r].dup; }
+    for (const id of get.items || []) if (ITEMS[id]) { if (!S.own[id] || S.own[id] === -1) { S.own[id] = Date.now(); S.news.push(id); (S.tr = S.tr || {})[id] = 1; } else S.bolts += RAR[ITEMS[id].r].dup; }
     for (const b of get.boxes || []) if (BOX[b]) S.boxes.push(b);
     S.bolts += Math.max(0, Math.floor(+get.bolts || 0));
     if (!S.eq.skin) S.eq.skin = "skin:classic"; S.trades = (S.trades || 0) + 1;
@@ -577,6 +592,6 @@
     const d = ymd(now); if (!S.earn || S.earn.d !== d) S.earn = { d, n: 0 };
     const g = Math.max(0, Math.min(n, EARN_CAP - S.earn.n)); S.earn.n += g; S.bolts += g; return g;
   }
-  const api = { hanukkahDay, hanukkahIn, setHanukkahTest, evOn, CANDLE, lightCandle, TITLES, titlesOf, titleText, gameDouble, UPG, upg, buyUpg, CHAL, challenge, challengeCheck, RUN_CAP, runBank, MISSIONS, missions, track, claimMission, WORLDS, MAP_N, MAP_STEP, mapPrize, mapStep, mapClaim, SHINY, WHEEL, spinWheel, FLASH, flashNow, buyFlash, labCombine, SETS, setsCheck, eventNow, PRICE, GAME_CAP, GAME_ITEMS, gameBank, cleanName, achievements, RVAL, BVAL, offerValue, canGive, applyTrade, weekId, HEROES, EARN_CAP, earn, RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
+  const api = { LEGEND_REQ, legendReq, legendReady, hanukkahDay, hanukkahIn, setHanukkahTest, evOn, CANDLE, lightCandle, TITLES, titlesOf, titleText, gameDouble, UPG, upg, buyUpg, CHAL, challenge, challengeCheck, RUN_CAP, runBank, MISSIONS, missions, track, claimMission, WORLDS, MAP_N, MAP_STEP, mapPrize, mapStep, mapClaim, SHINY, WHEEL, spinWheel, FLASH, flashNow, buyFlash, labCombine, SETS, setsCheck, eventNow, PRICE, GAME_CAP, GAME_ITEMS, gameBank, cleanName, achievements, RVAL, BVAL, offerValue, canGive, applyTrade, weekId, HEROES, EARN_CAP, earn, RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.RoboCore = api;
 })(typeof self !== "undefined" ? self : this);
