@@ -780,7 +780,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     const move = e => { const r = box.getBoundingClientRect(), p = e.touches ? e.touches[0] : e; G.tx = Math.max(30, Math.min(W - 30, p.clientX - r.left)); };
     box.addEventListener("pointerdown", move); box.addEventListener("pointermove", move); box.addEventListener("touchmove", e => { move(e); e.preventDefault(); }, { passive: false });
     const key = e => { if (e.key === "ArrowLeft") G.tx = Math.max(30, G.tx - 45); if (e.key === "ArrowRight") G.tx = Math.min(W - 30, G.tx + 45); }; addEventListener("keydown", key);
-    const overlay = (html, btns) => new Promise(res => { const o = document.createElement("div"); o.className = "gm-ov"; o.innerHTML = `<div>${html}<div class="rd-btns">${btns.map((b, i) => `<button class="rbtn${i ? " alt" : ""}" type="button" data-i="${i}">${b}</button>`).join("")}</div></div>`; box.appendChild(o); o.querySelectorAll("button").forEach(b => b.onclick = () => { o.remove(); res(+b.dataset.i); }); });
+    const overlay = (html, btns) => new Promise(res => { const o = document.createElement("div"); setTimeout(() => { if (botOn() && o.isConnected) { const bb = o.querySelector('[data-i="0"]'); if (bb) bb.click(); } }, 1400); /* 🤖 הרובוט ממשיך לבד (סיבוב חדש / לשמור) */ o.className = "gm-ov"; o.innerHTML = `<div>${html}<div class="rd-btns">${btns.map((b, i) => `<button class="rbtn${i ? " alt" : ""}" type="button" data-i="${i}">${b}</button>`).join("")}</div></div>`; box.appendChild(o); o.querySelectorAll("button").forEach(b => b.onclick = () => { o.remove(); res(+b.dataset.i); }); });
     // ⏸️ יצאו מהאפליקציה באמצע (נעילת מסך / אפליקציה אחרת): עוצרים, משתיקים, וכשחוזרים – "להמשיך"
     const onVis = async () => { if (!G.run || G.over || G.dead) return; if (document.hidden) { if (!G.paused) { G.paused = true; SND.stopMusic(); } } else if (G.paused && !G.pauseAsk) { G.pauseAsk = 1; await overlay(`<div class="big">⏸️</div><h3>המשחק בהמתנה</h3><p>יצאת מהאפליקציה – עצרנו בשבילך 🙂</p>`, ["▶️ להמשיך"]); G.pauseAsk = 0; G.paused = false; last = performance.now(); SND.music(G.hard > 0 ? "hard" : "bolts"); } };
     document.addEventListener("visibilitychange", onVis);
@@ -861,7 +861,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
       if (o.k === "bomb" && G.pw.defuse > 0 && G.hard <= 0) { const n = G.practice ? 3 : Math.min(3, Math.max(0, left() - G.bolts)); G.bolts += n; AU.shield(); burst(o.x, py - 20, "#f87171", 16, 180); fxText(o.x, py - 60, `🧯 נוטרל! +${n}`, "#fca5a5", 1, 20); hud(); return; }
       if (o.k === "bomb" || o.k === "thief") {
         if (G.hard > 0) { boom(o); return; }
-        if (G.shield) { G.st.shieldUsed = true; G.shield = false; AU.shield(); X.vib(40); burst(o.x, py - 20, "#38bdf8", 24, 220); fxText(G.px, py - 70, "🛡️ המגן הציל אותך!", "#7dd3fc", 1.3, 20); return; }
+        if (G.shield) { G.st.shieldUsed = true; G.shield = false; AU.shield(); if (!botOn()) X.vib(40); burst(o.x, py - 20, "#38bdf8", 24, 220); if (!botOn()) fxText(G.px, py - 70, "🛡️ המגן הציל אותך!", "#7dd3fc", 1.3, 20); return; }
         if (o.k === "thief") {
           const take = Math.ceil(G.bolts / 2); G.bolts -= take; G.stolen += take; loseCombo(); AU.thief(); X.vib([40, 30, 40, 30, 40]); G.shake = .3;
           fxText(G.px, py - 70, take ? `🦹 הגנב לקח ${take}!` : "🦹 הגנב לא מצא כלום 😅", "#e879f9", 1.4, 22); burst(o.x, py - 20, "#a855f7", 26, 240);
@@ -912,11 +912,12 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
         if ((G.nitem -= rdt) <= 0) { G.nitem = 14 + Math.random() * 12; if (!G.practice && itemsLeft() > 0) spawn("item"); }
       }
       if (botOn() && !G.over && !G.dead) { // 🤖 רובוט אוטומטי: מחפש את המקום הכי טוב – ברגים קרובים, רחוק מפצצות וגנבים
+        G.shield = true; // 🛡️ מגן רובוט: פצצה או גנב לא פוסלים כשהרובוט משחק
         const py0 = H - 60; let bx = G.px, bv = -1e9;
         for (let i = 0; i <= 24; i++) { const x = 30 + (W - 60) * i / 24; let v = -Math.abs(x - G.px) * .02;
           for (const o of G.obj) { const dy = py0 - o.y; if (dy < -20 || dy > H * .9) continue; const dx = Math.abs(o.x - x), t = Math.max(0, dy) / Math.max(60, o.v || 200);
-            if (o.k === "bomb" || o.k === "thief") { if (dx < 62 && dy < H * .5) v -= 900 / (1 + t * 3); }
-            else v += (o.k === "gold" ? 5 : o.k === "item" || o.k === "pow" ? 6 : 1) * Math.max(0, 1 - dx / (90 + t * 220)) / (1 + t); }
+            if (o.k === "bomb" || o.k === "thief") { if (G.hard > 0 && dx < 62 && dy < H * .5) v -= 900 / (1 + t * 3); else if (dx < 50 && dy < H * .25) v -= 2; } // יש מגן רובוט – לא בורחים, רק אוספים
+            else v += (o.k === "gold" ? 5 : o.k === "item" || o.k === "pow" ? 6 : 1) * Math.max(0, 1 - dx / (50 + t * 520)) / (.25 + t); }
           if (v > bv) { bv = v; bx = x; } }
         G.tx = bx; }
       G.px += (G.tx - G.px) * Math.min(1, rdt * 16);

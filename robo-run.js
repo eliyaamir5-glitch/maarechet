@@ -83,7 +83,7 @@
     const onVis = async () => { if (!G.run || G.over || G.dead) return; if (document.hidden) { if (!G.paused) { G.paused = true; AU.stopMusic(); } } else if (G.paused && !G.pauseAsk) { G.pauseAsk = 1; await overlay(`<div class="big">⏸️</div><h3>הריצה בהמתנה</h3><p>יצאת מהאפליקציה – עצרנו בשבילך 🙂</p>`, ["▶️ להמשיך"]); G.pauseAsk = 0; G.paused = false; last = performance.now(); AU.music(G.fly > 0 ? "sky" : "run"); } };
     document.addEventListener("visibilitychange", onVis);
     const finish = () => { document.removeEventListener("visibilitychange", onVis); AU.stopMusic(); G.run = false; game = null; removeEventListener("keydown", key); removeEventListener("resize", fit); try { ro && ro.disconnect(); } catch (e) {} delete d.dataset.lock; d.close(); X.hubRefresh(); if (host && host.isConnected) panel(host); };
-    const overlay = (html, btns) => new Promise(res => { const o = document.createElement("div"); o.className = "gm-ov"; o.innerHTML = `<div>${html}<div class="rd-btns">${btns.map((b, i) => `<button class="rbtn${i ? " alt" : ""}" type="button" data-i="${i}">${b}</button>`).join("")}</div></div>`; box.appendChild(o); o.querySelectorAll("button").forEach(b => b.onclick = () => { o.remove(); res(+b.dataset.i); }); });
+    const overlay = (html, btns) => new Promise(res => { const o = document.createElement("div"); setTimeout(() => { if (autoOn() && o.isConnected) { const bb = o.querySelector('[data-i="0"]'); if (bb) bb.click(); } }, 1400); /* 🤖 הרובוט ממשיך לבד (עוד ריצה) */ o.className = "gm-ov"; o.innerHTML = `<div>${html}<div class="rd-btns">${btns.map((b, i) => `<button class="rbtn${i ? " alt" : ""}" type="button" data-i="${i}">${b}</button>`).join("")}</div></div>`; box.appendChild(o); o.querySelectorAll("button").forEach(b => b.onclick = () => { o.remove(); res(+b.dataset.i); }); });
     // ---- סוף ריצה: שומרים את הברגים (או שיא באימון), אתגר יומי, טבלת שיאים ----
     const end = async (why, msg) => {
       if (G.over) return; G.over = true; AU.stopMusic();
@@ -163,7 +163,7 @@
     function stumble(o, what) { G.hurtT = .5;
       if (G.pw.turbo > 0 || G.fly > 0) return;
       if (G.tut) { o.gone = 1; G.tutO = null; G.tutT = .8; AU.stumble(); fxText(W / 2, H * .45, "אופס! ננסה שוב 🙂", "#fde68a", 1.2, 22); return; }
-      if (G.shield) { G.shield = false; AU.shield(); X.vib(40); burst(botX(), botY(), "#38bdf8", 26, 220); fxText(W / 2, H * .45, "🛡️ המגן הציל אותך!", "#7dd3fc", 1.3, 20); o.gone = 1; return; }
+      if (G.shield) { G.shield = false; AU.shield(); if (!autoOn()) { X.vib(40); fxText(W / 2, H * .45, "🛡️ המגן הציל אותך!", "#7dd3fc", 1.3, 20); } burst(botX(), botY(), "#38bdf8", 26, 220); o.gone = 1; return; }
       o.gone = 1; G.stats.cleanDist = Math.max(G.stats.cleanDist, G.dist - G.cleanFrom); G.cleanFrom = G.dist;
       if (G.chase > 0) { G.dead = true; G.slow = .9; G.deathT = 0; G.shake = .8; AU.stomp(); AU.crash(); X.vib([80, 40, 160]); burst(botX(), botY(), "#ef4444", 40, 300); fxText(W / 2, H * .4, "🤖 הרובוט הענק תפס אותך!", "#f87171", 1.5, 22); setTimeout(() => end("caught", "הרובוט הענק תפס אותך!"), 1100); return; }
       G.chase = 7; G.chaseX = 0; G.v *= .7; AU.stumble(); setTimeout(() => AU.stomp(), 300); X.vib([40, 30, 60]); G.shake = .35; fxText(W / 2, H * .42, `😵 מעדת ב${what}! הרובוט הענק רודף אחריך!`, "#fdba74", 1.8, 17);
@@ -172,6 +172,7 @@
     const autoOn = () => LS.get("roboBot", "") === "1" && X.powers && X.powers().owner;
     function autoRun() {
       if (G.cd > 0 || G.dead || G.over) return;
+      G.shield = true; // 🛡️ מגן רובוט: כשהרובוט משחק – לא נפסלים
       const near = (ln, z0, z1, ks) => G.obj.filter(o => !o.gone && o.z > z0 && o.z < z1 && Math.abs(o.lane - ln) < .5 && (!ks || ks.includes(o.k)));
       const bad = G.fly > 0 ? ["bird", "drone"] : ["locker", "bully"], score = ln => {
         if (ln < -1 || ln > 1) return -1e9; let v = 0;
@@ -187,7 +188,7 @@
     function crash() {
       if (G.pw.turbo > 0 || G.fly > 0) return false;
       if (G.tut) { if (G.tutO) G.tutO.gone = 1; G.tutO = null; G.tutT = .8; AU.stumble(); fxText(W / 2, H * .45, "אופס! עקוף אותו – ננסה שוב 🙂", "#fde68a", 1.2, 20); return false; }
-      if (G.shield) { G.shield = false; AU.shield(); X.vib(40); burst(botX(), botY(), "#38bdf8", 26, 220); fxText(W / 2, H * .45, "🛡️ המגן הציל אותך!", "#7dd3fc", 1.3, 20); return false; }
+      if (G.shield) { G.shield = false; AU.shield(); if (!autoOn()) { X.vib(40); fxText(W / 2, H * .45, "🛡️ המגן הציל אותך!", "#7dd3fc", 1.3, 20); } burst(botX(), botY(), "#38bdf8", 26, 220); return false; }
       G.dead = true; G.slow = .9; G.deathT = 0; G.shake = .7; AU.crash(); X.vib([80, 40, 160]); burst(botX(), botY(), "#ef4444", 40, 300); burst(botX(), botY(), "#fde047", 25, 220);
       setTimeout(() => end("crash"), 1300); return true;
     }
