@@ -66,6 +66,11 @@ r = await feed({ action: "robo", op: "me", device: dev(5) });
 ok("owner phone gets ∞ bolts + all skins", r.json.owner && r.json.inf && r.json.all);
 r = await feed({ action: "robo", op: "me", device: dev(4) });
 ok("other phones don't", r.json.owner === false && !r.json.inf);
+// 👑 מנהל המערכת מוריד את עצמו מטבלת השיאים (ורק הוא)
+await feed({ action: "robo", op: "score", g: "run", v: 777, device: dev(5) }); await feed({ action: "robo", op: "score", g: "run", v: 555, device: dev(4) });
+r = await feed({ action: "robo", op: "lbMe", device: dev(4) }); ok("lbMe: other phones are refused", !r.json.ok);
+r = await feed({ action: "robo", op: "lbMe", device: dev(5) }); ok("lbMe: owner phone removed itself", r.json.ok);
+r = await feed({ action: "robo", op: "scores", g: "run", device: dev(4) }); ok("lbMe: owner gone from weekly + all-time, others stay", r.json.ok && !r.json.list.some(x => x.v === 777) && !(r.json.all || []).some(x => x.v === 777) && r.json.list.some(x => x.v === 555), JSON.stringify(r.json.list));
 await call("/api/owner", { action: "ownPowers", inf: false }, tok);
 r = await feed({ action: "robo", op: "me", device: dev(5) });
 ok("owner can turn ∞ bolts off", r.json.owner && !r.json.inf && r.json.all);

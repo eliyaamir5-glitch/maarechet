@@ -133,8 +133,8 @@ for (const t of ["box", "big", "mega", "giant"]) { let tot = 0; const N = 1500; 
 // ---- 👑 האגדה: 4 אתגרים, גיבורים מטרייד לא נספרים ----
 { const S = R.fresh(), hs = R.SETS.find(x => x.id === "heroes").ids; for (const id of hs) R.grant(S, { t: "item", id });
   ok("legend: heroes alone are not enough", !R.legendReady(S) && R.legendReq(S).find(x => x.id === "heroes").ok);
-  S.st.best = 30; S.runBest = 2000; S.sets = { a: 1, b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, heroes: 1, newheroes: 1 }; ok("legend: 7 sets (+ hero sets) are not enough", !R.legendReady(S));
-  S.sets.h = 1; ok("legend: all 4 challenges → ready", R.legendReady(S));
+  S.st.best = 300; S.runBest = 5000; S.dblWins = 3; S.allTop = { run: 1 }; S.sets = {}; for (const x of R.SETS.slice(1)) S.sets[x.id] = 1; ok("legend: a long streak doesn't help, one set missing → not ready", !R.legendReady(S) && !R.legendReq(S).some(x => x.id === "streak"));
+  S.sets[R.SETS[0].id] = 1; ok("legend: all 5 challenges → ready", R.legendReady(S)); S.allTop = { run: 2 }; ok("legend: needs all-time #1", !R.legendReady(S)); S.allTop = { run: 1 };
   const T = R.fresh(); R.applyTrade(T, {}, { items: [hs[0]] }); ok("legend: a hero from a trade doesn't count", R.legendReq(T).find(x => x.id === "heroes").have === 0 && T.tr[hs[0]]);
   R.grant(T, { t: "item", id: hs[0] }); ok("legend: same hero later from a box → counts", R.legendReq(T).find(x => x.id === "heroes").have === 1); }
 { const S = R.fresh(); S.allTop = { run: 4 }; ok("all-time top 5 title", R.titlesOf(S).some(x => x.id === "top5") && !R.titlesOf(S).some(x => x.id === "allking")); S.allTop.bolts = 1; ok("all-time #1 title", R.titlesOf(S).some(x => x.id === "allking")); }

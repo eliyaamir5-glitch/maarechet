@@ -485,6 +485,9 @@ dialog.robo.open{background:#05020f}
 .ro-ultra{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;z-index:5}
 .ro-ultra b{font-size:34px;font-weight:900;background:linear-gradient(90deg,#fde047,#f472b6,#a5f3fc,#fde047);background-size:300%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:rGrad 1.2s linear infinite,rBeat .6s ease-in-out infinite}
 @keyframes rBeat{50%{transform:scale(1.12)}}
+.ro.ro-sumv{justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(56px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom))}
+.ro-sumv .rd-btns{position:sticky;bottom:0;padding:10px 0 4px;background:linear-gradient(transparent,rgba(10,6,30,.95) 35%);width:100%;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;z-index:2}
+.ro-x{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;z-index:5;width:40px;height:40px;border-radius:12px;border:0;background:rgba(255,255,255,.16);color:#fff;font-size:18px;cursor:pointer}
 .ro-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:min(92vw,420px);margin:14px auto}
 .ro-sum .rc{cursor:default}
 /* רצף יומי */
@@ -690,6 +693,9 @@ dialog.robo.open{background:#05020f}
 
   // ---------- פתיחת תיבות ----------
   let opening = false;
+  // 👑 מנהל המערכת: תיבה שהבאת לעצמך מסומנת, ומה שיוצא ממנה נרשם – כדי שאפשר יהיה להחזיר הכל בלחיצה
+  function ownTake(type) { if (!S.ownBx || !(S.ownBx[type] > 0)) return false; S.ownBx[type]--; return true; }
+  function ownLog(got) { const L = S.ownL = S.ownL || { bolts: 0, boxes: {}, items: [] }; for (const g of got) { if (g.t === "item" && !g.dup && R.ITEMS[g.id]) { L.items.push(g.id); (S.tr = S.tr || {})[g.id] = 1; } L.bolts += (g.t === "bolts" ? g.n : 0) + (g.dup || 0); if (g.t === "box") { S.ownBx = S.ownBx || {}; S.ownBx[g.box] = (S.ownBx[g.box] || 0) + 1; } } }
   async function openBoxes(list, opt = {}) {
     if (opening || !list.length) return; opening = true;
     const d = dlg("roboOpen", "open"); d.dataset.lock = "1"; show(d);
@@ -697,15 +703,15 @@ dialog.robo.open{background:#05020f}
     try {
       for (let bi = 0; bi < list.length; bi++) {
         const type = list[bi], ix = S.boxes.indexOf(type); if (ix < 0) continue;
-        S.boxes.splice(ix, 1); S.opened = (S.opened || 0) + 1; R.mapStep(S, 1); trk("box");
+        S.boxes.splice(ix, 1); S.opened = (S.opened || 0) + 1; R.mapStep(S, 1); trk("box"); const own = ownTake(type);
         let prizes = R.roll(S, type), taps = prizes.taps.slice();
         if (opt.rig && bi === 0) { const id = R.LIST.filter(x => x.r === opt.rig && !x.x)[0].id; prizes[prizes.length - 1] = { t: "item", id, r: opt.rig, main: 1, ...(opt.rig === "u" ? { need: "claim" } : {}) }; const st = R.TIERS.indexOf(R.START[type]), en = R.TIERS.indexOf(opt.rig); taps = Array.from({ length: R.TAPS + 1 }, (_, i) => R.TIERS[Math.min(en, st + i)]); } // דמו בלבד
         // אולטרה אגדי – השרת מאשר (כמות מוגבלת). לא אושר → אגדי רגיל במקום
         for (const p of prizes) if (p.need === "claim") { const ok = await claim(p.id); if (!ok) { Object.assign(p, R.guaranteed(S, "l"), { need: undefined }); if (p.main) taps = taps.map(t => t === "u" ? "l" : t); } }
-        const got = prizes.map(p => R.grant(S, p)); save();
+        const got = prizes.map(p => R.grant(S, p)); if (own) ownLog(got); save();
         all.push(...got);
         const skip = await boxScene(d, type, got, list.length - bi - 1, taps);
-        if (skip) { for (let j = bi + 1; j < list.length; j++) { const t = list[j], k = S.boxes.indexOf(t); if (k < 0) continue; S.boxes.splice(k, 1); let pz = R.roll(S, t); for (const p of pz) if (p.need === "claim") { const ok = await claim(p.id); if (!ok) Object.assign(p, R.guaranteed(S, "l"), { need: undefined }); } all.push(...pz.map(p => R.grant(S, p))); } save(); break; }
+        if (skip) { for (let j = bi + 1; j < list.length; j++) { const t = list[j], k = S.boxes.indexOf(t); if (k < 0) continue; S.boxes.splice(k, 1); const own2 = ownTake(t); let pz = R.roll(S, t); for (const p of pz) if (p.need === "claim") { const ok = await claim(p.id); if (!ok) Object.assign(p, R.guaranteed(S, "l"), { need: undefined }); } const g2 = pz.map(p => R.grant(S, p)); if (own2) ownLog(g2); all.push(...g2); } save(); break; }
         // תיבה שיצאה מתיבה – נפתחת מיד אחרי
         const extra = got.filter(g => g.t === "box").map(g => g.box); if (extra.length) list.splice(bi + 1, 0, ...extra);
       }
@@ -795,12 +801,16 @@ dialog.robo.open{background:#05020f}
   async function summary(d, all) {
     const items = all.filter(g => g.t === "item"), bolts = all.filter(g => g.t === "bolts").reduce((a, g) => a + g.n, 0) + items.reduce((a, g) => a + (g.dup || 0), 0);
     const fresh = items.filter(g => !g.dup).sort((a, b) => R.RAR[b.r].o - R.RAR[a.r].o);
-    d.innerHTML = `<div class="ro" style="--rc:#a855f7;padding:20px"><div class="ro-nm">🎉 מה קיבלת</div>
-      <div class="ro-sum">${items.map(g => `<div class="rc ${g.r === "l" ? "leg" : ""} ${g.r === "u" ? "ult" : ""}" style="--c:${RC(g.r)}"><div class="pv">${preview(g.id)}</div><div class="nm">${esc(R.ITEMS[g.id].n)}</div><div class="rr">${g.dup ? "+" + g.dup + " 🔩" : R.RAR[g.r].n}</div></div>`).join("")}</div>
+    // הרבה פרסים: מקבצים כפולים, מציגים עד 24 כרטיסים, והמסך נגלל – כפתור הסיום תמיד נראה (קודם זה נתקע מחוץ למסך)
+    const uniq = []; { const seenI = {}; for (const g of items) { if (seenI[g.id]) { seenI[g.id].n++; seenI[g.id].dup = (seenI[g.id].dup || 0) + (g.dup || 0); continue; } const c = Object.assign({}, g, { n: 1 }); seenI[g.id] = c; uniq.push(c); } }
+    uniq.sort((a, b) => R.RAR[b.r].o - R.RAR[a.r].o); const shown = uniq.slice(0, 24), more = uniq.length - shown.length;
+    d.innerHTML = `<div class="ro ro-sumv" style="--rc:#a855f7"><button class="ro-x" type="button" id="roX" aria-label="סגור">✕</button><div class="ro-nm">🎉 מה קיבלת${items.length > 6 ? ` · ${items.length} אביזרים` : ""}</div>
+      <div class="ro-sum">${shown.map(g => `<div class="rc ${g.r === "l" ? "leg" : ""} ${g.r === "u" ? "ult" : ""}" style="--c:${RC(g.r)}"><div class="pv">${preview(g.id)}</div><div class="nm">${esc(R.ITEMS[g.id].n)}</div><div class="rr">${g.n > 1 ? `×${g.n} · ` : ""}${g.dup ? "+" + g.dup + " 🔩" : R.RAR[g.r].n}</div></div>`).join("")}</div>
       ${bolts ? `<div class="ro-sub" style="font-size:17px;font-weight:900">🔩 +${bolts} ברגים</div>` : ""}
       <div class="rd-btns" style="margin-top:16px">${(() => { const th = fresh.find(g => R.ITEMS[g.id].cat === "theme" && window.Theme && Theme.THEMES[g.id.split(":")[1]]); return th ? `<button class="rbtn" type="button" id="roTheme" data-th="${th.id.split(":")[1]}">🎨 להפעיל את העיצוב ${esc(R.ITEMS[th.id].n)}</button>` : ""; })()}${fresh[0] && ["skin", "hat", "eyes", "held", "aura"].includes(R.ITEMS[fresh[0].id].cat) ? `<button class="rbtn" type="button" id="roWear">👕 ללבוש את ${esc(R.ITEMS[fresh[0].id].n)}</button>` : ""}<button class="rbtn alt" type="button" id="roDone">סגור</button></div></div>`;
     const tb = d.querySelector("#roTheme"); if (tb) tb.onclick = () => { try { Theme.setTheme(tb.dataset.th); } catch (e) {} tb.textContent = "✅ העיצוב הופעל!"; tb.disabled = true; vib(30); };
-    await new Promise(res => { const w = d.querySelector("#roWear"); if (w) w.onclick = () => { R.equip(S, fresh[0].id); save(); res(); }; d.querySelector("#roDone").onclick = res; });
+    if (more > 0) { const sm = d.querySelector(".ro-sum"); if (sm) sm.insertAdjacentHTML("afterend", `<div class="ro-sub">ועוד ${more} אביזרים – הכל כבר בארון 👕</div>`); }
+    await new Promise(res => { const w = d.querySelector("#roWear"); if (w) w.onclick = () => { R.equip(S, fresh[0].id); save(); res(); }; const dn = d.querySelector("#roDone"); if (dn) dn.onclick = res; d.querySelector("#roX").onclick = res; setTimeout(() => { if (!d.isConnected || !d.open) res(); }, 100); });
   }
   function celebrateItem(id) { const it = R.ITEMS[id]; toast(`✨ <b>${esc(it.n)}</b> ${rarTag(it.r)} נכנס לארון!`, null, 3000); vib(30); }
 
@@ -820,8 +830,8 @@ dialog.robo.open{background:#05020f}
   }
   function legendShow(won) {
     const d = dlg("roboAnn");
-    d.innerHTML = won ? `<div class="ann"><div class="t">👑 אתה האגדה!!!</div><div class="bot">${svg("", { skin: "skin:legend" }, { noHoli: true })}</div><div class="w">השלמת ראשון בישיבה את כל 4 האתגרים של האגדה 🦸</div><div class="l">קיבלת את "האגדה" – הסקין הכי נדיר במשחק. רק אחד בכל הישיבה, והוא שלך!</div><div class="rd-btns" style="margin-top:18px"><button class="rbtn" type="button" id="annOk">👑 ללבוש עכשיו</button></div></div>`
-      : `<div class="ann"><div class="t">👑 השלמת את כל 4 האתגרים!</div><div class="bot">${svg()}</div><div class="w">כל הכבוד – זה הישג ענק!</div><div class="l">"האגדה" 👑 כבר נלקחה – מישהו הגיע לפניך. אבל אתה בין הבודדים שאספו הכל!</div><div class="rd-btns" style="margin-top:18px"><button class="rbtn" type="button" id="annOk">וואו 🤩</button></div></div>`;
+    d.innerHTML = won ? `<div class="ann"><div class="t">👑 אתה האגדה!!!</div><div class="bot">${svg("", { skin: "skin:legend" }, { noHoli: true })}</div><div class="w">השלמת ראשון בישיבה את כל 5 האתגרים של האגדה 🦸</div><div class="l">קיבלת את "האגדה" – הסקין הכי נדיר במשחק. רק אחד בכל הישיבה, והוא שלך!</div><div class="rd-btns" style="margin-top:18px"><button class="rbtn" type="button" id="annOk">👑 ללבוש עכשיו</button></div></div>`
+      : `<div class="ann"><div class="t">👑 השלמת את כל 5 האתגרים!</div><div class="bot">${svg()}</div><div class="w">כל הכבוד – זה הישג ענק!</div><div class="l">"האגדה" 👑 כבר נלקחה – מישהו הגיע לפניך. אבל אתה בין הבודדים שאספו הכל!</div><div class="rd-btns" style="margin-top:18px"><button class="rbtn" type="button" id="annOk">וואו 🤩</button></div></div>`;
     show(d); if (won) { SFX.ultra(); setTimeout(() => SFX.reveal(6), 900); setTimeout(() => particles(d.querySelector(".ann"), "#facc15", 80, ["👑", "⭐", "✨", "💛"]), 400); vib([80, 60, 80, 60, 300]); }
     d.querySelector("#annOk").onclick = () => { if (won) { R.equip(S, "skin:legend"); save(); publishSoon(); } d.close(); };
   }
@@ -830,7 +840,8 @@ dialog.robo.open{background:#05020f}
     if (window.__DEMO) return true;
     try {
       const base = (typeof SERVER_BASE !== "undefined" && SERVER_BASE) || "";
-      const r = await fetch(base + "/api/feed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "robo", op: "claim", item: id, device: dev() }) });
+      const ac = window.AbortController ? new AbortController() : null, to = setTimeout(() => ac && ac.abort(), 8000); // בלי חיבור – לא נתקעים לנצח
+      const r = await fetch(base + "/api/feed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "robo", op: "claim", item: id, device: dev() }), signal: ac ? ac.signal : undefined }); clearTimeout(to);
       const j = await r.json(); if (j && j.counts) LS.set("roboRare", JSON.stringify(j.counts));
       return !!(j && j.ok && j.granted);
     } catch (e) { return false; }
@@ -918,6 +929,7 @@ dialog.robo.open{background:#05020f}
   // 🔥 כרטיס רצף בדף הבית: אם עוד לא אספת – מזכיר ומראה איך; אם אספת – מתי המתנה הבאה ועד מתי להיכנס
   function dayCard() {
     if (page !== "index" || !profile() || locked() || window.__DEMO_NOROBO) return;
+    if (LS.get("roboNoDayCard", "") === "1" && stInfo().got) { const c = document.getElementById("roboDayCard"); if (c) c.remove(); return; } // כבוי בהגדרות (אם עוד לא אספת – עדיין מזכיר)
     let el = document.getElementById("roboDayCard");
     if (!el) { const anchor = document.getElementById("streakPill") || document.getElementById("content"); if (!anchor || !anchor.parentNode) return; el = document.createElement("div"); el.id = "roboDayCard"; el.setAttribute("role", "button"); el.tabIndex = 0; anchor.parentNode.insertBefore(el, anchor); el.onclick = () => { const i = stInfo(); if (!i.got) daily(); else open("streak"); }; }
     const i = stInfo(), now = Date.now(), gift = R.dayGift(i.willN).map(giftText).join(" + ");
@@ -1200,7 +1212,7 @@ dialog.robo.open{background:#05020f}
   // ---------- 👑 הכרזה: מישהו בשכבה זכה באולטרה אגדי ----------
   function checkNews() {
     let N = []; try { N = JSON.parse(LS.get("roboNews", "[]")) || []; } catch (e) {}
-    const p = profile(); if (!p || !N.length || locked() || document.querySelector("dialog[open]")) return;
+    const p = profile(); if (!p || !N.length || locked() || document.querySelector("dialog[open]") || LS.get("roboNoNews", "") === "1") return;
     const g = c => (String(c).startsWith("ya") ? 11 : 10), seen = (LS.get("roboNewsSeen", "") || "").split(",");
     const x = N.find(n => n && n.id && !seen.includes(n.id) && (g(n.cls) === g(p.cls) || n.item === "skin:legend") && Date.now() - n.at < 2 * 864e5 && R.ITEMS[n.item]); if (!x) return;
     LS.set("roboNewsSeen", [...seen, x.id].slice(-30).join(","));
@@ -1221,7 +1233,7 @@ dialog.robo.open{background:#05020f}
     svg, open, hub, share, subjectMile, daily, openBoxes, redeem, earn, sfx: SFX, mini, friendCard, tradeOpen, checkNews, publish, inviteHint, state: () => S, owns: id => !!S.own[id],
     give(p) { const x = R.grant(S, p); save(); hubRefresh(); return x; }, // דמו / בדיקות
     // בשביל robo-plus.js (גלגל, מעבדה, שוק, משחק, מפה)
-    _: { locked, trk, get S() { return S; }, save, toast, dlg, show, SFX, openBoxes, svg, preview, RC, rarTag, esc, particles, draw, hubRefresh, api, sleep, vib, card, celebrateItem, online, profile, dev, CLS_L, giftText, giftIcon, bl, step, open, wireMute, muteBtn, REDUCED, page, LS },
+    _: { powers, ownLog, locked, trk, get S() { return S; }, save, toast, dlg, show, SFX, openBoxes, svg, preview, RC, rarTag, esc, particles, draw, hubRefresh, api, sleep, vib, card, celebrateItem, online, profile, dev, CLS_L, giftText, giftIcon, bl, step, open, wireMute, muteBtn, REDUCED, page, LS },
     reload() { S = load(); applyBubble(); try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {} },
     locked, status: () => locked() ? "🔒 נעול עד 07:30" : `🔥 ${S.st.n} · 🔩 ${bl()}${S.boxes.length ? ` · 🎁 ${S.boxes.length}` : ""}`,
   };

@@ -275,7 +275,7 @@
   function norm(s) {
     const f = fresh(); if (!s || typeof s !== "object") return f;
     const o = Object.assign(f, s); o.own = Object.assign({ "skin:classic": 1 }, s.own || {}); o.eq = Object.assign({ skin: "skin:classic" }, s.eq || {});
-    o.st = Object.assign({ n: 0, last: "", best: 0 }, s.st || {}); o.boxes = Array.isArray(s.boxes) ? s.boxes.filter(b => BOX[b]).slice(0, 99) : [];
+    o.st = Object.assign({ n: 0, last: "", best: 0 }, s.st || {}); o.boxes = Array.isArray(s.boxes) ? s.boxes.filter(b => BOX[b]).slice(0, 500) : [];
     o.bolts = Math.max(0, Math.floor(+s.bolts || 0)); o.mile = s.mile && typeof s.mile === "object" ? s.mile : {}; o.news = Array.isArray(s.news) ? s.news.filter(id => ITEMS[id]) : [];
     for (const k of Object.keys(o.eq)) if (!ITEMS[o.eq[k]] || !o.own[o.eq[k]]) delete o.eq[k];
     if (!o.eq.skin) o.eq.skin = "skin:classic";
@@ -536,16 +536,17 @@
     { id: "gold", t: "💎 בעל זהב", how: "להשיג את עיצוב הזהב והיהלומים", ok: S => !!S.own["theme:goldx"] && S.own["theme:goldx"] !== -1 },
     { id: "legend", t: "👑 האגדה", how: "להיות האגדה", ok: S => !!S.own["skin:legend"] && S.own["skin:legend"] !== -1 },
   ];
-  // 👑 האגדה (8.11 – יותר קשה): כל הגיבורים שמצאת בעצמך (לא מטרייד/שוק) + רצף 30 יום + 8 סטים + ריצה של 2000 מ'
-  const LEGEND_REQ = { streak: 30, sets: 8, run: 2000 };
+  // 👑 האגדה (11.11 – ממש קשה, בלי רצף): כל הגיבורים שמצאת בעצמך + כל הסטים + ריצה של 5000 מ' + 3 ניצחונות בכפול או כלום + מקום 1 בטבלת כל הזמנים
+  const LEGEND_REQ = { run: 5000, dbl: 3 };
   function legendReq(S) {
     const hs = (SETS.find(x => x.id === "heroes") || { ids: [] }).ids, tr = S.tr || {}, mine = hs.filter(id => S.own[id] && S.own[id] !== -1 && !tr[id]).length;
-    const sets = Object.keys(S.sets || {}).filter(k => k !== "heroes" && k !== "newheroes").length;
+    const sets = SETS.filter(x => (S.sets || {})[x.id]).length, king = Object.values(S.allTop || {}).some(r => r === 1) ? 1 : 0;
     return [
-      { id: "heroes", em: "🦸", n: "כל הגיבורים – שמצאת בעצמך", how: "גיבור שקיבלת בטרייד או קנית בשוק לא נספר (אם יוצא לך בעצמך מתיבה – הוא נספר)", have: mine, need: hs.length },
-      { id: "streak", em: "🔥", n: `רצף של ${LEGEND_REQ.streak} ימים`, how: "השיא שלך ברצף הכניסות", have: Math.min(LEGEND_REQ.streak, ((S.st || {}).best || 0)), need: LEGEND_REQ.streak },
-      { id: "sets", em: "🎭", n: `${LEGEND_REQ.sets} סטים מלאים`, how: "בלי סטי הגיבורים", have: Math.min(LEGEND_REQ.sets, sets), need: LEGEND_REQ.sets },
+      { id: "heroes", em: "🦸", n: "כל הגיבורים – שמצאת בעצמך", how: "גיבור מטרייד, מהשוק או מתנה לא נספר (אם יוצא לך בעצמך מתיבה – הוא נספר)", have: mine, need: hs.length },
+      { id: "sets", em: "🎭", n: `כל ${SETS.length} הסטים`, how: "להשלים את כל הסטים באוסף", have: sets, need: SETS.length },
       { id: "run", em: "🏃", n: `ריצה של ${LEGEND_REQ.run} מ'`, how: "בריצה אחת בריצת הרובוט", have: Math.min(LEGEND_REQ.run, S.runBest || 0), need: LEGEND_REQ.run },
+      { id: "dbl", em: "🎲", n: `${LEGEND_REQ.dbl} ניצחונות ב"כפול או כלום"`, how: "בברגים נופלים – לשרוד את השלב הקשה 3 פעמים", have: Math.min(LEGEND_REQ.dbl, S.dblWins || 0), need: LEGEND_REQ.dbl },
+      { id: "king", em: "👑", n: "מקום 1 בטבלת כל הזמנים", how: "להיות ראשון בהיסטוריה של השכבה באחד המשחקים", have: king, need: 1 },
     ].map(x => Object.assign(x, { ok: x.have >= x.need }));
   }
   const legendReady = S => legendReq(S).every(x => x.ok);

@@ -88,9 +88,9 @@ for (let i = 0; i < 3; i++) { await p.evaluate(() => { const b = document.queryS
 log(await p.evaluate(b0 => { const s = Robo.state(); return s.ms.all === 1 && s.bolts > b0 && s.boxes.includes("big"); }, mb0), "daily missions: 3 claimed → bolts + a big box");
 // 👑 האגדה: אוספים את כל הגיבורים → השרת נותן את האגדה לראשון
 await p.evaluate(() => { const st = RoboCore.SETS.find(x => x.id === "heroes"); for (const id of st.ids) Robo.give({ t: "item", id }); }); await sleep(3000);
-log(await p.evaluate(() => !Robo.state().own["skin:legend"] && RoboCore.legendReq(Robo.state()).filter(x => x.ok).length === 1), "legend: all heroes alone is NOT enough anymore (4 challenges)");
-await p.evaluate(() => { const S = Robo.state(); S.st.best = 30; S.runBest = 2000; S.sets = Object.assign({}, S.sets, { a1: 1, a2: 1, a3: 1, a4: 1, a5: 1, a6: 1, a7: 1, a8: 1 }); Robo.give({ t: "bolts", n: 1 }); }); await sleep(4500);
-log(await p.evaluate(() => !!Robo.state().own["skin:legend"] && /האגדה/.test((document.querySelector("#roboAnn[open]") || {}).innerText || "")), "all 4 legend challenges → first one gets 'the legend' 👑");
+log(await p.evaluate(() => !Robo.state().own["skin:legend"] && RoboCore.legendReq(Robo.state()).filter(x => x.ok).length === 1), "legend: all heroes alone is NOT enough anymore (5 challenges)");
+await p.evaluate(() => { const S = Robo.state(); S.runBest = 5000; S.dblWins = 3; S.allTop = { run: 1 }; S.sets = Object.assign({}, S.sets, Object.fromEntries(RoboCore.SETS.map(x => [x.id, 1]))); Robo.give({ t: "bolts", n: 1 }); }); await sleep(4500);
+log(await p.evaluate(() => !!Robo.state().own["skin:legend"] && /האגדה/.test((document.querySelector("#roboAnn[open]") || {}).innerText || "")), "all 5 legend challenges → first one gets 'the legend' 👑");
 if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + "/s5-legend-win.png" });
 await p.evaluate(() => document.querySelector("#roboAnn #annOk").click()); await sleep(400);
 log(await p.evaluate(() => Robo.state().eq.skin === "skin:legend"), "wearing the legend");

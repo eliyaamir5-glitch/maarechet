@@ -1130,7 +1130,7 @@ async function feed(req, S, ip, headers) {
   }
   if (action === "robo") { // 🤖 אביזר "אולטרה אגדי" יצא בתיבה: כמות מוגבלת לכל הישיבה. נשמר רק מונה + קוד מכשיר מוצפן (בלי שם)
     if (await roboSeason(S, now) && !["me", "link", "day"].includes(b.op)) return reply(200, { ok: false, error: "locked", until: ROBO_RESET_AT }, headers);
-    if (DEV_RE.test(device) && ["code", "me", "link", "day"].includes(b.op)) return reply(200, await roboOp(S, b, device, ip, now), headers);
+    if (DEV_RE.test(device) && ["code", "me", "link", "day", "lbMe"].includes(b.op)) return reply(200, await roboOp(S, b, device, ip, now), headers);
     if (DEV_RE.test(device) && ["pub", "class", "like", "gift", "inbox", "tradeNew", "tradeGet", "tradeSet", "tradeOk", "tradeCancel", "tradeDone", "marketList", "marketSell", "marketBuy", "marketCancel", "score", "scores", "goalAdd", "goal"].includes(b.op)) return reply(200, await roboSocial(S, b, device, ip, now), headers);
     if (!DEV_RE.test(device) || b.op !== "claim" || !Object.hasOwn(ROBO_CAPS, String(b.item))) return reply(400, { ok: false, error: "bad_request" }, headers);
     memRate("robo", ip, 3000);
@@ -1568,6 +1568,12 @@ async function roboCodesGet(S, now) {
 }
 async function roboOp(S, b, device, ip, now) {
   const k = devKey(device);
+  if (b.op === "lbMe") { // 👑 רק הטלפון של מנהל המערכת: מוריד את עצמו מטבלאות השיאים (שבועית + כל הזמנים), כדי שיהיה הוגן
+    const o = await S.get("roboOwn"); if (!o || o.key !== k) return { ok: false, error: "forbidden" };
+    await S.update("roboScores", cur => { if (!cur || typeof cur !== "object") return undefined; const n = {}; for (const [w, W] of Object.entries(cur)) { n[w] = {}; for (const [g, T] of Object.entries(W || {})) { const t = { ...(T || {}) }; delete t[k]; n[w][g] = t; } } return n; });
+    await S.update("roboAll", cur => { if (!cur || typeof cur !== "object") return undefined; const n = {}; for (const [g, T] of Object.entries(cur)) { const t = { ...(T || {}) }; delete t[k]; n[g] = t; } return n; });
+    return { ok: true };
+  }
   if (b.op === "me") { // האם זה הטלפון של מנהל המערכת (ומה הוא הפעיל לעצמו)
     const o = await S.get("roboOwn");
     return o && o.key === k ? { ok: true, owner: true, inf: !!o.inf, all: !!o.all } : { ok: true, owner: false };

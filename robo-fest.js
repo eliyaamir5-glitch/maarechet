@@ -4,6 +4,9 @@
   const R = window.RoboCore, RP = window.RoboPlus, X = window.Robo && Robo._; if (!R || !RP || !X || !R.lightCandle) return;
   const esc = X.esc, LS = X.LS, PANELS = RP.panels;
   const CSS = `
+.ad-box{border-radius:16px;padding:12px;margin-bottom:10px;background:#1a1040;border:1.5px solid rgba(250,204,21,.45)}.ad-box>b{display:block;font-size:15px;margin-bottom:6px;color:#fde047}.ad-box small{display:block;color:#c7c3ff;font-size:12.5px}
+.ad-box label{display:block;font-size:13px;font-weight:800;margin:6px 0}.ad-box input,.ad-box select{display:block;width:100%;box-sizing:border-box;margin-top:4px;border-radius:10px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;padding:9px;font:inherit;font-size:15px}
+.ad-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}.ad-row2{display:flex;gap:6px;align-items:center;margin-top:4px}.ad-row2 select,.ad-row2 input{margin:0;flex:1}.ad-ck{display:flex!important;gap:6px;align-items:center}.ad-ck input{width:auto;display:inline}
 .hk-card{position:relative;border-radius:20px;padding:12px;margin-bottom:10px;color:#fff;background:radial-gradient(120% 120% at 50% 0%,#1e3a8a,#0b1033 70%);border:1.5px solid #facc15;box-shadow:0 0 24px rgba(250,204,21,.25);overflow:hidden}
 .hk-card h4{margin:0 0 2px;font-size:17px;color:#fde68a}.hk-card small{color:#c7d2fe}
 .hk-men{display:block;width:100%;max-width:330px;height:auto;margin:6px auto}
@@ -71,6 +74,66 @@
     const c = el.querySelector("#glClaim"); if (c) c.onclick = async () => { const before = S.bolts; S.goalClaim = j.week; S.goalHelps = (S.goalHelps || 0) + 1; S.boxes.push("big"); X.save();
       const open = await RP.rewardShow({ title: "🤝 השכבה הצליחה!", sub: "כל הכבוד לכולם – והנה הפרס שלך", got: [{ t: "box", box: "big" }], before }); RP.tab(body); if (open) X.openBoxes(["big"]); };
   });
+
+  // ===================== 👑 פאנל מנהל (רק בטלפון של מנהל המערכת) =====================
+  // מביאים לעצמך כמה שרוצים (ברגים / תיבות / אביזרים), הכל נרשם – ואפשר להחזיר הכל בלחיצה (רק מה שהבאת לעצמך).
+  // 🤖 רובוט אוטומטי במשחקים (כפתור 🤖 בשורה העליונה של המשחק), ו-🧹 להוריד את עצמך מטבלאות השיאים כדי שיהיה הוגן.
+  const isOwner = () => !!(X.powers && X.powers().owner);
+  RP.tiles.push(tile => isOwner() ? tile("admin", "👑", "#facc15", "פאנל מנהל", "להביא לעצמי · להחזיר · רובוט אוטומטי") : "");
+  const ledger = () => { const S = X.S; return S.ownL = S.ownL || { bolts: 0, boxes: {}, items: [] }; };
+  function giveSelf(o) {
+    const S = X.S, L = ledger(); S.ownBx = S.ownBx || {}; let msg = [];
+    const b = Math.max(0, Math.floor(+o.bolts || 0)); if (b) { if (S.realBolts != null) S.realBolts += b; else S.bolts += b; L.bolts += b; msg.push(`🔩 ${b.toLocaleString()}`); }
+    let room = 500 - S.boxes.length;
+    for (const [t, n0] of Object.entries(o.boxes || {})) { const n = Math.min(room, Math.max(0, Math.floor(+n0 || 0))); if (!n || !R.BOX[t]) continue; for (let i = 0; i < n; i++) S.boxes.push(t); room -= n; S.ownBx[t] = (S.ownBx[t] || 0) + n; L.boxes[t] = (L.boxes[t] || 0) + n; msg.push(`${R.BOX[t].em} ×${n}`); }
+    let ni = 0; for (const id of o.items || []) { if (!R.ITEMS[id] || (S.own[id] && S.own[id] !== -1)) continue; S.own[id] = Date.now(); S.news.push(id); L.items.push(id); (S.tr = S.tr || {})[id] = 1; ni++; }
+    if (ni) msg.push(`👕 ${ni} אביזרים`);
+    X.save(); X.hubRefresh(); return msg.join(" · ");
+  }
+  function undoSelf() {
+    const S = X.S, L = ledger(), bx = S.ownBx || {};
+    if (S.realBolts != null) S.realBolts = Math.max(0, S.realBolts - L.bolts); else S.bolts = Math.max(0, S.bolts - L.bolts);
+    let nb = 0; for (const [t, n] of Object.entries(bx)) { let k = n; for (let i = S.boxes.length - 1; i >= 0 && k > 0; i--) if (S.boxes[i] === t) { S.boxes.splice(i, 1); k--; nb++; } }
+    let ni = 0; for (const id of new Set(L.items)) { if (!S.own[id] || id === "skin:classic") continue; delete S.own[id]; ni++; if (S.shiny) delete S.shiny[id]; for (const c of Object.keys(S.eq)) if (S.eq[c] === id) delete S.eq[c]; }
+    if (!S.eq.skin) S.eq.skin = "skin:classic"; const b = L.bolts; delete S.ownL; delete S.ownBx; X.save(); X.hubRefresh(); return `החזרתי: 🔩 ${b.toLocaleString()} · 📦 ${nb} תיבות · 👕 ${ni} אביזרים`;
+  }
+  PANELS.admin = body => {
+    if (!isOwner()) { RP.tab(body); return; }
+    const S = X.S, L = ledger(), bot = LS.get("roboBot", "") === "1", nBox = Object.values(L.boxes).reduce((a, n) => a + n, 0);
+    const RARS = Object.keys(R.RAR), names = R.LIST.filter(x => !x.free).map(x => `<option value="${esc(x.n)} · ${esc(R.RAR[x.r].n)}"></option>`).join("");
+    body.innerHTML = `${RP.back}<div class="rp-h">👑 פאנל מנהל</div><div class="rp-s">רק בטלפון שלך. כל מה שאתה מביא לעצמך נרשם – ואפשר להחזיר הכל בלחיצה (מה שנתת לאחרים – לא נלקח).</div>
+      <div class="ad-box"><b>🎁 להביא לעצמי</b>
+        <label>🔩 ברגים <input type="number" inputmode="numeric" min="0" id="adB" placeholder="למשל 10009"></label>
+        <div class="ad-row">${Object.entries(R.BOX).map(([k, B]) => `<label>${B.em} ${esc(B.n)}<input type="number" inputmode="numeric" min="0" data-box="${k}" placeholder="0"></label>`).join("")}</div>
+        <label>👕 אביזר לפי שם <input list="adNames" id="adItem" placeholder="מתחילים להקליד…"><datalist id="adNames">${names}</datalist></label>
+        <label>✨ או: כמה אביזרים אקראיים מדרגה <span class="ad-row2"><select id="adRar">${RARS.map(r => `<option value="${r}">${esc(R.RAR[r].n)}</option>`).join("")}</select><input type="number" min="0" id="adRarN" placeholder="כמה"><button class="rbtn sm alt" type="button" id="adRarAll">כל הדרגה</button></span></label>
+        <button class="rbtn" type="button" id="adGive" style="width:100%;margin-top:8px">🎁 להביא לי עכשיו</button></div>
+      <div class="ad-box"><b>📒 מה הבאת לעצמך עד עכשיו</b><small>🔩 ${L.bolts.toLocaleString()} ברגים · 📦 ${nBox} תיבות (${Object.values(S.ownBx || {}).reduce((a, n) => a + n, 0)} עוד סגורות) · 👕 ${L.items.length} אביזרים</small>
+        <button class="rbtn alt" type="button" id="adUndo" style="width:100%;margin-top:8px" ${L.bolts || nBox || L.items.length ? "" : "disabled"}>↩️ להחזיר הכל ממני</button></div>
+      <div class="ad-box"><b>🤖 רובוט שמשחק בשבילי</b><small>במשחקים (ריצה וברגים נופלים) יש כפתור 🤖 למעלה – לוחצים והרובוט משחק לבד, לוחצים שוב והוא עוצר.</small>
+        <button class="rbtn ${bot ? "" : "alt"}" type="button" id="adBot" style="width:100%;margin-top:8px">${bot ? "🤖 פועל – ללחוץ כדי לכבות" : "🤖 להדליק את הרובוט"}</button></div>
+      <div class="ad-box"><b>🧹 שיהיה הוגן</b><small>מוריד אותך מטבלת השבוע ומטבלת כל הזמנים (בשני המשחקים).</small>
+        <label class="ad-ck"><input type="checkbox" id="adLocal" checked> גם לאפס את השיאים שלי בטלפון</label>
+        <button class="rbtn alt" type="button" id="adLb" style="width:100%;margin-top:6px">🧹 להוריד אותי מהטבלאות</button></div>`;
+    body.querySelector(".rp-back").onclick = () => RP.tab(body);
+    const pickItem = () => { const v = (body.querySelector("#adItem").value || "").split(" · ")[0].trim(); const it = v && R.LIST.find(x => x.n === v); return it ? [it.id] : []; };
+    const randItems = (r, n) => { const pool = R.LIST.filter(x => x.r === r && !x.free && !(S.own[x.id] && S.own[x.id] !== -1)); const out = []; while (out.length < n && pool.length) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0].id); return out; };
+    body.querySelector("#adRarAll").onclick = () => { const r = body.querySelector("#adRar").value, m = giveSelf({ items: randItems(r, 9999) }); X.toast(m ? `✅ קיבלת: ${m}` : "כבר יש לך את כל הדרגה הזאת 🙂", null, 3500); PANELS.admin(body); };
+    body.querySelector("#adGive").onclick = () => {
+      const boxes = {}; body.querySelectorAll("[data-box]").forEach(i => { boxes[i.dataset.box] = +i.value || 0; });
+      const items = [...pickItem(), ...randItems(body.querySelector("#adRar").value, +body.querySelector("#adRarN").value || 0)];
+      const m = giveSelf({ bolts: body.querySelector("#adB").value, boxes, items });
+      if (!m) { X.toast("לא בחרת כלום 🙂", null, 2500); return; } X.SFX.gift(); X.toast(`✅ קיבלת: ${m}`, Object.values(boxes).some(n => n > 0) ? ["📦 לפתוח", () => X.open("boxes")] : null, 6000); PANELS.admin(body);
+    };
+    body.querySelector("#adUndo").onclick = () => { if (!confirm("להחזיר את כל מה שהבאת לעצמך? (ברגים, תיבות שעוד סגורות, אביזרים – וגם מה שיצא מהתיבות האלה)")) return; X.toast("↩️ " + undoSelf(), null, 5000); PANELS.admin(body); };
+    body.querySelector("#adBot").onclick = () => { LS.set("roboBot", LS.get("roboBot", "") === "1" ? null : "1"); PANELS.admin(body); };
+    body.querySelector("#adLb").onclick = async e => {
+      if (!confirm("להוריד אותך מטבלאות השיאים (השבוע + כל הזמנים)?")) return; e.target.disabled = true; let r = null; try { r = await X.api({ op: "lbMe" }); } catch (er) {}
+      if (!r || !r.ok) { e.target.disabled = false; X.toast("לא הצלחתי 📶 נסה שוב", null, 3000); return; }
+      if (body.querySelector("#adLocal").checked) { S.runBest = 0; S.gameBest = 0; S.gamePract = 0; delete S.wk; delete S.allTop; X.save(); }
+      X.toast("🧹 הורדתי אותך מהטבלאות ✅", null, 3500); PANELS.admin(body);
+    };
+  };
 
   // ===================== 🏅 תארים =====================
   RP.tiles.push(tile => tile("titles", "🏅", "#f59e0b", "תארים", R.titleText(X.S) || `פתחת ${R.titlesOf(X.S).length}/${R.TITLES.length}`));

@@ -416,6 +416,7 @@ dialog textarea{width:100%;min-height:90px;border:1.5px solid var(--line);border
 .hero .stk{font-size:18px}
 /* רצף במסך הראשי */
 [hidden]{display:none!important}
+.th-mode{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.th-mode button{flex:1 1 auto;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:8px 10px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}.th-mode button.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,var(--card));font-weight:900}
 #streakPill{display:flex;align-items:center;gap:10px;border-radius:14px;padding:10px 14px;margin-bottom:12px;cursor:pointer;color:#fff;font-size:15px;background:linear-gradient(90deg,#3a1a55,#5a2a3a);box-shadow:0 0 18px rgba(255,140,40,.25)}
 #streakPill.blue{background:linear-gradient(90deg,#0c2a5a,#2a1a66);box-shadow:0 0 18px rgba(80,180,255,.35)}
 #streakPill.ash{background:linear-gradient(90deg,#2a2f4a,#3a3f5a);box-shadow:none}
@@ -1346,7 +1347,11 @@ function renderProfile(){
     <div class="pf-acts" style="justify-content:center"><button type="button" class="ghost" id="pfEdit">✎ עריכת פרטים והקבצות</button><button type="button" class="ghost" id="pfFb">💬 רעיון או תקלה</button><button type="button" class="ghost" id="pfNew">✨ מה חדש</button></div></div>
   ${pfSec("robo","🤖 הרובוט שלי",window.Robo?Robo.status():"",true,`<div id="pfRobo"></div>`,"pf-robo")}
   ${pfSec("theme","🎨 תצוגה",(Theme.THEMES[Theme.current()]||{}).name||"",false,`<div class="pf-sub">צבע לאפליקציה:</div><div class="th-sw">${Object.entries(Theme.THEMES).filter(([k,t])=>!t.lock||(window.Robo&&Robo.owns(t.lock))).map(([k,t])=>`<button type="button" class="sw ${Theme.current()===k?"on":""}" data-th="${k}" style="background:${t.grad}" aria-label="${t.name}" title="${t.name}"></button>`).join("")}</div>
+    <div class="pf-sub" style="margin-top:10px">🌗 מצב תצוגה:</div><div class="th-mode" id="pfMode">${[["","📱 לפי הטלפון"],["light","☀️ בהיר"],["dark","🌙 כהה"],["time","🕒 לפי השעה"]].map(([k,l])=>`<button type="button" data-mode="${k}" class="${Theme.mode()===k?"on":""}">${l}</button>`).join("")}</div>
+    <div class="pf-sub" style="margin-top:4px;font-size:12px">"לפי השעה" = בהיר ביום (06:30–18:00) וכהה בלילה.</div>
+    <div class="pf-sub" style="margin-top:10px">🔤 גופן:</div><div class="th-mode" id="pfFont">${[["","רגיל"],["round","עגול"],["bold","מודגש"],["classic","קלאסי"]].map(([k,l])=>`<button type="button" data-font="${k}" class="${Theme.font()===k?"on":""}">${l}</button>`).join("")}</div>
     <label class="tgl-row"><input type="checkbox" id="pfBig" ${Theme.big()?"checked":""}> 🔍 טקסט גדול</label>
+    <label class="tgl-row"><input type="checkbox" id="pfCalm" ${Theme.calm()?"checked":""}> 🧘 בלי אנימציות (רגוע יותר, חוסך סוללה)</label>
     <label class="tgl-row"><input type="checkbox" id="pfMate" ${(()=>{try{return localStorage.getItem("hideFromClass")!=="1"}catch(e){return true}})()?"checked":""}> 👥 להופיע כשחברים מהכיתה שואלים את העוזר "מי בכיתה שלי"</label>
     <label class="tgl-row"><input type="checkbox" id="pfAsst" ${(()=>{try{return localStorage.getItem("asstOff")!=="1"&&localStorage.getItem("asstHideDay")!==new Date().toDateString()}catch(e){return true}})()?"checked":""}> 🤖 להציג את העוזר "מערכתי"</label>`)}
   ${pfSec("push","🔔 התראות",(()=>{const p=pushLS();return p.on&&pushSupported()&&Notification.permission==="granted"?"פועלות ✓":"כבויות"})(),false,`<div class="pf-push" id="pfPush"></div>`)}
@@ -1375,6 +1380,9 @@ function renderProfile(){
   $("pfNew").onclick=()=>{document.getElementById("profDlg").close();openWhatsNew(true)};
   b.querySelectorAll("[data-th]").forEach(x=>x.onclick=()=>{Theme.setTheme(x.dataset.th);b.querySelectorAll("[data-th]").forEach(y=>y.classList.toggle("on",y===x))});
   $("pfBig").onchange=e=>Theme.setBig(e.target.checked);
+  $("pfCalm").onchange=e=>Theme.setCalm(e.target.checked);
+  b.querySelectorAll("[data-mode]").forEach(x=>x.onclick=()=>{Theme.setMode(x.dataset.mode);b.querySelectorAll("[data-mode]").forEach(y=>y.classList.toggle("on",y===x))});
+  b.querySelectorAll("[data-font]").forEach(x=>x.onclick=()=>{Theme.setFont(x.dataset.font);b.querySelectorAll("[data-font]").forEach(y=>y.classList.toggle("on",y===x))});
   $("pfMate").onchange=e=>{try{e.target.checked?localStorage.removeItem("hideFromClass"):localStorage.setItem("hideFromClass","1")}catch(_){}helloAt=0;hello().catch(()=>{});toast(e.target.checked?"👥 מופיע ברשימת הכיתה":"🙈 השם שלך מוסתר מרשימת הכיתה","מתעדכן תוך דקה")};
   $("pfAsst").onchange=e=>{if(!window.Asst)return;if(e.target.checked){Asst.show();toast("🤖 הנה אני!","אפשר לגרור אותי לכל צד של המסך")}else{Asst.off();toast("👋 הסתרתי את העוזר","אפשר להחזיר כאן מתי שתרצה")}};
   $("pfParent").onclick=shareParent;
@@ -1933,11 +1941,16 @@ function renderPushPrefs(){
       <label><input type="checkbox" id="ppUrg" ${pr.urgent?"checked":""}> 🚨 הודעות דחופות מהצוות</label>
       <label><input type="checkbox" id="ppHol" ${pr.holiday?"checked":""}> 🎉 ברכה לכל חג (בערב חג, בצהריים)</label>
       <label><input type="checkbox" id="ppStreak" ${pr.streak?"checked":""}> 🔥 תזכורת לפני שהרצף נשבר (20:00, רק אם עוד לא נכנסת)</label>
-    </div><div class="pf-sub" id="ppMsg">${Notification.permission==="denied"?"ההתראות חסומות בהגדרות של הטלפון/הדפדפן.":"בלי התראות בלילה (22:00–07:00) ובשבת."}</div>`;
+    </div><div class="pf-sub" id="ppMsg">${Notification.permission==="denied"?"ההתראות חסומות בהגדרות של הטלפון/הדפדפן.":"בלי התראות בלילה (22:00–07:00) ובשבת."}</div>
+    <b style="display:block;margin-top:12px">📲 בתוך האפליקציה</b>
+    <label><input type="checkbox" id="ppNews" ${(()=>{try{return localStorage.getItem("roboNoNews")!=="1"}catch(e){return true}})()?"checked":""}> 🏆 הכרזה כשמישהו בשכבה זוכה בפרס נדיר</label>
+    <label><input type="checkbox" id="ppDay" ${(()=>{try{return localStorage.getItem("roboNoDayCard")!=="1"}catch(e){return true}})()?"checked":""}> 🔥 כרטיס הרצף בדף הבית גם אחרי שאספתי</label>`;
   const $=id=>document.getElementById(id);
   $("ppOn").onchange=async e=>{$("ppMsg").textContent="רגע…";if(e.target.checked){const r=await pushEnable();if(r!=="on")e.target.checked=false}else await pushDisable();renderPushPrefs();renderPushCard()};
   const prefs=async()=>{pushSave({...pushLS(),prefs:{tef:$("ppTef").checked,urgent:$("ppUrg").checked,holiday:$("ppHol").checked,streak:$("ppStreak").checked},synced:0});$("ppMsg").textContent="נשמר ✓";try{await pushSubscribe()}catch(e){$("ppMsg").textContent="לא הצלחתי לשמור עכשיו"}};
   $("ppTef").onchange=prefs;$("ppUrg").onchange=prefs;$("ppHol").onchange=prefs;$("ppStreak").onchange=prefs;
+  const lsT=(k,on)=>{try{on?localStorage.removeItem(k):localStorage.setItem(k,"1")}catch(e){}};
+  $("ppNews").onchange=e=>lsT("roboNoNews",e.target.checked);$("ppDay").onchange=e=>{lsT("roboNoDayCard",e.target.checked);const c=document.getElementById("roboDayCard");if(c&&!e.target.checked)c.remove()};
 }
 setTimeout(()=>{renderPushCard();pushSync()},3000);
 

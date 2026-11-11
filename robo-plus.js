@@ -111,6 +111,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
 .rc[data-tr]::after{content:"🔁";position:absolute;top:4px;left:4px;font-size:15px;background:rgba(0,0,0,.55);border-radius:99px;padding:1px 3px}.lg-req.ok{opacity:.85}
 .lb-hof{text-align:center;margin:6px 0 10px;padding:12px;border-radius:18px;background:linear-gradient(135deg,#78350f,#1e1b4b);border:2px solid #facc15;box-shadow:0 0 22px rgba(250,204,21,.35)}.lb-hof b{display:block;font-size:19px;color:#fde047}.lb-hof small{color:#fef3c7;font-weight:700}.lb-crown{font-size:40px;animation:rBeat 1.6s infinite}
 .rp-mk.lb-top{box-shadow:0 0 0 2px var(--c),0 6px 18px rgba(0,0,0,.3)}.lb-mode{margin-top:6px}
+.gm-top .gm-bot.on{background:linear-gradient(180deg,#22c55e,#15803d)!important;box-shadow:0 0 12px #22c55e;animation:rBeat 1s infinite}
 .ch-bar{position:absolute;top:8px;left:8px;z-index:2;max-width:64%;min-width:150px;display:flex;align-items:center;gap:7px;background:rgba(10,6,30,.78);border:2px solid rgba(255,255,255,.18);border-radius:16px;padding:6px 9px 6px 7px;color:#fff;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:border-color .3s,background .3s}
 .ch-bar.off{display:none}.ch-r{flex:0 0 auto;min-width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font:900 17px system-ui,sans-serif;background:linear-gradient(180deg,#818cf8,#4f46e5);box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
 .ch-t{flex:1;min-width:0;font-size:12.5px;font-weight:800;line-height:1.25}.ch-t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}.ch-t small{display:block;color:#c7d2fe;font-weight:800;font-size:11.5px}
@@ -171,7 +172,7 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     const mRow = id => { const M = R.MISSIONS[id], p = ms.p[id] || 0, done = p >= M.need, got = ms.got[id]; return `<div class="rp-ms${got ? " got" : done ? " done" : ""}"><span class="e">${M.em}</span><div class="t"><b>${esc(M.n)}</b><div class="rp-bar" style="margin:4px 0 0;height:7px"><i style="width:${p / M.need * 100}%"></i></div></div>${got ? "✅" : done ? `<button class="rbtn sm" type="button" data-mc="${id}">🔩 ${M.b}</button>` : `<small>${p}/${M.need}</small>`}</div>`; };
     body.innerHTML = (R.eventNow() ? `<div class="rev"><b>${R.eventNow().n}</b> פי ${R.eventNow().up} סיכוי שהתיבות ישתדרגו!</div>` : "")
       + `<div class="rp-msb"><div class="rp-msh">📋 משימות היום <small>${ms.all ? "✅ השלמת הכל! קיבלת 🎁" : "כל ה-3 = 🎁 תיבה גדולה"}</small></div>${ms.ids.map(mRow).join("")}</div>`
-      + `<button type="button" class="rp-legend" data-p="legend"><div class="lg-bot">${X.svg("", { skin: "skin:legend" }, { still: false, noHoli: true })}</div><div class="t"><b>👑 האגדה</b><small>${legendTaken ? "נלקחה! מישהו השלים את כל האתגרים 🔒" : `4 אתגרים קשים – הראשון שמשלים את כולם מקבל. רק אחד בכל הישיבה! (${lqDone}/4)`}</small><div class="rp-bar" style="margin:6px 0 0"><i style="width:${lqPct * 100}%"></i></div><small>${lq.map(x => `${x.ok ? "✅" : x.em} ${x.have}/${x.need}`).join(" · ")}</small></div></button>`
+      + `<button type="button" class="rp-legend" data-p="legend"><div class="lg-bot">${X.svg("", { skin: "skin:legend" }, { still: false, noHoli: true })}</div><div class="t"><b>👑 האגדה</b><small>${legendTaken ? "נלקחה! מישהו השלים את כל האתגרים 🔒" : `5 אתגרים ממש קשים – הראשון שמשלים את כולם מקבל. רק אחד בכל הישיבה! (${lqDone}/5)`}</small><div class="rp-bar" style="margin:6px 0 0"><i style="width:${lqPct * 100}%"></i></div><small>${lq.map(x => `${x.ok ? "✅" : x.em} ${x.have}/${x.need}`).join(" · ")}</small></div></button>`
       + (window.RoboPlus && RoboPlus.top || []).map(f => { try { return f() || ""; } catch (e) { return ""; } }).join("")
       + `<div class="rp-menu">
       ${tile("game", "🔩", "#f59e0b", "ברגים נופלים", bs.open ? (g.n >= R.GAME_CAP ? "סיימת להיום 💪" : `משחק להפסקה · עוד ${R.GAME_CAP - g.n} 🔩 היום`) : `🏋️ בלי פרסים עכשיו · 🔩 ב-${hhmm(bs.until)}`, bs.open && g.n < R.GAME_CAP ? "!" : "", true)}
@@ -196,10 +197,10 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
     const S = X.S, st = R.SETS.find(x => x.id === "heroes"), mine = !!S.own["skin:legend"], lq = R.legendReq(S), tr = S.tr || {};
     const taken = ((JSON.parse(LS.get("roboRare", "{}") || "{}") || {})["skin:legend"] || {}).n >= 1;
     body.innerHTML = `${back}<div class="rp-lghero"><div class="lg-big">${X.svg("", { skin: "skin:legend" }, { noHoli: true })}</div><div class="rp-h">👑 האגדה</div>
-      <div class="rp-s">הסקין הכי נדיר במשחק – <b>רק אחד בכל הישיבה!</b> מי שמשלים ראשון את <b>כל 4 האתגרים</b> מקבל אותו אוטומטית, וכל הישיבה מקבלת הכרזה.</div>
-      <div class="rbx" style="--c:#facc15"><div class="em">${mine ? "👑" : taken ? "🔒" : "⏳"}</div><div class="t"><b>${mine ? "היא שלך! אתה האגדה 👑" : taken ? "כבר נלקחה – מישהו הגיע ראשון" : "עוד לא נלקחה – המירוץ פתוח!"}</b><small>השלמת ${lq.filter(x => x.ok).length} מתוך 4 אתגרים</small></div></div></div>
+      <div class="rp-s">הסקין הכי נדיר במשחק – <b>רק אחד בכל הישיבה!</b> מי שמשלים ראשון את <b>כל 5 האתגרים</b> מקבל אותו אוטומטית, וכל הישיבה מקבלת הכרזה.</div>
+      <div class="rbx" style="--c:#facc15"><div class="em">${mine ? "👑" : taken ? "🔒" : "⏳"}</div><div class="t"><b>${mine ? "היא שלך! אתה האגדה 👑" : taken ? "כבר נלקחה – מישהו הגיע ראשון" : "עוד לא נלקחה – המירוץ פתוח!"}</b><small>השלמת ${lq.filter(x => x.ok).length} מתוך 5 אתגרים</small></div></div></div>
       ${lq.map(x => `<div class="rbx lg-req${x.ok ? " ok" : ""}" style="--c:${x.ok ? "#22c55e" : "#facc15"}"><div class="em">${x.ok ? "✅" : x.em}</div><div class="t"><b>${esc(x.n)}</b><small>${esc(x.how)}</small><div class="rp-bar" style="margin:5px 0 0;height:7px"><i style="width:${Math.min(100, x.have / x.need * 100)}%"></i></div></div><b style="white-space:nowrap">${x.have}/${x.need}</b></div>`).join("")}
-      <div class="rw-sec">🦸 הגיבורים <small>מתיבת ענק 💎 (ולפעמים ממגה). 🔁 = קיבלת בטרייד/בשוק – לא נספר לאגדה</small></div>
+      <div class="rw-sec">🦸 הגיבורים <small>מתיבת ענק 💎 (ולפעמים ממגה). 🔁 = מטרייד / שוק / מתנה – לא נספר לאגדה</small></div>
       <div class="rw-grid">${st.ids.map(id => X.card(R.ITEMS[id]).replace('class="rc', tr[id] && S.own[id] ? 'data-tr="1" class="rc' : 'class="rc')).join("")}</div>`;
     wireBack(body);
     body.querySelectorAll(".rc[data-id]").forEach(b => b.onclick = () => { const it = R.ITEMS[b.dataset.id]; X.toast(`${esc(it.n)} ${X.rarTag(it.r)} – ${S.own[it.id] ? (tr[it.id] ? "יש לך, אבל מטרייד/שוק 🔁 – לא נספר לאגדה" : "יש לך ✅ (נספר)") : "עוד אין לך"}`, null, 2800); });
@@ -554,8 +555,12 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
   })();
   const AU = SND;
   // כפתורי 🎵/🔊 לשורה העליונה של משחק
-  const sndBtns = kind => `<button class="x gm-snd" type="button" data-snd="m" aria-label="מוזיקה">${SND.musicOn() ? "🎵" : "🔇"}</button><button class="x gm-snd" type="button" data-snd="f" aria-label="צלילים">${SND.fxOn() ? "🔊" : "🔈"}</button>`;
-  const wireSnd = (root, kind) => root.querySelectorAll("[data-snd]").forEach(b => b.onclick = e => { e.stopPropagation(); if (b.dataset.snd === "m") b.textContent = SND.toggleMusic(kind()) ? "🎵" : "🔇"; else b.textContent = SND.toggleFx() ? "🔊" : "🔈"; });
+  const sndBtns = kind => `<button class="x gm-snd" type="button" data-snd="m" aria-label="מוזיקה">${SND.musicOn() ? "🎵" : "🔇"}</button><button class="x gm-snd" type="button" data-snd="f" aria-label="צלילים">${SND.fxOn() ? "🔊" : "🔈"}</button>${botBtn()}`;
+  // 🤖 רובוט אוטומטי – רק בטלפון של מנהל המערכת: משחק לבד עד שלוחצים שוב
+  const isOwner = () => !!(X.powers && X.powers().owner), botOn = () => LS.get("roboBot", "") === "1" && isOwner();
+  const botBtn = () => isOwner() ? `<button class="x gm-snd gm-bot${botOn() ? " on" : ""}" type="button" data-bot="1" aria-label="רובוט אוטומטי">🤖</button>` : "";
+  const wireSnd = (root, kind) => { root.querySelectorAll("[data-snd]").forEach(b => b.onclick = e => { e.stopPropagation(); if (b.dataset.snd === "m") b.textContent = SND.toggleMusic(kind()) ? "🎵" : "🔇"; else b.textContent = SND.toggleFx() ? "🔊" : "🔈"; });
+    root.querySelectorAll("[data-bot]").forEach(b => b.onclick = e => { e.stopPropagation(); LS.set("roboBot", botOn() ? null : "1"); b.classList.toggle("on", botOn()); X.toast(botOn() ? "🤖 הרובוט משחק בשבילך – לוחצים שוב כדי לעצור" : "🤖 הרובוט עצר – אתה משחק", null, 2200); }); };
   // 🎨 ציורים מוכנים מראש (בהירים וזוהרים – רואים אותם טוב על כל טלפון)
   const SPR = {};
   function sprite(key, s, fn) { const k = key + "|" + s; if (SPR[k]) return SPR[k]; const dp = Math.min(2, window.devicePixelRatio || 1), P = s * 2, c = document.createElement("canvas"); c.width = c.height = Math.ceil(P * dp); const x = c.getContext("2d"); x.scale(dp, dp); x.translate(P / 2, P / 2); fn(x, s); return (SPR[k] = c); }
@@ -906,6 +911,14 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
         if ((G.npow -= rdt) <= 0) { G.npow = 14 - R.upg(X.S, "luck") * 2.5 + Math.random() * 8; spawn("pow"); }
         if ((G.nitem -= rdt) <= 0) { G.nitem = 14 + Math.random() * 12; if (!G.practice && itemsLeft() > 0) spawn("item"); }
       }
+      if (botOn() && !G.over && !G.dead) { // 🤖 רובוט אוטומטי: מחפש את המקום הכי טוב – ברגים קרובים, רחוק מפצצות וגנבים
+        const py0 = H - 60; let bx = G.px, bv = -1e9;
+        for (let i = 0; i <= 24; i++) { const x = 30 + (W - 60) * i / 24; let v = -Math.abs(x - G.px) * .02;
+          for (const o of G.obj) { const dy = py0 - o.y; if (dy < -20 || dy > H * .9) continue; const dx = Math.abs(o.x - x), t = Math.max(0, dy) / Math.max(60, o.v || 200);
+            if (o.k === "bomb" || o.k === "thief") { if (dx < 62 && dy < H * .5) v -= 900 / (1 + t * 3); }
+            else v += (o.k === "gold" ? 5 : o.k === "item" || o.k === "pow" ? 6 : 1) * Math.max(0, 1 - dx / (90 + t * 220)) / (1 + t); }
+          if (v > bv) { bv = v; bx = x; } }
+        G.tx = bx; }
       G.px += (G.tx - G.px) * Math.min(1, rdt * 16);
       const py = H - 60, mag = G.pw.magnet > 0;
       const odt = G.pw.freeze > 0 ? 0 : dt, catchW = 44 * (1 + R.upg(X.S, "bucket") * .12) * (G.pw.bucket > 0 ? 1.8 : 1);

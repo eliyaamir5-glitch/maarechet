@@ -59,23 +59,42 @@ html,body{background:radial-gradient(120% 60% at 50% 0%,color-mix(in srgb,#facc1
       document.body.appendChild(f); };
     if (document.body) go(); else document.addEventListener("DOMContentLoaded", go);
   }
+  // 🌗 מצב תצוגה: "" = לפי הטלפון · light = תמיד בהיר · dark = תמיד כהה · time = בהיר ביום (06:30–18:00), כהה בלילה
+  // הדפים כתובים עם @media (prefers-color-scheme: …) – כאן "מדליקים" או "מכבים" את הכללים האלה לפי הבחירה
+  const wantMode = () => { const m = get("uiMode", ""); if (m === "light" || m === "dark") return m; if (m === "time") { const d = new Date(), h = d.getHours() + d.getMinutes() / 60; return h >= 6.5 && h < 18 ? "light" : "dark"; } return null; };
+  function applyMode() {
+    const want = wantMode();
+    const walk = rules => { for (const r of rules) { if (r.media && r.cssRules) { const t = r.__o || r.media.mediaText; if (/prefers-color-scheme/.test(t)) { if (!r.__o) r.__o = t; const isL = /light/.test(t), nt = want == null ? r.__o : (want === (isL ? "light" : "dark") ? "all" : "not all"); if (r.media.mediaText !== nt) try { r.media.mediaText = nt; } catch (e) {} } else walk(r.cssRules); } } };
+    for (const sh of document.styleSheets) { try { walk(sh.cssRules); } catch (e) {} }
+    try { document.documentElement.style.colorScheme = want || ""; document.documentElement.dataset.mode = want || "auto"; } catch (e) {}
+  }
+  const FONTS = { round: 'ui-rounded,"SF Pro Rounded","Varela Round",Rubik,system-ui,sans-serif', classic: 'Arial,"Segoe UI",Helvetica,sans-serif', bold: "Rubik,system-ui,sans-serif" };
   function apply() {
-    const t = THEMES[get("uiTheme", "purple")] || THEMES.purple, big = get("uiBig", "") === "1";
+    const t = THEMES[get("uiTheme", "purple")] || THEMES.purple, big = get("uiBig", "") === "1", font = get("uiFont", ""), calm = get("uiCalm", "") === "1";
     // :root:root גובר על ה-:root של כל עמוד, בלי קשר לסדר
     const pg = pageGrad();
     st.textContent = (t === THEMES.purple ? "" : `:root:root{--grad:${t.grad};--accent:${t.dark}}
-@media (prefers-color-scheme: light){:root:root{--accent:${t.light}}}`) + (t.fx === "gold" ? GOLD_CSS : "") + (pg ? `:root:root{--grad:${pg}}` : "") + (big ? `html{zoom:${BIG}}` : "");
+@media (prefers-color-scheme: light){:root:root{--accent:${t.light}}}`) + (t.fx === "gold" ? GOLD_CSS : "") + (pg ? `:root:root{--grad:${pg}}` : "") + (big ? `html{zoom:${BIG}}` : "")
+      + (FONTS[font] ? `html,body,button,input,select,textarea{font-family:${FONTS[font]}!important}${font === "bold" ? "body{font-weight:500}b,strong,h1,h2,h3{font-weight:900!important}" : ""}` : "")
+      + (calm ? "*,*::before,*::after{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important;scroll-behavior:auto!important}" : "");
     gxFx(t.fx === "gold");
     if (!st.isConnected) (document.head || document.documentElement).appendChild(st);
     const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = t.meta;
+    applyMode();
   }
   apply();
+  document.addEventListener("DOMContentLoaded", applyMode); addEventListener("load", applyMode);
+  setInterval(() => { if (get("uiMode", "") === "time") applyMode(); }, 60000);
+  try { new MutationObserver(ms => { if (ms.some(m => [...m.addedNodes].some(n => n.tagName === "STYLE" || n.tagName === "LINK"))) applyMode(); }).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
   window.Theme = {
     THEMES,
     current: () => get("uiTheme", "purple"),
     setTheme(k) { set("uiTheme", k === "purple" ? null : k); apply(); },
     big: () => get("uiBig", "") === "1",
     setBig(on) { set("uiBig", on ? "1" : null); apply(); },
+    mode: () => get("uiMode", ""), setMode(m) { set("uiMode", ["light", "dark", "time"].includes(m) ? m : null); apply(); }, isDark: () => { const w = wantMode(); return w ? w === "dark" : !matchMedia("(prefers-color-scheme: light)").matches; },
+    font: () => get("uiFont", ""), setFont(f) { set("uiFont", FONTS[f] ? f : null); apply(); },
+    calm: () => get("uiCalm", "") === "1", setCalm(on) { set("uiCalm", on ? "1" : null); apply(); },
   };
   // מסמך שנטען לפני שה-<head> מוכן: מוודאים שהעיצוב נשאר אחרון
   document.addEventListener("DOMContentLoaded", () => { if (st.nextSibling) document.head.appendChild(st); });

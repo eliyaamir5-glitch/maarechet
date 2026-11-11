@@ -215,7 +215,7 @@ function ownCard(){
   return`<div class="card ctl"><h2>👑 הטלפון שלי</h2><p class="hint">הטלפון שמחובר כאן הוא שלך: רק בו אפשר להפעיל ברגים לאין סוף וכל האביזרים. אף אחד אחר לא יכול – גם אם יראה את הקוד.</p>
     ${o.linked?`<div class="sub" style="margin-bottom:8px">✅ הטלפון שלך מחובר</div>
       <div class="row"><button class="b2 ${o.inf?"":"ghost"}" id="pwInf">🔩 ברגים לאין סוף: ${o.inf?"פועל ✓":"כבוי"}</button><button class="b2 ${o.all?"":"ghost"}" id="pwAll">👕 כל האביזרים: ${o.all?"פועל ✓":"כבוי"}</button></div>
-      <div class="row" style="margin-top:8px"><button class="b2 ghost sm" id="pwLink">🔁 לחבר טלפון אחר</button><button class="b2 ghost sm" id="pwOff">ניתוק</button></div><p class="hint" style="margin-top:6px">השינוי מגיע לטלפון תוך כמה דקות (או מיד כשפותחים את האפליקציה מחדש).</p>`
+      <div class="row" style="margin-top:8px"><button class="b2 ghost sm" id="pwLink">🔁 לחבר טלפון אחר</button><button class="b2 ghost sm" id="pwOff">ניתוק</button></div><p class="hint" style="margin-top:6px">השינוי מגיע לטלפון תוך כמה דקות (או מיד כשפותחים את האפליקציה מחדש).</p><p class="hint">👑 <b>בטלפון שלך יש עכשיו "פאנל מנהל"</b> (רובוט ← 🎮 כיף ← 👑 פאנל מנהל): להביא לעצמך כמה ברגים/תיבות/אביזרים שרוצים, להחזיר הכל בלחיצה, רובוט שמשחק בשבילך במשחקים (כפתור 🤖), ולהוריד את עצמך מטבלאות השיאים.</p>`
     :`<button class="b2" id="pwLink">🔗 לחבר את הטלפון שלי</button>`}
     <div id="pwBox"></div></div>`;
 }

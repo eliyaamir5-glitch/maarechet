@@ -44,6 +44,7 @@
     { n: "🛏️ הפנימייה", sky: ["#2e1065", "#6d28d9"], wall: ["#7c3aed", "#6d28d9", "#9333ea"], floor: ["#4c1d95", "#7e22ce"], decor: "doors", ceil: 1 },
     { n: "🌙 הגג בלילה", sky: ["#020617", "#1e1b4b"], wall: ["#0f172a", "#1e293b", "#334155"], floor: ["#1e293b", "#475569"], decor: "rail", ceil: 0 },
   ];
+  const hexA = h => { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},`; };
   const POW = { magnet: { c: "#f43f5e", n: "מגנט", t: 8, em: "🧲" }, shield: { c: "#38bdf8", n: "מגן", t: 0, em: "🛡️" }, double: { c: "#facc15", n: "כפול", t: 8, em: "×2" }, turbo: { c: "#a855f7", n: "טורבו", t: 4.5, em: "🚀" } };
   let game = null;
   async function play() {
@@ -69,7 +70,7 @@
     const newRun = () => {
       Object.assign(G, { practice: left() <= 0 || !RP.breakState().open, over: false, dead: false, t: 0, dist: 0, v: 13, lane: 0, pl: 0, jt: -1, st: -1, obj: [], parts: [], fx: [], puffs: [], next: 30, rows: 0, bolts: 0, pw: {}, shield: Math.random() < [0, .35, .7, 1][R.upg(X.S, "shield")], shake: 0, lv: 1, lvT: 0, combo: 0, run500: false,
         fly: 0, alt: 0, big: -1, ice: 0, chase: 0, chaseX: 0, lastStumble: -99, wIdx: 0, wT: 0, nPuff: 0, stats: { dist: 0, flights: 0, bolts: 0, cleanDist: 0, world: 1, bullyPass: 0 }, cleanFrom: 0,
-        cd: 3.2, slow: 0, deathT: -1, buf: null, laneT: -9, leanV: 0, flyers: [], landT: 0, lines: [], nearN: 0 });
+        cd: 3.2, slow: 0, deathT: -1, buf: null, laneT: -9, leanV: 0, flyers: [], landT: 0, lines: [], nearN: 0, hopT: -1, fromL: 0, trail: [], rings: [], hurtT: 0, camX: 0, zoom: 1, camB: 0, pwMax: {} });
       G.tut = LS.get("roboRunTut", "") ? 0 : 1; if (G.tut) { G.next = 9999; G.tutStep = 0; G.tutT = 1.5; }
       AU.music("run"); G.ch = RP.chase(d, "run"); hud(); last = performance.now(); requestAnimationFrame(loop);
     };
@@ -103,7 +104,7 @@
     // ---- שליטה: החלקות (וגם לחיצה על צד המסך) + מקלדת ----
     const act = a => { if (G.over || G.dead) return;
       if (G.cd > 0) return;
-      if (a === "L" || a === "R") { if (G.ice > 0) { fxText(W / 2, H * .5, "🧊 מחליק! אי אפשר לפנות", "#bae6fd", .7, 16); return; } const nl = Math.max(-1, Math.min(1, G.lane + (a === "R" ? 1 : -1))); if (nl !== G.lane) { G.leanV = nl - G.lane; G.lane = nl; G.laneT = G.t; AU.lane(); } else { G.shake = Math.max(G.shake, .08); } }
+      if (a === "L" || a === "R") { if (G.ice > 0) { fxText(W / 2, H * .5, "🧊 מחליק! אי אפשר לפנות", "#bae6fd", .7, 16); return; } const nl = Math.max(-1, Math.min(1, G.lane + (a === "R" ? 1 : -1))); if (nl !== G.lane) { G.leanV = nl - G.lane; G.fromL = G.pl; G.hopT = 0; G.lane = nl; G.laneT = G.t; burst(botX(), GY() - 6, "rgba(226,232,240,.9)", 7, 110); AU.lane(); } else { G.shake = Math.max(G.shake, .08); } }
       else if (G.fly > 0) return; // באוויר – רק ימינה ושמאלה
       else if (a === "U" && (G.jt >= 0 || G.big >= 0)) { G.buf = { a: "U", t: G.t }; } // 🕹️ זוכרים קפיצה שנלחצה מוקדם מדי
       else if (a === "U" && G.jt < 0 && G.big < 0) { G.jt = 0; G.st = -1; AU.jump(); }
@@ -134,8 +135,8 @@
     }
     // שורה בשמיים (בזמן עפיפה)
     function skyRow() {
-      G.rows++; const free = Math.floor(Math.random() * 3) - 1, lanes = [-1, 0, 1].filter(x => x !== free).sort(() => Math.random() - .5), n = G.lv >= 4 && Math.random() < .5 ? 2 : 1;
-      for (const ln of lanes.slice(0, n)) add({ k: Math.random() < .55 ? "bird" : "drone", lane: ln, ph: Math.random() * 6 });
+      G.rows++; const free = Math.floor(Math.random() * 3) - 1, lanes = [-1, 0, 1].filter(x => x !== free).sort(() => Math.random() - .5), n = G.lv >= 5 && Math.random() < .35 ? 2 : 1;
+      for (const ln of lanes.slice(0, n)) add({ k: G.lv >= 3 && Math.random() < .18 ? "drone" : "bird", lane: ln, ph: Math.random() * 6 }); // 🛸 פחות רחפנים (11.11)
       for (let i = 0; i < 4; i++) add({ k: "sbolt", lane: free, z: 92 + i * 2.4 });
       if (G.rows % 5 === 0) add({ k: "rainbow", lane: free, z: 104 });
     }
@@ -145,7 +146,7 @@
     const jumpH = () => G.big >= 0 ? Math.sin(Math.PI * Math.min(1, G.big / BIGT)) * 3 : G.jt < 0 ? 0 : Math.sin(Math.PI * Math.min(1, G.jt / .62)) * 1.25, sliding = () => G.st >= 0 && G.st < .62;
     const botX = () => sx(G.pl, 0), botY = () => GY() - Math.min(W * .27, 112) * .75 - G.alt * H * .32 - jumpH() * H * .14;
     let last = performance.now(), secT = 0;
-    const addBolts = (n0, gold) => { const cap = G.practice ? Infinity : left(), mult = G.pw.double > 0 || G.rainbowT > 0 ? 2 : 1, n = Math.min(n0 * mult, Math.max(0, cap - G.bolts)); G.bolts += n; G.combo++; if (n) { if (G.flyers.length < 14) G.flyers.push({ x: botX(), y: botY() - 20, t: 0, gold }); gold ? AU.gold() : AU.coin(G.combo); burst(botX(), botY(), gold ? "#fde047" : "#bae6fd", gold ? 10 : 4, 140); if (gold || n > 1) fxText(botX(), botY() - 50, "+" + n, "#fde047", .8, 24); } hud(); };
+    const addBolts = (n0, gold) => { const cap = G.practice ? Infinity : left(), mult = G.pw.double > 0 || G.rainbowT > 0 ? 2 : 1, n = Math.min(n0 * mult, Math.max(0, cap - G.bolts)); G.bolts += n; G.combo++; if (n) { if (G.flyers.length < 14) G.flyers.push({ x: botX(), y: botY() - 20, t: 0, gold }); if (G.rings.length < 10) G.rings.push({ x: botX(), y: botY() - 10, r: 8, a: .9, c: gold ? "rgba(250,204,21," : "rgba(186,230,253," }); gold ? AU.gold() : AU.coin(G.combo); burst(botX(), botY(), gold ? "#fde047" : "#bae6fd", gold ? 10 : 4, 140); if (gold || n > 1) fxText(botX(), botY() - 50, "+" + n, "#fde047", .8, 24); } hud(); };
     // ---- 💩 עפיפה ----
     function startFly() {
       G.fly = 10 + R.upg(X.S, "flight") * 2; G.stats.flights++; AU.fart(); setTimeout(() => AU.fart(), 250); X.vib([40, 30, 40, 30, 80]); G.shake = .3;
@@ -159,13 +160,29 @@
       setTimeout(() => { AU.land(); burst(botX(), GY() - 10, "#d6d3d1", 20, 160); }, 500);
     }
     // ---- מעידה / התנגשות ----
-    function stumble(o, what) {
+    function stumble(o, what) { G.hurtT = .5;
       if (G.pw.turbo > 0 || G.fly > 0) return;
       if (G.tut) { o.gone = 1; G.tutO = null; G.tutT = .8; AU.stumble(); fxText(W / 2, H * .45, "אופס! ננסה שוב 🙂", "#fde68a", 1.2, 22); return; }
       if (G.shield) { G.shield = false; AU.shield(); X.vib(40); burst(botX(), botY(), "#38bdf8", 26, 220); fxText(W / 2, H * .45, "🛡️ המגן הציל אותך!", "#7dd3fc", 1.3, 20); o.gone = 1; return; }
       o.gone = 1; G.stats.cleanDist = Math.max(G.stats.cleanDist, G.dist - G.cleanFrom); G.cleanFrom = G.dist;
       if (G.chase > 0) { G.dead = true; G.slow = .9; G.deathT = 0; G.shake = .8; AU.stomp(); AU.crash(); X.vib([80, 40, 160]); burst(botX(), botY(), "#ef4444", 40, 300); fxText(W / 2, H * .4, "🤖 הרובוט הענק תפס אותך!", "#f87171", 1.5, 22); setTimeout(() => end("caught", "הרובוט הענק תפס אותך!"), 1100); return; }
       G.chase = 7; G.chaseX = 0; G.v *= .7; AU.stumble(); setTimeout(() => AU.stomp(), 300); X.vib([40, 30, 60]); G.shake = .35; fxText(W / 2, H * .42, `😵 מעדת ב${what}! הרובוט הענק רודף אחריך!`, "#fdba74", 1.8, 17);
+    }
+    // 🤖 רובוט אוטומטי – רק בטלפון של מנהל המערכת (כפתור 🤖 למעלה). משחק לבד עד שלוחצים שוב
+    const autoOn = () => LS.get("roboBot", "") === "1" && X.powers && X.powers().owner;
+    function autoRun() {
+      if (G.cd > 0 || G.dead || G.over) return;
+      const near = (ln, z0, z1, ks) => G.obj.filter(o => !o.gone && o.z > z0 && o.z < z1 && Math.abs(o.lane - ln) < .5 && (!ks || ks.includes(o.k)));
+      const bad = G.fly > 0 ? ["bird", "drone"] : ["locker", "bully"], score = ln => {
+        if (ln < -1 || ln > 1) return -1e9; let v = 0;
+        for (const o of G.obj) { if (o.gone || o.z <= 0 || o.z > 16) continue; const w = 16 - o.z;
+          if (o.k === "bully") { if (Math.abs(o.base - ln) < .5) v -= w * 40; }
+          else if (Math.abs(o.lane - ln) < .5) { if (bad.includes(o.k)) v -= w * 40; else if (["bench", "beam"].includes(o.k)) v -= w * 2; else if (["bolt", "gold", "sbolt", "pow", "rainbow"].includes(o.k)) v += w * (o.k === "gold" || o.k === "pow" ? 3 : 1); else if (o.k === "poop" && G.fly <= 0) v += w * 2; } }
+        return v - Math.abs(ln - G.lane) * 3; };
+      if (G.ice <= 0 && G.t - G.laneT > .18) { const cur = score(G.lane), l = score(G.lane - 1), r = score(G.lane + 1); if (l > cur + 5 && l >= r) act("L"); else if (r > cur + 5) act("R"); }
+      if (G.fly > 0) return;
+      const t = near(G.lane, 0, 4.2, ["bench", "beam"])[0], bl = G.obj.find(o => !o.gone && o.k === "bully" && o.z > 0 && o.z < 4 && Math.abs(o.base + o.arm - G.lane) < .5 && Math.abs(o.base - G.lane) >= .5);
+      if (bl && !sliding()) act("D"); else if (t && t.k === "bench" && G.jt < 0 && G.big < 0) act("U"); else if (t && t.k === "beam" && !sliding()) act("D");
     }
     function crash() {
       if (G.pw.turbo > 0 || G.fly > 0) return false;
@@ -190,18 +207,21 @@
         tutTick(dt);
         G.v = G.tut ? 9 : Math.min(36, 13 + G.dist * .012) * (G.pw.turbo > 0 ? 1.7 : 1) * (G.ice > 0 ? 1.35 : 1) * (G.fly > 0 ? 1.15 : 1);
         const dz = G.v * dt; G.dist += dz; if (G.ch && !G.tut) G.ch.update(G.dist); if (G.dist >= 500) G.run500 = true;
-        for (const k of Object.keys(G.pw)) { G.pw[k] -= dt; if (G.pw[k] <= 0) delete G.pw[k]; }
+        for (const k of Object.keys(G.pw)) { G.pw[k] -= dt; if (G.pw[k] <= 0) { delete G.pw[k]; AU.shield(); fxText(W / 2, H * .38, `${POW[k].em} ${POW[k].n} נגמר`, "#e2e8f0", .9, 17); } }
+        if (G.hurtT > 0) G.hurtT -= dt; G.camB *= Math.pow(.004, dt);
         if (G.rainbowT > 0) G.rainbowT -= dt;
-        if (G.jt >= 0) { G.jt += dt; if (G.jt > .62) { G.jt = -1; G.landT = .16; burst(botX(), GY() - 6, "#cbd5e1", 8, 90); if (G.buf && G.t - G.buf.t < .25) { G.buf = null; G.jt = 0; AU.jump(); } } }
+        if (G.jt >= 0) { G.jt += dt; if (G.jt > .62) { G.jt = -1; G.landT = .16; burst(botX(), GY() - 6, "#cbd5e1", 8, 90); G.rings.push({ x: botX(), y: GY() - 4, r: 8, a: .8, c: "rgba(226,232,240,", flat: 1 }); G.camB = 5; if (G.buf && G.t - G.buf.t < .25) { G.buf = null; G.jt = 0; AU.jump(); } } }
         if (G.st >= 0) { G.st += dt; if (G.st > .62) G.st = -1; }
-        if (G.big >= 0) { G.big += dt; if (G.big > BIGT) { G.big = -1; G.landT = .22; AU.land(); burst(botX(), GY() - 10, "#d6d3d1", 14, 140); if (G.buf && G.t - G.buf.t < .3) { G.buf = null; G.jt = 0; AU.jump(); } } }
+        if (G.big >= 0) { G.big += dt; if (G.big > BIGT) { G.big = -1; G.landT = .22; AU.land(); G.rings.push({ x: botX(), y: GY() - 4, r: 10, a: 1, c: "rgba(187,247,208,", flat: 1 }); G.camB = 10; G.shake = Math.max(G.shake, .15); burst(botX(), GY() - 10, "#d6d3d1", 14, 140); if (G.buf && G.t - G.buf.t < .3) { G.buf = null; G.jt = 0; AU.jump(); } } }
         if (G.landT > 0) G.landT -= dt; G.leanV *= Math.pow(.02, dt);
         if (G.ice > 0) G.ice -= dt;
         if (G.chase > 0) { G.chase -= dt; if (Math.floor(G.chase * 2) !== Math.floor((G.chase + dt) * 2)) AU.stomp(); if (G.chase <= 0) fxText(W / 2, H * .45, "😅 ברחת מהרובוט הענק!", "#86efac", 1.2, 20); }
         // 💩 עפיפה: גובה, פלוצים
         if (G.fly > 0) { G.fly -= dt; G.alt = Math.min(1, G.alt + dt * 2.2); if ((G.nPuff -= dt) <= 0) { G.nPuff = .55 + Math.random() * .4; AU.fart(); G.puffs.push({ x: botX() + (Math.random() - .5) * 20, y: botY() + 40, r: 12 + Math.random() * 10, a: 1, txt: Math.random() < .35 }); } if (G.fly <= 0) endFly(false); }
         else G.alt = Math.max(0, G.alt - dt * 2.5);
-        G.pl += (G.lane - G.pl) * Math.min(1, dt * 14);
+        // ↔️ מעבר מסלול: קפיצונת קטנה עם האטה בסוף (במקום החלקה רכה) – מרגיש חד וקופצני
+        if (G.hopT >= 0) { G.hopT += dt; const p0 = Math.min(1, G.hopT / .17), e = 1 - Math.pow(1 - p0, 3); G.pl = G.fromL + (G.lane - G.fromL) * e; if (p0 >= 1) { G.hopT = -1; G.pl = G.lane; } } else G.pl += (G.lane - G.pl) * Math.min(1, dt * 14);
+        if (autoOn()) autoRun();
         if ((G.next -= dz) <= 0) { if (G.fly > 0) { skyRow(); G.next = Math.max(11, 18 - G.lv * .7) + Math.random() * 5; } else { row(); G.next = Math.max(10, 19 - G.lv * .9) + Math.random() * 6; } }
         const jh = jumpH(), mag = G.pw.magnet > 0, turbo = G.pw.turbo > 0, high = G.big >= 0 && jh > 1;
         for (const o of G.obj) {
@@ -215,18 +235,19 @@
           if (!same && !o.near && ["locker", "bench", "beam"].includes(o.k) && G.t - G.laneT < .4 && Math.abs(o.lane - G.pl) < 1.3 && G.fly <= 0) { o.near = 1; G.nearN++; AU.whoosh(); addBolts(2, false); fxText(W / 2, H * .5, "😎 כמעט! +2", "#86efac", .9, 24); G.shake = Math.max(G.shake, .12); }
           if (o.k === "bolt" || o.k === "gold") { if (same && G.fly <= 0 && (turbo || Math.abs(o.h - jh) < .75 || (high && o.h > .5))) { o.gone = 1; addBolts(o.k === "gold" ? 5 : 1, o.k === "gold"); } }
           else if (o.k === "sbolt") { if (same && G.fly > 0) { o.gone = 1; addBolts(1, false); } }
-          else if (o.k === "pow") { if (same && G.fly <= 0) { o.gone = 1; const P = POW[o.p]; if (o.p === "shield") G.shield = true; else G.pw[o.p] = P.t + (o.p === "magnet" ? R.upg(X.S, "magnet") * 3 : 0); AU.power(); X.vib(30); burst(botX(), botY(), P.c, 24, 220); fxText(W / 2, H * .42, `${P.em} ${P.n}!`, P.c, 1.2, 26); } }
+          else if (o.k === "pow") { if (same && G.fly <= 0) { o.gone = 1; const P = POW[o.p]; if (o.p === "shield") G.shield = true; else { G.pw[o.p] = P.t + (o.p === "magnet" ? R.upg(X.S, "magnet") * 3 : 0); G.pwMax[o.p] = G.pw[o.p]; } G.rings.push({ x: botX(), y: botY(), r: 20, a: 1, c: hexA(P.c) }); AU.power(); X.vib(30); burst(botX(), botY(), P.c, 24, 220); fxText(W / 2, H * .42, `${P.em} ${P.n}!`, P.c, 1.2, 26); } }
           else if (o.k === "poop") { if (same && G.fly <= 0 && jh < .6) { o.gone = 1; startFly(); } }
           else if (o.k === "tramp") { if (same && G.fly <= 0 && jh < .6) { o.gone = 1; G.big = 0; G.jt = -1; G.st = -1; AU.boing(); X.vib(30); fxText(W / 2, H * .45, "🤸 בוינג!", "#86efac", 1, 26); } }
           else if (o.k === "ice") { if (same && G.fly <= 0 && jh < .6) { o.gone = 1; G.ice = 1.6; const reach = G.v * 1.35 * 1.8 + 6; for (const q of G.obj) if (q !== o && Math.abs(q.lane - G.lane) < .5 && q.z > 0 && q.z < reach && ["locker", "bench", "beam", "bully"].includes(q.k)) q.gone = 1; G.next = Math.max(G.next, reach); AU.whoosh(); fxText(W / 2, H * .45, "🧊 מחליקים!!!", "#bae6fd", 1.2, 24); } }
           else if (o.k === "rainbow") { if (same && G.fly > 0) { o.gone = 1; G.rainbowT = 6; AU.rainbow(); X.vib(30); fxText(W / 2, H * .4, "🌈 קשת! כל בורג ×2", "#f0abfc", 1.4, 24); burst(botX(), botY(), "#f0abfc", 30, 240); } }
           else if (o.k === "bird") { if (same && G.fly > 0) { o.gone = 1; if (G.shield) { G.shield = false; AU.shield(); fxText(W / 2, H * .45, "🛡️ המגן הציל אותך!", "#7dd3fc", 1.3, 20); } else { endFly(true); G.shake = .4; X.vib([50, 30, 50]); } } }
-          else if (o.k === "drone") { if (same && G.fly > 0) { o.gone = 1; if (G.shield) { G.shield = false; AU.shield(); fxText(W / 2, H * .45, "🛡️ המגן הציל אותך!", "#7dd3fc", 1.3, 20); } else { const take = Math.ceil(G.bolts / 2); G.bolts -= take; AU.drone(); AU.thief(); G.shake = .3; X.vib([40, 30, 40]); fxText(W / 2, H * .42, take ? `🛸 הרחפן גנב ${take}!` : "🛸 הרחפן לא מצא כלום 😅", "#e879f9", 1.4, 22); G.fx.push({ big: 1, drone: 1, x: botX(), y: botY(), a: 1.2, life: 1.2 }); hud(); } } }
+          else if (o.k === "drone") { if (same && G.fly > 0) { o.gone = 1; if (G.shield) { G.shield = false; AU.shield(); fxText(W / 2, H * .45, "🛡️ המגן הציל אותך!", "#7dd3fc", 1.3, 20); } else { const take = Math.ceil(G.bolts / 2); G.bolts -= take; G.hurtT = .5; AU.drone(); AU.thief(); G.shake = .3; X.vib([40, 30, 40]); fxText(W / 2, H * .42, take ? `🛸 הרחפן גנב ${take}!` : "🛸 הרחפן לא מצא כלום 😅", "#e879f9", 1.4, 22); G.fx.push({ big: 1, drone: 1, x: botX(), y: botY(), a: 1.2, life: 1.2 }); hud(); } } }
           else if (o.k === "bully") {
             if (G.fly > 0 || turbo || high) { o.gone = 1; continue; }
-            const body = Math.abs(o.base - G.pl) < .5, grab = Math.abs(o.base + o.arm - G.pl) < .5;
+            const body = Math.abs(o.base - G.pl) < .5, grab0 = Math.abs(o.base + o.arm - G.pl) < .5, grab = grab0 && !sliding(); // 🛝 אפשר להחליק מתחת ליד של הביריון
+            if (grab0 && !grab && !body) { o.gone = 1; G.stats.bullyPass++; AU.whoosh(); addBolts(3, false); fxText(W / 2, H * .45, "🛝 החלקת מתחת ליד! +3", "#86efac", 1.1, 22); continue; }
             o.gone = 1;
-            if (body || grab) { if (G.shield) { G.shield = false; AU.shield(); fxText(W / 2, H * .45, "🛡️ המגן הציל אותך מהביריון!", "#7dd3fc", 1.3, 18); } else { const take = Math.max(G.bolts ? 1 : 0, Math.floor(G.bolts * .2)); G.bolts -= take; AU.bully(); AU.thief(); G.shake = .4; X.vib([60, 40, 60]); fxText(W / 2, H * .42, take ? `😠 הביריון לקח לך ${take} ברגים!` : "😠 הביריון ניסה… אבל אין לך ברגים 😅", "#fca5a5", 1.6, 19); hud(); } }
+            if (body || grab) { if (G.shield) { G.shield = false; AU.shield(); fxText(W / 2, H * .45, "🛡️ המגן הציל אותך מהביריון!", "#7dd3fc", 1.3, 18); } else { const take = Math.max(G.bolts ? 1 : 0, Math.floor(G.bolts * .2)); G.bolts -= take; G.hurtT = .5; AU.bully(); AU.thief(); G.shake = .4; X.vib([60, 40, 60]); fxText(W / 2, H * .42, take ? `😠 הביריון לקח לך ${take} ברגים!` : "😠 הביריון ניסה… אבל אין לך ברגים 😅", "#fca5a5", 1.6, 19); hud(); } }
             else { G.stats.bullyPass++; AU.coin(8); fxText(W / 2, H * .45, "😎 עקפת את הביריון!", "#86efac", 1, 20); }
           }
           else if (same && !high && G.fly <= 0) {
@@ -250,7 +271,8 @@
       if (G.shake > 0) cx.translate((Math.random() - .5) * G.shake * 30, (Math.random() - .5) * G.shake * 30);
       const hy = HOR(), lc = LV_COL[G.lv - 1], turbo = G.pw.turbo > 0, Wd = world(), sky = G.alt;
       // 🎥 מצלמה: נוטה לכיוון הפנייה וזזה קצת עם הרובוט (כמו במשחקי ריצה גדולים)
-      cx.save(); cx.translate(W / 2, H * .75); cx.rotate(-G.leanV * .045); cx.translate(-W / 2 - G.pl * W * .035, -H * .75);
+      G.camX += (G.pl - G.camX) * Math.min(1, dt * 6); G.zoom += ((turbo ? .93 : G.fly > 0 ? .96 : 1) + (G.lvT > 1.2 ? .03 : 0) - G.zoom) * Math.min(1, dt * 4);
+      cx.save(); cx.translate(W / 2, H * .75 + G.camB); cx.rotate(-G.leanV * .05); cx.scale(G.zoom, G.zoom); cx.translate(-W / 2 - G.camX * W * .05, -H * .75);
       if (sky > .5) drawSky(dt); else drawGround(Wd, turbo);
       // 🌫️ ערפל באופק – הדברים מופיעים בהדרגה מהמרחק
       if (sky <= .5) { const fg = cx.createLinearGradient(0, hy - 10, 0, hy + H * .12); fg.addColorStop(0, Wd.sky[1]); fg.addColorStop(1, "rgba(0,0,0,0)"); cx.globalAlpha = .75; cx.fillStyle = fg; cx.fillRect(-40, hy - 10, W + 80, H * .12); cx.globalAlpha = 1; }
@@ -266,17 +288,24 @@
       G.lines = G.lines.filter(q => q.r < W * 1.2);
       drawBot();
       for (const q of G.puffs) { cx.globalAlpha = Math.max(0, q.a) * .8; cx.fillStyle = "#a3a380"; cx.beginPath(); cx.arc(q.x, q.y, q.r, 0, 7); cx.fill(); cx.fillStyle = "#c7c7a1"; cx.beginPath(); cx.arc(q.x - q.r * .3, q.y - q.r * .3, q.r * .6, 0, 7); cx.fill(); if (q.txt) { cx.fillStyle = "#713f12"; cx.font = "900 15px system-ui,sans-serif"; cx.textAlign = "center"; cx.fillText("פפפט!", q.x, q.y + 4); } } cx.globalAlpha = 1;
-      for (const p of G.parts) { cx.globalAlpha = Math.max(0, p.a); cx.fillStyle = p.c; cx.fillRect(p.x, p.y, p.s, p.s); } cx.globalAlpha = 1;
+      for (const p of G.parts) { cx.globalAlpha = Math.max(0, p.a); cx.fillStyle = p.c; cx.beginPath(); cx.arc(p.x, p.y, p.s * .6, 0, 7); cx.fill(); } cx.globalAlpha = 1;
+      // ✨ טבעות: איסוף, נחיתה, כוח
+      for (const q of G.rings) { q.r += dt * (q.flat ? 160 : 120); q.a -= dt * 2.2; if (q.a <= 0) continue; cx.strokeStyle = q.c + Math.max(0, q.a) + ")"; cx.lineWidth = 3; cx.beginPath(); if (q.flat) cx.ellipse(q.x, q.y, q.r * 1.6, q.r * .35, 0, 0, 7); else cx.arc(q.x, q.y, q.r, 0, 7); cx.stroke(); } G.rings = G.rings.filter(q => q.a > 0);
+      if (G.hurtT > 0) { const vg = cx.createRadialGradient(W / 2, H / 2, H * .25, W / 2, H / 2, H * .75); vg.addColorStop(0, "rgba(239,68,68,0)"); vg.addColorStop(1, `rgba(239,68,68,${Math.min(.5, G.hurtT)})`); cx.fillStyle = vg; cx.fillRect(0, 0, W, H); }
       cx.textAlign = "center"; cx.textBaseline = "middle";
       for (const q of G.fx) { q.a -= dt; if (q.drone) { q.y -= 140 * dt; q.x += 80 * dt; cx.globalAlpha = Math.max(0, q.a / q.life); cx.font = "32px sans-serif"; cx.fillText("🛸💰", q.x, q.y); cx.globalAlpha = 1; continue; } q.y -= 40 * dt; cx.globalAlpha = Math.max(0, q.a / q.life); cx.font = `900 ${q.size}px system-ui,sans-serif`; cx.lineWidth = 4; cx.strokeStyle = "rgba(0,0,0,.6)"; cx.strokeText(q.t, q.x, q.y); cx.fillStyle = q.c; cx.fillText(q.t, q.x, q.y); } cx.globalAlpha = 1; G.fx = G.fx.filter(q => q.a > 0);
       // למעלה: קצב, עולם, כוחות, זמן עפיפה
       cx.font = "900 15px system-ui,sans-serif"; cx.textAlign = "right"; cx.fillStyle = lc; cx.fillText(`⬆️ קצב ${G.lv}${G.practice ? " · 🏋️ אימון" : ""}`, W - 10, 18);
       if (G.lv < 10) { const pr = (G.dist % 250) / 250; cx.fillStyle = "rgba(255,255,255,.15)"; cx.fillRect(W - 110, 28, 100, 5); cx.fillStyle = lc; cx.fillRect(W - 10 - 100 * pr, 28, 100 * pr, 5); }
       cx.font = "800 12px system-ui,sans-serif"; cx.fillStyle = "rgba(255,255,255,.8)"; cx.fillText(Wd.n, W - 10, 44);
-      let px = 10; cx.textAlign = "left"; cx.font = "800 13px system-ui,sans-serif";
-      for (const [k, v] of Object.entries(G.pw)) { cx.fillStyle = POW[k].c; cx.fillText(`${POW[k].n} ${Math.ceil(v)}`, px, 18); px += 70; }
-      if (G.shield) { cx.fillStyle = "#7dd3fc"; cx.fillText("🛡️ מגן", px, 18); px += 60; }
-      if (G.rainbowT > 0) { cx.fillStyle = "#f0abfc"; cx.fillText(`🌈×2 ${Math.ceil(G.rainbowT)}`, px, 18); }
+      // ⏱️ כמה זמן נשאר לכל כוח: עיגול שמתרוקן + שניות (למטה, שלא יסתיר את המשחק)
+      { const chips = Object.entries(G.pw).map(([k, v]) => ({ em: POW[k].em, c: POW[k].c, v, max: G.pwMax[k] || POW[k].t || v, n: POW[k].n })); if (G.shield) chips.push({ em: "🛡️", c: "#7dd3fc", v: 1, max: 1, n: "מגן", inf: 1 }); if (G.rainbowT > 0) chips.push({ em: "🌈", c: "#f0abfc", v: G.rainbowT, max: 6, n: "×2" });
+        const R0 = 21, gap = 58, x0 = W / 2 - (chips.length - 1) * gap / 2, yC = H - 34;
+        chips.forEach((q, i) => { const x = x0 + i * gap, fr = Math.max(0, Math.min(1, q.v / q.max)), low = !q.inf && q.v < 1.6 && Math.floor(G.t * 8) % 2;
+          cx.fillStyle = "rgba(10,6,30,.7)"; cx.beginPath(); cx.arc(x, yC, R0 + 4, 0, 7); cx.fill(); cx.strokeStyle = "rgba(255,255,255,.18)"; cx.lineWidth = 4; cx.beginPath(); cx.arc(x, yC, R0, 0, 7); cx.stroke();
+          cx.strokeStyle = low ? "#ef4444" : q.c; cx.lineWidth = 4; cx.lineCap = "round"; cx.beginPath(); cx.arc(x, yC, R0, -Math.PI / 2, -Math.PI / 2 + fr * Math.PI * 2); cx.stroke(); cx.lineCap = "butt";
+          cx.textAlign = "center"; cx.textBaseline = "middle"; cx.font = `900 ${q.em.length > 2 ? 13 : 17}px system-ui,"Apple Color Emoji","Segoe UI Emoji",sans-serif`; cx.fillStyle = q.c; cx.fillText(q.em, x, yC - 3);
+          cx.font = "900 10px system-ui,sans-serif"; cx.fillStyle = "#fff"; cx.fillText(q.inf ? q.n : `${q.v.toFixed(1)}`, x, yC + 11); }); }
       if (G.fly > 0) { cx.textAlign = "center"; cx.font = "900 17px system-ui,sans-serif"; cx.fillStyle = "#fde68a"; cx.fillText(`💩💨 עפים! ${Math.ceil(G.fly)}`, W / 2, 62); cx.fillStyle = "rgba(255,255,255,.2)"; cx.fillRect(W / 2 - 60, 74, 120, 6); cx.fillStyle = "#a16207"; cx.fillRect(W / 2 - 60, 74, 120 * Math.min(1, G.fly / (10 + R.upg(X.S, "flight") * 2)), 6); }
       if (G.chase > 0) { cx.textAlign = "center"; cx.font = "900 15px system-ui,sans-serif"; cx.fillStyle = "#fca5a5"; cx.fillText(`🤖 רודף! עוד ${Math.ceil(G.chase)} – אל תמעד!`, W / 2, 62); }
       if (G.lvT > 0) { G.lvT -= dt; const a = Math.min(1, G.lvT * 2); cx.save(); cx.globalAlpha = a; cx.translate(W / 2, H * .2); cx.textAlign = "center"; cx.font = "900 38px system-ui,sans-serif"; cx.lineWidth = 6; cx.strokeStyle = "rgba(0,0,0,.6)"; cx.strokeText(`קצב ${G.lv}!`, 0, 0); cx.fillStyle = lc; cx.fillText(`קצב ${G.lv}!`, 0, 0); cx.font = "800 14px system-ui,sans-serif"; cx.fillStyle = "#fff"; cx.fillText(G.lv >= 7 ? "😈 מטורף!" : G.lv >= 4 ? "🔥 מהר יותר!" : "⚡ מאיץ", 0, 24); cx.restore(); }
@@ -380,19 +409,27 @@
     function drawBot() {
       const gy = GY(), jh = jumpH(), sl = sliding(), size = Math.min(W * .27, 112), x = botX();
       const flying = G.alt > .05, air = jh > .05 && !flying, ph = G.t * (7 + G.v * .32), run = !G.dead && !air && !flying && !sl && G.cd <= 0;
-      const lift = jh * H * .14 + G.alt * H * .32;
+      const hp = G.hopT >= 0 ? Math.min(1, G.hopT / .17) : -1, hopH = hp >= 0 && !flying ? Math.sin(Math.PI * hp) * size * .16 : 0;
+      const lift = jh * H * .14 + G.alt * H * .32 + hopH;
+      // 👻 צללים של מהירות: בטורבו ובמעבר מסלול
+      if ((G.pw.turbo > 0 || hp >= 0) && !G.dead) { G.trail.push({ x, y: gy - lift }); if (G.trail.length > 6) G.trail.shift(); } else if (G.trail.length) G.trail.shift();
+      if (imgOk) G.trail.forEach((q, i) => { cx.globalAlpha = .07 * (i + 1); cx.drawImage(img, q.x - size * .35, q.y - size * 1.25, size * .7, size * .7); }); cx.globalAlpha = 1;
       // צל על הרצפה – קטן יותר כשגבוה
       if (G.alt < .9) { const k = Math.max(.25, 1 - lift / (H * .35)); cx.fillStyle = `rgba(0,0,0,${.35 * k})`; cx.beginPath(); cx.ellipse(x, gy - 2, size * .34 * k, size * .09 * k, 0, 0, 7); cx.fill(); }
       const bob = run ? Math.abs(Math.sin(ph)) * size * .05 : flying ? Math.sin(G.t * 4) * 6 : 0;
       const legL = size * .26, torsoH = size * .3, headS = size * .7;
       // מתיחה/כיווץ: נחיתה = מתכווץ, עלייה בקפיצה = נמתח
-      const sq = G.landT > 0 ? 1 - G.landT * 1.2 : air && G.jt >= 0 && G.jt < .25 ? 1.08 : 1, sqx = 1 / Math.sqrt(sq);
+      const sq = G.landT > 0 ? 1 - G.landT * 1.4 : G.jt >= 0 && G.jt < .06 ? .84 : air && G.jt >= 0 && G.jt < .3 ? 1.14 : G.big >= 0 && G.big < .08 ? .8 : 1, sqx = 1 / Math.sqrt(sq);
       const hip = gy - 4 - legL * (sl ? .25 : 1) - lift + (run ? -bob : -bob);
       cx.save(); cx.translate(x, gy - lift);
       // נטייה: קדימה בריצה, לצד בפנייה, סיבוב בנפילה
-      let rot = (run ? .06 : 0) + G.leanV * -.32 + (G.ice > 0 ? Math.sin(G.t * 20) * .05 : 0);
+      let rot = (run ? .06 + Math.sin(ph) * .03 : 0) + G.leanV * -.32 + (G.ice > 0 ? Math.sin(G.t * 20) * .05 : 0);
+      if (G.big >= 0) { const q = Math.min(1, G.big / BIGT), e = q < .5 ? 2 * q * q : 1 - Math.pow(-2 * q + 2, 2) / 2; rot -= e * Math.PI * 2; } // 🤸 סלטה בטרמפולינה
+      else if (G.jt >= 0) rot -= Math.sin(Math.PI * Math.min(1, G.jt / .62)) * .22; // קפיצה: נוטה קדימה
+      if (hp >= 0) rot += Math.sin(Math.PI * hp) * .28 * Math.sign(G.lane - G.fromL || 0); // סיבוב קטן במעבר מסלול
+      if (G.hurtT > 0 && Math.floor(G.hurtT * 16) % 2) cx.globalAlpha = .45; // נפגעת – מהבהב
       if (G.deathT >= 0) rot = -G.deathT * 7;
-      cx.rotate(rot); cx.scale(sqx, sq);
+      const pv = G.big >= 0 ? size * .6 : 0; cx.translate(0, -pv); cx.rotate(rot); cx.translate(0, pv); cx.scale(sqx, sq); // הסלטה מסתובבת סביב האמצע של הגוף
       if (G.deathT >= 0) cx.translate(-G.deathT * 120, -Math.sin(Math.min(1, G.deathT * 1.3) * Math.PI) * 90);
       cx.translate(-x, -(gy - lift));
       // טורבו: להבות
@@ -423,6 +460,9 @@
       if (imgOk) cx.drawImage(img, hx, hy2, headS, headS); else { cx.fillStyle = "#e0e7ff"; cx.beginPath(); cx.arc(x, hy2 + headS / 2, headS * .4, 0, 7); cx.fill(); }
       cx.restore();
       if (G.ice > 0) { cx.fillStyle = "rgba(186,230,253,.55)"; for (let i = 0; i < 4; i++) cx.fillRect(x - size * .3 + i * size * .2, gy - 6, size * .06, 10 + Math.random() * 12); }
+      cx.globalAlpha = 1;
+      // ⚡ ניצוצות בהחלקה
+      if (sl && !G.dead && G.parts.length < 140) for (let i = 0; i < 2; i++) G.parts.push({ x: x + (Math.random() - .5) * size * .4, y: gy - 3, vx: (Math.random() - .5) * 90, vy: -40 - Math.random() * 70, life: .35, a: 1, c: Math.random() < .5 ? "#fde047" : "#fb923c", s: 2 + Math.random() * 2 });
       // אבק מהרגליים בריצה
       if (run && Math.random() < .25 && G.parts.length < 120) G.parts.push({ x: x + (Math.random() - .5) * size * .3, y: gy - 4, vx: (Math.random() - .5) * 40, vy: -20 - Math.random() * 30, life: .4, a: .7, c: "rgba(203,213,225,.8)", s: 3 + Math.random() * 3 });
       const cy = hip - torsoH * .5 - headS * .3;
