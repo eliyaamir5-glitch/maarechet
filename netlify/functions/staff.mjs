@@ -1131,7 +1131,7 @@ async function feed(req, S, ip, headers) {
   if (action === "robo") { // 🤖 אביזר "אולטרה אגדי" יצא בתיבה: כמות מוגבלת לכל הישיבה. נשמר רק מונה + קוד מכשיר מוצפן (בלי שם)
     if (await roboSeason(S, now) && !["me", "link", "day"].includes(b.op)) return reply(200, { ok: false, error: "locked", until: ROBO_RESET_AT }, headers);
     if (DEV_RE.test(device) && ["code", "me", "link", "day", "lbMe"].includes(b.op)) return reply(200, await roboOp(S, b, device, ip, now), headers);
-    if (DEV_RE.test(device) && ["pub", "class", "like", "gift", "inbox", "tradeNew", "tradeGet", "tradeSet", "tradeOk", "tradeCancel", "tradeDone", "marketList", "marketSell", "marketBuy", "marketCancel", "score", "scores", "goalAdd", "goal"].includes(b.op)) return reply(200, await roboSocial(S, b, device, ip, now), headers);
+    if (DEV_RE.test(device) && ["pub", "class", "like", "gift", "inbox", "tradeNew", "tradeGet", "tradeSet", "tradeOk", "tradeCancel", "tradeDone", "marketList", "marketSell", "marketBuy", "marketCancel", "giftItem", "score", "scores", "goalAdd", "goal"].includes(b.op)) return reply(200, await roboSocial(S, b, device, ip, now), headers);
     if (!DEV_RE.test(device) || b.op !== "claim" || !Object.hasOwn(ROBO_CAPS, String(b.item))) return reply(400, { ok: false, error: "bad_request" }, headers);
     memRate("robo", ip, 3000);
     const pres = await S.get("presence"), k = devKey(device);
@@ -1674,7 +1674,7 @@ export async function streakTick(now = Date.now()) {
 const pidOf = k => crypto.createHash("sha256").update("robo|" + k).digest("hex").slice(0, 12);
 // 🔄 עונה חדשה לרובוט (בקשת מנהל המערכת, 4.11.2026): עד 5.11 07:00 הכל נעול, ואז מוחקים פעם אחת את כל מה שהשרת שומר על הרובוטים
 // (ספירת אולטרה, פרופילים, לייקים, קרב כיתות, שוק, טריידים, הכרזות, הודעות) – כדי שכולם יתחילו שווה. הטלפונים מתאפסים לבד (robo.js)
-let ROBO_RESET_AT = Date.parse("2026-11-04T07:30:00+02:00"); const ROBO_RESET_ID = "2026-11-05", ROBO_BLOBS = ["roboRare", "roboPub", "roboLikes", "roboLikeDay", "roboGiftDay", "roboBattle", "roboMarket", "roboTrades", "roboNews", "roboInbox", "roboAll", "roboInvHint"];
+let ROBO_RESET_AT = Date.parse("2026-11-04T07:30:00+02:00"); const ROBO_RESET_ID = "2026-11-05", ROBO_BLOBS = ["roboRare", "roboPub", "roboLikes", "roboLikeDay", "roboGiftDay", "roboBattle", "roboMarket", "roboTrades", "roboNews", "roboInbox", "roboAll", "roboGiftItemDay", "roboInvHint"];
 let roboSeasonDone = false;
 export function __setRoboReset(ms) { ROBO_RESET_AT = ms; roboSeasonDone = false; } // לבדיקות
 async function roboSeason(S, now) { // true = עדיין נעול
@@ -1744,6 +1744,16 @@ async function roboSocial(S, b, device, ip, now) {
     if (!okk) return { ok: false, error: "limit", left };
     await inboxPush(S, to, { t: "bolts", n, from: clean(me.name, MAX_NAME), at: now });
     return { ok: true, left };
+  }
+  if (b.op === "giftItem") { // 🎁 אביזר במתנה לחבר מהשכבה – אחד ביום לכל שולח (הטלפון של השולח מוריד אותו מהארון)
+    const to = String(b.to || ""), item = String(b.item || "");
+    if (!/^[0-9a-f]{12}$/.test(to) || to === pid || !/^[a-z]+:[a-z0-9_:-]{1,40}$/.test(item) || Object.hasOwn(ROBO_CAPS, item)) return { ok: false, error: "bad_request" };
+    const t = await findPid(to); if (!t || !t.who || gradeOfCls(t.who.cls) !== gradeOfCls(me.cls)) return { ok: false, error: "not_found" };
+    const today = israelDay(now); let okk = false;
+    await S.update("roboGiftItemDay", cur => { const o = cur && cur.d === today ? { d: today, m: { ...cur.m } } : { d: today, m: {} }; if (o.m[pid]) return undefined; o.m[pid] = 1; okk = true; return o; });
+    if (!okk) return { ok: false, error: "limit" };
+    await inboxPush(S, to, { t: "item", item, from: clean(me.name, MAX_NAME), at: now });
+    return { ok: true };
   }
   if (b.op === "inbox") { await S.update("roboInvHint", cur => { if (!cur || !cur[pid]) return undefined; const o = { ...cur }; delete o[pid]; return o; }); let box = []; await S.update("roboInbox", cur => { if (!cur || !cur[pid] || !cur[pid].length) return undefined; box = cur[pid]; const o = { ...cur }; delete o[pid]; return o; }); return { ok: true, inbox: box }; }
   // ---- 🏆 טבלת שיאים שבועית למשחקים (לפי שכבה): שיא אחד לכל ילד לכל משחק בשבוע ----

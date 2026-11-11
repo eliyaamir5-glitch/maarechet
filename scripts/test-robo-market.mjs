@@ -61,3 +61,11 @@ r = await R(2, { op: "scores", g: "bolts", full: 1 }); ok("full leaderboard for 
 r = await R(1, { op: "scores", g: "bolts" }); ok("all-time board: my grade, best ever, sorted", Array.isArray(r.all) && r.all.length === 2 && r.all[0].v === 450 && r.allMe && r.allMe.v === 320 && r.allMe.rank === 2, JSON.stringify(r.all));
 await R(1, { op: "score", g: "bolts", v: 500 }); r = await R(2, { op: "scores", g: "bolts" }); ok("beating #1 moves you to the top of the all-time board", r.all[0].kid === "דני כהן" && r.all[0].v === 500 && r.allMe.rank === 2);
 ok("all-time board: no device ids", !JSON.stringify(r.all).includes("device-mrkt"));
+// ---- 🎀 אביזר במתנה: אחד ביום, רק לשכבה ----
+await R(2, { op: "pub", rn: "y", eq: {}, st: {} }); await R(3, { op: "pub", rn: "z", eq: {}, st: {} });
+r = await R(1, { op: "class", cls: "y2" }); const p2 = (r.list || []).find(x => x.kid === "יוסי לוי");
+r = await R(1, { op: "giftItem", to: p2 && p2.pid, item: "hat:crown" }); ok("gift an item to a grade friend", r.ok, JSON.stringify(r));
+r = await R(1, { op: "giftItem", to: p2 && p2.pid, item: "held:pizza" }); ok("only one item gift a day", r.error === "limit");
+r = await R(2, { op: "inbox" }); ok("friend gets the item in the inbox", r.inbox.some(x => x.t === "item" && x.item === "hat:crown" && x.from === "דני כהן"));
+r = await R(2, { op: "giftItem", to: p2 && p2.pid, item: "hat:crown" }); ok("can't gift yourself", !r.ok);
+r = await R(2, { op: "giftItem", to: "abcdefabcdef", item: "skin:legend" }); ok("can't gift a capped ultra", r.error === "bad_request");

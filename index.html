@@ -1504,6 +1504,10 @@ const MONTH_NAMES=["ינואר","פברואר","מרץ","אפריל","מאי","�
 // איזה סיכום מוכן עכשיו: 1–10 בחודש → החודש הקודם (רק חודשי לימודים); 10.6–31.7 → השנה
 function recapDue(now=new Date()){
   const iso=isoOf(now);
+  // 📊 סיכום שבועי: במוצאי שבת (מ-18:00) ועד סוף יום ראשון – על השבוע שעבר (ראשון–שישי)
+  {const dw=now.getDay(),h=now.getHours();if((dw===6&&h>=18)||dw===0){const sat=new Date(now.getFullYear(),now.getMonth(),now.getDate()-(dw===0?1:0)),from=isoOf(new Date(sat.getFullYear(),sat.getMonth(),sat.getDate()-6)),to=isoOf(new Date(sat.getFullYear(),sat.getMonth(),sat.getDate()-1)),key="w"+from;
+    let seen=[];try{seen=JSON.parse(localStorage.getItem("recapSeen")||"[]")}catch(e){}
+    if(to>=SCHOOL_YEAR.start&&from<=SCHOOL_YEAR.end&&!seen.includes(key))return{kind:"week",key,from,to,title:"השבוע שלך",label:"סיכום שבועי",next:isoOf(new Date(sat.getFullYear(),sat.getMonth(),sat.getDate()+1))}}}
   if(iso>=dayAdd(SCHOOL_YEAR.end,-10)&&iso<=SCHOOL_YEAR.end.slice(0,4)+"-07-31")return{kind:"year",key:"y"+SCHOOL_YEAR.start.slice(0,4),from:SCHOOL_YEAR.start,to:SCHOOL_YEAR.end,title:"השנה שלך",label:"שנת הלימודים"};
   if(now.getDate()>10)return null;
   const p=new Date(now.getFullYear(),now.getMonth()-1,1),pm=p.getMonth(),from=isoOf(p),to=isoOf(new Date(p.getFullYear(),pm+1,0));
@@ -1522,11 +1526,15 @@ function recapStats(R){
     const G=(md&&md.grades||[]).filter(g=>inR(g.date)&&isFinite(parseFloat(g.grade))).map(g=>({g:parseFloat(g.grade),s:g.subject}));
     st.grades=G.length;if(G.length){st.top=G.reduce((x,y)=>y.g>x.g?y:x);st.avg=Math.round(G.reduce((t,x)=>t+x.g,0)/G.length)}
   }
+  // 🗓️ מה מחכה בשבוע הבא (רק לסיכום השבועי)
+  if(R.kind==="week"&&R.next&&window.Asst&&Asst.todayLessons){let n=0,first="";for(let i=0;i<6;i++){const d=new Date(R.next+"T12:00");d.setDate(d.getDate()+i);try{const t=Asst.todayLessons(d);const L=(t&&t.L)||[];n+=L.length;if(i===0&&L[0])first=L[0].n||L[0].name||L[0].s||""}catch(e){}}
+    let hol="";try{const c=window.Holidays&&Holidays.current();const N=c&&c.next;if(N&&N.inDays<=8&&!(Holidays.T[N.key]||{}).sad)hol=`${N.name} בעוד ${N.inDays} ימים`}catch(e){}
+    st.nextL={n,first,hol}}
   return st;
 }
 function recapSlides(R,st){
   const S=[],add=(e,big,h,p)=>S.push({e,big,h,p});
-  add(R.kind==="year"?"🎓":"🎬","",`${st.name?escH(st.name)+", ":""}${R.title}`,R.kind==="year"?"שנה שלמה במערכת. בוא נראה מה עשית 👀":`ה${R.label.replace("חודש ","")} נגמר. בוא נראה מה עשית 👀`);
+  add(R.kind==="year"?"🎓":R.kind==="week"?"📊":"🎬","",`${st.name?escH(st.name)+", ":""}${R.title}`,R.kind==="year"?"שנה שלמה במערכת. בוא נראה מה עשית 👀":R.kind==="week"?"השבוע נגמר. בוא נראה מה עשית – ומה מחכה בשבוע הבא 👀":`ה${R.label.replace("חודש ","")} נגמר. בוא נראה מה עשית 👀`);
   if(st.days)add("📱",st.days,"ימים פתחת את המערכת",st.days>=15?"אתה כאן כמעט כל יום – אלוף של סדר 💪":"כל פעם שאתה נכנס, אתה יודע בדיוק מה מחכה לך");
   if(st.mashov&&st.held){
     const att=st.held-st.missed,pct=Math.round(100*att/st.held);
@@ -1536,6 +1544,7 @@ function recapSlides(R,st){
     if(st.grades)add("📝",st.top.g,`הציון הכי גבוה – ב${escH(st.top.s)}`,`קיבלת ${st.grades===1?"ציון אחד":st.grades+" ציונים"}${st.grades>1?` · ממוצע ${st.avg}`:""}`);
   }
   if(st.tef)add("🙏",st.tef,"ימים הנחת תפילין","(לפי מה שסימנת באפליקציה) – כל יום נחשב 💙");
+  if(R.kind==="week"&&st.nextL){const nx=st.nextL;add("🗓️",nx.n,"שיעורים בשבוע הבא",`${nx.first?`ביום ראשון מתחילים ב${escH(nx.first)}. `:""}${nx.hol?`ושימו לב: ${escH(nx.hol)} 🎉`:"שבוע טוב ומוצלח! 💪"}`)}
   S.push({sum:true});
   return S;
 }
@@ -1567,7 +1576,7 @@ async function recapImage(R,st,rows){
   const gr=g.createLinearGradient(0,0,W,H);gr.addColorStop(0,"#5b6cff");gr.addColorStop(1,"#ff6bd6");g.fillStyle=gr;g.fillRect(0,0,W,H);
   g.direction="rtl";g.textAlign="center";g.fillStyle="#fff";
   const F='"Heebo","Rubik",system-ui,sans-serif';
-  g.font=`140px ${F}`;g.fillText(R.kind==="year"?"🎓":"✨",W/2,230);
+  g.font=`140px ${F}`;g.fillText(R.kind==="year"?"🎓":R.kind==="week"?"📊":"✨",W/2,230);
   g.font=`900 84px ${F}`;g.fillText(`${st.name?st.name+", ":""}${R.title}`,W/2,380);
   g.font=`500 40px ${F}`;g.globalAlpha=.85;g.fillText(R.label+" · "+(CLASSES[profile&&profile.cls]||{label:""}).label,W/2,450);g.globalAlpha=1;
   g.fillStyle="rgba(255,255,255,.16)";const top=490,rh=108,bh=Math.max(1,rows.length)*rh+60;if(g.roundRect){g.beginPath();g.roundRect(110,top,W-220,bh,48);g.fill()}else g.fillRect(110,top,W-220,bh);
@@ -1587,7 +1596,7 @@ function renderRecapCard(){
   // רק מי שהיה רשום לפני סוף התקופה
   if(!R||hid.includes(R.key)||(profile.since&&profile.since.slice(0,10)>R.to)){box.hidden=true;box.innerHTML="";return}
   box.hidden=false;
-  box.innerHTML=`<button type="button" class="rcard" id="rcOpen"><span class="e">${R.kind==="year"?"🎓":"✨"}</span><span><b>${R.kind==="year"?"הסיכום השנתי שלך מוכן!":"הסיכום של "+escH(R.label.replace("חודש ",""))+" מוכן!"}</b><small>${seen.includes(R.key)?"לראות שוב":"נוכחות, רצפים, ציונים ותפילין – בכמה שניות"}</small></span><span class="x" id="rcHide" role="button" aria-label="הסתר">✕</span></button>`;
+  box.innerHTML=`<button type="button" class="rcard" id="rcOpen"><span class="e">${R.kind==="year"?"🎓":R.kind==="week"?"📊":"✨"}</span><span><b>${R.kind==="year"?"הסיכום השנתי שלך מוכן!":R.kind==="week"?"הסיכום השבועי שלך מוכן!":"הסיכום של "+escH(R.label.replace("חודש ",""))+" מוכן!"}</b><small>${seen.includes(R.key)?"לראות שוב":R.kind==="week"?"נוכחות, רצפים ומה מחכה בשבוע הבא":"נוכחות, רצפים, ציונים ותפילין – בכמה שניות"}</small></span><span class="x" id="rcHide" role="button" aria-label="הסתר">✕</span></button>`;
   box.querySelector("#rcOpen").onclick=e=>{if(e.target.id==="rcHide"){try{localStorage.setItem("recapHide",JSON.stringify([...hid,R.key].slice(-30)))}catch(_){}renderRecapCard();return}openRecap(R)};
 }
 dayLog("openDays");setTimeout(renderRecapCard,1200);

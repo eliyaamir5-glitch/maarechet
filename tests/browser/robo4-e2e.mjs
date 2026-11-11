@@ -38,7 +38,7 @@ log(await p.evaluate(() => !!window.RoboPlus && typeof Asst.todayLessons === "fu
 // לשונית כיף
 await p.evaluate(() => Robo.open("fun")); await sleep(500);
 if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + "/1-fun.png" });
-log(await p.evaluate(() => document.querySelectorAll("#roboUI .rp-t").length === 12), "fun tab: 12 tiles (game, run, wheel, map, lab, market, leaderboard, upgrades, sets, bonuses, titles, photo booth)");
+log(await p.evaluate(() => document.querySelectorAll("#roboUI .rp-t").length === 13), "fun tab: 13 tiles (game, run, wheel, map, lab, market, leaderboard, upgrades, sets, bonuses, medals, titles, photo booth; no owner panel for kids)");
 // 🎰 גלגל
 await p.evaluate(() => document.querySelector('#roboUI [data-p="wheel"]').click()); await sleep(300);
 const s0 = await p.evaluate(() => { const s = Robo.state(); return { b: s.bolts, x: s.boxes.length }; });

@@ -88,6 +88,38 @@
 @keyframes holHop{0%{transform:translate(112vw,0)}5%{transform:translate(105vw,-40px)}10%{transform:translate(98vw,0)}15%{transform:translate(91vw,-40px)}20%{transform:translate(84vw,0)}25%{transform:translate(77vw,-40px)}30%{transform:translate(70vw,0)}35%{transform:translate(63vw,-40px)}40%{transform:translate(56vw,0)}45%{transform:translate(49vw,-40px)}50%{transform:translate(42vw,0)}55%{transform:translate(35vw,-40px)}60%{transform:translate(28vw,0)}65%{transform:translate(21vw,-40px)}70%{transform:translate(14vw,0)}75%{transform:translate(7vw,-40px)}80%{transform:translate(0,0)}85%{transform:translate(-7vw,-40px)}100%{transform:translate(-14vw,0)}}
 #holFx .glow{position:absolute;inset:-20%;background:radial-gradient(circle at 50% 0%,rgba(255,255,255,.35),transparent 60%);animation:holBreath 6s ease-in-out infinite}
 @keyframes holBreath{0%,100%{opacity:.4}50%{opacity:.9}}
+/* 🚧 שבוע לפני חג שמח: רובוטים בונים את העיצוב */
+#holCard.build{background:linear-gradient(135deg,#1e1b4b,#312e81 60%,#4c1d95);padding:14px 14px 12px;border:1.5px solid rgba(250,204,21,.55)}
+#holCard.build .b-scene{position:relative;height:118px;margin:8px -4px 6px;border-radius:14px;background:linear-gradient(#0f172a00,#0f172a66),repeating-linear-gradient(135deg,rgba(250,204,21,.16) 0 12px,transparent 12px 24px);overflow:hidden}
+#holCard.build .b-sign{position:absolute;inset:auto 0 0 0;height:22px;background:repeating-linear-gradient(45deg,#facc15 0 14px,#111827 14px 28px);opacity:.9}
+#holCard.build .b-hang{position:absolute;top:6px;left:0;right:0;display:flex;justify-content:space-around;padding:0 16px}
+#holCard.build .b-hang span{font-size:20px;transform-origin:50% -8px;animation:holSwing 2.4s ease-in-out infinite alternate;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
+#holCard.build .b-hang span.no{opacity:.14;filter:grayscale(1);animation:none}
+#holCard.build .b-crane{position:absolute;top:0;right:22%;width:3px;height:64px;background:#94a3b8;transform-origin:50% 0;animation:bCrane 3.2s ease-in-out infinite}
+#holCard.build .b-crane::after{content:attr(data-e);position:absolute;top:60px;left:50%;transform:translateX(-50%);font-size:26px}
+@keyframes bCrane{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(12deg)}}
+#holCard.build .bot{position:absolute;bottom:20px;width:34px;height:46px}
+#holCard.build .bot .hd{position:absolute;top:0;left:3px;width:28px;height:22px;border-radius:8px;background:linear-gradient(#e0e7ff,#a5b4fc);box-shadow:inset 0 -3px 0 rgba(0,0,0,.15)}
+#holCard.build .bot .hd::before,#holCard.build .bot .hd::after{content:"";position:absolute;top:8px;width:6px;height:6px;border-radius:50%;background:#0f172a;animation:bBlink 3s infinite}
+#holCard.build .bot .hd::before{left:6px}#holCard.build .bot .hd::after{right:6px}
+#holCard.build .bot .bd{position:absolute;top:24px;left:7px;width:20px;height:16px;border-radius:5px;background:#6366f1}
+#holCard.build .bot .lg{position:absolute;bottom:0;left:9px;width:16px;height:6px;border-left:4px solid #475569;border-right:4px solid #475569}
+#holCard.build .bot .tool{position:absolute;top:18px;font-size:18px;transform-origin:20% 90%}
+#holCard.build .b1{left:10%;animation:bWalk 6s ease-in-out infinite}#holCard.build .b1 .tool{right:-14px;animation:bHammer .5s ease-in-out infinite alternate}
+#holCard.build .b2{left:44%;animation:bHop 1.4s ease-in-out infinite}#holCard.build .b2 .tool{left:-14px;animation:bHammer .7s ease-in-out infinite alternate-reverse}
+#holCard.build .b3{right:8%;animation:bWalk 7s ease-in-out infinite reverse}#holCard.build .b3 .tool{right:-12px;animation:bPaint 1s ease-in-out infinite alternate}
+#holCard.build .spk{position:absolute;bottom:56px;left:calc(10% + 44px);font-size:12px;animation:bSpark .5s steps(2) infinite}
+@keyframes bWalk{0%,100%{transform:translateX(0)}50%{transform:translateX(42px)}}@keyframes bHop{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes bHammer{from{transform:rotate(-35deg)}to{transform:rotate(25deg)}}@keyframes bPaint{from{transform:rotate(-20deg) translateY(0)}to{transform:rotate(15deg) translateY(-6px)}}
+@keyframes bSpark{0%{opacity:1}100%{opacity:0}}@keyframes bBlink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+#holCard.build .b-bar{height:12px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden;margin-top:6px}#holCard.build .b-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#facc15,#fb923c,#f472b6);background-size:200% 100%;animation:bFlow 2s linear infinite}
+@keyframes bFlow{to{background-position:-200% 0}}
+#holCard.build .b-row{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#e0e7ff;margin-top:4px}
+/* 🎉 היום של החג: חשיפה גדולה פעם אחת */
+#holReveal{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:radial-gradient(circle,rgba(250,204,21,.35),rgba(10,6,30,.92) 65%);animation:hrFade 3.4s forwards;pointer-events:none}
+#holReveal .in{text-align:center;color:#fff;animation:hrPop .8s cubic-bezier(.2,1.6,.4,1)}#holReveal .em{font-size:110px;line-height:1;filter:drop-shadow(0 0 30px #fde047)}#holReveal h2{margin:8px 0 0;font:900 34px system-ui,sans-serif;text-shadow:0 4px 0 #000}#holReveal p{margin:4px 0 0;font-weight:800;color:#fde68a}
+@keyframes hrPop{from{transform:scale(.2) rotate(-20deg)}to{transform:none}}@keyframes hrFade{0%,78%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion: reduce){#holCard.build *,#holReveal,#holReveal *{animation:none!important}}
 html.hol-sad{filter:grayscale(.85)}
 html.hol-sad .top{box-shadow:none}
 #holCard{position:relative;overflow:hidden;border-radius:22px;padding:16px 16px 14px;margin:0 0 14px;color:#fff;background:var(--grad);box-shadow:0 10px 26px rgba(0,0,0,.25);animation:holIn .5s cubic-bezier(.2,1.4,.4,1)}
@@ -229,6 +261,17 @@ body.hol-flip{transition:transform 1s cubic-bezier(.6,-.3,.4,1.3);transform:rota
       return;
     }
     const N = cur.next;
+    // 🚧 שבוע לפני חג שמח: "הרובוטים בונים את העיצוב" – כל יום עוד קישוט נדלק, עם ספירה לאחור
+    if (N && T[N.key] && !T[N.key].sad && N.inDays <= 7 && N.inDays >= 1) {
+      const t = T[N.key], ems = (t.hang || t.em || [t.mark]).slice(0, 7), pct = Math.round((8 - N.inDays) / 8 * 100), lit = Math.max(1, Math.round(ems.length * (8 - N.inDays) / 8));
+      const txt = N.inDays === 1 ? `הערב מתחיל ${N.name}! כמעט מוכן 😍` : N.inDays === 2 ? `מחר בערב ${N.name}!` : `עוד ${N.inDays} ימים ${N.name}`;
+      el.className = "build"; el.removeAttribute("role");
+      el.innerHTML = `<div class="h-row"><div class="h-em">🚧</div><div><div class="h-t">הרובוטים בונים את ${esc(N.name)}! ${t.mark || "🎉"}</div><div class="h-s">${esc(txt)} · ${esc(dateTxt(N.start))}</div></div><div class="h-cnt">${N.inDays}<small>${N.inDays === 1 ? "יום" : "ימים"}</small></div></div>
+        <div class="b-scene" aria-hidden="true"><div class="b-hang">${ems.map((e, i) => `<span class="${i < lit ? "" : "no"}">${e}</span>`).join("")}</div><div class="b-crane" data-e="${t.mark || "🎉"}"></div>
+          ${["🔨", "🔧", "🖌️"].map((tool, i) => `<div class="bot b${i + 1}"><div class="hd"></div><div class="bd"></div><div class="lg"></div><div class="tool">${tool}</div></div>`).join("")}<div class="spk">✨</div><div class="b-sign"></div></div>
+        <div class="b-bar"><i style="width:${pct}%"></i></div><div class="b-row"><span>🔧 העיצוב של החג מוכן ב-${pct}%</span><span>${N.inDays === 1 ? "ביום החג – חשיפה גדולה! 🎉" : "כל יום נבנה עוד חלק"}</span></div>`;
+      return;
+    }
     if (N) {
       const t = T[N.key] || {}, k = "holSoonX";
       if (get(k) === N.key + N.start) { el.remove(); return; }
@@ -264,6 +307,8 @@ body.hol-flip{transition:transform 1s cubic-bezier(.6,-.3,.4,1.3);transform:rota
         // פרץ גדול: פעם ביום בפתיחה של העמוד הראשי
         const k = H.key + C.ilNow(Date.now()).ymd;
         if (page === "index" && (get("holBurst") !== k || H.preview)) { set("holBurst", k); setTimeout(() => burst(th), 700); }
+        // 🎉 החשיפה הגדולה: פעם אחת בתחילת החג (אחרי שבוע של "בנייה")
+        const rk = "holReveal"; if (page === "index" && get(rk) !== H.key + H.start && !REDUCED && document.body) { set(rk, H.key + H.start); const r = document.createElement("div"); r.id = "holReveal"; r.innerHTML = `<div class="in"><div class="em">${th.mark || "🎉"}</div><h2>${esc(H.name)} הגיע!</h2><p>הרובוטים סיימו לבנות 🤖🔨 חג שמח!</p></div>`; document.body.appendChild(r); setTimeout(() => r.remove(), 3500); setTimeout(() => fireworks(6, 260), 300); }
       }
     } else if (th && th.sad) decorate({ mark: "🕯️" });
     card();

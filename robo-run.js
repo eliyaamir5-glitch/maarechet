@@ -87,7 +87,7 @@
     // ---- סוף ריצה: שומרים את הברגים (או שיא באימון), אתגר יומי, טבלת שיאים ----
     const end = async (why, msg) => {
       if (G.over) return; G.over = true; AU.stopMusic();
-      const m = Math.floor(G.dist), rec = m > (X.S.runBest || 0); if (rec) X.S.runBest = m;
+      const m = Math.floor(G.dist), rec = m > (X.S.runBest || 0); if (rec) X.S.runBest = m; X.S.runTot = (X.S.runTot || 0) + m; /* 🛤️ לכל הריצות (מדליה) */
       let got = 0; if (!G.practice && G.bolts) { const r = R.runBank(X.S, G.bolts); got = r.bolts; if (got) { X.step(1); RP.goalAdd && RP.goalAdd(got); } }
       if (G.run500) X.trk("run500");
       const st = Object.assign(G.stats, { dist: m, bolts: G.bolts, cleanDist: Math.max(G.stats.cleanDist, G.dist - G.cleanFrom) });

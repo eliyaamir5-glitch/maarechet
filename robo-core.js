@@ -566,6 +566,32 @@
     A(likes >= 100, "❤️", "100 לייקים"); A(likes >= 25 && likes < 100, "❤️", "25 לייקים"); A((S.trades || 0) >= 1, "🤝", "סוחר"); A((S.gave || 0) >= 100, "🎁", "נדיב");
     return out;
   }
+  // ---- 🏅 הישגים עם מדליות: 🥉 ארד → 🥈 כסף → 🥇 זהב. כל מדליה = פרס (ארד 100 🔩, כסף 🎁 גדולה, זהב 💠 מגה), פעם אחת ----
+  const MEDALS = [
+    { id: "run", em: "🏃", n: "רץ מרחקים", u: "מ' בריצה אחת", v: S => S.runBest || 0, t: [1000, 3000, 6000] },
+    { id: "runTot", em: "🛤️", n: "מרתון", u: "מ' בכל הריצות", v: S => S.runTot || 0, t: [5000, 30000, 100000] },
+    { id: "game", em: "🔩", n: "תופס ברגים", u: "ברגים בסיבוב", v: S => S.gameBest || 0, t: [150, 300, 400] },
+    { id: "gameTot", em: "🧲", n: "מגנט אנושי", u: "ברגים במשחק בסך הכל", v: S => S.gameTot || 0, t: [1000, 5000, 20000] },
+    { id: "streak", em: "🔥", n: "נאמן", u: "ימים ברצף (שיא)", v: S => (S.st || {}).best || 0, t: [7, 30, 100] },
+    { id: "boxes", em: "📦", n: "פותח תיבות", u: "תיבות", v: S => S.opened || 0, t: [25, 100, 400] },
+    { id: "collect", em: "🏆", n: "אספן", u: "אביזרים", v: S => progress(S).have, t: [50, 150, 300] },
+    { id: "sets", em: "🎭", n: "משלים סטים", u: "סטים", v: S => Object.keys(S.sets || {}).length, t: [3, 7, 12] },
+    { id: "heroes", em: "🦸", n: "צייד גיבורים", u: "גיבורים", v: S => LIST.filter(x => x.hero && S.own[x.id] && S.own[x.id] !== -1).length, t: [5, 15, 25] },
+    { id: "legend", em: "⭐", n: "אגדות", u: "אביזרים אגדיים+", v: S => LIST.filter(x => (x.r === "l" || x.r === "u") && S.own[x.id] && S.own[x.id] !== -1).length, t: [1, 5, 15] },
+    { id: "shiny", em: "✨", n: "נוצץ", u: "אביזרים נוצצים", v: S => Object.keys(S.shiny || {}).length, t: [1, 5, 15] },
+    { id: "lab", em: "🔨", n: "מדען", u: "שימושים במעבדה", v: S => S.labs || 0, t: [5, 25, 100] },
+    { id: "map", em: "🗺️", n: "מגלה עולמות", u: "תחנות במסע", v: S => (S.map || {}).c || 0, t: [10, 25, 40] },
+    { id: "dbl", em: "🎲", n: "אמיץ", u: "ניצחונות בכפול או כלום", v: S => S.dblWins || 0, t: [1, 3, 10] },
+    { id: "champ", em: "🏆", n: "אלוף השבוע", u: "שבועות במקום 1", v: S => S.lbWins || 0, t: [1, 3, 10] },
+    { id: "trade", em: "🤝", n: "סוחר", u: "טריידים", v: S => S.trades || 0, t: [1, 10, 50] },
+    { id: "team", em: "🤲", n: "שחקן קבוצה", u: "מטרות שכבה", v: S => S.goalHelps || 0, t: [1, 5, 15] },
+    { id: "gave", em: "🎁", n: "נדיב", u: "ברגים שנתת לחברים", v: S => S.gave || 0, t: [50, 300, 1000] },
+  ];
+  const MEDAL_PRIZE = [[{ t: "bolts", n: 100 }], [{ t: "box", box: "big" }], [{ t: "box", box: "mega" }]];
+  // tier = כמה מדליות הגעת (0–3), got = כמה כבר קיבלת פרס
+  const medals = S => MEDALS.map(m => { const v = m.v(S), tier = m.t.filter(x => v >= x).length, got = Math.min(tier, (S.medal || {})[m.id] || 0); return { ...m, val: v, tier, got, next: m.t[tier] }; });
+  const medalCount = S => { const c = [0, 0, 0]; for (const m of medals(S)) for (let i = 0; i < m.tier; i++) c[i]++; return { b: c[0], s: c[1], g: c[2], ready: medals(S).filter(m => m.tier > m.got).length }; };
+  function claimMedal(S, id) { const m = medals(S).find(x => x.id === id); if (!m || m.tier <= m.got) return null; S.medal = S.medal || {}; const tier = m.got + 1; S.medal[id] = tier; const prize = MEDAL_PRIZE[tier - 1]; for (const p of prize) grant(S, p); return { tier, prize }; }
   // ---- 🔄 טרייד: שווי (למאזניים), בדיקה שיש לך, וביצוע ----
   const RVAL = { c: 10, r: 25, s: 60, e: 150, m: 400, l: 1000, u: 5000 }, BVAL = { box: 40, big: 130, mega: 380, giant: 1200 };
   function offerValue(o) { o = o || {}; return (o.items || []).reduce((a, id) => a + (ITEMS[id] ? RVAL[ITEMS[id].r] : 0), 0) + (o.boxes || []).reduce((a, b) => a + (BVAL[b] || 0), 0) + Math.max(0, Math.floor(+o.bolts || 0)); }
@@ -593,6 +619,6 @@
     const d = ymd(now); if (!S.earn || S.earn.d !== d) S.earn = { d, n: 0 };
     const g = Math.max(0, Math.min(n, EARN_CAP - S.earn.n)); S.earn.n += g; S.bolts += g; return g;
   }
-  const api = { LEGEND_REQ, legendReq, legendReady, hanukkahDay, hanukkahIn, setHanukkahTest, evOn, CANDLE, lightCandle, TITLES, titlesOf, titleText, gameDouble, UPG, upg, buyUpg, CHAL, challenge, challengeCheck, RUN_CAP, runBank, MISSIONS, missions, track, claimMission, WORLDS, MAP_N, MAP_STEP, mapPrize, mapStep, mapClaim, SHINY, WHEEL, spinWheel, FLASH, flashNow, buyFlash, labCombine, SETS, setsCheck, eventNow, PRICE, GAME_CAP, GAME_ITEMS, gameBank, cleanName, achievements, RVAL, BVAL, offerValue, canGive, applyTrade, weekId, HEROES, EARN_CAP, earn, RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
+  const api = { MEDALS, MEDAL_PRIZE, medals, medalCount, claimMedal, LEGEND_REQ, legendReq, legendReady, hanukkahDay, hanukkahIn, setHanukkahTest, evOn, CANDLE, lightCandle, TITLES, titlesOf, titleText, gameDouble, UPG, upg, buyUpg, CHAL, challenge, challengeCheck, RUN_CAP, runBank, MISSIONS, missions, track, claimMission, WORLDS, MAP_N, MAP_STEP, mapPrize, mapStep, mapClaim, SHINY, WHEEL, spinWheel, FLASH, flashNow, buyFlash, labCombine, SETS, setsCheck, eventNow, PRICE, GAME_CAP, GAME_ITEMS, gameBank, cleanName, achievements, RVAL, BVAL, offerValue, canGive, applyTrade, weekId, HEROES, EARN_CAP, earn, RAR, RK, CATS, ITEMS, LIST, BOX, LADDER, TIERS, TAPS, START, EXTRA_N, UP, upgrades, finalOdds, ymd, add, dow, restDay, missed, fresh, norm, roll, guaranteed, grant, dayGift, saveCost, checkIn, saveStreak, subjectGift, subjectMile, deals, buy, equip, progress, best, pickW };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.RoboCore = api;
 })(typeof self !== "undefined" ? self : this);

@@ -4,6 +4,12 @@
   const R = window.RoboCore, RP = window.RoboPlus, X = window.Robo && Robo._; if (!R || !RP || !X || !R.lightCandle) return;
   const esc = X.esc, LS = X.LS, PANELS = RP.panels;
   const CSS = `
+.md-sum{display:flex;gap:10px;justify-content:center;align-items:baseline;flex-wrap:wrap;margin:6px 0 4px;font-size:22px}.md-sum b{font-size:24px}.md-sum small{flex-basis:100%;text-align:center;color:#c7c3ff;font-size:12.5px}
+.md-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.md-c{position:relative;border-radius:16px;padding:10px 8px;text-align:center;background:linear-gradient(160deg,#241a52,#16103a);border:1.5px solid rgba(255,255,255,.12)}
+.md-c.gold{border-color:#facc15;background:linear-gradient(160deg,#5b3d05,#1a1040);box-shadow:0 0 16px rgba(250,204,21,.3)}.md-c.ready{border-color:#22c55e;animation:mdGlow 1.2s ease-in-out infinite alternate}@keyframes mdGlow{to{box-shadow:0 0 18px rgba(34,197,94,.55)}}
+.md-em{font-size:30px}.md-c b{display:block;font-size:14px}.md-c small{display:block;font-size:11.5px;color:#c7c3ff;margin-top:2px}.md-row{display:flex;justify-content:center;gap:4px;margin:4px 0}
+.md-row i{font-style:normal;font-size:22px;filter:grayscale(1) brightness(.6);opacity:.45;transition:.3s}.md-row i.on{filter:none;opacity:1;animation:mdPop .5s cubic-bezier(.2,1.6,.4,1)}@keyframes mdPop{from{transform:scale(.3)}to{transform:none}}
+.md-bar{height:6px;border-radius:9px;background:rgba(255,255,255,.12);overflow:hidden;margin:5px 4px}.md-bar i{display:block;height:100%;background:linear-gradient(90deg,#f59e0b,#facc15)}.md-c .rbtn{margin-top:4px;width:100%}
 .ad-box{border-radius:16px;padding:12px;margin-bottom:10px;background:#1a1040;border:1.5px solid rgba(250,204,21,.45)}.ad-box>b{display:block;font-size:15px;margin-bottom:6px;color:#fde047}.ad-box small{display:block;color:#c7c3ff;font-size:12.5px}
 .ad-box label{display:block;font-size:13px;font-weight:800;margin:6px 0}.ad-box input,.ad-box select{display:block;width:100%;box-sizing:border-box;margin-top:4px;border-radius:10px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;padding:9px;font:inherit;font-size:15px}
 .ad-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}.ad-row2{display:flex;gap:6px;align-items:center;margin-top:4px}.ad-row2 select,.ad-row2 input{margin:0;flex:1}.ad-ck{display:flex!important;gap:6px;align-items:center}.ad-ck input{width:auto;display:inline}
@@ -74,6 +80,30 @@
     const c = el.querySelector("#glClaim"); if (c) c.onclick = async () => { const before = S.bolts; S.goalClaim = j.week; S.goalHelps = (S.goalHelps || 0) + 1; S.boxes.push("big"); X.save();
       const open = await RP.rewardShow({ title: "🤝 השכבה הצליחה!", sub: "כל הכבוד לכולם – והנה הפרס שלך", got: [{ t: "box", box: "big" }], before }); RP.tab(body); if (open) X.openBoxes(["big"]); };
   });
+
+  // ===================== 🏅 הישגים ומדליות =====================
+  const MI = ["🥉", "🥈", "🥇"], MN = ["ארד", "כסף", "זהב"];
+  RP.tiles.push(tile => { const mc = R.medalCount(X.S); return tile("medals", "🏅", "#eab308", "מדליות", `🥇${mc.g} 🥈${mc.s} 🥉${mc.b}${mc.ready ? ` · ${mc.ready} מחכות!` : ""}`, mc.ready ? "!" : ""); });
+  PANELS.medals = body => {
+    const S = X.S, L = R.medals(S), mc = R.medalCount(S), fmt = n => Math.floor(n).toLocaleString("he-IL");
+    body.innerHTML = `${RP.back}<div class="rp-h">🏅 הישגים ומדליות</div><div class="md-sum"><span>🥇 <b>${mc.g}</b></span><span>🥈 <b>${mc.s}</b></span><span>🥉 <b>${mc.b}</b></span><small>${L.length * 3 - mc.g - mc.s - mc.b} מדליות עוד מחכות לך</small></div>
+      <div class="rp-s">כל מדליה = פרס: 🥉 100 🔩 · 🥈 🎁 תיבה גדולה · 🥇 💠 תיבת מגה</div>
+      <div class="md-grid">${L.map(m => { const ready = m.tier > m.got, pct = m.next ? Math.min(100, m.val / m.next * 100) : 100;
+        return `<div class="md-c${m.tier === 3 ? " gold" : ""}${ready ? " ready" : ""}"><div class="md-em">${m.em}</div><b>${esc(m.n)}</b><div class="md-row">${[0, 1, 2].map(i => `<i class="${i < m.tier ? "on" : ""} t${i}">${MI[i]}</i>`).join("")}</div>
+          <small>${m.next ? `${fmt(m.val)} / ${fmt(m.next)} ${esc(m.u)}` : `הכל! ${fmt(m.val)} ${esc(m.u)} 👑`}</small><div class="md-bar"><i style="width:${pct}%"></i></div>
+          ${ready ? `<button class="rbtn sm" type="button" data-md="${m.id}">${MI[m.got]} לקבל!</button>` : ""}</div>`; }).join("")}</div>`;
+    body.querySelector(".rp-back").onclick = () => RP.tab(body);
+    body.querySelectorAll("[data-md]").forEach(b => b.onclick = async () => {
+      const before = S.bolts, r = R.claimMedal(S, b.dataset.md); if (!r) return; X.save(); X.hubRefresh();
+      const boxes = r.prize.filter(p => p.t === "box").map(p => p.box);
+      const open = await RP.rewardShow({ title: `${MI[r.tier - 1]} מדליית ${MN[r.tier - 1]}!`, sub: R.MEDALS.find(x => x.id === b.dataset.md).n, got: r.prize, before });
+      PANELS.medals(body); if (open && boxes.length) X.openBoxes(boxes);
+    });
+  };
+  // הודעה כשמגיעים למדליה חדשה
+  function medalCheck() { const S = X.S; if (!S || X.locked()) return; const L = R.medals(S), key = L.map(m => m.tier).join(""); if (S.mdSeen === key) return; const had = (S.mdSeen || "").split("").map(Number); S.mdSeen = key; X.save();
+    const nw = L.find((m, i) => had.length === L.length && m.tier > (had[i] || 0)); if (nw) { X.SFX.gift(); X.toast(`${MI[nw.tier - 1]} <b>מדליית ${MN[nw.tier - 1]} – ${esc(nw.n)}!</b> יש לך פרס שמחכה`, ["🏅 לקבל", () => X.open("fun", "medals")], 8000); } }
+  setInterval(medalCheck, 15000); setTimeout(medalCheck, 6000);
 
   // ===================== 👑 פאנל מנהל (רק בטלפון של מנהל המערכת) =====================
   // מביאים לעצמך כמה שרוצים (ברגים / תיבות / אביזרים), הכל נרשם – ואפשר להחזיר הכל בלחיצה (רק מה שהבאת לעצמך).
