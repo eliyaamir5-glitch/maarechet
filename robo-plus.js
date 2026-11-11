@@ -911,13 +911,20 @@ dialog.robo.game{height:100vh;height:100dvh;max-height:100dvh}
         if ((G.npow -= rdt) <= 0) { G.npow = 14 - R.upg(X.S, "luck") * 2.5 + Math.random() * 8; spawn("pow"); }
         if ((G.nitem -= rdt) <= 0) { G.nitem = 14 + Math.random() * 12; if (!G.practice && itemsLeft() > 0) spawn("item"); }
       }
-      if (botOn() && !G.over && !G.dead) { // 🤖 רובוט אוטומטי: מחפש את המקום הכי טוב – ברגים קרובים, רחוק מפצצות וגנבים
-        G.shield = true; // 🛡️ מגן רובוט: פצצה או גנב לא פוסלים כשהרובוט משחק
-        const py0 = H - 60; let bx = G.px, bv = -1e9;
-        for (let i = 0; i <= 24; i++) { const x = 30 + (W - 60) * i / 24; let v = -Math.abs(x - G.px) * .02;
-          for (const o of G.obj) { const dy = py0 - o.y; if (dy < -20 || dy > H * .9) continue; const dx = Math.abs(o.x - x), t = Math.max(0, dy) / Math.max(60, o.v || 200);
-            if (o.k === "bomb" || o.k === "thief") { if (G.hard > 0 && dx < 62 && dy < H * .5) v -= 900 / (1 + t * 3); else if (dx < 50 && dy < H * .25) v -= 2; } // יש מגן רובוט – לא בורחים, רק אוספים
-            else v += (o.k === "gold" ? 5 : o.k === "item" || o.k === "pow" ? 6 : 1) * Math.max(0, 1 - dx / (50 + t * 520)) / (.25 + t); }
+      if (botOn() && !G.over && !G.dead) { // 🧠 בלי מגן: מנבא איפה כל פצצה/גנב ייפלו, נמנע מהם, ורודף אחרי הברגים שהכי שווים
+        const py0 = H - 60, bR = 36 * (G.pw.bucket > 0 ? 1.5 : 1) + 16, cW = 44 * (1 + R.upg(X.S, "bucket") * .12) * (G.pw.bucket > 0 ? 1.8 : 1) - 6, frz = G.pw.freeze > 0;
+        const at = (o, tt) => { if (o.k === "thief") return Math.max(25, Math.min(W - 25, o.x0 + Math.sin((o.y + o.v * tt) / 55 + o.ph) * o.amp)); let x = o.x + (o.vx || 0) * tt; if (x < 25) x = 50 - x; if (x > W - 25) x = 2 * (W - 25) - x; return x; };
+        const bad = [], good = [];
+        for (const o of G.obj) { if (o.hit) continue; const vv = Math.max(40, o.v || 200), t0 = frz ? 9 : (py0 - 40 - o.y) / vv, t1 = frz ? 9 : (py0 + 22 - o.y) / vv; // מתי נכנס/יוצא מאזור הפגיעה
+          if (o.k === "bomb" || o.k === "thief") { if (t1 > 0 && t0 < 1.1) bad.push({ o, tt: Math.max(0, t0), t1, x: at(o, Math.max(0, t0)), x1: at(o, Math.max(0, t1)) }); }
+          else if (t0 > -.05 && t0 < 2.2) good.push({ o, tt: Math.max(0, t0), x: at(o, Math.max(0, t0)) }); }
+        let bx = G.px, bv = -1e12;
+        for (let i = 0; i <= 40; i++) { const x = 30 + (W - 60) * i / 40; let v = -Math.abs(x - W / 2) * .002;
+          // איפה הרובוט יהיה בכל רגע אם ילך ל-x (מתקרב כמו בקוד של המשחק: 16 בשנייה) – ומה המרחק מהפצצה באותו רגע
+          const pAt = t => x + (G.px - x) * Math.exp(-16 * t);
+          for (const b of bad) { let hitP = false, dmin = 1e9; for (const t of [b.tt, (b.tt + b.t1) / 2, b.t1]) { const tt = Math.max(0, t), bxx = at(b.o, tt), d = Math.abs(pAt(tt) - bxx); dmin = Math.min(dmin, d); if (d < bR) hitP = true; }
+            if (hitP) v -= 1e5 * (1.3 - b.tt); else if (dmin < bR + 30) v -= 40 * (1 - (dmin - bR) / 30) / (.3 + b.tt); }
+          for (const g of good) { if (g.tt < 0) continue; const reach = cW + g.tt * 900; const d = Math.abs(g.x - x); if (d < reach) v += (g.o.k === "gold" ? 6 : g.o.k === "item" || g.o.k === "pow" ? 9 : 1.5) * (1 - d / reach) / (.2 + g.tt); }
           if (v > bv) { bv = v; bx = x; } }
         G.tx = bx; }
       G.px += (G.tx - G.px) * Math.min(1, rdt * 16);

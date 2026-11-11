@@ -170,20 +170,27 @@
     }
     // 🤖 רובוט אוטומטי – רק בטלפון של מנהל המערכת (כפתור 🤖 למעלה). משחק לבד עד שלוחצים שוב
     const autoOn = () => LS.get("roboBot", "") === "1" && X.powers && X.powers().owner;
-    function autoRun() {
+    function autoRun() { // 🧠 בלי מגן: מחשב לכל מסלול כמה הוא מסוכן בשנייה הקרובה, בוחר את הכי טוב, וקופץ/מחליק בדיוק בזמן
       if (G.cd > 0 || G.dead || G.over) return;
-      G.shield = true; // 🛡️ מגן רובוט: כשהרובוט משחק – לא נפסלים
-      const near = (ln, z0, z1, ks) => G.obj.filter(o => !o.gone && o.z > z0 && o.z < z1 && Math.abs(o.lane - ln) < .5 && (!ks || ks.includes(o.k)));
-      const bad = G.fly > 0 ? ["bird", "drone"] : ["locker", "bully"], score = ln => {
-        if (ln < -1 || ln > 1) return -1e9; let v = 0;
-        for (const o of G.obj) { if (o.gone || o.z <= 0 || o.z > 16) continue; const w = 16 - o.z;
-          if (o.k === "bully") { if (Math.abs(o.base - ln) < .5) v -= w * 40; }
-          else if (Math.abs(o.lane - ln) < .5) { if (bad.includes(o.k)) v -= w * 40; else if (["bench", "beam"].includes(o.k)) v -= w * 2; else if (["bolt", "gold", "sbolt", "pow", "rainbow"].includes(o.k)) v += w * (o.k === "gold" || o.k === "pow" ? 3 : 1); else if (o.k === "poop" && G.fly <= 0) v += w * 2; } }
-        return v - Math.abs(ln - G.lane) * 3; };
-      if (G.ice <= 0 && G.t - G.laneT > .18) { const cur = score(G.lane), l = score(G.lane - 1), r = score(G.lane + 1); if (l > cur + 5 && l >= r) act("L"); else if (r > cur + 5) act("R"); }
-      if (G.fly > 0) return;
-      const t = near(G.lane, 0, 4.2, ["bench", "beam"])[0], bl = G.obj.find(o => !o.gone && o.k === "bully" && o.z > 0 && o.z < 4 && Math.abs(o.base + o.arm - G.lane) < .5 && Math.abs(o.base - G.lane) >= .5);
-      if (bl && !sliding()) act("D"); else if (t && t.k === "bench" && G.jt < 0 && G.big < 0) act("U"); else if (t && t.k === "beam" && !sliding()) act("D");
+      const v = Math.max(8, G.v * (G.pw.turbo > 0 ? 1.5 : 1)), tc = o => (o.z - .3) / v, fly = G.fly > 0, objs = G.obj.filter(o => !o.gone && o.z > .15);
+      const inL = (o, ln) => Math.abs(o.lane - ln) < .5;
+      const deadly = (o, ln) => fly ? (o.k === "bird" || o.k === "drone") && inL(o, ln) : o.k === "bully" ? Math.abs(o.base - ln) < .5 : o.k === "locker" && inL(o, ln);
+      const soft = (o, ln) => !fly && ((["bench", "beam"].includes(o.k) && inL(o, ln)) || (o.k === "bully" && Math.abs(o.base + o.arm - ln) < .5 && Math.abs(o.base - ln) >= .5));
+      const cost = (ln, hz = 1.2) => { let c = 0; for (const o of objs) { const t = tc(o); if (t > hz) continue;
+        if (deadly(o, ln)) c += 1000 * (1.5 - t); else if (soft(o, ln)) c += t < .2 && !(G.jt >= 0 || sliding()) ? 400 : 6;
+        else if (inL(o, ln) && t < 1) { if (o.k === "gold" || o.k === "pow" || o.k === "rainbow") c -= 7; else if (o.k === "bolt" || o.k === "sbolt") c -= 2; else if (o.k === "poop" && !fly) c -= 5; else if (o.k === "tramp") c -= 3; } }
+        return c; };
+      if (G.ice <= 0 && G.t - G.laneT > .08) {
+        const cur = G.lane, cs = { "-1": cost(-1), "0": cost(0), "1": cost(1) }; let best = cur;
+        for (const ln of [-1, 0, 1]) if (cs[ln] < cs[best] - 2) best = ln;
+        if (Math.abs(best - cur) === 2 && cost(0, .3) >= 300) best = cur; // לא עוברים דרך מסלול האמצע אם יש שם משהו מסוכן ממש עכשיו
+        if (best !== cur) act(best > cur ? "R" : "L");
+      }
+      if (fly) return;
+      const ln = Math.round(G.pl);
+      for (const o of objs.slice().sort((a, b) => a.z - b.z)) { const t = tc(o); if (t < 0 || t > .5) continue;
+        if (o.k === "bench" && inL(o, ln) && t < .3) { if (G.jt < 0 && G.big < 0) act("U"); break; }
+        if (((o.k === "beam" && inL(o, ln)) || (o.k === "bully" && Math.abs(o.base + o.arm - ln) < .5 && Math.abs(o.base - ln) >= .5)) && t < .34) { if (!sliding()) act("D"); break; } }
     }
     function crash() {
       if (G.pw.turbo > 0 || G.fly > 0) return false;
