@@ -206,7 +206,8 @@ function people(){
 // 🎟️ קודים לפרסים + 👑 הטלפון שלך (ברגים לאין סוף / כל האביזרים)
 const APP_URL="https://eliyaamir5-glitch.github.io/maarechet/";
 const RCx=window.RoboCore;
-const prizeTxt=p=>!p?"?":p.t==="box"?({box:"📦 תיבה",big:"🎁 תיבה גדולה",mega:"💠 תיבת מגה"}[p.box]||p.box):p.t==="bolts"?`🔩 ${p.n} ברגים`:p.t==="item"?`👕 ${RCx&&RCx.ITEMS[p.id]?RCx.ITEMS[p.id].n+" ("+RCx.RAR[RCx.ITEMS[p.id].r].n+")":p.id}`:"?";
+const BXN={box:"📦 תיבה",big:"🎁 תיבה גדולה",mega:"💠 תיבת מגה",giant:"💎 תיבת ענק"},itN=id=>RCx&&RCx.ITEMS[id]?RCx.ITEMS[id].n:id;
+const prizeTxt=p=>!p?"?":p.t==="multi"?[p.bolts?`🔩 ${p.bolts}`:"",...Object.entries(p.boxes||{}).map(([b,n])=>`${BXN[b]||b}${n>1?" ×"+n:""}`),...(p.items||[]).map(id=>"👕 "+itN(id))].filter(Boolean).join(" + "):p.t==="box"?(BXN[p.box]||p.box):p.t==="bolts"?`🔩 ${p.n} ברגים`:p.t==="item"?`👕 ${RCx&&RCx.ITEMS[p.id]?RCx.ITEMS[p.id].n+" ("+RCx.RAR[RCx.ITEMS[p.id].r].n+")":p.id}`:"?";
 const codeLink=c=>APP_URL+"?code="+encodeURIComponent(c);
 const shareTxt=c=>`🎁 קוד מתנה למערכת: ${c.code}\n${prizeTxt(c.prize)}\nכתוב את הקוד למערכתי (הרובוט באפליקציה) או פתח: ${codeLink(c.raw)}`;
 function qrImg(text,size=6){try{const q=qrcode(0,"M");q.addData(text);q.make();return q.createDataURL(size,12)}catch(e){return""}}
@@ -224,9 +225,15 @@ function codesCard(){
   const items=RCx?RCx.LIST.filter(x=>x.r!=="u"&&!x.free):[];
   return`<div class="card"><h2>🎟️ קודים לפרסים <span class="pill">${L.length}</span></h2><p class="hint">שולחים לחברים קוד (או ברקוד). הם כותבים אותו למערכתי באפליקציה – ומקבלים את הפרס. כל ילד יכול לממש כל קוד פעם אחת בלבד. "עד" = כמה ילדים יכולים לממש (ריק = בלי הגבלה).</p>
     <details class="msg1"><summary style="cursor:pointer;font-weight:800">✨ ליצור קודים חדשים</summary>
-      <div class="row" style="margin-top:8px"><select id="cPr" aria-label="פרס"><option value="box:box">📦 תיבה</option><option value="box:big">🎁 תיבה גדולה</option><option value="box:mega">💠 תיבת מגה</option><option value="bolts:100">🔩 100 ברגים</option><option value="bolts:300">🔩 300 ברגים</option><option value="bolts:1000">🔩 1000 ברגים</option>${items.map(x=>`<option value="item:${x.id}">👕 ${esc(x.n)} (${RCx.RAR[x.r].n})</option>`).join("")}</select></div>
-      <div class="row" style="margin-top:6px"><input id="cMax" type="number" min="1" placeholder="עד כמה ילדים (ריק = כולם)"><input id="cCnt" type="number" min="1" max="50" value="1" placeholder="כמה קודים"></div>
-      <div class="row" style="margin-top:6px"><input id="cOwn" maxlength="16" placeholder="קוד משלך (לא חובה), למשל CHAG-SAMEACH" dir="ltr"><button class="b2" id="cGo">✨ ליצור</button></div></details>
+      <p class="hint" style="margin:8px 0 4px"><b>מה יהיה בקוד?</b> אפשר לשלב כמה דברים ביחד.</p>
+      <label style="display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center;font-weight:700">🔩 ברגים<input id="cB" type="number" min="0" max="100000" placeholder="0"></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-top:6px">${Object.entries(BXN).map(([k,l])=>`<label style="display:grid;grid-template-columns:1fr 64px;gap:6px;align-items:center;font-size:14px;font-weight:700">${l}<input data-cbx="${k}" type="number" min="0" max="50" placeholder="0"></label>`).join("")}</div>
+      <div class="row" style="margin-top:8px"><input id="cIt" list="cItL" placeholder="👕 אביזר – מתחילים להקליד את השם"><datalist id="cItL">${items.map(x=>`<option value="${esc(x.n)} · ${esc(RCx.RAR[x.r].n)}"></option>`).join("")}</datalist><button class="b2 ghost sm" id="cItAdd">➕ להוסיף</button></div>
+      <div class="sub" id="cItList" style="margin-top:4px"></div>
+      <p class="hint" style="margin:10px 0 4px"><b>כמה יקבלו?</b></p>
+      <label style="display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center;font-weight:700">👥 כמה ילדים יכולים לממש (ריק = בלי הגבלה)<input id="cMax" type="number" min="1" placeholder="∞"></label>
+      <label style="display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center;font-weight:700;margin-top:6px">🎟️ כמה קודים שונים ליצור<input id="cCnt" type="number" min="1" max="50" value="1"></label>
+      <div class="row" style="margin-top:8px"><input id="cOwn" maxlength="16" placeholder="קוד משלך (לא חובה), למשל CHAG-SAMEACH" dir="ltr"></div><button class="b2" id="cGo" style="width:100%;margin-top:8px">✨ ליצור את הקוד</button></details>
     ${CODES_NEW.length?`<div class="msg1" style="border-color:#22c55e"><b>✅ נוצרו:</b> <span dir="ltr" style="font-family:monospace">${CODES_NEW.map(esc).join(" · ")}</span></div>`:""}
     <div class="row" style="margin:8px 0"><button class="b2 ghost sm" id="cCopyAll">📋 להעתיק את כל הקודים הפעילים</button></div>
     <div class="tablewrap"><table><thead><tr><th>קוד</th><th>פרס</th><th>מימשו</th><th></th></tr></thead><tbody>${L.map(c=>`<tr${c.on?"":' style="opacity:.5"'}><td dir="ltr" style="font-family:monospace;font-weight:800;white-space:nowrap">${esc(c.code)}</td><td>${esc(prizeTxt(c.prize))}${c.note?`<div class="sub">${esc(c.note)}</div>`:""}</td><td style="white-space:nowrap">${c.used}${c.max!=null?" / "+c.max:""}${c.max!=null&&c.used>=c.max?" 🔒":""}</td>
@@ -238,11 +245,49 @@ function qrDialog(title,text,sub){
     <p class="sub" style="text-align:center">${sub}</p><div class="row" style="margin-top:12px"><a class="b2" download="barcode.gif" href="${qrImg(text,10)}" style="text-decoration:none;text-align:center">⬇️ להוריד</a><button class="b2 ghost" id="qClose">סגור</button></div>`;
   $("qClose").onclick=()=>$("dlg").close();if(!$("dlg").open)$("dlg").showModal();
 }
+// 🤖 הרובוטים של התלמידים: ברגים, מה יש להם, ופעולות (מגיעות לטלפון שלהם תוך דקה-שתיים, בפעם הבאה שהאפליקציה פתוחה)
+let KIDS=null,KQ="";
+function kidsCard(){
+  const L=KIDS?(KIDS.list||[]).filter(k=>!KQ||k.kid.includes(KQ)||(k.rn||"").includes(KQ)):[];
+  return`<div class="card"><h2>🤖 הרובוטים של התלמידים ${KIDS?`<span class="pill">${(KIDS.list||[]).length}</span>`:""}</h2><p class="hint">הברגים ומה שיש לכל אחד (לפי מה שהטלפון שלו שלח לאחרונה). לוחצים על תלמיד כדי להוסיף/להוריד ברגים, להוריד או לתת אביזרים, ולחסום את הרובוט. השינוי מגיע לטלפון שלו בפעם הבאה שהאפליקציה פתוחה.</p>
+    ${KIDS?`<div class="row"><input id="kQ" placeholder="🔍 חיפוש לפי שם" value="${esc(KQ)}"><button class="b2 ghost sm" id="kRe">🔄 לרענן</button></div>
+      <div class="tablewrap" style="margin-top:8px"><table><thead><tr><th>תלמיד</th><th>🔩</th><th>🏆</th><th>🔥</th><th></th></tr></thead><tbody>${L.map(k=>`<tr${k.banned?' style="opacity:.6"':""}><td><b>${esc(k.kid)}</b>${k.banned?" 🚫":""}<div class="sub">${esc(k.cls)}${k.rn?" · 🤖 "+esc(k.rn):""}</div></td><td style="font-weight:800">${k.bolts.toLocaleString()}</td><td>${k.have}</td><td>${k.streak}</td><td><button class="b2 sm" data-kid="${esc(k.pid)}">פתח</button></td></tr>`).join("")||`<tr><td colspan="5" class="sub">אין תוצאות</td></tr>`}</tbody></table></div>`
+    :`<button class="b2" id="kLoad">🤖 להציג את כל הרובוטים</button>`}</div>`;
+}
+function kidDlg(k){
+  const rar=id=>RCx&&RCx.ITEMS[id]?RCx.ITEMS[id].r:"c",own=(k.own||[]).slice().sort((a,b)=>RCx?RCx.RAR[rar(b)].o-RCx.RAR[rar(a)].o:0),items=RCx?RCx.LIST.filter(x=>x.r!=="u"&&!x.free):[];
+  const eqTxt=Object.values(k.eq||{}).map(itN).join(", ");
+  $("dlgBody").innerHTML=`<h3>🤖 ${esc(k.kid)}${k.banned?" · 🚫 חסום":""}</h3><div class="sub">${esc(k.cls)} · ${k.rn?"🤖 "+esc(k.rn)+" · ":""}${k.title?esc(k.title)+" · ":""}עודכן ${k.at?new Date(k.at).toLocaleString("he-IL"):"—"}</div>
+    <div class="msg1" style="margin-top:8px"><b>🔩 ${k.bolts.toLocaleString()} ברגים</b> · 🏆 ${k.have} אביזרים · 📦 ${k.opened} תיבות נפתחו · 🔥 רצף ${k.streak}${(k.boxes||[]).length?` · ${k.boxes.length} תיבות סגורות`:""}<div class="sub">לובש: ${esc(eqTxt||"—")}</div></div>
+    <b style="display:block;margin-top:10px">🔩 ברגים</b><div class="row"><input id="kdB" type="number" placeholder="כמה (למשל 500)"><button class="b2 sm" id="kdAdd">➕ להוסיף</button><button class="b2 ghost sm" id="kdSub">➖ להוריד</button><button class="b2 ghost sm" id="kdZero">0️⃣ לאפס</button></div>
+    <b style="display:block;margin-top:10px">🎁 לתת</b><div class="row"><input id="kdIt" list="kdItL" placeholder="👕 אביזר לפי שם"><datalist id="kdItL">${items.map(x=>`<option value="${esc(x.n)} · ${esc(RCx.RAR[x.r].n)}"></option>`).join("")}</datalist><button class="b2 sm" id="kdGive">לתת</button></div>
+    <div class="row" style="margin-top:6px"><select id="kdBx">${Object.entries(BXN).map(([b,l])=>`<option value="${b}">${l}</option>`).join("")}</select><input id="kdBxN" type="number" min="1" max="100" value="1" style="max-width:80px"><button class="b2 sm" id="kdGiveBx">לתת תיבות</button></div>
+    <b style="display:block;margin-top:10px">👕 מה יש לו (${own.length}) – מסמנים ולוחצים "להוריד"</b><div style="max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px;margin-top:4px">${own.map(id=>`<label style="display:flex;gap:6px;align-items:center;font-size:13px;padding:2px 0"><input type="checkbox" data-kown="${esc(id)}"> ${esc(itN(id))} <span class="sub">${RCx&&RCx.ITEMS[id]?esc(RCx.RAR[rar(id)].n):""}</span></label>`).join("")||'<span class="sub">אין</span>'}</div>
+    <div class="row" style="margin-top:6px"><button class="b2 ghost sm" id="kdTake">🗑️ להוריד את המסומנים</button></div>
+    <div class="row" style="margin-top:12px"><button class="b2 ${k.banned?"":"ghost"}" id="kdBan">${k.banned?"✅ להסיר חסימה":"🚫 לחסום את הרובוט"}</button><button class="b2 ghost" id="kdX">סגור</button></div>`;
+  const send=async(body,btn,msg)=>{btn.disabled=true;const r=await api({action:"roboAdm",pid:k.pid,...body});btn.disabled=false;if(!r||!r.ok){alert(ERR[r&&r.error]||"לא הצלחנו.");return}btn.textContent="✓ נשלח";const j=await api({action:"roboKids"});if(j&&j.ok){KIDS=j;const nk=j.list.find(x=>x.pid===k.pid);if(nk)setTimeout(()=>kidDlg(nk),600)}};
+  const n=()=>Math.abs(Math.floor(+$("kdB").value||0));
+  $("kdAdd").onclick=e=>{if(n())send({bolts:n()},e.target)};$("kdSub").onclick=e=>{if(n())send({bolts:-n()},e.target)};$("kdZero").onclick=e=>{if(confirm(`לאפס ל-${k.kid} את כל הברגים?`))send({setBolts:0},e.target)};
+  $("kdGive").onclick=e=>{const v=($("kdIt").value||"").split(" · ")[0].trim(),it=RCx&&RCx.LIST.find(x=>x.n===v);if(!it){alert("לא מצאתי אביזר בשם הזה");return}send({give:[it.id]},e.target)};
+  $("kdGiveBx").onclick=e=>send({boxes:{[$("kdBx").value]:+$("kdBxN").value||1}},e.target);
+  $("kdTake").onclick=e=>{const ids=[...document.querySelectorAll("[data-kown]:checked")].map(c=>c.dataset.kown);if(!ids.length){alert("תסמן אביזרים להוריד");return}if(confirm(`להוריד ${ids.length} אביזרים מ${k.kid}?`))send({take:ids},e.target)};
+  $("kdBan").onclick=e=>{if(confirm(k.banned?`להחזיר ל${k.kid} את הרובוט?`:`לחסום ל${k.kid} את הרובוט? (כל השאר באפליקציה ימשיך לעבוד)`))send({ban:!k.banned},e.target)};
+  $("kdX").onclick=()=>{$("dlg").close();draw()};if(!$("dlg").open)$("dlg").showModal();
+}
+function kidsWire(){
+  const ld=async b=>{if(b)b.disabled=true;const r=await api({action:"roboKids"});if(!r||!r.ok){if(b)b.disabled=false;alert(ERR[r&&r.error]||"לא הצלחנו.");return}KIDS=r;draw()};
+  if($("kLoad"))$("kLoad").onclick=e=>ld(e.target);if($("kRe"))$("kRe").onclick=e=>ld(e.target);
+  if($("kQ"))$("kQ").oninput=e=>{KQ=e.target.value.trim();const pos=e.target.selectionStart;draw();const q=$("kQ");if(q){q.focus();try{q.setSelectionRange(pos,pos)}catch(_){}}};
+  document.querySelectorAll("[data-kid]").forEach(b=>b.onclick=()=>kidDlg(KIDS.list.find(x=>x.pid===b.dataset.kid)));
+}
 function codesWire(){
   if(!CODES)return;const L=CODES.list||[],byRaw=r=>L.find(c=>c.raw===r);
   const go=async(body,btn)=>{if(btn)btn.disabled=true;const r=await api(body);if(!r.ok){if(btn)btn.disabled=false;alert(ERR[r.error]||(r.error==="exists"?"הקוד הזה כבר קיים":"לא הצלחנו."));return null}return r};
-  if($("cGo"))$("cGo").onclick=async e=>{const [t,v]=$("cPr").value.split(/:(.+)/);const prize=t==="box"?{t,box:v}:t==="bolts"?{t,n:+v}:{t,id:v};
-    const r=await go({action:"codeCreate",prize,max:$("cMax").value||null,count:+$("cCnt").value||1,code:$("cOwn").value.trim(),note:prizeTxt(prize).replace(/^\S+\s/,"")},e.target);if(r){CODES_NEW=r.codes;load()}};
+  const CIT=[],drawCit=()=>{if($("cItList"))$("cItList").innerHTML=CIT.map((id,i)=>`<span class="pill" style="margin:2px">👕 ${esc(itN(id))} <a href="#" data-cirm="${i}" style="color:inherit">✕</a></span>`).join("");document.querySelectorAll("[data-cirm]").forEach(a=>a.onclick=e=>{e.preventDefault();CIT.splice(+a.dataset.cirm,1);drawCit()})};
+  if($("cItAdd"))$("cItAdd").onclick=()=>{const v=($("cIt").value||"").split(" · ")[0].trim(),it=RCx&&RCx.LIST.find(x=>x.n===v);if(!it){alert("לא מצאתי אביזר בשם הזה");return}if(!CIT.includes(it.id))CIT.push(it.id);$("cIt").value="";drawCit()};
+  if($("cGo"))$("cGo").onclick=async e=>{const boxes={};document.querySelectorAll("[data-cbx]").forEach(i=>{const n=+i.value||0;if(n>0)boxes[i.dataset.cbx]=n});const prize={t:"multi",bolts:+$("cB").value||0,boxes,items:CIT.slice()};
+    if(!prize.bolts&&!Object.keys(boxes).length&&!CIT.length){alert("תבחר מה יהיה בקוד – ברגים, תיבות או אביזרים 🙂");return}
+    const r=await go({action:"codeCreate",prize,max:$("cMax").value||null,count:+$("cCnt").value||1,code:$("cOwn").value.trim(),note:""},e.target);if(r){CODES_NEW=r.codes;load()}};
   if($("cCopyAll"))$("cCopyAll").onclick=async()=>{const a=L.filter(c=>c.on&&(c.max==null||c.used<c.max));if(await copyTxt(a.map(c=>`${c.code} – ${prizeTxt(c.prize)}${c.max!=null?` (ל-${c.max} הראשונים)`:""}`).join("\n")))alert(`📋 הועתקו ${a.length} קודים`)};
   document.querySelectorAll("[data-ccp]").forEach(b=>b.onclick=async()=>{if(await copyTxt(shareTxt(byRaw(b.dataset.ccp)))){b.textContent="✓";setTimeout(()=>b.textContent="📋",1500)}});
   document.querySelectorAll("[data-cqr]").forEach(b=>b.onclick=()=>{const c=byRaw(b.dataset.cqr);qrDialog(`🔳 ${c.code} – ${prizeTxt(c.prize)}`,codeLink(c.raw),"סורקים במצלמה → נפתח דף עם הקוד ← \"להעתיק\" ← פותחים את האפליקציה ומדביקים למערכתי 🤖 (כל ילד פעם אחת)")});
@@ -340,6 +385,7 @@ function draw(){
     </div>
   </div>
   ${ownCard()}
+  ${kidsCard()}
   ${codesCard()}
   ${holCard()}
   ${(D.suspended||[]).length?`<div class="card"><h2>⛔ מושעים כרגע (${susGroups().length})</h2>${susList()}</div>`:""}
@@ -387,7 +433,7 @@ function draw(){
   $("selClr").onclick=()=>{sel.clear();drawRows()};
   $("selMsg").onclick=()=>{$("oTo").value="some";$("oText").focus();$("oText").scrollIntoView({behavior:"smooth",block:"center"})};
   $("selSus").onclick=()=>susDialog(chosen());
-  holWire();codesWire();
+  holWire();codesWire();kidsWire();
   // מצב עדכון
   if($("mGo"))$("mGo").onclick=async()=>{const min=$("mMin").value;if(!confirm(`להפעיל מצב עדכון לכל התלמידים ${min?"ל-"+$("mMin").selectedOptions[0].textContent:"עד שתעצור"}?`))return;
     $("mGo").disabled=true;const r=await api({action:"maint",on:true,minutes:min?+min:null,msg:$("mMsg").value.trim()});if(!r.ok){$("mGo").disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}load()};

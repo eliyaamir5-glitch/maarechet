@@ -30,7 +30,8 @@
   // 🔒 עונה חדשה: הרובוט נעול לכולם עד 5.11.2026 07:00, ואז כולם מתחילים מאפס ושווים – 1000 ברגים (בקשת מנהל המערכת)
   const OPEN_AT = Date.parse("2026-11-04T07:30:00+02:00"), SEASON = "2026-11-05";
   const testRun = () => !!(navigator.webdriver && LS.get("roboTest", "") && !LS.get("roboLockTest", ""));
-  const locked = () => !testRun() && !powers().owner && Date.now() < OPEN_AT;
+  const banned = () => !powers().owner && !!powers().banned; // 🚫 מנהל המערכת חסם את הרובוט של הילד הזה
+  const locked = () => !powers().owner && ((!testRun() && Date.now() < OPEN_AT) || banned());
   function seasonReset() {
     if (testRun() || Date.now() < OPEN_AT || S.season === SEASON) return false;
     S = R.norm(null); S.bolts = 1000; S.g1000 = 1; S.cap2k = 1; S.season = SEASON;
@@ -42,6 +43,7 @@
   const lockLeft = () => { const s = Math.max(0, Math.floor((OPEN_AT - Date.now()) / 1000)); return `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; };
   function lockScreen() {
     const d = dlg("roboLock"); let tm = 0;
+    if (banned()) { d.innerHTML = `<div class="ann" style="padding:calc(28px + env(safe-area-inset-top)) 20px 24px"><div class="t">🚫 הרובוט שלך נחסם</div><div class="bot">${svg("", { skin: "skin:classic" }, { noHoli: true })}</div><div class="w">מנהל המערכת חסם את הרובוט שלך</div><div class="l">כל השאר באפליקציה עובד כרגיל 🙂</div><div class="rd-btns" style="margin-top:16px"><button class="rbtn" type="button" id="rlOk">הבנתי</button></div></div>`; show(d); d.querySelector("#rlOk").onclick = () => d.close(); return; }
     const draw = () => { if (!d.open && tm) { clearInterval(tm); return; } if (!locked()) { clearInterval(tm); d.close(); seasonReset(); return; } const c = d.querySelector("#rlLeft"); if (c) c.textContent = lockLeft(); };
     d.innerHTML = `<div class="ann" style="padding:calc(28px + env(safe-area-inset-top)) 20px 24px"><div class="t">🔒 הרובוט נעול עד הבוקר</div><div class="bot">${svg("", { skin: "skin:classic" }, { noHoli: true })}</div>
       <div class="w">נפתח לכולם ביחד ב-07:30 בבוקר ⏰</div><div class="l">עונה חדשה: כולם מתחילים מאפס ושווים –<br>1000 ברגים 🔩 לכל אחד!</div>
@@ -883,7 +885,7 @@ dialog.robo.open{background:#05020f}
   async function checkPowers(force) {
     if (window.__DEMO || !profile()) return;
     const P = powers(); if (!force && P.at && Date.now() - P.at < 10 * 60e3 && !P.owner) return;
-    try { const j = await api({ op: "me" }); if (j && j.ok) { LS.set("roboOwner", JSON.stringify({ owner: !!j.owner, inf: !!j.inf, all: !!j.all, at: Date.now() })); applyPowers(); hubRefresh(); } } catch (e) {}
+    try { const j = await api({ op: "me" }); if (j && j.ok) { LS.set("roboOwner", JSON.stringify({ owner: !!j.owner, inf: !!j.inf, all: !!j.all, banned: !!j.banned, at: Date.now() })); homeBtn(); applyPowers(); hubRefresh(); } } catch (e) {}
   }
   // 🎟️ מממשים קוד (מהעוזר, מברקוד או מהארון). כל קוד – פעם אחת לכל ילד
   const CODE_ERR = { bad_code: "הקוד הזה לא נכון 🤔 תבדוק שהקלדת נכון", used: "כבר מימשת את הקוד הזה 😉 כל קוד – פעם אחת", full: "אוי, הקוד נגמר – כל הפרסים שלו כבר נלקחו 😅", off: "הקוד הזה כבר לא פעיל", not_registered: "צריך קודם להירשם לאפליקציה (ולפתוח אותה פעם אחת)", bad_token: "קוד החיבור לא נכון או שפג תוקפו – צור חדש בדף הניהול" };
@@ -899,6 +901,10 @@ dialog.robo.open{background:#05020f}
     const p = j.prize; let msg = "";
     if (p.t === "box") { S.boxes.push(p.box); save(); msg = `🎁 קיבלת ${R.BOX[p.box].n}!`; setTimeout(() => openBoxes([p.box]), 400); }
     else if (p.t === "bolts") { R.grant(S, p); save(); msg = `🔩 קיבלת ${p.n} ברגים!`; toast(msg, null, 3500); }
+    else if (p.t === "multi") { const got = [], bx = []; if (p.bolts) { R.grant(S, { t: "bolts", n: p.bolts }); got.push(`🔩 ${p.bolts} ברגים`); }
+      for (const [b, n] of Object.entries(p.boxes || {})) if (R.BOX[b]) { for (let i = 0; i < n; i++) { S.boxes.push(b); bx.push(b); } got.push(`${R.BOX[b].em} ${n > 1 ? n + " × " : ""}${R.BOX[b].n}`); }
+      for (const id of p.items || []) if (R.ITEMS[id]) { const x = R.grant(S, { t: "item", id, r: R.ITEMS[id].r }); got.push(x.dup ? `${R.ITEMS[id].n} (כפול → +${x.dup} 🔩)` : `✨ ${R.ITEMS[id].n}`); }
+      save(); msg = `קיבלת: ${got.join(" · ")}`; toast("🎉 " + esc(msg), null, 7000); if (bx.length) setTimeout(() => openBoxes(bx.slice(0, 20)), 600); }
     else if (p.t === "item" && R.ITEMS[p.id]) { const x = R.grant(S, p); save(); msg = x.dup ? `כבר היה לך ${R.ITEMS[p.id].n} – קיבלת ${x.dup} ברגים 🔩` : `✨ קיבלת ${R.ITEMS[p.id].n}!`; if (!x.dup) { celebrateItem(p.id); setTimeout(() => open("wear"), 900); } else toast(msg, null, 3500); }
     hubRefresh(); return { ok: true, msg: "🎉 הקוד מומש! " + msg };
   }
@@ -1029,6 +1035,7 @@ dialog.robo.open{background:#05020f}
   function hub(el) { hubEl = el; hubRefresh(); }
   function hubRefresh() {
     const el = hubEl; if (!el || !el.isConnected) return;
+    if (locked() && banned()) { el.innerHTML = `<div style="font-size:14px;font-weight:800;line-height:1.6">🚫 הרובוט שלך נחסם על ידי מנהל המערכת.</div>`; return; }
     if (locked()) { el.innerHTML = `<div style="font-size:14px;font-weight:800;line-height:1.6">🔒 הרובוט נעול עד 07:30 בבוקר.<br><span style="font-weight:600;opacity:.85">עונה חדשה: כולם מתחילים שווה עם 1000 ברגים 🔩</span></div>`; return; }
     const pr = R.progress(S), nb = S.boxes.length, b = R.best(S);
     el.innerHTML = `<div style="display:flex;gap:12px;align-items:center"><button type="button" id="rhBot" style="width:86px;height:86px;flex:0 0 86px;border:0;border-radius:24px;cursor:pointer;background:${(SK[S.eq.skin] || {}).bg || DEF_BG};box-shadow:0 8px 20px rgba(0,0,0,.3)">${svg()}</button>
@@ -1075,7 +1082,7 @@ dialog.robo.open{background:#05020f}
   const myStats = () => { const pr = R.progress(S); return { n: S.st.n, best: S.st.best, have: pr.have, all: pr.all, opened: S.opened || 0 }; };
   const topRare = () => R.LIST.filter(x => S.own[x.id] && S.own[x.id] !== -1 && !x.free).sort((a, b) => R.RAR[b.r].o - R.RAR[a.r].o).slice(0, 3).map(x => x.id);
   let pubT = 0, myLikes = +LS.get("roboMyLikes", "0") || 0;
-  async function publish() { if (!online() || locked()) return; try { const pj = await api({ op: "pub", title: R.titleText ? R.titleText(S) : "", rn: S.name || "", eq: S.eq, st: myStats(), rare: topRare(), ach: R.achievements(S, myLikes), hide: !!S.hide }); if (pj && pj.pid) LS.set("roboPid", pj.pid); LS.set("roboPubAt", String(Date.now())); } catch (e) {} }
+  async function publish() { if (!online() || locked()) return; try { const pj = await api({ op: "pub", title: R.titleText ? R.titleText(S) : "", rn: S.name || "", eq: S.eq, st: myStats(), rare: topRare(), ach: R.achievements(S, myLikes), hide: !!S.hide, b: S.realBolts != null ? S.realBolts : S.bolts, own: Object.keys(S.own).filter(k => S.own[k] !== -1), bx: S.boxes.slice(0, 500) }); if (pj && pj.pid) LS.set("roboPid", pj.pid); LS.set("roboPubAt", String(Date.now())); } catch (e) {} }
   // ⚡ הזמנה לטרייד מגיעה מהר: הפיד (שנבדק כל 20 שניות) אומר אם מחכה לי משהו
   let hintAt = 0;
   function inviteHint(list) { const me = LS.get("roboPid", ""); if (!me || !list.includes(me) || Date.now() - hintAt < 8000) return; hintAt = Date.now(); checkInbox(); }
@@ -1249,6 +1256,16 @@ dialog.robo.open{background:#05020f}
     for (const x of j.inbox.filter(x => x.t === "bolts")) { S.bolts += Math.max(0, Math.min(50, x.n | 0)); ch = true; setTimeout(() => { toast(`🎁 ${esc(x.from)} שלח לך ${x.n} ברגים!`, null, 5000); SFX.coin(); }, 600); }
     for (const x of j.inbox.filter(x => x.t === "sold")) { const n = Math.max(0, Math.min(20000, x.price | 0)); S.bolts += n; if (S.mkt) delete S.mkt[x.id]; ch = true; setTimeout(() => { toast(`🕵️ ${esc(x.from)} קנה ממך ${esc((R.ITEMS[x.item] || {}).n || "אביזר")}! קיבלת ${n} ברגים 🔩`, null, 7000); SFX.coin(); }, 900); }
     for (const x of j.inbox.filter(x => x.t === "item" && R.ITEMS[x.item] && !R.ITEMS[x.item].x)) { const g = R.grant(S, { t: "item", id: x.item, r: R.ITEMS[x.item].r }); if (!g.dup) (S.tr = S.tr || {})[x.item] = 1; ch = true; setTimeout(() => { toast(`🎁 <b>${esc(x.from)}</b> שלח לך במתנה: ${esc(R.ITEMS[x.item].n)} ${rarTag(R.ITEMS[x.item].r)}${g.dup ? ` (כבר היה לך → +${g.dup} 🔩)` : ""}`, g.dup ? null : ["👕 ללבוש", () => { R.equip(S, x.item); save(); draw(); }], 8000); SFX.gift(); }, 700); }
+    // 👑 פעולות של מנהל המערכת (מדף הניהול)
+    for (const x of j.inbox.filter(x => x.t === "adm")) { const msgs = []; const B = S.realBolts != null ? "realBolts" : "bolts";
+      if (x.set != null) { S[B] = Math.max(0, x.set | 0); msgs.push(`הברגים שלך עודכנו ל-${S[B]}`); }
+      if (x.bolts) { S[B] = Math.max(0, S[B] + (x.bolts | 0)); msgs.push(x.bolts > 0 ? `קיבלת ${x.bolts} ברגים 🔩` : `הורדו ${-x.bolts} ברגים`); }
+      if (Array.isArray(x.take) && x.take.length) { let n = 0; for (const id of x.take) { if (!S.own[id] || id === "skin:classic") continue; delete S.own[id]; if (S.shiny) delete S.shiny[id]; for (const c of Object.keys(S.eq)) if (S.eq[c] === id) delete S.eq[c]; n++; } if (!S.eq.skin) S.eq.skin = "skin:classic"; if (n) msgs.push(`הורדו ${n} אביזרים`); }
+      if (Array.isArray(x.give) && x.give.length) { let n = 0; for (const id of x.give) if (R.ITEMS[id]) { const g = R.grant(S, { t: "item", id, r: R.ITEMS[id].r }); if (!g.dup) { (S.tr = S.tr || {})[id] = 1; n++; } } if (n) msgs.push(`קיבלת ${n} אביזרים 🎁`); }
+      if (x.boxes) { let n = 0; for (const [b, k] of Object.entries(x.boxes)) if (R.BOX[b]) for (let i = 0; i < Math.min(100, k | 0); i++) { S.boxes.push(b); n++; } if (n) msgs.push(`קיבלת ${n} תיבות 📦`); }
+      if (typeof x.ban === "boolean") { try { const P = JSON.parse(LS.get("roboOwner", "null")) || {}; P.banned = x.ban; P.at = Date.now(); LS.set("roboOwner", JSON.stringify(P)); } catch (e) {} msgs.push(x.ban ? "🚫 הרובוט שלך נחסם" : "✅ הרובוט שלך שוב פתוח"); homeBtn(); }
+      ch = true; if (msgs.length) setTimeout(() => toast(`👑 <b>מנהל המערכת:</b> ${esc(msgs.join(" · "))}`, null, 7000), 500); }
+    if (j.inbox.some(x => x.t === "adm")) { setTimeout(publishSoon, 1500); draw(); }
     for (const x of j.inbox.filter(x => x.t === "trade").slice(-2)) setTimeout(() => toast(`🔄 ${esc(x.from)} מזמין אותך לטרייד!`, ["לפתוח", () => tradeOpen(x.id)], 15000), 1200);
     if (ch) save();
   }
@@ -1273,12 +1290,12 @@ dialog.robo.open{background:#05020f}
 
   // ---------- הפעלה ----------
   window.Robo = {
-    svg, open, hub, share, subjectMile, daily, openBoxes, redeem, earn, sfx: SFX, mini, friendCard, tradeOpen, checkNews, publish, inviteHint, state: () => S, owns: id => !!S.own[id],
+    svg, open, hub, share, checkInbox, subjectMile, daily, openBoxes, redeem, earn, sfx: SFX, mini, friendCard, tradeOpen, checkNews, publish, inviteHint, state: () => S, owns: id => !!S.own[id],
     give(p) { const x = R.grant(S, p); save(); hubRefresh(); return x; }, // דמו / בדיקות
     // בשביל robo-plus.js (גלגל, מעבדה, שוק, משחק, מפה)
     _: { powers, ownLog, locked, trk, get S() { return S; }, save, toast, dlg, show, SFX, openBoxes, svg, preview, RC, rarTag, esc, particles, draw, hubRefresh, api, sleep, vib, card, celebrateItem, online, profile, dev, CLS_L, giftText, giftIcon, bl, step, open, wireMute, muteBtn, REDUCED, page, LS },
     reload() { S = load(); applyBubble(); try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {} },
-    locked, status: () => locked() ? "🔒 נעול עד 07:30" : `🔥 ${S.st.n} · 🔩 ${bl()}${S.boxes.length ? ` · 🎁 ${S.boxes.length}` : ""}`,
+    locked, status: () => locked() ? (banned() ? "🚫 נחסם" : "🔒 נעול עד 07:30") : `🔥 ${S.st.n} · 🔩 ${bl()}${S.boxes.length ? ` · 🎁 ${S.boxes.length}` : ""}`,
   };
   try { dispatchEvent(new CustomEvent("robo:change")); } catch (e) {}
   urlCodes();
@@ -1289,7 +1306,7 @@ dialog.robo.open{background:#05020f}
     if (!S.cap2k) { S.cap2k = 1; const k = S.realBolts != null ? "realBolts" : "bolts"; if (S[k] > 2000 && S[k] < 999999) { S[k] = 2000; setTimeout(() => toast("⚖️ <b>עדכון איזון:</b> היה קל מדי לצבור ברגים, אז כל מי שהיה לו יותר מ-2000 ירד ל-2000. כל האביזרים שלך נשארו! 🤖", null, 10000), 4000); } save(); }
     applyPowers(); setTimeout(() => checkPowers(), 3000);
     // 👥 מפרסמים את הרובוט (פעם ב-6 שעות), בודקים הודעות כל דקה וחצי, והכרזות אולטרה
-    if (online() && Date.now() - (+LS.get("roboPubAt", "0") || 0) > 6 * 3600e3) setTimeout(publish, 6000);
+    if (online() && Date.now() - (+LS.get("roboPubAt", "0") || 0) > 30 * 60e3) setTimeout(publish, 6000);
     setTimeout(checkInbox, 7000); setInterval(() => { if (!document.hidden) checkInbox(); }, 90000);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) setTimeout(checkInbox, 800); });
     if (!LS.get("roboPid", "") && online()) setTimeout(publish, 4000);

@@ -969,7 +969,7 @@ async function owner(req, S, ip, headers) {
   if (b.action === "msgDelete") return reply(200, await msgDeleteOp(S, b, ""), headers);
   if (b.action === "holGet") return reply(200, await holOverview(S, now), { ...headers, "Cache-Control": "no-store" });
   if (b.action === "holSet") return reply(200, await holSetOp(S, b), headers);
-  if (["codeList", "codeCreate", "codeSet", "ownLink", "ownPowers", "ownUnlink"].includes(b.action)) return reply(200, await roboOwnerOp(S, b, now), { ...headers, "Cache-Control": "no-store" });
+  if (["codeList", "codeCreate", "codeSet", "ownLink", "ownPowers", "ownUnlink", "roboKids", "roboAdm"].includes(b.action)) return reply(200, await roboOwnerOp(S, b, now), { ...headers, "Cache-Control": "no-store" });
   if (b.action !== "overview") return reply(400, { ok: false, error: "bad_action" }, headers);
   return reply(200, await schoolOverview(S, now, true), { ...headers, "Cache-Control": "no-store" });
 }
@@ -1130,6 +1130,7 @@ async function feed(req, S, ip, headers) {
   }
   if (action === "robo") { // 🤖 אביזר "אולטרה אגדי" יצא בתיבה: כמות מוגבלת לכל הישיבה. נשמר רק מונה + קוד מכשיר מוצפן (בלי שם)
     if (await roboSeason(S, now) && !["me", "link", "day"].includes(b.op)) return reply(200, { ok: false, error: "locked", until: ROBO_RESET_AT }, headers);
+    if (DEV_RE.test(device) && !["me", "link", "day", "inbox"].includes(b.op)) { const ban = await S.get("roboBan"); if (ban && ban[devKey(device)]) return reply(200, { ok: false, error: "banned" }, headers); } // 🚫 מנהל המערכת חסם את הרובוט
     if (DEV_RE.test(device) && ["code", "me", "link", "day", "lbMe"].includes(b.op)) return reply(200, await roboOp(S, b, device, ip, now), headers);
     if (DEV_RE.test(device) && ["pub", "class", "like", "gift", "inbox", "tradeNew", "tradeGet", "tradeSet", "tradeOk", "tradeCancel", "tradeDone", "marketList", "marketSell", "marketBuy", "marketCancel", "giftItem", "score", "scores", "goalAdd", "goal"].includes(b.op)) return reply(200, await roboSocial(S, b, device, ip, now), headers);
     if (!DEV_RE.test(device) || b.op !== "claim" || !Object.hasOwn(ROBO_CAPS, String(b.item))) return reply(400, { ok: false, error: "bad_request" }, headers);
@@ -1532,12 +1533,18 @@ const CODE_ABC = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // בלי 0/O/1/I שמתב�
 const normCode = c => String(c || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 16);
 const showCode = c => c.length > 4 ? c.slice(0, 4) + "-" + c.slice(4) : c;
 const newPromo = (pre = "") => { let s = normCode(pre).slice(0, 4); while (s.length < 8) s += CODE_ABC[crypto.randomInt(CODE_ABC.length)]; return s; };
-const BOXES = ["box", "big", "mega"];
+const BOXES = ["box", "big", "mega", "giant"];
 function cleanPrize(p) {
   if (!p || typeof p !== "object") return null;
   if (p.t === "box" && BOXES.includes(p.box)) return { t: "box", box: p.box };
   if (p.t === "bolts" && Number.isInteger(+p.n) && +p.n >= 1 && +p.n <= 5000) return { t: "bolts", n: +p.n };
   if (p.t === "item" && /^(skin|hat|eyes|held|aura|theme|page):[a-z0-9:]{1,30}$/.test(String(p.id)) && !Object.hasOwn(ROBO_CAPS, p.id)) return { t: "item", id: String(p.id) };
+  if (p.t === "multi") { // 🎁 חבילה: ברגים + תיבות + כמה אביזרים ביחד (מה שמנהל המערכת בוחר)
+    const bolts = Math.max(0, Math.min(100000, Math.floor(+p.bolts || 0))), boxes = {}, items = [];
+    for (const bx of BOXES) { const n = Math.max(0, Math.min(50, Math.floor(+(p.boxes || {})[bx] || 0))); if (n) boxes[bx] = n; }
+    for (const id of Array.isArray(p.items) ? p.items.slice(0, 30) : []) if (ITEM_RE.test(String(id)) && !Object.hasOwn(ROBO_CAPS, id) && !items.includes(id)) items.push(String(id));
+    return bolts || Object.keys(boxes).length || items.length ? { t: "multi", bolts, boxes, items } : null;
+  }
   return null;
 }
 // הקודים המוכנים: נוצרים בפעם הראשונה שמנהל המערכת פותח את הכרטיס (אקראיים – לא כתובים בשום מקום בקוד)
@@ -1575,8 +1582,8 @@ async function roboOp(S, b, device, ip, now) {
     return { ok: true };
   }
   if (b.op === "me") { // האם זה הטלפון של מנהל המערכת (ומה הוא הפעיל לעצמו)
-    const o = await S.get("roboOwn");
-    return o && o.key === k ? { ok: true, owner: true, inf: !!o.inf, all: !!o.all } : { ok: true, owner: false };
+    const o = await S.get("roboOwn"), ban = ((await S.get("roboBan")) || {})[k];
+    return o && o.key === k ? { ok: true, owner: true, inf: !!o.inf, all: !!o.all } : { ok: true, owner: false, banned: !!ban };
   }
   if (b.op === "link") { // מחברים את הטלפון של מנהל המערכת: קוד חד-פעמי מדף הניהול. הטלפון הראשון שמשתמש בו – הוא שלך
     memRate("roboLink", ip, 5);
@@ -1612,6 +1619,29 @@ async function roboOp(S, b, device, ip, now) {
   return out;
 }
 async function roboOwnerOp(S, b, now) {
+  // 🤖 הרובוטים של התלמידים: ברגים, מה יש להם, חסימה – ופעולות שמגיעות לטלפון שלהם (דרך תיבת ההודעות של הרובוט)
+  if (b.action === "roboKids") {
+    const pub = (await S.get("roboPub")) || {}, pres = (await S.get("presence")) || {}, ban = (await S.get("roboBan")) || {};
+    const list = Object.entries(pub).filter(([kk]) => pres[kk]).map(([kk, p]) => ({ pid: p.pid, kid: pres[kk].name || "", cls: pres[kk].cls || "", rn: p.rn || "", bolts: p.b || 0, have: (p.st || {}).have || 0, streak: (p.st || {}).n || 0, opened: (p.st || {}).opened || 0, eq: p.eq || {}, own: p.own || [], boxes: p.bx || [], title: p.title || "", banned: !!ban[kk], at: p.at || 0, last: pres[kk].last || 0 }))
+      .sort((a, c) => c.bolts - a.bolts);
+    return { ok: true, list };
+  }
+  if (b.action === "roboAdm") {
+    const pid = String(b.pid || ""); if (!/^[0-9a-f]{12}$/.test(pid)) return { ok: false, error: "bad_request" };
+    const pub = (await S.get("roboPub")) || {}, ent = Object.entries(pub).find(([, p]) => p.pid === pid); if (!ent) return { ok: false, error: "not_found" };
+    const [kk] = ent, cmd = { t: "adm", at: now }, num = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(+v || 0)));
+    if (b.bolts != null) cmd.bolts = num(b.bolts, -1e8, 1e8);
+    if (b.setBolts != null) cmd.set = num(b.setBolts, 0, 1e8);
+    const ids = a => (Array.isArray(a) ? a : []).map(String).filter(x => ITEM_RE.test(x)).slice(0, 900);
+    if (b.take) cmd.take = ids(b.take); if (b.give) cmd.give = ids(b.give).filter(x => !Object.hasOwn(ROBO_CAPS, x));
+    if (b.boxes && typeof b.boxes === "object") { cmd.boxes = {}; for (const bx of BOXES) { const n = num(b.boxes[bx], 0, 100); if (n) cmd.boxes[bx] = n; } }
+    if (typeof b.ban === "boolean") { await S.update("roboBan", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; if (b.ban) o[kk] = now; else delete o[kk]; return o; }); cmd.ban = b.ban; }
+    await inboxPush(S, pid, cmd);
+    // מעדכנים מיד גם בדף הניהול (עד שהטלפון ישלח את המצב החדש)
+    await S.update("roboPub", cur => { if (!cur || !cur[kk]) return undefined; const o = { ...cur }, p = { ...o[kk] }; if (cmd.set != null) p.b = cmd.set; if (cmd.bolts) p.b = Math.max(0, (p.b || 0) + cmd.bolts); if (cmd.take) p.own = (p.own || []).filter(x => !cmd.take.includes(x)); if (cmd.give) p.own = [...new Set([...(p.own || []), ...cmd.give])]; o[kk] = p; return o; });
+    await olog(S, "roboAdm", `🤖 רובוט של ${(((await S.get("presence")) || {})[kk] || {}).name || "?"}: ${[cmd.set != null ? `ברגים = ${cmd.set}` : "", cmd.bolts ? `ברגים ${cmd.bolts > 0 ? "+" : ""}${cmd.bolts}` : "", cmd.take && cmd.take.length ? `הורדו ${cmd.take.length} אביזרים` : "", cmd.give && cmd.give.length ? `ניתנו ${cmd.give.length} אביזרים` : "", cmd.boxes && Object.keys(cmd.boxes).length ? "תיבות" : "", cmd.ban === true ? "🚫 נחסם" : cmd.ban === false ? "✅ החסימה הוסרה" : ""].filter(Boolean).join(" · ")}`);
+    return { ok: true };
+  }
   if (b.action === "codeList") {
     const c = await roboCodesGet(S, now);
     const list = Object.entries(c.codes || {}).map(([code, x]) => ({ code: showCode(code), raw: code, prize: x.prize, max: x.max, used: x.used.length, on: x.on, note: x.note || "", at: x.at })).sort((a, b) => b.at - a.at || a.code.localeCompare(b.code));
@@ -1674,7 +1704,7 @@ export async function streakTick(now = Date.now()) {
 const pidOf = k => crypto.createHash("sha256").update("robo|" + k).digest("hex").slice(0, 12);
 // 🔄 עונה חדשה לרובוט (בקשת מנהל המערכת, 4.11.2026): עד 5.11 07:00 הכל נעול, ואז מוחקים פעם אחת את כל מה שהשרת שומר על הרובוטים
 // (ספירת אולטרה, פרופילים, לייקים, קרב כיתות, שוק, טריידים, הכרזות, הודעות) – כדי שכולם יתחילו שווה. הטלפונים מתאפסים לבד (robo.js)
-let ROBO_RESET_AT = Date.parse("2026-11-04T07:30:00+02:00"); const ROBO_RESET_ID = "2026-11-05", ROBO_BLOBS = ["roboRare", "roboPub", "roboLikes", "roboLikeDay", "roboGiftDay", "roboBattle", "roboMarket", "roboTrades", "roboNews", "roboInbox", "roboAll", "roboGiftItemDay", "roboInvHint"];
+let ROBO_RESET_AT = Date.parse("2026-11-04T07:30:00+02:00"); const ROBO_RESET_ID = "2026-11-05", ROBO_BLOBS = ["roboRare", "roboPub", "roboLikes", "roboLikeDay", "roboGiftDay", "roboBattle", "roboMarket", "roboTrades", "roboNews", "roboInbox", "roboAll", "roboGiftItemDay", "roboBan", "roboInvHint"];
 let roboSeasonDone = false;
 export function __setRoboReset(ms) { ROBO_RESET_AT = ms; roboSeasonDone = false; } // לבדיקות
 async function roboSeason(S, now) { // true = עדיין נעול
@@ -1709,7 +1739,8 @@ async function roboSocial(S, b, device, ip, now) {
   if (b.op === "pub") { // מפרסמים את הרובוט שלי (מה לובש + הישגים)
     const st = b.st && typeof b.st === "object" ? b.st : {}, num = (v, m) => Math.max(0, Math.min(m, Math.floor(+v || 0)));
     const rec = { pid, rn: clean(b.rn, 14), eq: cleanEq(b.eq), st: { n: num(st.n, 5000), best: num(st.best, 5000), have: num(st.have, 2000), all: num(st.all, 2000), opened: num(st.opened, 100000) },
-      rare: (Array.isArray(b.rare) ? b.rare : []).map(String).filter(x => ITEM_RE.test(x)).slice(0, 3), ach: (Array.isArray(b.ach) ? b.ach : []).slice(0, 16).map(a => ({ e: clean(a && a.e, 4), n: clean(a && a.n, 20) })), title: clean(b.title, 24), hide: !!b.hide, at: now };
+      rare: (Array.isArray(b.rare) ? b.rare : []).map(String).filter(x => ITEM_RE.test(x)).slice(0, 3), ach: (Array.isArray(b.ach) ? b.ach : []).slice(0, 16).map(a => ({ e: clean(a && a.e, 4), n: clean(a && a.n, 20) })), title: clean(b.title, 24), hide: !!b.hide, at: now,
+      b: num(b.b, 1e8), own: (Array.isArray(b.own) ? b.own : []).map(String).filter(x => ITEM_RE.test(x)).slice(0, 900), bx: (Array.isArray(b.bx) ? b.bx : []).map(String).filter(x => BOXES.includes(x)).slice(0, 500) }; // 🔩 ברגים + מה יש לו – רק בשביל דף הניהול
     await S.update("roboPub", cur => { const o = cur && typeof cur === "object" ? { ...cur } : {}; if (!o[k] && Object.keys(o).length >= 3000) return undefined; o[k] = rec; return o; });
     return { ok: true, pid };
   }

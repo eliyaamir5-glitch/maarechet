@@ -98,3 +98,22 @@ day[p2] = { d: "2026-11-12", n: 6 }; put(day);
 r = await mod.streakTick(at("2026-11-13T20:05:00+02:00")); ok("Friday: not at 20:00 (Shabbat)", r.skipped === "time");
 r = await mod.streakTick(at("2026-11-13T12:10:00+02:00")); ok("Friday: at 12:00 instead", r.sent === 1);
 r = await mod.streakTick(at("2026-11-14T20:05:00+02:00")); ok("Shabbat: nothing", r.skipped === "rest");
+// ---- 🎁 קוד-חבילה (ברגים + תיבות + אביזרים) ----
+r = await call("/api/owner", { action: "codeCreate", prize: { t: "multi", bolts: 750, boxes: { big: 2, giant: 1 }, items: ["hat:crown", "skin:legend"] }, max: 3, code: "PACK-TEST" }, tok);
+ok("multi-prize code created (capped ultra filtered out)", r.json.ok, JSON.stringify(r.json));
+r = await feed({ action: "robo", op: "code", code: "PACKTEST", device: dev(2) });
+ok("redeem a multi code", r.json.ok && r.json.prize.t === "multi" && r.json.prize.bolts === 750 && r.json.prize.boxes.big === 2 && r.json.prize.boxes.giant === 1 && r.json.prize.items.length === 1, JSON.stringify(r.json));
+// ---- 🤖 הרובוטים של התלמידים (דף הניהול) ----
+await feed({ action: "robo", op: "pub", rn: "רובי", eq: { skin: "skin:classic" }, st: { have: 3 }, b: 1234, own: ["skin:classic", "hat:crown", "held:pizza"], bx: ["big"], device: dev(2) });
+r = await call("/api/owner", { action: "roboKids" }, tok); const kid = (r.json.list || []).find(x => x.bolts === 1234);
+ok("admin sees everyone's bolts and items", r.json.ok && kid && kid.own.includes("hat:crown") && kid.boxes.length === 1, JSON.stringify(r.json.list && r.json.list.slice(0, 2)));
+r = await call("/api/owner", { action: "roboAdm", pid: kid.pid, setBolts: 0, take: ["hat:crown"], give: ["held:burger"], boxes: { mega: 2 } }, tok); ok("admin action accepted", r.json.ok);
+r = await feed({ action: "robo", op: "inbox", device: dev(2) }); const adm = (r.json.inbox || []).find(x => x.t === "adm");
+ok("the phone gets the admin command", adm && adm.set === 0 && adm.take[0] === "hat:crown" && adm.give[0] === "held:burger" && adm.boxes.mega === 2, JSON.stringify(adm));
+r = await call("/api/owner", { action: "roboKids" }, tok); ok("admin list updates right away", r.json.list.find(x => x.pid === kid.pid).bolts === 0 && !r.json.list.find(x => x.pid === kid.pid).own.includes("hat:crown"));
+r = await call("/api/owner", { action: "roboAdm", pid: kid.pid, ban: true }, tok); ok("ban", r.json.ok);
+r = await feed({ action: "robo", op: "class", device: dev(2) }); ok("banned robot: social ops refused", r.json.error === "banned");
+r = await feed({ action: "robo", op: "me", device: dev(2) }); ok("banned robot: phone learns it via 'me'", r.json.banned === true);
+r = await feed({ action: "robo", op: "class", device: dev(4) }); ok("other kids not affected", r.json.ok);
+await call("/api/owner", { action: "roboAdm", pid: kid.pid, ban: false }, tok); r = await feed({ action: "robo", op: "me", device: dev(2) }); ok("unban", r.json.banned === false);
+r = await feed({ action: "robo", op: "roboAdm" , device: dev(2) }); ok("kids can't call admin ops", !r.json.ok);
