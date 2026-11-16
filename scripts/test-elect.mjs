@@ -1,0 +1,36 @@
+// בדיקות: 🗳️ קלפי למועצת התלמידים – קול אחד לכל מכשיר, אנונימי, תוצאות רק אחרי סגירה
+//   node scripts/test-elect.mjs
+import crypto from "node:crypto";
+const mod = await import("../netlify/functions/staff.mjs");
+mod.__useMemoryStore(); mod.__setRoboReset(0);
+mod.__setOwner({ salt: "ab", hash: crypto.scryptSync("OWNERTEST1234567", "ab", 32).toString("hex") });
+const ORIGIN = "https://eliyaamir5-glitch.github.io";
+const ok = (name, c, x = "") => { console.log(c ? "✅" : "❌", name, x); if (!c) process.exitCode = 1; };
+let n = 0;
+const call = async (path, body, tok) => { const r = await mod.default(new Request("http://localhost" + path, { method: "POST", headers: { "Content-Type": "application/json", origin: ORIGIN, ...(tok ? { authorization: "Bearer " + tok } : {}) }, body: JSON.stringify(body) }), { ip: "7.7." + Math.floor(++n / 200) + "." + (n % 200) }); return r.json(); };
+const dev = i => `device-elect-${String(i).padStart(4, "0")}`;
+const login = await call("/api/owner", { action: "login", code: "OWNERTEST1234567" }); const tok = login.token;
+ok("owner login", !!tok, JSON.stringify(login).slice(0, 80));
+for (let i = 1; i <= 10; i++) await call("/api/feed", { action: "hello", device: dev(i), name: "תלמיד " + i, cls: i % 2 ? "y1" : "y2", ver: "x" });
+let r = await call("/api/feed", { action: "elect", device: dev(1) }); ok("hidden until the owner turns it on", r.ok && r.state === "off" && !r.cands);
+r = await call("/api/owner", { action: "electSet", state: "open" }, tok); ok("can't open without candidates", r.error === "no_cands");
+r = await call("/api/owner", { action: "electSet", title: "בחירות למועצה", cands: [{ name: "אליה עמיר", letters: "א״ע", slogan: "תיקו? כבר לא" }, { name: "מועמד ב", letters: "מב" }, { name: "" }] }, tok); ok("set candidates (empty names dropped)", r.ok);
+r = await call("/api/owner", { action: "electSet", state: "open" }, tok); ok("open the ballot", r.ok);
+const getFeed = async () => (await mod.default(new Request("http://localhost/api/feed", { method: "GET", headers: { origin: ORIGIN } }), { ip: "7.9.9.9" })).json();
+r = await getFeed(); ok("feed says a ballot is open (no details, no counts)", r.el && r.el.s === "open" && !("counts" in r.el) && !("cands" in r.el), JSON.stringify(r.el));
+r = await call("/api/feed", { action: "elect", device: dev(1) }); ok("students see the candidates", r.state === "open" && r.cands.length === 2 && !r.voted && !r.results);
+for (let i = 1; i <= 6; i++) await call("/api/feed", { action: "elect", op: "vote", cid: i <= 4 ? "c0" : "c1", device: dev(i) });
+r = await call("/api/feed", { action: "elect", op: "vote", cid: "c1", device: dev(1) }); ok("one vote per phone", r.error === "already");
+r = await call("/api/feed", { action: "elect", op: "vote", cid: "c0", device: "device-elect-9999" }); ok("unregistered phone can't vote", r.error === "not_registered");
+r = await call("/api/feed", { action: "elect", device: dev(2) }); ok("voted, approximate turnout, no results while open", r.voted && r.turnout === 60 && !r.results, JSON.stringify(r));
+r = await call("/api/owner", { action: "electGet" }, tok); ok("owner sees only turnout while open", r.ok && !r.results && r.votes === 6);
+r = await call("/api/owner", { action: "electSet", cands: [{ name: "x" }] }, tok); ok("can't change candidates after votes", r.error === "has_votes");
+r = await call("/api/owner", { action: "electSet", state: "closed" }, tok); ok("close", r.ok);
+r = await call("/api/feed", { action: "elect", op: "vote", cid: "c0", device: dev(8) }); ok("can't vote after closing", r.error === "closed");
+r = await call("/api/feed", { action: "elect", device: dev(9) }); ok("results after closing (percent only)", r.state === "closed" && r.results[0].id === "c0" && r.results[0].pct === 66.7 && r.results[1].pct === 33.3, JSON.stringify(r.results));
+ok("no device ids anywhere", !JSON.stringify(r).includes("device-elect"));
+r = await call("/api/feed", { action: "elect", op: "vote", cid: "c0", device: dev(1) }); r = await call("/api/owner", { action: "electSet", reset: true }, tok); ok("reset", r.ok);
+r = await call("/api/feed", { action: "elect", device: dev(1) }); ok("after reset: hidden again", r.state === "off");
+r = await getFeed(); ok("feed: no ballot after reset", r.el === null);
+r = await call("/api/feed", { action: "elect", op: "nope", device: dev(1) }); ok("kids can't call owner ops", r.ok && r.state === "off");
+r = await call("/api/owner", { action: "electSet", state: "open" }); ok("electSet needs the owner login", !r.ok);

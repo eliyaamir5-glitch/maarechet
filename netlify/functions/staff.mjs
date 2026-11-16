@@ -969,6 +969,7 @@ async function owner(req, S, ip, headers) {
   if (b.action === "msgDelete") return reply(200, await msgDeleteOp(S, b, ""), headers);
   if (b.action === "holGet") return reply(200, await holOverview(S, now), { ...headers, "Cache-Control": "no-store" });
   if (b.action === "holSet") return reply(200, await holSetOp(S, b), headers);
+  if (["electGet", "electSet"].includes(b.action)) return reply(200, await electOwnerOp(S, b, now), { ...headers, "Cache-Control": "no-store" });
   if (["codeList", "codeCreate", "codeSet", "ownLink", "ownPowers", "ownUnlink", "roboKids", "roboAdm"].includes(b.action)) return reply(200, await roboOwnerOp(S, b, now), { ...headers, "Cache-Control": "no-store" });
   if (b.action !== "overview") return reply(400, { ok: false, error: "bad_action" }, headers);
   return reply(200, await schoolOverview(S, now, true), { ...headers, "Cache-Control": "no-store" });
@@ -978,11 +979,12 @@ async function feed(req, S, ip, headers) {
   if (req.method === "GET") {
     const now = Date.now(), today = israelDay(now);
     await roboSeason(S, now);
-    const [ups, polls, events, qs, bd, rx, chg, ctl, om, hc, rr, rn, hi] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions", "changes", "control", "ownerMsgs", "holCfg", "roboRare", "roboNews", "roboInvHint"].map(k => S.get(k)));
+    const [ups, polls, events, qs, bd, rx, chg, ctl, om, hc, rr, rn, hi, el] = await Promise.all(["updates", "polls", "events", "questions", "birthdays", "reactions", "changes", "control", "ownerMsgs", "holCfg", "roboRare", "roboNews", "roboInvHint", "elect"].map(k => S.get(k)));
     return reply(200, {
       ok: true, now,
       // 🎉 מצב חג: האם מנהל המערכת כיבה (הכל / חג מסוים). התאריכים עצמם מחושבים בטלפון
       hol: holPublic(hc),
+      el: el && ["open", "closed"].includes(el.state) ? { s: el.state, id: el.id || "" } : null, // 🗳️ רק האם יש קלפי – הפרטים בבקשה נפרדת (רק כשיש)
       robo: roboCounts(rr), // 🤖 כמה נשארו מכל אביזר אולטרה אגדי
       roboNews: (Array.isArray(rn) ? rn : []).filter(x => now - x.at < 2 * 864e5).slice(0, 5),
       ti: Object.entries(hi && typeof hi === "object" ? hi : {}).filter(([, t]) => now - t < 10 * 60e3).map(([p]) => p).slice(0, 50), // 🔄 למי מחכה הזמנה לטרייד (מזהה ציבורי בלבד) – כדי שתגיע מהר // 👑 מי זכה באולטרה (שם, כיתה, כמה נשארו)
@@ -1127,6 +1129,23 @@ async function feed(req, S, ip, headers) {
     mates.sort((a, b) => a.localeCompare(b, "he"));
     const bd = await S.get("birthdays"), bdays = Object.values(bd || {}).filter(x => x && x.name && x.md && grade(x.cls) === grade(me.cls)).map(x => ({ name: x.name, cls: x.cls, md: x.md }));
     return reply(200, { ok: true, cls: me.cls, mates, bdays }, headers);
+  }
+  if (action === "elect") { // 🗳️ בחירות למועצה: קול אחד לכל מכשיר. נשמר רק מונה לכל מועמד + שהמכשיר (מוצפן) כבר הצביע – אף פעם לא מי הצביע למי
+    if (!DEV_RE.test(device)) return reply(400, { ok: false, error: "bad_request" }, headers);
+    const k = devKey(device), E = (await S.get("elect")) || {}, st = E.state || "off";
+    if (st === "off") return reply(200, { ok: true, state: "off" }, headers);
+    const pres = (await S.get("presence")) || {}, voted = !!(E.voters || {})[k];
+    if (b.op === "vote") {
+      memRate("elect", ip, 30);
+      if (st !== "open") return reply(200, { ok: false, error: "closed" }, headers);
+      if (!Object.hasOwn(pres, k)) return reply(403, { ok: false, error: "not_registered" }, headers);
+      const cid = String(b.cid || ""); if (!(E.cands || []).some(c => c.id === cid)) return reply(400, { ok: false, error: "bad_request" }, headers);
+      let res = "ok";
+      await S.update("elect", cur => { if (!cur || cur.state !== "open") { res = "closed"; return undefined; } if ((cur.voters || {})[k]) { res = "already"; return undefined; } const o = { ...cur, voters: { ...(cur.voters || {}), [k]: 1 }, counts: { ...(cur.counts || {}) } }; o.counts[cid] = (o.counts[cid] || 0) + 1; return o; });
+      if (res !== "ok") return reply(200, { ok: false, error: res }, headers);
+    }
+    const E2 = b.op === "vote" ? (await S.get("elect")) || E : E;
+    return reply(200, { ok: true, ...electView(E2, pres, k) }, headers);
   }
   if (action === "robo") { // 🤖 אביזר "אולטרה אגדי" יצא בתיבה: כמות מוגבלת לכל הישיבה. נשמר רק מונה + קוד מכשיר מוצפן (בלי שם)
     if (await roboSeason(S, now) && !["me", "link", "day"].includes(b.op)) return reply(200, { ok: false, error: "locked", until: ROBO_RESET_AT }, headers);
@@ -1617,6 +1636,30 @@ async function roboOp(S, b, device, ip, now) {
     out = { ok: true, prize: x.prize, note: x.note || "" }; return o;
   });
   return out;
+}
+// 🗳️ מה רואים: אחוז הצבעה מעוגל (לא כמה בדיוק). התוצאות – רק אחרי שמנהל המערכת סוגר את הקלפי (גם הוא לא רואה לפני)
+function electView(E, pres, k) {
+  const now = Date.now(), active = Object.values(pres || {}).filter(p => p && now - (p.last || 0) < 30 * 864e5).length || 1;
+  const total = Object.values(E.counts || {}).reduce((a, n) => a + n, 0), turnout = Math.min(100, Math.round(total / active * 100 / 5) * 5);
+  const out = { state: E.state || "off", id: E.id || "", title: E.title || "בחירות למועצת התלמידים", cands: (E.cands || []).map(c => ({ id: c.id, name: c.name, letters: c.letters, slogan: c.slogan, color: c.color })), voted: !!(k && (E.voters || {})[k]), turnout, closedAt: E.closedAt || 0 };
+  if (out.state === "closed") out.results = (E.cands || []).map(c => ({ id: c.id, pct: total ? Math.round((E.counts || {})[c.id] / total * 1000) / 10 || 0 : 0 })).sort((a, c) => c.pct - a.pct);
+  return out;
+}
+async function electOwnerOp(S, b, now) {
+  if (b.action === "electGet") { const E = (await S.get("elect")) || {}; return { ok: true, ...electView(E, await S.get("presence"), ""), votes: Object.values(E.counts || {}).reduce((a, n) => a + n, 0) }; }
+  // electSet: כותרת + מועמדים (רק כשהקלפי סגורה ואין קולות), state: off / open / closed, reset: מוחק את כל הקולות
+  const cur = (await S.get("elect")) || {};
+  if (b.reset) { await S.update("elect", c => ({ ...(c || {}), state: "off", counts: {}, voters: {}, closedAt: 0, id: crypto.randomBytes(4).toString("hex") })); await olog(S, "elect", "🗳️ הקולות נמחקו – קלפי חדשה"); return { ok: true }; }
+  const o = { ...cur };
+  if (Array.isArray(b.cands)) {
+    if (Object.keys(cur.counts || {}).length) return { ok: false, error: "has_votes" };
+    o.cands = b.cands.slice(0, 20).map((c, i) => ({ id: "c" + i, name: clean(c && c.name, 30), letters: clean(c && c.letters, 6), slogan: clean(c && c.slogan, 60), color: /^#[0-9a-f]{6}$/i.test(String(c && c.color)) ? c.color : "" })).filter(c => c.name);
+  }
+  if (typeof b.title === "string") o.title = clean(b.title, 60);
+  if (["off", "open", "closed"].includes(b.state)) { if (b.state === "open" && !(o.cands || []).length) return { ok: false, error: "no_cands" }; o.state = b.state; if (b.state === "closed") o.closedAt = now; if (!o.id) o.id = crypto.randomBytes(4).toString("hex"); }
+  await S.update("elect", c => ({ ...(c || {}), title: o.title, cands: o.cands, state: o.state, closedAt: o.closedAt, id: o.id })); // רק השדות של הניהול – הקולות שנספרו באותו רגע לא נדרסים
+  await olog(S, "elect", `🗳️ ${b.state === "open" ? "הקלפי נפתחה" : b.state === "closed" ? "הקלפי נסגרה – התוצאות פורסמו" : b.state === "off" ? "הבחירות הוסתרו" : "המועמדים עודכנו"}`);
+  return { ok: true };
 }
 async function roboOwnerOp(S, b, now) {
   // 🤖 הרובוטים של התלמידים: ברגים, מה יש להם, חסימה – ופעולות שמגיעות לטלפון שלהם (דרך תיבת ההודעות של הרובוט)

@@ -280,6 +280,34 @@ function kidsWire(){
   if($("kQ"))$("kQ").oninput=e=>{KQ=e.target.value.trim();const pos=e.target.selectionStart;draw();const q=$("kQ");if(q){q.focus();try{q.setSelectionRange(pos,pos)}catch(_){}}};
   document.querySelectorAll("[data-kid]").forEach(b=>b.onclick=()=>kidDlg(KIDS.list.find(x=>x.pid===b.dataset.kid)));
 }
+// 🗳️ בחירות למועצה: מועמדים, פתיחה/סגירה של הקלפי. בזמן שהקלפי פתוחה גם כאן רואים רק אחוז הצבעה – לא מי מוביל.
+let EL=null,ELload=false;
+function electCard(){
+  if(!EL){if(!ELload){ELload=true;api({action:"electGet"}).then(r=>{if(r&&r.ok){EL=r;draw()}})}return`<div class="card"><h2>🗳️ בחירות למועצה</h2><div class="sub">טוען…</div></div>`}
+  const st=EL.state,has=EL.votes>0,C=(EL.cands||[]).length?EL.cands:[{},{}];
+  const stTxt=st==="open"?"🟢 הקלפי פתוחה":st==="closed"?"📊 נסגרה – התוצאות מוצגות לתלמידים":"⚪ מוסתר (התלמידים לא רואים)";
+  return`<div class="card"><h2>🗳️ בחירות למועצה</h2><p class="hint">כל טלפון מצביע פעם אחת. ההצבעה סודית: השרת שומר רק כמה קולות לכל מועמד, לא מי הצביע למי. התוצאות מופיעות (גם כאן) רק אחרי שסוגרים את הקלפי.</p>
+    <div class="msg1"><b>${stTxt}</b> · אחוז הצבעה: בערך ${EL.turnout}% · ${EL.votes} קולות</div>
+    <div class="row" style="margin-top:8px"><input id="elT" placeholder="כותרת" value="${esc(EL.title||"")}"></div>
+    <b style="display:block;margin-top:10px">המועמדים ${has?'<span class="sub">(אי אפשר לשנות אחרי שיש קולות – רק "קלפי חדשה")</span>':""}</b>
+    <div id="elC">${C.map((c,i)=>`<div class="row" data-elr style="margin-top:6px"><input data-f="name" placeholder="שם מלא" value="${esc(c.name||"")}" ${has?"disabled":""}><input data-f="letters" placeholder="אותיות (למשל א״ע)" value="${esc(c.letters||"")}" style="max-width:120px" ${has?"disabled":""}><input data-f="slogan" placeholder="סיסמה (לא חובה)" value="${esc(c.slogan||"")}" ${has?"disabled":""}>${has?"":`<button class="b2 ghost sm" data-elrm="${i}" title="להסיר">✕</button>`}</div>`).join("")}</div>
+    ${has?"":`<div class="row" style="margin-top:6px"><button class="b2 ghost sm" id="elAdd">➕ עוד מועמד</button><button class="b2 sm" id="elSave">💾 לשמור</button></div>`}
+    ${st==="closed"&&EL.results?`<div class="bars" style="margin-top:10px">${EL.results.map(r=>{const c=(EL.cands||[]).find(x=>x.id===r.id)||{};return`<div class="r"><span>${esc(c.name||"")}</span><div class="t"><i style="width:${r.pct}%"></i></div><span class="n">${r.pct}%</span></div>`}).join("")}</div>`:""}
+    <div class="row" style="margin-top:12px">${st!=="open"?`<button class="b2" id="elOpen">🟢 לפתוח את הקלפי</button>`:`<button class="b2" id="elClose">🔒 לסגור ולפרסם תוצאות</button>`}${st!=="off"?`<button class="b2 ghost" id="elOff">🙈 להסתיר</button>`:""}<button class="b2 ghost red" id="elReset">🗑️ קלפי חדשה (מוחק קולות)</button></div></div>`;
+}
+function electWire(){
+  if(!$("elT"))return;
+  const rows=()=>[...document.querySelectorAll("[data-elr]")].map(r=>{const o={};r.querySelectorAll("[data-f]").forEach(i=>o[i.dataset.f]=i.value.trim());return o});
+  const go=async(body,btn)=>{if(btn)btn.disabled=true;const r=await api({action:"electSet",...body});if(!r||!r.ok){if(btn)btn.disabled=false;alert(r&&r.error==="has_votes"?"כבר יש קולות – אי אפשר לשנות מועמדים":r&&r.error==="no_cands"?"קודם תכתוב מועמדים ותשמור":ERR[r&&r.error]||"לא הצלחנו.");return false}const j=await api({action:"electGet"});if(j&&j.ok)EL=j;draw();return true};
+  const save=()=>EL.votes>0?{title:$("elT").value.trim()}:{title:$("elT").value.trim(),cands:rows().filter(c=>c.name)};
+  if($("elAdd"))$("elAdd").onclick=()=>{EL.cands=[...rows(),{}];EL.title=$("elT").value;draw()};
+  document.querySelectorAll("[data-elrm]").forEach(b=>b.onclick=()=>{const r=rows();r.splice(+b.dataset.elrm,1);EL.cands=r;EL.title=$("elT").value;draw()});
+  if($("elSave"))$("elSave").onclick=e=>go(save(),e.target);
+  if($("elOpen"))$("elOpen").onclick=e=>{if(confirm("לפתוח את הקלפי? כל התלמידים יראו כרטיס \"הקלפי פתוחה\" בדף הבית."))go({...save(),state:"open"},e.target)};
+  if($("elClose"))$("elClose").onclick=e=>{if(confirm("לסגור את הקלפי ולפרסם את התוצאות לכל התלמידים? אחרי זה אי אפשר להצביע."))go({state:"closed"},e.target)};
+  if($("elOff"))$("elOff").onclick=e=>go({state:"off"},e.target);
+  if($("elReset"))$("elReset").onclick=e=>{if(confirm("למחוק את כל הקולות ולהתחיל קלפי חדשה? (אי אפשר לבטל)"))go({reset:true},e.target)};
+}
 function codesWire(){
   if(!CODES)return;const L=CODES.list||[],byRaw=r=>L.find(c=>c.raw===r);
   const go=async(body,btn)=>{if(btn)btn.disabled=true;const r=await api(body);if(!r.ok){if(btn)btn.disabled=false;alert(ERR[r.error]||(r.error==="exists"?"הקוד הזה כבר קיים":"לא הצלחנו."));return null}return r};
@@ -385,6 +413,7 @@ function draw(){
     </div>
   </div>
   ${ownCard()}
+  ${electCard()}
   ${kidsCard()}
   ${codesCard()}
   ${holCard()}
@@ -433,7 +462,7 @@ function draw(){
   $("selClr").onclick=()=>{sel.clear();drawRows()};
   $("selMsg").onclick=()=>{$("oTo").value="some";$("oText").focus();$("oText").scrollIntoView({behavior:"smooth",block:"center"})};
   $("selSus").onclick=()=>susDialog(chosen());
-  holWire();codesWire();kidsWire();
+  holWire();codesWire();kidsWire();electWire();
   // מצב עדכון
   if($("mGo"))$("mGo").onclick=async()=>{const min=$("mMin").value;if(!confirm(`להפעיל מצב עדכון לכל התלמידים ${min?"ל-"+$("mMin").selectedOptions[0].textContent:"עד שתעצור"}?`))return;
     $("mGo").disabled=true;const r=await api({action:"maint",on:true,minutes:min?+min:null,msg:$("mMsg").value.trim()});if(!r.ok){$("mGo").disabled=false;alert(ERR[r.error]||"לא הצלחנו.");return}load()};
