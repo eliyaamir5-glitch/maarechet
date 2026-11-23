@@ -57,5 +57,8 @@ In source only hashes: `OWNER` (salt+scrypt) and legacy `PHONE_HASH`/`INVITE_HAS
 - Other pages: `cards.html` (flashcards), `calc.html` (+`calc-engine.js`), `phones.html`, `shichrur.html` (exit permit; parent signs), `parent.html`, `absences.html`, `about.html` (privacy text must match what's collected), `demo.html` + `demo-shim.js` (fake server for demos).
 - Local preview with a fake server and 46 sample students: `npm run dev` → http://localhost:8790 (owner code there: `DEV0-DEV0-DEV0-DEV0`). Listens on localhost only – stop it when done.
 
+## Home page priority (his decision 23.11.2026: "שיהיה מערכת ולא רק משחק")
+The timetable comes first. Phone order (CSS `order` in index.html): maintBar, owner messages, absence alert, **hero (now/next)**, exam card + today's board, staff updates, **lessons**, then everything else (push, recaps, election, holiday card, extras/birthday, streak pill, zmanim, Q&A…). The robot is only a quiet row at the very bottom (`#roboDayCard`, order 30) + the header button "🤖 הרובוט שלי". No automatic daily robot popup: the visit is counted silently (`tick` in robo.js does `R.checkIn` + `S.dpend`), the gift waits until the kid taps the row; a broken streak is also handled only on tap. Don't put new game/robot cards above the lessons.
+
 ## Privacy rules
 Presence sends name, class, groups, device type, version, last seen. Never collect grades, absences, passwords, IP/location, who asked an anonymous question, or poll votes. The assistant's AI questions go to Google Gemini without name/class – keep it that way (counts only on the server, no content). Keep `about.html` in sync with any change.

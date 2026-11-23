@@ -16,8 +16,12 @@ await p.evaluateOnNewDocument(() => { if (sessionStorage.getItem("s")) return; s
 await p.setRequestInterception(true); p.on("request", q => /^http:\/\/localhost:8797/.test(q.url()) ? q.continue() : q.abort());
 await p.goto("http://localhost:8797/index.html", { waitUntil: "domcontentloaded" });
 await p.evaluate(() => document.querySelectorAll(".upd-pop").forEach(x => x.remove()));
-let day = false; for (let i = 0; i < 20 && !day; i++) { await sleep(600); day = await p.evaluate(() => !!document.querySelector("#roboDay[open] #rdGo")); }
-log(day, "first open of the day: streak popup with a gift");
+// 23.11: אין חלון קופץ – הכניסה נספרת בשקט והמתנה מחכה בשורה הקטנה של הרובוט (למטה בדף הבית); לוחצים → חלון המתנה
+let card = false; for (let i = 0; i < 20 && !card; i++) { await sleep(600); card = await p.evaluate(() => !!document.querySelector("#roboDayCard .rdc-go")); }
+log(card && !(await p.evaluate(() => !!document.querySelector("#roboDay[open]"))), "first open of the day: no popup, the gift waits in the robot row");
+await p.evaluate(() => document.querySelector("#roboDayCard").click());
+let day = false; for (let i = 0; i < 10 && !day; i++) { await sleep(400); day = await p.evaluate(() => !!document.querySelector("#roboDay[open] #rdGo")); }
+log(day, "tap the robot row: streak popup with a gift");
 log(await p.evaluate(() => /יום 1/.test(document.getElementById("roboDay").innerText)), "streak = 1");
 await p.click("#rdGo"); await sleep(900);
 log(await p.evaluate(() => !!document.querySelector("#roboOpen[open] .ro-chest")), "gift box opens (tap the box)");

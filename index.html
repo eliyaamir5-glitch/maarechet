@@ -91,15 +91,17 @@ main{padding:16px 14px 40px;max-width:560px;margin:0 auto;display:flex;flex-dire
 #hero.noanim *{animation:none!important;transition:none!important}
 /* בטלפון: עמודה אחת, באותו סדר כמו תמיד */
 .col-main,.col-side{display:contents}
-#maintBar{order:0}#ownBox{order:1}#updates{order:1}
-body.maint #hero{order:2}body.maint #content{order:3}body.maint :is(#updates,#extras,#board,#zmanim,#qaBox){order:20}#fxBox{order:2}#recapBox{order:2}#gradeBox{order:2}#pushBox{order:6}#tefLine.early{order:5;margin:0 0 12px}#extras{order:2}#streakPill{order:3}#absAlert{order:4}#board{order:5}#hero{order:6}#content{order:7}#zmanim{order:8}#qaBox{order:9}#imgBtn{order:10}#tefLine{order:11}main>.foot{order:12}
+/* 📋 סדר דף הבית (23.11, בקשת אליה): קודם המערכת – עכשיו/הבא, המבחן הקרוב, השיעורים – ורק אחר כך כל השאר. הרובוט שורה קטנה בסוף */
+#maintBar{order:0}#ownBox{order:1}#absAlert{order:2}#hero{order:3}#tefLine.early{order:4;margin:0 0 12px}#examCard{order:5}#board{order:5}#updates{order:6}#content{order:7}
+#pushBox{order:8}#recapBox{order:9}#fxBox{order:9}#gradeBox{order:9}#electCard{order:10!important}#holCard{order:11}#extras{order:12}#streakPill{order:13}#zmanim{order:14}#qaBox{order:15}#imgBtn{order:16}#tefLine{order:17}#roboDayCard{order:30!important}main>.foot{order:40}
+body.maint #hero{order:2}body.maint #content{order:3}body.maint :is(#updates,#extras,#board,#zmanim,#qaBox){order:20}
 /* 💻 מחשב: הכל נפרס – המערכת מימין, עדכונים וזמנים משמאל */
 @media (min-width:1000px){
   .top{padding-left:32px;padding-right:32px}
   .top>*{max-width:1240px;margin-left:auto;margin-right:auto}
   .actions{grid-template-columns:repeat(7,minmax(0,1fr))}.actions>:last-child:nth-child(odd){grid-column:auto}
   main{max-width:1240px;padding:24px 32px 48px;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:24px;align-items:start}
-  .col-main,.col-side{display:block;min-width:0}
+  .col-main,.col-side{display:block;min-width:0}.col-main{display:flex;flex-direction:column}
   .col-side{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto;scrollbar-width:thin}
   #imgBtn,main>.foot{grid-column:1/-1}
   #imgBtn{max-width:520px;justify-self:center;width:100%}
