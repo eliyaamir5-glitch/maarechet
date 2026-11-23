@@ -128,8 +128,8 @@ ok("fire tiers", A.tierOf(0).cls === "ash" && A.tierOf(3).cls === "small" && A.t
 const weekOf = p => [0, 1, 2, 3, 4].map(i => A.lessonsOfDay(D.DAYS_Y1, i, p, D));
 const sunEng = p => weekOf(p)[0].filter(l => l.n === "אנגלית").length;
 ok("Sunday 17:15 English only for Minervi/Hadad, not Bokobza", sunEng({ ...profile, eng: "hadad" }) === 2 && sunEng({ ...profile, eng: "minervi" }) === 2 && sunEng({ ...profile, eng: "bokobza" }) === 1);
-const tue18 = p => weekOf(p)[2].find(l => l.s === "18:00").n;
-ok("Tuesday 18:00 (י'1): CS major → מדעי המחשב, others → חנ\"ג", tue18({ ...profile, major: "cs" }) === "מדעי המחשב" && tue18({ ...profile, major: "phys" }) === "חינוך גופני" && tue18({ ...profile, major: "econ" }) === "חינוך גופני");
+const tue18 = p => (weekOf(p)[2].find(l => l.s === "18:00") || {}).n;
+ok("Tuesday 18:00 (י'1): only the CS major has a lesson (מדעי המחשב)", tue18({ ...profile, major: "cs" }) === "מדעי המחשב" && !tue18({ ...profile, major: "phys" }) && !tue18({ ...profile, major: "econ" }));
 const thuMincha = p => weekOf(p)[4].some(l => l.s === "13:30");
 ok("Thursday mincha: econ prays, phys/cs leave (exit not counted as a subject)", thuMincha({ ...profile, major: "econ" }) && !thuMincha({ ...profile, major: "phys" }) && !thuMincha({ ...profile, major: "cs" }));
 ok("forProfile: no group chosen yet → still sees the lesson", D.forProfile({ s: "17:15", e: "18:00", n: "אנגלית", key: "eng", only: { eng: ["hadad"] } }, {}) !== null);
