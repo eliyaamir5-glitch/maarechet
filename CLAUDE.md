@@ -9,6 +9,7 @@ He works from several computers and from the cloud – this file is the shared m
 - For a new feature with open choices: ask 2–4 short questions (with a recommended option), then build.
 - After work: a short Hebrew summary – what changed, what he needs to do, and what was NOT done.
 - Mark estimates as estimates (prices, numbers you didn't verify).
+- **Timetable updates (his standing rule, 23.11.2026):** from time to time he sends the school timetable (Shahaf link / file / picture). Compare it with `data.js` and update right away **without asking questions** – take only what is written there (lessons: subject, teacher, hours, groups). Keep prayers/meals/dorm/evening as they are (not in Shahaf). Then the usual tests → push → short Hebrew summary of exactly what changed.
 - He decided **not** to integrate with the dorm app (pnimiya), **not** to pay for Azure, and **not** to build real student accounts (email/SMS). Don't re-propose unless he raises it.
 
 ## Start of every session
