@@ -47,6 +47,32 @@ header .clock{font-size:34px;font-weight:900;font-variant-numeric:tabular-nums;l
 .board.abs-orange{border-color:#ffb03f;background:linear-gradient(90deg,rgba(255,176,63,.18),transparent)}
 .board.test{border-color:var(--now);background:linear-gradient(90deg,rgba(255,210,63,.18),transparent)}
 .bl{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px;line-height:1.45}
+/* 📝 המבחן הבא */
+#examCard{display:flex;align-items:center;gap:12px;border-radius:18px;padding:12px 14px;margin-bottom:12px;cursor:pointer;border:1.5px solid var(--line);background:var(--card);position:relative;overflow:hidden}
+#examCard .ex-n{flex:0 0 auto;width:62px;height:62px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--chip,rgba(124,140,255,.16));line-height:1}
+#examCard .ex-n b{font-size:28px;font-weight:900;font-variant-numeric:tabular-nums}#examCard .ex-n small{font-size:11px;margin-top:3px;opacity:.8}
+#examCard .ex-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}#examCard .ex-t b{font-size:16px}#examCard .ex-t span{font-size:13px;color:var(--muted)}
+#examCard .ex-more{font-size:12px;color:var(--muted);margin-top:2px}#examCard .ex-go{font-size:20px;opacity:.6}
+#examCard.soon{border-color:#ff9f43;background:linear-gradient(100deg,rgba(255,159,67,.2),var(--card) 70%)}#examCard.soon .ex-n{background:#ff9f43;color:#2a1500}
+#examCard.tmrw,#examCard.today{border-color:#ff5d6c;background:linear-gradient(100deg,rgba(255,93,108,.25),var(--card) 75%)}#examCard.tmrw .ex-n,#examCard.today .ex-n{background:#ff5d6c;color:#fff}
+#examCard.today .ex-n{animation:exBeat 1.4s ease-in-out infinite}@keyframes exBeat{50%{transform:scale(1.07)}}
+.ex-tag{display:inline-block;margin-inline-start:6px;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:99px;background:rgba(255,93,108,.16);color:#e0384a;vertical-align:middle;white-space:nowrap}
+@media (prefers-color-scheme:dark){.ex-tag{color:#ff8a95}}
+/* 📅 לוח חודשי */
+.cal-dlg{width:min(96vw,520px)}
+.cal-tabs{display:flex;gap:6px;margin:6px 0 10px}.cal-tabs button{flex:1;border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:12px;padding:8px;font:inherit;font-weight:700;cursor:pointer}.cal-tabs button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}.cal-nav b{font-size:16px}.cal-nav button{border:0;background:var(--line);color:var(--ink);border-radius:10px;width:36px;height:34px;font-size:18px;cursor:pointer}.cal-nav button:disabled{opacity:.3}
+.cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.cal-h{font-size:11px;text-align:center;color:var(--muted);font-weight:700;padding:2px 0}
+.cal-c{min-height:54px;border-radius:9px;padding:3px;background:rgba(127,127,160,.07);border:1.5px solid transparent;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0;font:inherit;color:inherit;text-align:start}
+.cal-c.out{visibility:hidden}.cal-c.sat{background:rgba(255,200,80,.1)}.cal-c.vac{background:rgba(61,220,151,.14)}.cal-c.past{opacity:.45}
+.cal-c.td{border-color:var(--accent)}.cal-c.sel{border-color:var(--ink)}
+.cal-c .d{font-size:12px;font-weight:800}.cal-c .ch{display:block;font-size:10px;font-weight:700;line-height:1.2;border-radius:4px;padding:1px 2px;overflow:hidden;white-space:nowrap;text-overflow:clip;color:#fff;letter-spacing:-.2px;text-align:center}
+.k-test{background:#e5394b}.k-work{background:#3b6fd8}.k-day{background:#7c4dcc}.k-parents{background:#d6458f}.k-hol{background:#1f9d63}.k-admin{background:#0f8f8f}.k-trip{background:#c98a00}.k-vac{background:#1f9d63}.k-notice{background:#5b6475}
+.cal-leg{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11.5px;color:var(--muted);margin:8px 0 2px}.cal-leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-inline-end:4px;vertical-align:-1px}
+.cal-day{margin-top:10px;border-top:1px solid var(--line);padding-top:8px;min-height:44px}.cal-day h4{margin:0 0 6px;font-size:14px}.cal-day .it{display:flex;gap:8px;align-items:center;font-size:14px;padding:3px 0}.cal-day .it i{width:10px;height:10px;border-radius:3px;flex:0 0 auto}.cal-day .it small{color:var(--muted)}
+#boardList{max-height:58vh;overflow:auto}.cal-foot{font-size:12px;color:var(--muted);margin:8px 0 0}
+@media (max-width:380px){.cal-c{min-height:46px}.cal-c .ch{font-size:8.5px}}
 .bl .bd{min-width:64px;font-weight:700;color:var(--accent);font-size:13px;padding-top:2px}.bl .bx{color:var(--muted);font-size:13px}
 .gear-tmrw{margin-top:12px;padding-top:12px;border-top:1.5px dashed var(--line);font-size:15px}
 #calBtn,#relBtn,#cardsBtn,#absBtn,#calcBtn,#roboBtn,#phonesBtn{min-width:0;overflow:hidden;text-overflow:ellipsis;text-decoration:none;text-align:center;white-space:nowrap;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px)}
@@ -583,6 +609,7 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
   <div class="col-main">
   <div id="streakPill" hidden role="button" tabindex="0"></div>
   <div id="absAlert" hidden role="button" tabindex="0"></div>
+  <div id="examCard" hidden role="button" tabindex="0"></div>
   <div id="maintBar" role="status" aria-live="polite"></div>
   <div id="hero"></div>
   <div id="content"></div>
@@ -658,11 +685,13 @@ dialog button{border:none;border-radius:12px;padding:11px 16px;font:inherit;font
     </div>
   </form>
 </dialog>
-<dialog id="boardDlg">
+<dialog id="boardDlg" class="cal-dlg">
   <form method="dialog">
-    <h3>📌 לוח הכיתה</h3>
-    <p>מבחנים והודעות. הכל נכנס גם ליומן בטלפון.</p>
-    <div id="boardList" style="max-height:60vh;overflow:auto"></div>
+    <h3>📅 לוח השכבה</h3>
+    <div class="cal-tabs" role="tablist"><button type="button" data-ct="month" role="tab">🗓️ חודש</button><button type="button" data-ct="list" role="tab">📝 מבחנים</button></div>
+    <div id="calMonth"></div>
+    <div id="boardList" hidden></div>
+    <p class="cal-foot">הכל נכנס גם ליומן בטלפון (בפרופיל ← יומן).</p>
     <div class="btns"><button class="ghost" value="cancel">סגור</button></div>
   </form>
 </dialog>
@@ -911,12 +940,12 @@ function render(animate){
     nxt=L.findIndex(l=>!isCancel(l)&&l.sm>nowMin);
   }
   // hero: now + next in one card
-  const nextBlock=l=>l?`<div class="nxt"><div class="lbl">השיעור הבא · מתחיל בעוד ${dur(l.sm-nowMin)}</div><div class="nb">${l.n}${l.part>1?"":stkTag(l.n)}${partTag(l)}</div>${mustTag(l.n)}<div class="sub">${l.w?l.w+" · ":""}${l.s}–${l.e} · ${dur(l.em-l.sm)}</div>${l.joke||l.part>1?"":gearBlock(l.n)}</div>`:"";
+  const nextBlock=l=>l?`<div class="nxt"><div class="lbl">השיעור הבא · מתחיל בעוד ${dur(l.sm-nowMin)}</div><div class="nb">${l.n}${l.part>1?"":stkTag(l.n)}${partTag(l)}</div>${examTag(l.n,isoToday())}${mustTag(l.n)}<div class="sub">${l.w?l.w+" · ":""}${l.s}–${l.e} · ${dur(l.em-l.sm)}</div>${l.joke||l.part>1?"":gearBlock(l.n)}</div>`:"";
   if(sel===today){
     const nl=nxt>=0?L[nxt]:null;
     if(cur>=0){
       const l=L[cur];
-      hero.innerHTML=`<div class="hero"><div class="lbl">עכשיו</div><div class="big">${l.n}${stkTag(l.n)}${partTag(l)}</div>${mustTag(l.n)}<div class="sub">${l.w?l.w+" · ":""}${l.s}–${l.e} · ${dur(l.em-l.sm)}</div><div class="left">נשארו ${dur(l.em-nowMin)}</div><div class="bar"><i style="width:${Math.round(100*(nowMin-l.sm)/(l.em-l.sm))}%"></i></div>${l.joke?"":gearBlock(l.n)}${nextBlock(nl)}</div>`;
+      hero.innerHTML=`<div class="hero"><div class="lbl">עכשיו</div><div class="big">${l.n}${stkTag(l.n)}${partTag(l)}</div>${examTag(l.n,isoToday())}${mustTag(l.n)}<div class="sub">${l.w?l.w+" · ":""}${l.s}–${l.e} · ${dur(l.em-l.sm)}</div><div class="left">נשארו ${dur(l.em-nowMin)}</div><div class="bar"><i style="width:${Math.round(100*(nowMin-l.sm)/(l.em-l.sm))}%"></i></div>${l.joke?"":gearBlock(l.n)}${nextBlock(nl)}</div>`;
     }else if(nl){
       // "עוד לא התחלנו" גם כשהשיעור הראשון בוטל (אין עדיין שיעור שהתקיים)
       const first=!L.some((l,i)=>i<nxt&&!isCancel(l));
@@ -943,7 +972,7 @@ function render(animate){
     if(i>0){const g=l.sm-L[i-1].em;if(g>=10)html+=`<div class="gap">☕ הפסקה ${dur(g)} <span>${fmt(L[i-1].em)}–${fmt(l.sm)}</span></div>`}
     const cls=sel===today?(i===cur?"now":i===nxt?"next":l.em<=nowMin?"done":""):"";
     const gl=l.joke||l.part>1?[]:gearList(l.n);
-    html+=`<div class="row ${cls} ${l.joke?"joke":""} ${isCancel(l)?"cancel":""} ${mustOf(l.n)==="must"&&!cls.includes("done")&&!isCancel(l)?"must-row":""}" style="--c:hsl(${hue(l.n)} 70% 60%)"><div class="bar-c"></div><div class="t"><b>${l.s}</b>${l.e}<span class="dur">${durPill(l.em-l.sm)}</span></div><div><div class="n">${l.n}${l.joke||l.part>1?"":stkTag(l.n)}${partTag(l)}${chgTag(l)}</div>${l.w?`<div class="who">${l.w}</div>`:""}${chgNote(l)}${isCancel(l)?"":mustTag(l.n)}${l.joke||l.part>1||isCancel(l)?"":`<div class="g">${gl.map(x=>`<span class="chip">${escH(x)}</span>`).join("")}<button class="edit" data-n="${l.n.replace(/"/g,"&quot;")}">${gl.length?"ערוך ציוד":"+ ציוד"}</button></div>`}</div></div>`;
+    html+=`<div class="row ${cls} ${l.joke?"joke":""} ${isCancel(l)?"cancel":""} ${mustOf(l.n)==="must"&&!cls.includes("done")&&!isCancel(l)?"must-row":""}" style="--c:hsl(${hue(l.n)} 70% 60%)"><div class="bar-c"></div><div class="t"><b>${l.s}</b>${l.e}<span class="dur">${durPill(l.em-l.sm)}</span></div><div><div class="n">${l.n}${l.joke||l.part>1?"":stkTag(l.n)}${partTag(l)}${chgTag(l)}${l.joke||isCancel(l)?"":examTag(l.n,dateOfTab(sel))}</div>${l.w?`<div class="who">${l.w}</div>`:""}${chgNote(l)}${isCancel(l)?"":mustTag(l.n)}${l.joke||l.part>1||isCancel(l)?"":`<div class="g">${gl.map(x=>`<span class="chip">${escH(x)}</span>`).join("")}<button class="edit" data-n="${l.n.replace(/"/g,"&quot;")}">${gl.length?"ערוך ציוד":"+ ציוד"}</button></div>`}</div></div>`;
   });
   if(past&&past===L.length)html+=`</details>`;
   html+='</div>';
@@ -972,20 +1001,93 @@ const whenTxt=n=>n===0?"היום":n===1?"מחר":n<0?"עבר":`עוד ${n} ימ�
 const fmtD=iso=>{const[y,m,d]=iso.split("-");return `${+d}.${+m}`};
 function boardItems(){
   const cls=(profile&&profile.cls)||"y2",t=isoToday();
-  return (typeof BOARD==="undefined"?[]:BOARD).filter(b=>(b.cls==="all"||b.cls===cls)&&b.date&&(b.type==="test"?b.date>=t:(b.date<=t&&(b.until||b.date)>=t)||b.date>t))
+  return (typeof BOARD==="undefined"?[]:BOARD).filter(b=>boardFor(b,cls)&&b.date&&(b.type==="test"?b.date>=t:(b.date<=t&&(b.until||b.date)>=t)||b.date>t))
     .sort((a,b)=>a.date<b.date?-1:1);
 }
+const myBoard=()=>(typeof BOARD==="undefined"?[]:BOARD).filter(b=>b.date&&boardFor(b,(profile&&profile.cls)||"y2"));
+const DAYN=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+const dayOfIso=iso=>new Date(iso+"T12:00:00").getDay();
+const evTxt=b=>escH(b.title)+(b.time?` <small>${escH(b.time)}</small>`:"");
+// 📝 מבחן קרוב ליד השיעור עצמו (עד שבוע לפני)
+function examTag(n,iso){
+  if(!iso)return "";const tx=myBoard().filter(b=>b.type==="test"&&b.m&&b.date>=iso);
+  for(const b of tx){let re;try{re=new RegExp(b.m)}catch(e){continue}if(!re.test(n))continue;
+    const k=Math.round((new Date(b.date+"T12:00:00")-new Date(iso+"T12:00:00"))/864e5);if(k>7)continue;
+    return `<span class="ex-tag">📝 ${k===0?"היום המבחן!":k===1&&iso===isoToday()?"מבחן מחר":"מבחן ביום "+DAYN[dayOfIso(b.date)]+" "+fmtD(b.date)}</span>`}
+  return "";
+}
+function renderExamCard(){
+  const el=document.getElementById("examCard");if(!el)return;const t=isoToday();
+  const T=myBoard().filter(b=>b.type==="test"&&b.date>=t).sort((a,b)=>a.date<b.date?-1:1);
+  const x=T[0],n=x?daysUntil(x.date):99;
+  if(!x||n>30){el.hidden=true;return}
+  const late=new Date().getHours()>=15;// אחרי הלימודים ביום המבחן – כבר עבר
+  if(n===0&&late&&T[1]&&daysUntil(T[1].date)<=30)return renderExamFrom(el,T.slice(1));
+  renderExamFrom(el,T);
+}
+function renderExamFrom(el,T){
+  const x=T[0],n=daysUntil(x.date),wk=T.slice(1).filter(b=>daysUntil(b.date)<=7);
+  el.hidden=false;el.className=n===0?"today":n===1?"tmrw":n<=3?"soon":"";
+  const big=n===0?"היום":n===1?"מחר":n,lbl=n<=1?"":"ימים";
+  const sub=n===0?"בהצלחה! 💪 אתה מוכן":n===1?`מחר, יום ${DAYN[dayOfIso(x.date)]} · עוד ערב אחד לחזור 💪`:`יום ${DAYN[dayOfIso(x.date)]} ${fmtD(x.date)}${x.detail?" · "+escH(x.detail):""}`;
+  el.innerHTML=`<span class="ex-n"><b${n<=1?' style="font-size:18px"':""}>${big}</b>${lbl?`<small>${lbl}</small>`:""}</span><span class="ex-t"><b>📝 ${escH(x.title)}</b><span>${sub}</span>${wk.length?`<span class="ex-more">ועוד השבוע: ${wk.map(b=>escH(b.title.replace(/^מבחן /,""))+" ("+DAYN[dayOfIso(b.date)]+")").join(", ")}</span>`:T[1]?`<span class="ex-more">הבא אחריו: ${escH(T[1].title.replace(/^מבחן /,""))} · ${fmtD(T[1].date)}</span>`:""}</span><span class="ex-go">📅</span>`;
+  el.onclick=()=>openCal("month");
+}
 function renderBoard(){
-  const el=document.getElementById("board");const items=boardItems();
-  if(!items.length){el.hidden=true;return}
-  const live=items.filter(b=>b.type==="notice"&&b.date<=isoToday());
-  const top=live[0]||items[0];const n=daysUntil(top.date);
-  el.className="board "+top.type;el.hidden=false;
-  el.innerHTML=`<span class="bi">${top.type==="test"?"📝":"📌"}</span><span class="bt"><b>${escH(top.title)}</b></span><span class="bc">${top.type==="test"?whenTxt(n)+" · "+fmtD(top.date):(items.length>1?"ועוד "+(items.length-1):"")}</span>`;
-  el.onclick=()=>{
-    document.getElementById("boardList").innerHTML=items.map(b=>`<div class="bl"><div class="bd">${b.type==="test"?whenTxt(daysUntil(b.date))+"<br>"+fmtD(b.date):(b.date<=isoToday()?"עכשיו":whenTxt(daysUntil(b.date))+"<br>"+fmtD(b.date))}</div><div><div>${b.type==="test"?"📝 ":"📌 "}<b>${escH(b.title)}</b></div>${b.detail?`<div class="bx">${escH(b.detail)}</div>`:""}</div></div>`).join("");
-    document.getElementById("boardDlg").showModal();
-  };
+  renderExamCard();
+  const el=document.getElementById("board");const t=isoToday();
+  // היום: הודעות ואירועים (מבחנים מוצגים בכרטיס "המבחן הבא")
+  const live=myBoard().filter(b=>b.type!=="test"&&b.date<=t&&(b.until||b.date)>=t);
+  if(!live.length){el.hidden=true;return}
+  const top=live[0];el.className="board "+top.type;el.hidden=false;
+  el.innerHTML=`<span class="bi">📌</span><span class="bt"><b>${top.type==="event"?"היום: ":""}${escH(top.title)}</b>${top.time?" · "+escH(top.time):""}</span><span class="bc">${live.length>1?"ועוד "+(live.length-1):""}</span>`;
+  el.onclick=()=>openCal("month");
+}
+// 📅 לוח השכבה: חודש (צבעים לפי סוג) + רשימת מבחנים
+const CAL_K={test:"מבחנים",day:"ימים מיוחדים",work:"סדנאות",parents:"הורים",hol:"חגים וצומות",admin:"מנהלה",trip:"שבתות וטיולים",vac:"חופשה"};
+let calYM=null,calSel=null;
+function calItems(iso){
+  const out=myBoard().filter(b=>b.date<=iso&&(b.type==="event"&&b.until||b.type==="notice"&&b.until||b.date)>=iso&&(b.type!=="notice"||b.date===iso)).map(b=>({...b,kk:b.type==="test"?"test":b.type==="notice"?"notice":(b.k||"day")}));
+  try{const v=vacationOf(new Date(iso+"T12:00:00"));if(v&&v.title&&/^חופשה/.test(v.title))out.push({title:v.title,kk:"vac"})}catch(e){}
+  return out.sort((a,b)=>(a.kk==="test"?0:1)-(b.kk==="test"?0:1));
+}
+function openCal(tab){
+  const d=new Date();if(!calYM)calYM=[d.getFullYear(),d.getMonth()];calSel=isoToday();
+  calTab(tab||"month");const dl=document.getElementById("boardDlg");if(!dl.open)dl.showModal();
+}
+function calTab(tab){
+  document.querySelectorAll("#boardDlg [data-ct]").forEach(b=>{b.classList.toggle("on",b.dataset.ct===tab);b.setAttribute("aria-selected",b.dataset.ct===tab);b.onclick=()=>calTab(b.dataset.ct)});
+  document.getElementById("calMonth").hidden=tab!=="month";document.getElementById("boardList").hidden=tab!=="list";
+  if(tab==="month")drawCal();else drawCalList();
+}
+function drawCalList(){
+  const t=isoToday(),T=myBoard().filter(b=>b.type==="test"&&b.date>=t).sort((a,b)=>a.date<b.date?-1:1);
+  document.getElementById("boardList").innerHTML=T.length?T.map(b=>{const n=daysUntil(b.date);return `<div class="bl"><div class="bd">${whenTxt(n)}<br>${fmtD(b.date)}</div><div><div>📝 <b>${escH(b.title)}</b></div><div class="bx">יום ${DAYN[dayOfIso(b.date)]}${b.detail?" · "+escH(b.detail):""}</div></div></div>`}).join(""):`<p class="xsub">אין מבחנים קרובים 🎉</p>`;
+}
+function drawCal(){
+  const [y,m]=calYM,first=new Date(y,m,1),days=new Date(y,m+1,0).getDate(),t=isoToday();
+  const all=myBoard(),minD=all.reduce((a,b)=>!a||b.date<a?b.date:a,""),maxD=all.reduce((a,b)=>(b.until||b.date)>a?(b.until||b.date):a,"");
+  const ym=(Y,M)=>`${Y}-${pad(M+1)}`,canPrev=minD&&ym(y,m)>minD.slice(0,7),canNext=maxD&&ym(y,m)<maxD.slice(0,7);
+  const MN=["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
+  let h=`<div class="cal-nav"><button type="button" id="calPrev" aria-label="חודש קודם" ${canPrev?"":"disabled"}>›</button><b>${MN[m]} ${y}</b><button type="button" id="calNext" aria-label="חודש הבא" ${canNext?"":"disabled"}>‹</button></div><div class="cal-g">`;
+  h+=["א","ב","ג","ד","ה","ו","ש"].map(x=>`<div class="cal-h">${x}</div>`).join("");
+  for(let i=0;i<first.getDay();i++)h+=`<div class="cal-c out"></div>`;
+  const used=new Set();
+  for(let dd=1;dd<=days;dd++){const iso=`${y}-${pad(m+1)}-${pad(dd)}`,dw=new Date(y,m,dd).getDay(),its=calItems(iso);its.forEach(x=>used.add(x.kk));
+    const vac=its.some(x=>x.kk==="vac"),shown=its.filter(x=>x.kk!=="vac");
+    h+=`<button type="button" class="cal-c${dw===6?" sat":""}${vac?" vac":""}${iso<t?" past":""}${iso===t?" td":""}${iso===calSel?" sel":""}" data-cd="${iso}" aria-label="${dd} ${MN[m]}${its.length?": "+its.map(x=>x.title).join(", "):""}"><span class="d">${dd}</span>${shown.slice(0,2).map(x=>`<span class="ch k-${x.kk}">${escH(x.sh||x.title.replace(/^מבחן /,""))}</span>`).join("")}${shown.length>2?`<span class="ch k-notice">+${shown.length-2}</span>`:""}</button>`}
+  h+=`</div><div class="cal-leg">${Object.entries(CAL_K).filter(([k])=>used.has(k)).map(([k,l])=>`<span><i class="k-${k}"></i>${l}</span>`).join("")}</div><div class="cal-day" id="calDay"></div>`;
+  const box=document.getElementById("calMonth");box.innerHTML=h;
+  const mv=k=>{let M=m+k,Y=y;if(M<0){M=11;Y--}if(M>11){M=0;Y++}calYM=[Y,M];calSel=null;drawCal()};
+  document.getElementById("calPrev").onclick=()=>mv(-1);document.getElementById("calNext").onclick=()=>mv(1);
+  box.querySelectorAll("[data-cd]").forEach(c=>c.onclick=()=>{calSel=c.dataset.cd;box.querySelectorAll(".cal-c.sel").forEach(x=>x.classList.remove("sel"));c.classList.add("sel");calDay()});
+  calDay();
+}
+function calDay(){
+  const el=document.getElementById("calDay");if(!el)return;
+  if(!calSel||calSel.slice(0,7)!==`${calYM[0]}-${pad(calYM[1]+1)}`){el.innerHTML=`<p class="xsub" style="margin:0">לחץ על יום כדי לראות מה יש בו</p>`;return}
+  const its=calItems(calSel),n=daysUntil(calSel);
+  el.innerHTML=`<h4>יום ${DAYN[dayOfIso(calSel)]} ${fmtD(calSel)}${n>=0&&n<=14?` · ${whenTxt(n)}`:""}</h4>${its.length?its.map(x=>`<div class="it"><i class="k-${x.kk}"></i><span>${x.kk==="test"?"📝 ":""}${evTxt(x)}</span></div>`).join(""):`<div class="it"><span class="xsub">אין שום דבר מיוחד ביום הזה</span></div>`}`;
 }
 // היום הבא שיש בו לימודים, אחרי fromDay (מדלג על שבת, חג וחופשה)
 function nextSchoolDay(fromDay){

@@ -1,7 +1,11 @@
 // לוח הכיתה – מבחנים והודעות שכל התלמידים רואים (וגם נכנסים ליומן).
 // כל פריט:
 //   type:  "test" (מבחן) או "notice" (הודעה)
-//   cls:   "all" / "y1" / "y2"
+//   type:  "event" = אירוע ביום מסוים (סדנה, יום מיוחד, אסיפת הורים…) – מופיע בלוח החודשי וביום עצמו
+//   cls:   "all" / "y" (כל שכבה י') / "ya" (כל שכבה י"א) / "y1" / "y2" / "ya1" / "ya2"
+//   m:     (למבחן, לא חובה) מילים משם השיעור במערכת, מופרדות ב-| – כדי להראות "📝 מבחן בעוד X ימים" ליד השיעור
+//   sh:    (לא חובה) שם קצר ללוח החודשי
+//   time:  (לאירוע, לא חובה) שעות, למשל "9:00–12:45"
 //   date:  YYYY-MM-DD  (למבחן: תאריך המבחן. להודעה: מתי מתחילים להציג)
 //   until: YYYY-MM-DD  (להודעה בלבד, לא חובה: עד מתי להציג. ברירת מחדל = date)
 //   title: כותרת קצרה
@@ -11,5 +15,36 @@ const BOARD=[
  {type:"notice",cls:"all",date:"2026-09-16",until:"2026-09-22",title:"ברוכים הבאים למערכת החדשה 🎉",detail:"כאן יופיעו מבחנים והודעות לכיתה. לחצו על \"ליומן\" כדי שהכל ייכנס גם ליומן בטלפון."},
  {type:"notice",cls:"all",date:"2026-10-25",until:"2026-10-28",title:"🗓️ המערכת עודכנה",detail:"המערכת באפליקציה עודכנה לפי המערכת החדשה של בית הספר, והיא נכונה עכשיו. גם היומן בטלפון מתעדכן לבד."},
  // {type:"test",cls:"y1",date:"2026-10-05",title:"מבחן בהיסטוריה",detail:"פרקים 3–5"},
+ // ---- לוח שכבה י' – חשון עד שבט תשפ"ז (מהלוח של הישיבה, 25.10.2026–7.2.2027) ----
+ {type:"test",cls:"y",date:"2026-11-12",title:"מבחן מגמות",m:"מגמה|מדעי המחשב|פיזיקה"},
+ {type:"test",cls:"y",date:"2026-11-25",title:"מבחן לשון",m:"לשון"},
+ {type:"test",cls:"y",date:"2026-12-03",title:"מבחן גמרא",m:"גמרא"},
+ {type:"test",cls:"y",date:"2026-12-15",title:"מבחן היסטוריה",m:"היסטוריה"},
+ {type:"test",cls:"y",date:"2026-12-22",title:"מבחן אנגלית",m:"אנגלית"},
+ {type:"test",cls:"y",date:"2026-12-28",title:"מבחן מתמטיקה",m:"מתמטיקה"},
+ {type:"test",cls:"y",date:"2026-12-31",title:"מבחן מגמות",m:"מגמה|מדעי המחשב|פיזיקה"},
+ {type:"test",cls:"y",date:"2027-01-04",title:"מבחן מדעים",m:"מבוא למדעים"},
+ {type:"test",cls:"y",date:"2027-01-06",title:"מבחן לשון",m:"לשון"},
+ {type:"test",cls:"y",date:"2027-01-12",title:"מבחן מחשבת",m:"מחשבת ישראל"},
+ {type:"test",cls:"y",date:"2027-01-13",title:"מבחן הלכה",m:"הלכה"},
+ {type:"test",cls:"y",date:"2027-01-18",title:"מבחן מבוא לתושב\"ע",sh:"תושב\"ע"},
+ {type:"test",cls:"y",date:"2027-01-24",title:"מבחן גמרא",m:"גמרא"},
+ {type:"event",cls:"y",date:"2026-11-21",title:"שבת ארגון",sh:"ארגון",k:"trip"},
+ {type:"event",cls:"y",date:"2026-11-24",title:"סדנת אפיק",sh:"אפיק",k:"work"},
+ {type:"event",cls:"y",date:"2026-11-25",title:"יום ההוקרה לפצועים",sh:"הוקרה",k:"day"},
+ {type:"event",cls:"y",date:"2026-11-25",title:"שיחה לתיכון: איתמר פליימהר",sh:"שיחה",time:"11:30",k:"day"},
+ {type:"event",cls:"y",date:"2026-11-26",title:"תיכון צמאה",sh:"צמאה",time:"10:00–15:00",k:"day"},
+ {type:"event",cls:"y",date:"2026-11-30",until:"2026-12-02",title:"להזכירם תורתך",sh:"להזכירם",time:"9:00–12:45",k:"day"},
+ {type:"event",cls:"y",date:"2026-12-16",title:"סדנת אפיק",sh:"אפיק",k:"work"},
+ {type:"event",cls:"y",date:"2026-12-20",title:"צום עשרה בטבת",sh:"צום",k:"hol"},
+ {type:"event",cls:"y",date:"2026-12-27",title:"אסיפת הורים פרטנית",sh:"הורים",k:"parents"},
+ {type:"event",cls:"y",date:"2026-12-29",title:"סדנת אפיק",sh:"אפיק",k:"work"},
+ {type:"event",cls:"y",date:"2027-01-10",title:"סדנת אפיק",sh:"אפיק",k:"work"},
+ {type:"event",cls:"y",date:"2027-01-21",title:"הגשת ציונים מחצית א'",sh:"ציונים",k:"admin"},
+ {type:"event",cls:"y",date:"2027-01-23",title:"ט\"ו בשבט – ראש השנה לאילנות",sh:"ט\"ו בשבט",k:"hol"},
+ {type:"event",cls:"y",date:"2027-01-27",title:"סדנת אפיק",sh:"אפיק",k:"work"},
+ {type:"event",cls:"y",date:"2027-02-04",title:"חלוקת תעודות מחצית א' + טיול צוות",sh:"תעודות",k:"admin"},
 ];
-if(typeof module!=="undefined"&&module.exports){module.exports={BOARD};}
+// האם פריט מהלוח שייך לכיתה (y1/y2/ya1/ya2)
+function boardFor(b,cls){cls=cls||"";return b.cls==="all"||b.cls===cls||(b.cls==="y"&&/^y\d/.test(cls))||(b.cls==="ya"&&/^ya\d/.test(cls));}
+if(typeof module!=="undefined"&&module.exports){module.exports={BOARD,boardFor};}

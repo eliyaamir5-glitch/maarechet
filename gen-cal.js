@@ -6,7 +6,7 @@
 const fs = require("fs");
 const path = require("path");
 const { DAYS_OF, CLASSES_META, DEFAULT_GEAR, SCHOOL_YEAR, forProfile, groupsOf, GRADES, gradeOf } = require("./data.js");
-const { BOARD } = require("./board.js");
+const { BOARD, boardFor } = require("./board.js");
 
 const OUT_DIR = path.join(__dirname, "cal");
 const WEEK_START = new Date(2026, 8, 13);      // ראשון 13.9.2026 – השבוע הראשון של המערכת
@@ -92,13 +92,13 @@ function buildICS(p) {
       "BEGIN:VALARM", "TRIGGER:PT0M", "ACTION:DISPLAY", `DESCRIPTION:מחר להביא: ${esc(gear.join(", "))}`, "END:VALARM", "END:VEVENT");
   });
   // 📝 מבחנים והודעות מלוח הכיתה (אירועי יום שלם, תזכורת בערב שלפני)
-  BOARD.filter(b => b.date && (b.cls === "all" || b.cls === p.cls)).forEach((b, i) => {
+  BOARD.filter(b => b.date && boardFor(b, p.cls)).forEach((b, i) => {
     const ymd = b.date.replace(/-/g, "");
-    const next = new Date(b.date + "T12:00:00"); next.setDate(next.getDate() + 1);
+    const next = new Date((b.type === "event" && b.until || b.date) + "T12:00:00"); next.setDate(next.getDate() + 1);
     const ymd2 = `${next.getFullYear()}${pad(next.getMonth() + 1)}${pad(next.getDate())}`;
     out.push("BEGIN:VEVENT", `UID:${combo}-board-${i}-${ymd}@maarechet`, `DTSTAMP:${STAMP}`,
       `DTSTART;VALUE=DATE:${ymd}`, `DTEND;VALUE=DATE:${ymd2}`,
-      `SUMMARY:${b.type === "test" ? "📝 " : "📌 "}${esc(b.title)}`, b.detail ? `DESCRIPTION:${esc(b.detail)}` : "",
+      `SUMMARY:${b.type === "test" ? "📝 " : "📌 "}${esc(b.title)}${b.time ? " " + esc(b.time) : ""}`, b.detail ? `DESCRIPTION:${esc(b.detail)}` : "",
       ...(b.type === "test" ? ["BEGIN:VALARM", "TRIGGER:-PT4H", "ACTION:DISPLAY", `DESCRIPTION:מחר ${esc(b.title)}`, "END:VALARM"] : []),
       "END:VEVENT");
   });

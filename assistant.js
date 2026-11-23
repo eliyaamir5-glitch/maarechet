@@ -144,7 +144,7 @@ A("exit", { page: "shichrur.html", hash: "", label: "שחרורון – אישו
 A("about", { page: "about.html", hash: "", label: "על האפליקציה ופרטיות" });
 A("staff", { page: "staff.html", hash: "", label: "כניסת צוות" });
 // תשובות על המערכת האישית – מחושבות בטלפון (במסך הראשי)
-for (const id of ["now", "next", "today", "dayinfo", "gear", "end", "brk", "when", "teacher", "abs", "avg", "streak", "tef", "bdays", "time", "me", "start", "nth", "changes", "vac", "parsha", "zmanim", "news", "polls", "events", "qanswers", "wishes", "lates", "praise", "left30", "best", "teachers", "subjects", "weekly", "mashovAge", "mates", "bdayOf"]) A(id, { page: ix, label: "", answer: true });
+for (const id of ["now", "next", "today", "dayinfo", "gear", "end", "brk", "when", "teacher", "abs", "avg", "streak", "tef", "bdays", "time", "me", "start", "nth", "changes", "vac", "parsha", "zmanim", "news", "polls", "events", "qanswers", "wishes", "lates", "praise", "left30", "best", "teachers", "subjects", "weekly", "mashovAge", "mates", "bdayOf", "exams"]) A(id, { page: ix, label: "", answer: true });
 
 // ===================== המוח המהיר: כוונות =====================
 // p = ביטויים (אחרי norm). w = משקל. need = ישות שחייבת להופיע
@@ -152,6 +152,7 @@ const INT = [
   // ---- שאלות על המערכת ----
   { id: "now", p: ["מה אני לומד עכשיו", "מה לומדים עכשיו", "איזה שיעור יש כרגע", "מה יש לי עכשיו", "מה עכשיו", "איזה שיעור עכשיו", "שיעור עכשיו", "איפה אני צריך להיות", "איפה צריך להיות עכשיו", "מה יש עכשיו", "באיזה שיעור אני", "מה השיעור עכשיו"] },
   { id: "next", p: ["אחרי השיעור הזה", "אחרי השיעור", "מה אחרי השיעור", "מה השיעור הבא", "שיעור הבא", "מה הבא", "מה אחרי זה", "מה יש אחר כך", "מה אחר כך", "מה בשיעור הבא"] },
+  { id: "exams", p: ["מתי המבחן הבא", "מה המבחן הבא", "המבחן הבא", "מבחנים", "לוח מבחנים", "יש מבחן", "מתי יש מבחן", "מתי המבחן", "איזה מבחנים יש", "מבחן מחר", "יש לי מבחן מחר", "כמה ימים למבחן", "לוח השכבה", "לוח שכבה", "מה יש בלוח"], w: 1.2 },
   { id: "today", p: ["מה יש היום", "מערכת היום", "שיעורים היום", "מה יש לי היום", "מה המערכת היום", "מה יש לנו היום"] },
   { id: "dayinfo", p: ["מה יש מחר", "מערכת מחר", "מה יש לי מחר", "מה יש ביום", "מה המערכת ביום", "שיעורים ביום", "מה יש לנו מחר", "מערכת של יום", "מה יש מחרתיים", "מה יש בראשון"], day: true },
   { id: "gear", p: ["מה להביא", "מה לקחת", "מה צריך להביא", "ציוד", "מה להכניס לתיק", "מה לשים בתיק", "מה צריך לקחת", "תיק למחר", "מה להביא מחר", "ספרים להביא", "איזה ספרים", "איזה ספרים להביא", "מחברות"] },
@@ -402,6 +403,8 @@ function thinkCore(qRaw, ctx = {}) {
   if (id === "dayinfo" || ((id === "today" || id === "now") && day && day.rel !== 0)) { id = "dayinfo"; arg = day || { rel: 1 }; }
   if (id === "dayinfo" && arg && arg.rel === 0) { id = "today"; arg = undefined; }
   if (["when", "teacher", "abs", "avg", "grades", "goal"].includes(id)) arg = subj || undefined;
+  if (id === "exams" && /(לחוצ|מפחד|לחצ|דואג|מלחיצ)/.test(qn)) { id = "mood"; arg = "stress"; }
+  if (id === "exams") arg = subj ? { s: subj } : day ? { day } : undefined; // "מתי המבחן במתמטיקה" / "יש מבחן מחר?"
   if (id === "when" && !subj && day) { id = /(^| )מתי( |$)/.test(canon(qn)) ? "start" : "dayinfo"; arg = day; }
   if (id === "dayinfo" && /(^| )מתי( |$)/.test(canon(qn)) && !subj) id = "start"; // "מאיזה שעה לומדים מחר"
   if (id === "when" && subj && day) arg = { s: subj, day };
@@ -490,6 +493,23 @@ async function answerAsync(id, arg) {
 }
 const ASYNC = new Set(["mates", "bdayOf", "redeem"]);
 async function sayAnswer(id, arg) { if (!ASYNC.has(id)) { botSay(answer(id, arg)); return; } const out = await withDots(() => answerAsync(id, arg)); botSay(out); }
+// 📝 לוח השכבה (board.js – רק במסך הראשי): מבחנים ואירועים
+const isoD = dt => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+function myBoardA() { const B = g("BOARD"), bf = g("boardFor"), prof = g("profile"); if (!B || !bf) return null; const cls = (prof && prof.cls) || "y2"; return B.filter(b => b && b.date && bf(b, cls)); }
+const inDays = (iso, now) => Math.round((new Date(iso + "T12:00:00") - new Date(isoD(now) + "T12:00:00")) / 864e5);
+const whenA = k => k === 0 ? "<b>היום!</b>" : k === 1 ? "<b>מחר</b>" : `בעוד ${k} ימים`;
+const dmy = iso => { const [, m, d] = iso.split("-"); return `${+d}.${+m}`; };
+function boardLine(dt) { const B = myBoardA(); if (!B) return ""; const iso = isoD(dt), its = B.filter(b => b.date <= iso && (b.until || b.date) >= iso && (b.type !== "notice" || b.date === iso)); return its.length ? "<br>" + its.map(b => `${b.type === "test" ? "📝" : "📌"} <b>${esc(b.title)}</b>${b.time ? " " + esc(b.time) : ""}`).join("<br>") : ""; }
+function examsAnswer(arg, now) {
+  const B = myBoardA(); if (!B) return "את לוח המבחנים אני רואה רק במסך הראשי – פתח אותו ושאל שוב 🙂";
+  const t = isoD(now), T = B.filter(b => b.type === "test" && b.date >= t).sort((a, b) => a.date < b.date ? -1 : 1);
+  if (arg && arg.day) { const dt = dayDate(arg.day), iso = isoD(dt), k = inDays(iso, now), lbl = k === 0 ? "היום" : k === 1 ? "מחר" : `ביום ${DAYS_HE[dt.getDay()]}`, x = T.filter(b => b.date === iso);
+    return x.length ? `📝 כן, ${lbl} יש <b>${x.map(b => esc(b.title)).join(" + ")}</b>. בהצלחה! 💪` : `${lbl} אין מבחן 😌${T[0] ? `<br>המבחן הבא: <b>${esc(T[0].title)}</b> – ${DAYS_HE[new Date(T[0].date + "T12:00:00").getDay()]} ${dmy(T[0].date)} (${whenA(inDays(T[0].date, now))})` : ""}`; }
+  if (arg && arg.s) { const s = norm(arg.s), x = T.find(b => { try { if (b.m && new RegExp(b.m).test(arg.s)) return true; } catch (e) {} return norm(b.title).includes(s) || s.includes(norm(b.title.replace(/^מבחן /, ""))); });
+    return x ? `📝 <b>${esc(x.title)}</b>: יום ${DAYS_HE[new Date(x.date + "T12:00:00").getDay()]} ${dmy(x.date)} – ${whenA(inDays(x.date, now))}` : `לא מצאתי מבחן קרוב ב<b>${esc(arg.s)}</b> בלוח 🙂`; }
+  if (!T.length) return "אין מבחנים קרובים בלוח 🎉";
+  return `📝 <b>המבחנים הקרובים:</b><br>${T.slice(0, 5).map(b => `• <b>${esc(b.title.replace(/^מבחן /, ""))}</b> – ${DAYS_HE[new Date(b.date + "T12:00:00").getDay()]} ${dmy(b.date)} (${whenA(inDays(b.date, now))})`).join("<br>")}${T.length > 5 ? `<br>ועוד ${T.length - 5}…` : ""}<br><small>כל הלוח: לוחצים על כרטיס המבחן בדף הבית 📅</small>`;
+}
 function answer(id, arg) {
   if (id === "code") return "🎟️ שלח לי את הקוד כמו שהוא (למשל <b dir=\"ltr\">BOX-7K2P9Q</b>) – ואני מממש לך אותו מיד! כל קוד אפשר לממש פעם אחת. יש לך ברקוד? פשוט סורקים אותו במצלמה 📷";
   if (id === "roboinfo") {
@@ -604,12 +624,13 @@ ${st ? `אצלך עכשיו: 🔥 רצף ${st.st.n} · 🔩 ${st.bolts >= 999999
     if (id === "now") return cur ? `עכשיו: <b>${esc(cur.n)}</b>${cur.w ? ` עם ${esc(cur.w)}` : ""} (${cur.s}–${cur.e}), נשארו ${tm(cur.e) - nm} דק'.${nxt ? `<br>אחר כך: ${esc(nxt.n)} ב-${nxt.s}` : ""}` : nxt ? `עכשיו אין שיעור. הבא: <b>${esc(nxt.n)}</b> ב-${nxt.s} (בעוד ${tm(nxt.s) - nm} דק').` : "סיימנו להיום 🎉";
     return nxt ? `השיעור הבא: <b>${esc(nxt.n)}</b>${nxt.w ? ` עם ${esc(nxt.w)}` : ""} ב-${nxt.s} (בעוד ${tm(nxt.s) - nm} דק').` : "אין יותר שיעורים היום 🎉";
   }
+  if (id === "exams") return examsAnswer(arg, now);
   if (id === "today" || id === "dayinfo") {
     const dt = id === "today" ? now : dayDate(arg), t = todayLessons(dt);
     const lbl = id === "today" || (arg && arg.rel === 0) ? "היום" : arg && arg.rel === 1 ? "מחר" : arg && arg.rel === 2 ? "מחרתיים" : `ביום ${DAYS_HE[dt.getDay()]}`;
     if (!t) return "לא הצלחתי לקרוא את המערכת 😕";
     if (!t.L.length) return `${lbl} אין לימודים${t.d && t.d.shabbat ? " – שבת שלום 🕯️" : " 😎"}`;
-    return `${lbl} (${t.d.name}): ${t.L.length} שיעורים, ${t.L[0].s}–${t.L[t.L.length - 1].e}${list(t.L)}`;
+    return `${lbl} (${t.d.name}): ${t.L.length} שיעורים, ${t.L[0].s}–${t.L[t.L.length - 1].e}${list(t.L)}${boardLine(dt)}`;
   }
   if (id === "gear") { const tg = g("tomorrowGear"); if (!tg) return "לא הצלחתי לבדוק 😕"; const h = tg(now.getDay()); return h ? h.replace(/<\/?b>/g, "").replace(/<[^>]+>/g, "") : "לא מצאתי יום לימודים קרוב."; }
   if (id === "end") { const t = todayLessons(now); if (!t || !t.L.length) return "היום אין לימודים 😎"; const last = t.L[t.L.length - 1]; return tm(last.e) <= nm ? "כבר סיימנו להיום 🎉" : `היום מסיימים ב-<b>${last.e}</b> (${esc(last.n)}).`; }
