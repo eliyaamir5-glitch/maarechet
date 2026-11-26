@@ -181,6 +181,52 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);box-shadow:0 0 0
 .it.in .eyebrow,.it.in h1,.it.in p{animation:rise .7s var(--ease) both}.it.in h1{animation-delay:.06s}.it.in p{animation-delay:.14s}
 .scr.out>*{transition:opacity .25s,transform .3s var(--ease);opacity:0;transform:translateX(30px)}
 .phone{transition:transform .6s var(--ease)}.phone.tilt{transform:rotate(-2deg) translateY(-6px)}
+
+/* ===== תצוגה חיה: טלפון שמשתנה עם כל בחירה ===== */
+@media (min-width:1240px){.shell{grid-template-columns:280px 1fr 400px}.bar{inset-inline-start:280px;inset-inline-end:400px}.rail{padding-inline:22px}}
+.live{display:none}
+@media (min-width:1240px){.live{display:flex;position:sticky;top:0;height:100vh;align-items:center;justify-content:center;flex-direction:column;gap:14px;border-inline-start:1px solid var(--line);background:var(--paper);overflow:hidden}}
+.live .cap{font-size:12px;font-weight:600;letter-spacing:.4px;color:var(--muted);display:flex;align-items:center;gap:8px}.live .cap i{width:7px;height:7px;border-radius:50%;background:#2fbf71;box-shadow:0 0 0 0 rgba(47,191,113,.6);animation:ping 1.8s infinite}
+@keyframes ping{70%{box-shadow:0 0 0 8px rgba(47,191,113,0)}100%{box-shadow:0 0 0 0 rgba(47,191,113,0)}}
+.live .glow{position:absolute;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(255,207,51,.35),transparent 65%);filter:blur(30px);animation:drift 12s ease-in-out infinite;pointer-events:none}
+@keyframes drift{0%,100%{transform:translate(-40px,-60px)}50%{transform:translate(50px,80px)}}
+.lphone{position:relative;width:290px;aspect-ratio:9/18.5;border-radius:42px;background:#0c0d10;padding:10px;box-shadow:0 50px 90px -40px rgba(18,19,24,.55),0 0 0 1px rgba(255,255,255,.06) inset;transform-style:preserve-3d;transition:transform .5s var(--ease)}
+.lphone::before{content:"";position:absolute;top:17px;left:50%;width:76px;height:22px;margin-left:-38px;border-radius:99px;background:#0c0d10;z-index:3}
+.lscr{width:100%;height:100%;border-radius:33px;background:#f5f3ee;overflow:hidden;padding:44px 12px 14px;display:flex;flex-direction:column;gap:7px;color:#121318;font-size:11.5px}
+.lscr .lh{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2px}.lscr .lh b{font-size:15px;letter-spacing:-.3px;display:block;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lscr .lh small{color:#6c6f7a}
+.lscr .lb{background:#fff;border:1px solid #e5e1d8;border-radius:12px;padding:9px 10px;display:flex;align-items:center;gap:8px}
+.lscr .lb .i{width:16px;height:16px;color:#2a2c34}.lscr .lb span{flex:1;min-width:0}.lscr .lb em{font-style:normal;color:#6c6f7a;font-size:10.5px}
+.lscr .lb.now{background:#ffcf33;border-color:#ffcf33;font-weight:700;color:#1a1400;flex-direction:column;align-items:stretch;gap:4px}.lscr .lb.now small{font-weight:500;opacity:.75}
+.lscr .lb.now .bar2{height:4px;border-radius:9px;background:rgba(0,0,0,.12);overflow:hidden}.lscr .lb.now .bar2 i{display:block;height:100%;width:40%;background:#1a1400;animation:grow 5s var(--ease) infinite alternate}
+.lscr .lb.dark{background:#121318;color:#fff;border-color:#121318}.lscr .lb.dark .i{color:#ffcf33}
+.lscr .meter{height:5px;background:#eee9de;border-radius:9px;overflow:hidden;margin-top:4px}.lscr .meter i{display:block;height:100%;background:#121318;border-radius:9px;transition:width .8s var(--ease)}
+.lscr .chips2{display:flex;gap:5px;flex-wrap:wrap}.lscr .chips2 span{background:#fff;border:1px solid #e5e1d8;border-radius:99px;padding:3px 8px;font-size:10px}
+.lscr .new{animation:newIn .9s var(--ease)}
+@keyframes newIn{0%{opacity:0;transform:translateY(10px) scale(.96);box-shadow:0 0 0 0 rgba(255,207,51,0)}40%{opacity:1;transform:none;box-shadow:0 0 0 4px rgba(255,207,51,.75)}100%{box-shadow:0 0 0 0 rgba(255,207,51,0)}}
+.live .hintl{font-size:12.5px;color:var(--muted);max-width:280px;text-align:center}
+/* בטלפון: כפתור קטן שפותח את התצוגה החיה */
+.lfab{display:none;position:fixed;z-index:7;inset-inline-start:16px;bottom:calc(84px + env(safe-area-inset-bottom,0px));border:0;border-radius:99px;background:var(--ink);color:var(--bg);padding:10px 14px;font-weight:600;font-size:13px;align-items:center;gap:8px;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);cursor:pointer}
+.lfab .i{width:16px;height:16px}.lfab.bump{animation:bump .6s var(--spring)}@keyframes bump{40%{transform:scale(1.12)}}
+@media (max-width:1239px){.lfab.show{display:inline-flex}}
+.lsheet{position:fixed;inset:0;z-index:35;background:rgba(10,11,14,.55);backdrop-filter:blur(6px);display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.lsheet.open{opacity:1;pointer-events:auto}.lsheet .lphone{transform:translateY(40px) scale(.92);transition:transform .5s var(--spring)}.lsheet.open .lphone{transform:none}
+/* ===== איור שמצייר את עצמו בכל שלב ===== */
+.art{width:68px;height:68px;border-radius:18px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;margin-bottom:14px;box-shadow:var(--sh);position:relative;overflow:hidden}
+.art::after{content:"";position:absolute;inset:auto 0 0 0;height:3px;background:var(--acc);transform:scaleX(0);transform-origin:right;animation:line 1s .5s var(--ease) forwards}
+@keyframes line{to{transform:scaleX(1)}}
+.art .i{width:38px;height:38px;stroke-width:1.4}
+.draw *{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1.3s var(--ease) forwards}
+.draw *:nth-child(2){animation-delay:.15s}.draw *:nth-child(3){animation-delay:.3s}.draw *:nth-child(4){animation-delay:.45s}.draw *:nth-child(n+5){animation-delay:.55s}
+@keyframes draw{to{stroke-dashoffset:0}}
+/* ===== כרטיסים חיים: הטיה ואור שעוקב אחרי העכבר ===== */
+@media (hover:hover){.opt{transform-style:preserve-3d}.opt::before{content:"";position:absolute;inset:0;border-radius:inherit;background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%),rgba(255,207,51,.16),transparent 60%);opacity:0;transition:opacity .3s;pointer-events:none}.opt:hover::before{opacity:1}}
+.stage::before{content:"";position:fixed;width:520px;height:520px;top:-180px;right:20%;border-radius:50%;background:radial-gradient(circle,rgba(255,207,51,.12),transparent 65%);filter:blur(20px);animation:drift 16s ease-in-out infinite;pointer-events:none;z-index:0}
+main{position:relative;z-index:1}
+/* פתיח: טלפון שעולה מהלוח */
+#hero .hph{position:relative;z-index:2;margin:34px auto 0;width:min(230px,52vw);opacity:0;transform:translateY(120px) rotateX(25deg);animation:phUp 1.4s 1.9s var(--ease) forwards}
+@keyframes phUp{to{opacity:1;transform:none}}
+#hero .hph .lphone{width:100%;box-shadow:0 60px 120px -30px rgba(255,207,51,.35),0 0 0 1px rgba(255,255,255,.08) inset}
+@media (max-height:760px){#hero .hph{display:none}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -189,7 +235,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);box-shadow:0 0 0
 <div class="shell">
 <aside class="rail" aria-label="שלבים"><div class="brand"><span class="mark" id="mk1"></span><div>המערכת<small>לבתי ספר</small></div></div><ol class="steps" id="steps"></ol><div class="foot"><b>גרסת הדגמה.</b> שום פרט לא נשלח לשום מקום. מה שממלאים נשמר רק בדפדפן הזה, ואפשר לעצור ולהמשיך אחר כך.</div></aside>
 <div class="stage"><header class="mtop"><div class="mtop-in"><div class="brand"><span class="mark" id="mk2"></span><div>המערכת<small>לבתי ספר</small></div></div><span class="cnt" id="cnt"></span><span class="badge">הדגמה</span></div><div class="prog"><i id="prog"></i></div></header>
-<main id="app" aria-live="polite"></main></div></div>
+<main id="app" aria-live="polite"></main></div>
+<aside class="live" aria-label="תצוגה חיה"><div class="glow"></div><div class="cap"><i></i>תצוגה חיה · כך התלמידים יראו</div><div class="lphone" id="lph"><div class="lscr" id="lscr"></div></div><div class="hintl">כל בחירה שלכם משנה את האפליקציה כאן, בזמן אמת.</div></aside></div>
+<button class="lfab" id="lfab" type="button"></button><div class="lsheet" id="lsheet"><div class="lphone"><div class="lscr" id="lscr2"></div></div></div>
 <div class="bar"><div class="bar-in" id="bar"></div></div>
 <script>
 "use strict";
@@ -401,15 +449,15 @@ const mock = m => { const k = (h, i) => h.replace(/^<(\w+)/, `<$1 style="--i:${i
  : [`<div class="hd">פרטיות <small>בית הספר שלך</small></div>`, `<div class="lock">${ico("lock")}<span>כל בית ספר מופרד לגמרי</span></div>`, `<div class="lock">${ico("ban")}<span>בלי ציונים, סיסמאות או מיקום</span></div>`, `<div class="lock">${ico("box")}<span>ייצוא מלא בכל רגע</span></div>`, `<div class="lock">${ico("shield")}<span>יומן פעולות: מי שינה מה</span></div>`];
  return L.map(k).join(""); };
 const STEPS = [
- { id:"school", lbl:"פרטי בית הספר" },
- { id:"char", lbl:"אופי בית הספר" },
- { id:"grades", lbl:"שכבות וכיתות" },
- { id:"policy", lbl:"נוכחות ומדיניות" },
- { id:"goals", lbl:"יעדים" },
- { id:"emph", lbl:"דגשים" },
- { id:"data", lbl:"נתונים וכניסות" },
- { id:"privacy", lbl:"פרטיות" },
- { id:"rec", lbl:"התוכנית שלך" }
+ { id:"school", lbl:"פרטי בית הספר", art:"school" },
+ { id:"char", lbl:"אופי בית הספר", art:"columns" },
+ { id:"grades", lbl:"שכבות וכיתות", art:"grid" },
+ { id:"policy", lbl:"נוכחות ומדיניות", art:"chartDown" },
+ { id:"goals", lbl:"יעדים", art:"trophy" },
+ { id:"emph", lbl:"דגשים", art:"star" },
+ { id:"data", lbl:"נתונים וכניסות", art:"upload" },
+ { id:"privacy", lbl:"פרטיות", art:"shield" },
+ { id:"rec", lbl:"התוכנית שלך", art:"sparkle" }
 ];
 const opt = (attr, id, ic, n, d, on, radio, tag) => `<button type="button" class="opt${radio ? " radio" : ""}" ${attr}="${esc(id)}" role="${radio ? "radio" : "checkbox"}" aria-checked="${!!on}">${tag ? `<span class="tag">${esc(tag)}</span>` : ""}<span class="ic">${ico(ic)}</span><span><b>${esc(n)}</b>${d ? `<span class="d">${esc(d)}</span>` : ""}</span><span class="ck"><svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg></span></button>`;
 
@@ -465,14 +513,57 @@ function render(dir) {
     app.innerHTML = `<div class="${cls}"><div class="intro"><div class="it in"><span class="eyebrow">היכרות · ${S.intro + 1}/${INTRO.length}</span><h1>${s.t}</h1><p>${s.p}</p><div class="dots">${INTRO.map((_, i) => `<i class="${i === S.intro ? "on" : ""}"></i>`).join("")}</div></div><div class="phone" aria-hidden="true"><div class="scr">${mock(s.m)}</div></div></div></div>`;
     introBar(); return;
   }
+  live();
   const st = STEPS[S.step - 1];
-  app.innerHTML = `<div class="${cls}"><span class="eyebrow">${st.lbl}</span>${VIEWS[st.id]()}</div>`;
+  app.innerHTML = `<div class="${cls}">${dir ? `<div class="art">${drawIco(st.art)}</div>` : `<div class="art">${ico(st.art)}</div>`}<span class="eyebrow">${st.lbl}</span>${VIEWS[st.id]()}</div>`;
   if (dir) stagger(app.firstElementChild);
   bar.innerHTML = `<button class="btn ghost" id="bk">${BACK}הקודם</button><span class="msg" id="nt"></span><button class="btn" id="nx">${S.step < STEPS.length ? "המשך" : "לבנות את האפליקציה"}${ARROW}</button>`;
   $("bk").onclick = () => go(-1, () => { S.step--; if (S.step === 0) S.intro = INTRO.length - 1; });
   $("nx").onclick = () => { const e = (CHECK[st.id] || (() => ""))(); if (e) { const n = $("nt"); n.innerHTML = `<span class="err">${esc(e)}</span>`; n.classList.remove("shake"); void n.offsetWidth; n.classList.add("shake"); return; } if (S.step < STEPS.length) go(1, () => { S.step++; }); else finish(); };
   (WIRE[st.id] || (() => {}))();
 }
+const drawIco = k => ico(k, "draw").replace(/<(path|circle|rect)/g, '<$1 pathLength="1"');
+// 📱 תצוגה חיה: האפליקציה של התלמיד, לפי מה שבחרו עד עכשיו. כל שורה חדשה מבהיקה לרגע
+let liveKeys = new Set();
+function liveHTML() {
+  const G = new Set(S.goals), E = new Set(S.emph), sec = S.sector, gs = selGrades(), g0 = gs[0], ar = S.lang === "ar";
+  const relig = ["mamad","yeshiva","ulpana","haredi"].includes(sec) || E.has("torah");
+  const cls = g0 ? `${g0[1].replace(/'/, "")}${g0[1].includes("'") ? "'" : ""}1` : "י'1";
+  const p = S.samePolicy ? pol() : (g0 ? pol(g0[0]) : null), L = [];
+  const row = (k, h) => L.push([k, h]);
+  row("h", `<div class="lh"><div><small>${ar ? "صباح الخير" : "בוקר טוב, נועה"}</small><b>${esc(S.school.name || "בית הספר שלך")}</b></div><small>${esc(cls)}</small></div>`);
+  if (relig) row("tef", `<div class="lb">${ico("pray")}<span>${S.gender === "girls" ? "שחרית" : "שחרית · תזכורת תפילין"}</span><em>07:40</em></div>`);
+  if (["arab","bedouin"].includes(sec) || E.has("islam")) row("ram", `<div class="lb">${ico("moon")}<span>${ar ? "مواقيت الصلاة" : "זמני תפילה · רמדאן"}</span><em>12:05</em></div>`);
+  row("now", `<div class="lb now">${ar ? "الآن: رياضيات" : "עכשיו: מתמטיקה"}<small>${ar ? "غرفة 12 · بقي 18 دقيقة" : "חדר 12 · נשארו 18 דקות"}</small><div class="bar2"><i></i></div></div>`);
+  if (p && p.mode === "pct") row("att" + p.pct, `<div class="lb" style="flex-direction:column;align-items:stretch"><div style="display:flex;gap:8px;align-items:center">${ico("chartDown")}<span>אנגלית · 2 חיסורים</span><em>עוד ${Math.max(1, Math.round(p.pct / 100 * 30) - 2)} מותרים</em></div><div class="meter"><i style="width:${Math.min(100, Math.round(2 / Math.max(1, p.pct / 100 * 30) * 100))}%"></i></div></div>`);
+  row("ex", `<div class="lb dark">${ico("note")}<span>מבחן אנגלית</span><em style="color:#ffcf33">עוד 3 ימים</em></div>`);
+  if (G.has("attendance")) row("late", `<div class="lb">${ico("alarm")}<span>רצף בלי איחורים</span><em>4 ימים</em></div>`);
+  if (S.dorm !== "none") row("dorm", `<div class="lb">${ico("bed")}<span>פנימייה · יציאה הביתה</span><em>חמישי 14:00</em></div>`);
+  if (G.has("bagrut") && gs.some(([g]) => HIGH.has(g))) row("units", `<div class="lb">${ico("cap")}<span>יחידות לבגרות</span><em>14 מתוך 21</em></div>`);
+  if (G.has("climate") || G.has("wellbeing")) row("talk", `<div class="lb">${ico("chat")}<span>צריך לדבר? ליועצת</span><em>בשקט</em></div>`);
+  if (G.has("social")) row("vol", `<div class="lb">${ico("hand")}<span>שעות התנדבות</span><em>18/60</em></div>`);
+  if (G.has("service")) row("srv", `<div class="lb">${ico("medal")}<span>צו ראשון</span><em>עוד 41 ימים</em></div>`);
+  if (E.has("arts")) row("art", `<div class="lb">${ico("mask")}<span>חזרה להצגה</span><em>16:30</em></div>`);
+  if (E.has("sport")) row("spt", `<div class="lb">${ico("ball")}<span>אימון נבחרת</span><em>17:00</em></div>`);
+  if (E.has("science") || G.has("excellence")) row("oly", `<div class="lb">${ico("trophy")}<span>אולימפיאדת פיזיקה</span><em>הרשמה פתוחה</em></div>`);
+  if (S.src === "shahaf" || S.src === "mashovx") row("src", `<div class="lb">${ico("calendar")}<span>${S.src === "shahaf" ? "מתעדכן לבד משחף" : "נתונים ממשוב"}</span><em>היום 07:00</em></div>`);
+  if (gs.length > 1) row("gr", `<div class="chips2">${gs.map(([, n]) => `<span>${esc(n)}</span>`).join("")}</div>`);
+  return L;
+}
+function live(flash) {
+  const L = liveHTML().slice(0, 9), keys = new Set(L.map(x => x[0])), fresh = [...keys].filter(k => !liveKeys.has(k) && liveKeys.size);
+  const html = L.map(([k, h]) => fresh.includes(k) && k !== "h" ? h.replace(/^<div class="/, '<div class="new ') : h).join("");
+  for (const id of ["lscr", "lscr2"]) { const el = $(id); if (el) el.innerHTML = html; }
+  const nm = $("lscr") && $("lscr").querySelector(".lh b"); if (nm && flash === "name") { nm.classList.remove("new"); void nm.offsetWidth; nm.classList.add("new"); }
+  if (fresh.length) { const f = $("lfab"); f.classList.remove("bump"); void f.offsetWidth; f.classList.add("bump"); }
+  liveKeys = keys;
+  $("lfab").innerHTML = `${ico("eye")}תצוגה חיה${fresh.length ? ` · ${fresh.length} חדש` : ""}`;
+  $("lfab").classList.toggle("show", S.step > 0);
+}
+$("lfab").onclick = () => $("lsheet").classList.add("open"); $("lsheet").onclick = () => $("lsheet").classList.remove("open");
+// הטלפון החי נוטה קצת עם העכבר
+addEventListener("pointermove", e => { if (RM) return; const ph = $("lph"); if (ph && innerWidth >= 1240) { const x = e.clientX / innerWidth - .5, y = e.clientY / innerHeight - .5; ph.style.transform = `perspective(900px) rotateY(${x * -10}deg) rotateX(${y * 8}deg)`; }
+  const o = e.target.closest && e.target.closest(".opt"); if (o) { const r = o.getBoundingClientRect(); o.style.setProperty("--mx", (e.clientX - r.left) + "px"); o.style.setProperty("--my", (e.clientY - r.top) + "px"); } }, { passive: true });
 // גל קטן בכל לחיצה על כפתור
 addEventListener("pointerdown", e => { const b = e.target.closest(".btn"); if (!b || RM) return; const r = b.getBoundingClientRect(), d = Math.max(r.width, r.height), x = document.createElement("span"); x.className = "rip"; x.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px`; b.appendChild(x); setTimeout(() => x.remove(), 650); });
 addEventListener("resize", () => rail());
@@ -541,16 +632,16 @@ const CHECK = {
 };
 const bind = (sel, fn) => document.querySelectorAll(sel).forEach(el => el.onclick = () => { const a = sel.slice(1, -1), v = el.getAttribute(a), y = scrollY; fn(el); save(); render(); scrollTo(0, y); const n = document.querySelector(`[${a}="${CSS.escape(v || "")}"]`); if (n) n.classList.add("pop"); });
 const WIRE = {
- school: () => { const m = { sn:"name", ss:"semel", sc:"city", sw:"who", se:"email", sp:"phone" }; for (const [id, k] of Object.entries(m)) $(id).oninput = e => { S.school[k] = e.target.value; save(); }; $("sr").onchange = e => { S.school.role = e.target.value; save(); }; $("sn").focus(); },
+ school: () => { const m = { sn:"name", ss:"semel", sc:"city", sw:"who", se:"email", sp:"phone" }; for (const [id, k] of Object.entries(m)) $(id).oninput = e => { S.school[k] = e.target.value; save(); if (k === "name") live("name"); }; $("sr").onchange = e => { S.school.role = e.target.value; save(); }; $("sn").focus(); },
  char: () => { bind("[data-sec]", el => { S.sector = el.dataset.sec; if (["arab","bedouin"].includes(S.sector) && S.lang === "he") S.lang = "ar"; if (["yeshiva","ulpana"].includes(S.sector) && S.dorm === "none") S.dorm = "all"; if (S.sector === "yeshiva") S.gender = "boys"; if (S.sector === "ulpana") S.gender = "girls"; }); bind("[data-gen]", el => S.gender = el.dataset.gen); bind("[data-lang]", el => S.lang = el.dataset.lang); bind("[data-dorm]", el => S.dorm = el.dataset.dorm); bind("[data-week]", el => S.week = el.dataset.week); },
  grades: () => { bind("[data-gr]", el => { const g = el.dataset.gr; if (S.grades[g]) delete S.grades[g]; else S.grades[g] = { n: 2, mathG: HIGH.has(g), engG: HIGH.has(g), maj: HIGH.has(g), days: false }; }); bind("[data-st]", el => { const o = S.grades[el.dataset.st]; o.n = Math.max(1, Math.min(20, o.n + +el.dataset.d)); }); bind("[data-gx]", el => { const [g, k] = el.dataset.gx.split(":"); S.grades[g][k] = !S.grades[g][k]; }); },
  policy: () => { bind("[data-same]", () => { S.samePolicy = !S.samePolicy; }); bind("[data-pm]", el => { const [k, m] = el.dataset.pm.split(":"); (S.policy[k] = S.policy[k] || { pct: 30, lates: 3, show: true }).mode = m; }); bind("[data-ps]", el => { const p = S.policy[el.dataset.ps]; p.show = !p.show; });
-   document.querySelectorAll("[data-pp]").forEach(i => i.oninput = () => { S.policy[i.dataset.pp].pct = Math.max(5, Math.min(60, +i.value || 30)); save(); }); document.querySelectorAll("[data-pl]").forEach(i => i.oninput = () => { S.policy[i.dataset.pl].lates = Math.max(0, Math.min(10, +i.value || 0)); save(); }); document.querySelectorAll("[data-pc]").forEach(i => i.oninput = () => { S.policy[i.dataset.pc].txt = i.value.slice(0, 300); save(); }); },
+   document.querySelectorAll("[data-pp]").forEach(i => i.oninput = () => { S.policy[i.dataset.pp].pct = Math.max(5, Math.min(60, +i.value || 30)); save(); live(); }); document.querySelectorAll("[data-pl]").forEach(i => i.oninput = () => { S.policy[i.dataset.pl].lates = Math.max(0, Math.min(10, +i.value || 0)); save(); }); document.querySelectorAll("[data-pc]").forEach(i => i.oninput = () => { S.policy[i.dataset.pc].txt = i.value.slice(0, 300); save(); }); },
  goals: () => document.querySelectorAll("[data-goal]").forEach(el => el.onclick = () => { const id = el.dataset.goal, i = S.goals.indexOf(id); if (i >= 0) S.goals.splice(i, 1); else if (S.goals.length >= 5) { $("gc").innerHTML = `<span class="err">אפשר עד 5. הורידו אחד כדי להוסיף אחר</span>`; $("gc").classList.add("shake"); return; } else S.goals.push(id); const y = scrollY; save(); render(); scrollTo(0, y); const n = document.querySelector(`[data-goal="${id}"]`); if (n) n.classList.add("pop"); }),
  emph: () => bind("[data-em]", el => { const id = el.dataset.em, i = S.emph.indexOf(id); if (i >= 0) S.emph.splice(i, 1); else S.emph.push(id); }),
  data: () => { bind("[data-src]", el => S.src = el.dataset.src); bind("[data-lg]", el => S.logins.students = el.dataset.lg); bind("[data-lt]", el => { const k = el.dataset.lt; S.logins[k] = !S.logins[k]; }); if ($("sh")) $("sh").oninput = e => { S.shahaf = e.target.value.trim(); save(); }; $("qh").oninput = e => { S.quiet = e.target.value.trim(); save(); }; },
  privacy: () => bind("[data-pv]", () => { S.privacyOk = !S.privacyOk; }),
- rec: () => document.querySelectorAll("[data-ft]").forEach(b => b.onclick = () => { const f = catalog().find(x => x.id === b.dataset.ft); S.feat[f.id] = !isOn(f); save(); b.setAttribute("aria-checked", isOn(f)); b.closest(".feat").classList.toggle("on", isOn(f)); })
+ rec: () => document.querySelectorAll("[data-ft]").forEach(b => b.onclick = () => { const f = catalog().find(x => x.id === b.dataset.ft); S.feat[f.id] = !isOn(f); save(); b.setAttribute("aria-checked", isOn(f)); b.closest(".feat").classList.toggle("on", isOn(f)); live(); })
 };
 for (const id of ["mk1", "mk2"]) $(id).innerHTML = ico("table");
 function finish() { $("nt").textContent = "כאן תבוא אנימציית הבנייה והסיכום, בשלב הבא של ההדגמה"; }
@@ -562,9 +653,10 @@ function hero() {
   h.innerHTML = `<div class="hg">${cells}</div><div class="nowl"></div><div class="hc"><div class="hb"><span class="mark">${ico("table")}</span>המערכת לבתי ספר</div>
    <h1><span class="l">${words("כל בית הספר.", 450)}</span><span class="l acc">${words("בכף היד.", 800)}</span></h1>
    <p>מערכת שעות, שינויים, מבחנים והודעות. מותאם בדיוק לבית הספר שלכם, ומתעדכן לבד.</p>
-   <div class="go"><button class="btn" id="hgo">להקים את בית הספר שלי${ARROW}</button><small>בערך 5 דקות · גרסת הדגמה</small></div></div>`;
+   <div class="go"><button class="btn" id="hgo">להקים את בית הספר שלי${ARROW}</button><small>בערך 5 דקות · גרסת הדגמה</small></div><div class="hph"><div class="lphone"><div class="scr" style="border-radius:33px">${mock("student")}</div></div></div></div>`;
   document.body.appendChild(h); document.body.style.overflow = "hidden";
-  const start = () => { if (h.classList.contains("out")) return; h.classList.add("out"); S.seenHero = true; save(); setTimeout(() => { render(1); }, 450); setTimeout(() => { h.remove(); document.body.style.overflow = ""; }, 1150); };
+  const start = () => { if (h.classList.contains("out")) return; h.querySelector(".hg").style.transform = ""; h.classList.add("out"); S.seenHero = true; save(); setTimeout(() => { render(1); }, 450); setTimeout(() => { h.remove(); document.body.style.overflow = ""; }, 1150); };
+  h.addEventListener("pointermove", e => { if (RM) return; const x = e.clientX / innerWidth - .5, y = e.clientY / innerHeight - .5; h.querySelector(".hg").style.transform = `perspective(1200px) rotateX(${18 - y * 8}deg) rotateZ(${-6 + x * 4}deg) scale(1.15) translate(${x * -20}px,${y * -14}px)`; const ph = h.querySelector(".hph .lphone"); if (ph) ph.style.transform = `perspective(900px) rotateY(${x * -14}deg) rotateX(${y * 10}deg)`; });
   $("hgo").onclick = start; addEventListener("keydown", e => { if (e.key === "Enter" && document.getElementById("hero")) start(); }, { once: true });
 }
 // מצב הדגמה מהיר: ?reset מתחיל מחדש
