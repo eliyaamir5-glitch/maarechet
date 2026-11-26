@@ -271,7 +271,10 @@ main{position:relative;z-index:1}
 .todo{counter-reset:t;list-style:none;padding:0;margin:0}.todo li{counter-increment:t;display:flex;gap:14px;padding:12px 0;border-top:1px solid var(--line)}.todo li:first-child{border-top:0}
 .todo li::before{content:counter(t);flex:0 0 auto;width:28px;height:28px;border-radius:50%;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;font-weight:700;font-size:14px}
 .todo b{display:block}.todo span{font-size:13.5px;color:var(--muted)}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@media (min-width:1240px){body.intro .shell{grid-template-columns:280px 1fr}body.intro .live{display:none}body.intro .bar{inset-inline-end:0}}
+html.rm *,html.rm *::before,html.rm *::after{animation:none!important;transition:none!important}
+.motion{position:fixed;z-index:60;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:#121318;color:#f4f1ea;border-radius:99px;padding:8px 8px 8px 16px;font-size:13px;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);max-width:calc(100vw - 24px)}
+.motion button{border:0;border-radius:99px;background:#ffcf33;color:#1a1400;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap}.motion .x{background:transparent;color:#8d909b;padding:7px 8px}
 </style>
 </head>
 <body>
@@ -505,7 +508,11 @@ const STEPS = [
 ];
 const opt = (attr, id, ic, n, d, on, radio, tag) => `<button type="button" class="opt${radio ? " radio" : ""}" ${attr}="${esc(id)}" role="${radio ? "radio" : "checkbox"}" aria-checked="${!!on}">${tag ? `<span class="tag">${esc(tag)}</span>` : ""}<span class="ic">${ico(ic)}</span><span><b>${esc(n)}</b>${d ? `<span class="d">${esc(d)}</span>` : ""}</span><span class="ck"><svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg></span></button>`;
 
-const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+// המחשב ביקש "בלי אנימציות" (הגדרה של Windows / Mac) – מכבדים, אבל מציעים להפעיל בלחיצה
+const SYS_RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let MOTION = ""; try { MOTION = localStorage.getItem("pfMotion") || ""; } catch (e) {}
+const RM = SYS_RM && MOTION !== "1";
+if (RM) document.documentElement.classList.add("rm");
 let moving = false;
 // מעבר בין דפים: הדף הנוכחי יוצא, החדש נכנס מהכיוון הנכון, והחלקים שלו עולים אחד אחרי השני
 function go(dir, fn) {
@@ -536,6 +543,7 @@ function introSwap() {
 function rail() {
   const pos = S.step === 0 ? 0 : S.step;
   $("prog").style.width = (pos / (STEPS.length + 1) * 100) + "%";
+  document.body.classList.toggle("intro", S.step === 0);
   $("cnt").textContent = S.step > STEPS.length ? "סיכום" : S.step ? `שלב ${S.step} מתוך ${STEPS.length}` : "היכרות";
   const ol = $("steps"); if (!ol.children.length) ol.innerHTML = `<span class="fill"></span>` + [{ lbl: "היכרות" }, ...STEPS].map((x, i) => `<li><i>${i || "·"}</i>${x.lbl}</li>`).join("");
   [...ol.querySelectorAll("li")].forEach((li, i) => { li.className = i < pos ? "done" : i === pos ? "cur" : ""; li.querySelector("i").innerHTML = i < pos ? '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="m5 12 5 5 9-10"/></svg>' : (i || "·"); });
@@ -770,6 +778,9 @@ function hero() {
 // מצב הדגמה מהיר: ?reset מתחיל מחדש
 if (/[?&]reset\b/.test(location.search)) { S = blank(); save(); history.replaceState(null, "", location.pathname); }
 if (S.step === 0 && S.intro === 0 && !RM) { hero(); rail(); } else render();
+if (RM && MOTION !== "0") { const m = document.createElement("div"); m.className = "motion"; m.innerHTML = `<span>במחשב הזה האנימציות כבויות</span><button type="button" id="mOn">להפעיל אנימציות</button><button type="button" class="x" id="mNo" aria-label="לא תודה">✕</button>`; document.body.appendChild(m);
+  $("mOn").onclick = () => { try { localStorage.setItem("pfMotion", "1"); } catch (e) {} S.step = 0; S.intro = 0; save(); location.reload(); };
+  $("mNo").onclick = () => { try { localStorage.setItem("pfMotion", "0"); } catch (e) {} m.remove(); }; }
 </script>
 </body>
 </html>
