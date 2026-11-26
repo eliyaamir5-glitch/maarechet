@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>המערכת לבתי ספר · הרשמת מנהל (הדגמה)</title>
+<meta name="robots" content="noindex">
+<style>
+/* "המערכת לבתי ספר" – גרסת הדגמה של מסלול ההרשמה למנהל. דף נפרד: לא נוגע באפליקציה של הישיבה, לא שולח כלום לשום שרת.
+   הטיוטה נשמרת רק בדפדפן (localStorage "pfDraft"). */
+:root{--bg:#f4f6fb;--card:#fff;--ink:#141a2e;--muted:#5d667e;--line:#e2e6f0;--brand:#2f3fd6;--brand2:#5b6cff;--brand-ink:#fff;--soft:#eef0ff;--ok:#12805c;--warn:#b45309;--now:#ffd23f;--shadow:0 10px 30px rgba(20,26,46,.08)}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1120;--card:#161b2e;--ink:#eef1fa;--muted:#9aa3bd;--line:#262d47;--brand:#7c8cff;--brand2:#9aa6ff;--brand-ink:#0b0e24;--soft:#1d2340;--ok:#3ddc97;--warn:#fbbf24;--shadow:0 10px 30px rgba(0,0,0,.35)}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Heebo,Arial,sans-serif;font-size:16px;line-height:1.55;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+.top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top-in{max-width:760px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;display:flex;align-items:center;gap:12px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px}
+.logo i{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--brand),#a35ce6);display:grid;place-items:center;color:#fff;font-style:normal;font-size:15px}
+.logo small{display:block;font-weight:500;font-size:11.5px;color:var(--muted);margin-top:-3px}
+.demo{margin-inline-start:auto;font-size:12px;font-weight:700;color:var(--warn);border:1.5px solid currentColor;border-radius:99px;padding:3px 10px;white-space:nowrap}
+.prog{height:4px;background:var(--line)}.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brand),#a35ce6);transition:width .4s ease}
+main{max-width:760px;margin:0 auto;padding:22px 16px 120px}
+.step-lbl{font-size:13px;font-weight:700;color:var(--brand);letter-spacing:.2px}
+h1{font-size:26px;line-height:1.25;margin:4px 0 6px}h2{font-size:18px;margin:22px 0 8px}
+.lead{color:var(--muted);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+label.f{display:block;font-weight:700;font-size:14.5px;margin:12px 0 5px}
+.hint{display:block;font-weight:400;color:var(--muted);font-size:13px;margin-top:2px}
+input[type=text],input[type=email],input[type=tel],input[type=number],input[type=url],select,textarea{width:100%;border:1.5px solid var(--line);background:var(--bg);border-radius:12px;padding:11px 12px;outline:none;transition:border-color .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--brand)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}@media (max-width:560px){.grid2{grid-template-columns:1fr}}
+/* בחירה עם הסבר */
+.opts{display:grid;gap:10px}.opts.two{grid-template-columns:1fr 1fr}@media (max-width:560px){.opts.two{grid-template-columns:1fr}}
+.opt{position:relative;display:flex;gap:12px;align-items:flex-start;text-align:start;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;transition:border-color .15s,background .15s,transform .1s;width:100%}
+.opt:hover{border-color:color-mix(in srgb,var(--brand) 45%,var(--line))}.opt:active{transform:scale(.995)}
+.opt .ic{font-size:22px;line-height:1;margin-top:2px;flex:0 0 auto}
+.opt b{display:block;font-size:15px}.opt span.d{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.opt .ck{margin-inline-start:auto;flex:0 0 auto;width:22px;height:22px;border-radius:7px;border:2px solid var(--line);display:grid;place-items:center;font-size:13px;color:transparent;transition:.15s}
+.opt.radio .ck{border-radius:50%}
+.opt[aria-checked=true],.opt[aria-pressed=true]{border-color:var(--brand);background:var(--soft)}
+.opt[aria-checked=true] .ck,.opt[aria-pressed=true] .ck{background:var(--brand);border-color:var(--brand);color:#fff}
+.opt .tag{position:absolute;top:-9px;inset-inline-start:12px;background:var(--brand);color:#fff;font-size:11px;font-weight:800;padding:1px 8px;border-radius:99px}
+.opt:focus-visible,.btn:focus-visible,.chip:focus-visible{outline:3px solid color-mix(in srgb,var(--brand) 55%,transparent);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chip{border:1.5px solid var(--line);background:var(--card);border-radius:99px;padding:8px 14px;font-weight:700;cursor:pointer}.chip[aria-pressed=true]{background:var(--brand);color:#fff;border-color:var(--brand)}
+.why{display:flex;gap:8px;align-items:flex-start;background:var(--soft);border-radius:12px;padding:10px 12px;font-size:13.5px;color:var(--ink);margin:10px 0 0}.why::before{content:"💡";flex:0 0 auto}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.stepper{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:12px;overflow:hidden}.stepper button{border:0;background:var(--bg);width:36px;height:36px;font-size:18px;cursor:pointer}.stepper output{min-width:34px;text-align:center;font-weight:800}
+/* שכבות */
+.gr{border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px;background:var(--bg)}
+.gr h3{margin:0 0 6px;font-size:16px;display:flex;align-items:center;gap:8px}.gr h3 small{color:var(--muted);font-weight:500;font-size:12.5px}
+.mini{font-size:13px;color:var(--muted)}
+/* כפתורים תחתונים */
+.bar{position:fixed;inset:auto 0 0 0;z-index:6;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+.bar-in{max-width:760px;margin:0 auto;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center}
+.btn{border:0;border-radius:12px;padding:12px 20px;font-weight:800;cursor:pointer;background:var(--brand);color:var(--brand-ink)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}.btn.wide{flex:1}
+.bar .note{font-size:12.5px;color:var(--muted);flex:1;min-width:0}
+.err{color:#c0262d;font-size:13px;font-weight:700;margin-top:6px}
+/* היכרות */
+.intro{display:grid;grid-template-columns:1.1fr .9fr;gap:22px;align-items:center}@media (max-width:640px){.intro{grid-template-columns:1fr}}
+.intro h1{font-size:30px}.intro p{color:var(--muted);font-size:16.5px}
+.dots{display:flex;gap:6px;margin-top:16px}.dots i{width:8px;height:8px;border-radius:99px;background:var(--line);transition:.3s}.dots i.on{width:22px;background:var(--brand)}
+.phone{width:min(260px,72vw);margin:0 auto;aspect-ratio:9/18.5;border-radius:34px;background:#0f1324;padding:10px;box-shadow:0 24px 60px rgba(20,26,46,.25)}
+.scr{width:100%;height:100%;border-radius:26px;background:#f4f6fb;overflow:hidden;display:flex;flex-direction:column;gap:7px;padding:12px 10px;color:#141a2e;font-size:11px}
+.scr .hd{background:linear-gradient(135deg,#5b6cff,#a35ce6);border-radius:14px;color:#fff;padding:10px;font-weight:800}
+.scr .now{background:var(--now);border-radius:14px;padding:10px;font-weight:800;color:#221c00}.scr .now small{display:block;font-weight:600;opacity:.75}
+.scr .ln{background:#fff;border-radius:10px;padding:8px;border:1px solid #e2e6f0;display:flex;justify-content:space-between}
+.scr .ex{background:#fff;border:1.5px solid #ff9f43;border-radius:12px;padding:8px;font-weight:700}
+.scr .tch{background:#fff;border-radius:12px;padding:9px;border:1px solid #e2e6f0}.scr .tch b{display:block}
+.scr .kpi{display:grid;grid-template-columns:1fr 1fr;gap:6px}.scr .kpi div{background:#fff;border-radius:10px;padding:8px;border:1px solid #e2e6f0}.scr .kpi b{font-size:16px;display:block}
+.scr .lock{background:#fff;border-radius:12px;padding:10px;border:1px solid #e2e6f0;display:flex;gap:8px;align-items:center}
+/* המלצות */
+.feat{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}.feat:first-child{border-top:0}
+.feat .ic{font-size:22px}.feat .tx{flex:1;min-width:0}.feat .tx b{display:block}.feat .tx span{display:block;font-size:13px;color:var(--muted)}
+.feat .rs{display:block;font-size:12.5px;color:var(--brand);font-weight:700;margin-top:3px}
+.sw{flex:0 0 auto;width:46px;height:28px;border-radius:99px;background:var(--line);border:0;position:relative;cursor:pointer;transition:.2s}.sw::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:.2s}
+.sw[aria-checked=true]{background:var(--brand)}.sw[aria-checked=true]::after{inset-inline-start:21px}
+.sec-h{display:flex;align-items:center;gap:8px;margin:0 0 4px;font-size:16px}.sec-h .n{margin-inline-start:auto;font-size:12.5px;color:var(--muted);font-weight:600}
+.next-up{border:1.5px dashed var(--line);border-radius:16px;padding:16px;text-align:center;color:var(--muted)}
+.fade{animation:fade .35s ease}@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in"><div class="logo"><i>מ</i><div>המערכת<small>לבתי ספר</small></div></div><span class="demo">גרסת הדגמה</span></div><div class="prog"><i id="prog"></i></div></header>
+<main id="app" aria-live="polite"></main>
+<div class="bar"><div class="bar-in" id="bar"></div></div>
+<script>
+"use strict";
+// ===================== נתונים קבועים =====================
+const GRADES = [["z","ז'"],["h","ח'"],["t","ט'"],["y","י'"],["ya","י\"א"],["yb","י\"ב"]];
+const HIGH = new Set(["y","ya","yb"]);
+const SECTORS = [
+ {id:"mamlachti",ic:"🏫",n:"ממלכתי",d:"תיכון / מקיף בפיקוח ממלכתי"},
+ {id:"mamad",ic:"📖",n:"ממלכתי-דתי",d:"תיכון דתי, מעורב או נפרד"},
+ {id:"yeshiva",ic:"🕍",n:"ישיבה תיכונית",d:"בנים, הרבה שעות קודש, לרוב עם פנימייה"},
+ {id:"ulpana",ic:"🌸",n:"אולפנה",d:"בנות, קודש ותיכון, לרוב עם פנימייה"},
+ {id:"haredi",ic:"🎩",n:"חרדי",d:"תלמוד תורה / ישיבה קטנה / בית יעקב"},
+ {id:"arab",ic:"🌙",n:"ערבי",d:"חינוך ערבי ממלכתי"},
+ {id:"druze",ic:"⭐",n:"דרוזי",d:"חינוך דרוזי"},
+ {id:"bedouin",ic:"🏜️",n:"בדואי",d:"בתי ספר בנגב ובצפון"},
+ {id:"tech",ic:"⚙️",n:"טכנולוגי",d:"אורט, עמל ורשתות טכנולוגיות"},
+ {id:"democratic",ic:"🗳️",n:"דמוקרטי",d:"בחירה אישית, פרלמנט בית ספרי"},
+ {id:"anthro",ic:"🌿",n:"אנתרופוסופי",d:"ולדורף – מעט מסכים, הרבה אומנות"},
+ {id:"other",ic:"✳️",n:"אחר",d:"משהו שלא מופיע כאן"}
+];
+// יעדים – בהשראת היעדים שבתי ספר בוחרים בתוכנית העבודה (גפ"ן)
+const GOALS = [
+ {id:"climate",ic:"🤝",n:"אקלים מיטבי ושייכות",d:"שכל תלמיד ירגיש שייך, מוגן ושיש לו עם מי לדבר"},
+ {id:"wellbeing",ic:"💚",n:"מיטביות ורווחה נפשית",d:"פחות לחץ, יותר כלים להתמודדות"},
+ {id:"attendance",ic:"⏰",n:"ביקור סדיר ופחות איחורים",d:"שהתלמידים יגיעו – ובזמן"},
+ {id:"bagrut",ic:"🎓",n:"זכאות ואיכות בגרות",d:"יותר זכאים, יותר 5 יחידות"},
+ {id:"excellence",ic:"🏆",n:"מצוינות ותחרויות",d:"אולימפיאדות, קורסים אקדמיים, אתגרים"},
+ {id:"social",ic:"🙋",n:"מעורבות חברתית",d:"התנדבות ותרומה לקהילה"},
+ {id:"service",ic:"🎖️",n:"הכנה לשירות משמעותי",d:"צה\"ל, שירות לאומי, מכינות"},
+ {id:"parents",ic:"👪",n:"שותפות עם ההורים",d:"הורים שיודעים מה קורה בזמן"},
+ {id:"values",ic:"🕯️",n:"ערכים, זהות ומורשת",d:"טקסים, ימי זיכרון, זהות"},
+ {id:"digital",ic:"💻",n:"אוריינות דיגיטלית ובינה מלאכותית",d:"שימוש נבון בכלים דיגיטליים"},
+ {id:"gaps",ic:"📈",n:"צמצום פערים",d:"עזרה ממוקדת למי שמתקשה"},
+ {id:"staff",ic:"🧑‍🏫",n:"רווחת הצוות",d:"פחות עומס על המורים"}
+];
+const EMPH = [
+ {id:"torah",ic:"📜",n:"תורה ותפילה",d:"תפילות במניין, תפילין, סדרי לימוד",for:["mamad","yeshiva","ulpana","haredi"]},
+ {id:"islam",ic:"🌙",n:"תפילות וחגים במסורת המוסלמית",d:"זמני תפילה, חודש הרמדאן",for:["arab","bedouin"]},
+ {id:"druzeH",ic:"⭐",n:"מורשת דרוזית",d:"תוכנית מורשת, חגים",for:["druze"]},
+ {id:"science",ic:"🔬",n:"מדעים",d:"פיזיקה, כימיה, ביולוגיה, מעבדות"},
+ {id:"math",ic:"📐",n:"מתמטיקה",d:"5 יחידות, תרגול שוטף"},
+ {id:"techE",ic:"🤖",n:"טכנולוגיה והנדסה",d:"תוכנה, אלקטרוניקה, רובוטיקה, פרויקט גמר",for:["tech"]},
+ {id:"arts",ic:"🎭",n:"אומנויות",d:"מוזיקה, תיאטרון, אומנות, מחול"},
+ {id:"sport",ic:"⚽",n:"ספורט",d:"מגמת ספורט, נבחרות, אימונים"},
+ {id:"languages",ic:"🗣️",n:"שפות",d:"אנגלית מוגברת, ערבית, שפות נוספות"},
+ {id:"community",ic:"🌍",n:"קהילה והתנדבות",d:"פרויקטים בקהילה"},
+ {id:"lowscreen",ic:"🌿",n:"מעט מסכים",d:"האפליקציה בעיקר להורים ולמורים",for:["anthro"]}
+];
+const DATA_SRC = [
+ {id:"mashovx",ic:"📊",n:"קובץ שמורידים ממשוב",d:"מורידים ממשוב רשימות תלמידים, כיתות ומערכת – ומעלים כאן. אנחנו קוראים ומסדרים הכל לבד.",tag:"מומלץ"},
+ {id:"shahaf",ic:"🗓️",n:"קישור למערכת שחף",d:"אם המערכת של בית הספר מפורסמת באתר שחף – מדביקים קישור, והמערכת מתעדכנת לבד כל ערב."},
+ {id:"manual",ic:"✍️",n:"להקליד בעצמי",d:"לבתי ספר קטנים או בלי מערכת ממוחשבת."},
+ {id:"later",ic:"⏳",n:"אחליט אחר כך",d:"אפשר להתחיל עם בית ספר לדוגמה ולחבר נתונים בהמשך."}
+];
+// ===================== מצב + שמירה =====================
+const LSK = "pfDraft";
+const blank = () => ({ step:0, intro:0, school:{name:"",semel:"",city:"",who:"",role:"principal",email:"",phone:""}, sector:"", gender:"", lang:"he", dorm:"none", week:"5", grades:{}, samePolicy:true, policy:{}, goals:[], emph:[], src:"mashovx", shahaf:"", logins:{students:"codes",parents:true,teachers:true}, quiet:"19:00", privacyOk:false, feat:{} });
+let S; try { S = Object.assign(blank(), JSON.parse(localStorage.getItem(LSK) || "null") || {}); } catch (e) { S = blank(); }
+const save = () => { try { localStorage.setItem(LSK, JSON.stringify(S)); } catch (e) {} };
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $ = id => document.getElementById(id);
+const pol = g => { const k = S.samePolicy ? "_all" : g; S.policy[k] = S.policy[k] || { mode: g && HIGH.has(g) || S.samePolicy ? "pct" : "none", pct: 30, lates: 3, show: true }; return S.policy[k]; };
+const selGrades = () => GRADES.filter(([g]) => S.grades[g]);
+const gname = g => (GRADES.find(x => x[0] === g) || [, g])[1];
+
+// ===================== המלצות: מה נדלק ולמה =====================
+// core = חלק מהאפליקציה תמיד. rec = מומלץ לפי מה שבחרת (דלוק, אפשר לכבות). extra = לא נדלק – נשאל קודם
+function catalog() {
+  const sec = S.sector, G = new Set(S.goals), E = new Set(S.emph), grades = selGrades().map(x => x[0]), high = grades.some(g => HIGH.has(g));
+  const anyPct = (S.samePolicy ? [pol()] : grades.map(pol)).some(p => p.mode === "pct");
+  const relig = ["mamad","yeshiva","ulpana","haredi"].includes(sec) || E.has("torah");
+  const L = [];
+  const add = (id, ic, n, d, kind, why) => L.push({ id, ic, n, d, kind, why });
+  // תמיד
+  add("now","⏱️","עכשיו והבא","בכל רגע: איזה שיעור יש, כמה נשאר ומה אחריו","core");
+  add("tt","🗓️","מערכת שעות + שינויים","המערכת האישית לפי כיתה והקבצה, עם ביטולים והחלפות בזמן אמת","core");
+  add("upd","📢","עדכונים מהצוות","הודעה אחת מגיעה לכיתה, לשכבה או לכל בית הספר","core");
+  add("exams","📝","לוח מבחנים","מבחן שמורה מכניס מופיע לתלמידים עם ספירה לאחור – בלי להקליד פעמיים","core");
+  add("teacher","🧑‍🏫","אפליקציה למורים","המערכת שלי, השיעור הבא, ביטול/החלפה, מבחן, הודעה לכיתה","core");
+  add("admin","📊","לוח מנהל","מי נכנס, כיתות שעוד לא התחילו, עומס מבחנים בשבוע","core");
+  // לפי הבחירות
+  if (anyPct) add("att","📉","מעקב נוכחות לפי המדיניות שלכם","לכל תלמיד: כמה חיסורים יש במקצוע וכמה עוד מותר – לפי האחוז שקבעתם לשכבה","rec","בחרתם סף חיסורים");
+  if (G.has("attendance")) { add("late","⏰","תזכורת בוקר ורצף בלי איחורים","\"יוצאים עוד 10 דקות\" + רצף שבועי בלי איחורים","rec","בחרתם ביקור סדיר"); add("early","🔔","התראה מוקדמת למחנך","כשתלמיד מתקרב לסף – המחנך רואה לפני שמאוחר","rec","בחרתם ביקור סדיר"); }
+  if (relig) { add("tef","🙏","תפילות ותזכורת תפילין","זמני היום, שחרית/מנחה/ערבית לפי המערכת, \"הנחתי\" אישי (לא מדווח לאף אחד)","rec", sec === "ulpana" ? "בית ספר דתי" : "בחרתם תורה ותפילה"); add("shabbat","🕯️","מצב שבת וחג","אין התראות בשבת ובחג, כרטיס פרשת השבוע","rec","בית ספר שומר שבת"); }
+  if (E.has("islam") || ["arab","bedouin"].includes(sec)) add("ramadan","🌙","מצב רמדאן וזמני תפילה","מערכת מקוצרת בחודש הרמדאן, זמני תפילה וחגים","rec","בחרתם מסורת מוסלמית");
+  if (S.lang === "ar" || S.lang === "both") add("arabic","🗣️","ממשק בערבית","כל האפליקציה בערבית, מימין לשמאל","rec","בחרתם שפת הוראה ערבית");
+  if (S.dorm !== "none") add("dorm","🛏️","פנימייה","לוח זמני פנימייה, אישור יציאה עם חתימת הורה, רישום שבת בפנימייה","rec","יש פנימייה");
+  if (G.has("bagrut") && high) add("units","🎓","מונה יחידות בגרות","\"כמה חסר לי לתעודה\" + לוח בחינות ומועדים","rec","בחרתם בגרות");
+  if (G.has("climate") || G.has("wellbeing")) { add("talk","💬","\"צריך לדבר\" ליועצת","פנייה שקטה ליועצת, בלי שאף אחד אחר רואה","rec","בחרתם אקלים / מיטביות"); add("mood","🌤️","צ'ק-אין שבועי אנונימי","שאלה אחת בשבוע – רק סיכום לכיתה, אף פעם לא שמות","rec","בחרתם אקלים / מיטביות"); }
+  if (G.has("climate")) add("ask","❓","שאלה לצוות בלי שם","תלמיד שואל, התשובה מופיעה לכל הכיתה","rec","בחרתם אקלים מיטבי");
+  if (G.has("parents") && S.logins.parents) add("parent","👪","אפליקציה להורים","מערכת, מבחנים, אישורים והודעות מהמחנך","rec","בחרתם שותפות הורים");
+  if (G.has("social") || E.has("community")) add("volunteer","🙋","יומן התנדבות","שעות התנדבות + אישור רכז + כמה נשאר לדרישה","rec","בחרתם מעורבות חברתית");
+  if (G.has("service") && high) add("service","🎖️","הכנה לשירות","ספירה לצו ראשון / שירות לאומי, מסע ישראלי, מכינות","rec","בחרתם הכנה לשירות");
+  if (G.has("excellence") || E.has("science")) add("olymp","🏆","לוח תחרויות ואולימפיאדות","מועדים, הרשמה ותזכורות","rec","בחרתם מצוינות / מדעים");
+  if (E.has("math") || G.has("bagrut") || G.has("gaps")) add("practice","📐","תרגול מתמטיקה יומי","תרגיל קצר לפי נושא ורמה, עם הסבר צעד-אחר-צעד","rec","בחרתם מתמטיקה / בגרות");
+  if (E.has("techE")) add("project","🛠️","פרויקט גמר","אבני דרך, הגשות ותזכורות למבחן מעשי","rec","בחרתם טכנולוגיה");
+  if (E.has("arts")) add("rehearse","🎭","חזרות והופעות","לוח חזרות, הופעות ותזכורת לציוד","rec","בחרתם אומנויות");
+  if (E.has("sport")) add("train","⚽","אימונים ומשחקים","לוח אימונים, שינויים ותחרויות","rec","בחרתם ספורט");
+  if (G.has("staff")) add("quiet","🌙","שעות שקט למורים","אחרי " + (S.quiet || "19:00") + " אין התראות למורים, והודעות מחכות לבוקר","rec","בחרתם רווחת הצוות");
+  if (G.has("values")) add("ceremony","🕯️","טקסים וימי זיכרון","לוח טקסים, ובימי זיכרון האפליקציה שקטה ומכובדת","rec","בחרתם ערכים ומורשת");
+  if (G.has("digital")) add("assist","🤖","עוזר חכם","עונה על שאלות על המערכת, המבחנים והחומר – בלי לשלוח פרטים אישיים","rec","בחרתם אוריינות דיגיטלית");
+  // תוספות – לא נדלקות לבד
+  const has = id => L.some(x => x.id === id);
+  const ex = (id, ic, n, d) => { if (!has(id)) add(id, ic, n, d, "extra"); };
+  ex("cards","🃏","כרטיסיות לימוד","תלמידים ומורים יוצרים כרטיסיות לחזרה למבחן");
+  ex("bday","🎂","ימי הולדת","מי שרוצה משתף יום הולדת, והכיתה רואה");
+  ex("polls","🗳️","סקרים ובחירות","סקרים לכיתה ובחירות למועצת תלמידים – אנונימי");
+  ex("calendar","📅","סנכרון ליומן בטלפון","המערכת והמבחנים נכנסים ליומן של התלמיד");
+  ex("parent","👪","אפליקציה להורים","מערכת, מבחנים ואישורים להורים");
+  ex("talk","💬","\"צריך לדבר\" ליועצת","פנייה שקטה ליועצת");
+  ex("assist","🤖","עוזר חכם","עונה על שאלות על המערכת והמבחנים");
+  ex("practice","📐","תרגול מתמטיקה","תרגול קצר לפי נושא ורמה");
+  ex("report","🛠️","\"דווחו על טעות\"","תלמיד מסמן טעות במערכת, והרכז מתקן");
+  return L;
+}
+const isOn = f => S.feat[f.id] != null ? S.feat[f.id] : f.kind !== "extra";
+
+// ===================== המסכים =====================
+const INTRO = [
+ { t:"מערכת שעות שתלמידים באמת פותחים", p:"במקום עוד מערכת מסובכת: מסך אחד שאומר לכל תלמיד מה יש עכשיו, מה הבא, מה השתנה ומתי המבחן – ברגע שהוא פותח את הטלפון.", m:"student" },
+ { t:"מורים מעדכנים פעם אחת – וכולם יודעים", p:"מורה מבטל שיעור, מחליף חדר או קובע מבחן – וזה מגיע מיד לתלמידים של הכיתה הזאת בלבד. בלי להקליד פעמיים.", m:"teacher" },
+ { t:"בנוי לפי בית הספר שלך", p:"שכבות, הקבצות, מגמות, מדיניות נוכחות, פנימייה, תפילות, רמדאן – אתם מספרים לנו איך בית הספר שלכם עובד, והאפליקציה נבנית בדיוק לפי זה.", m:"admin" },
+ { t:"המידע של בית הספר – של בית הספר", p:"כל בית ספר נפרד לגמרי. אין ציונים, סיסמאות או מיקום. אפשר לייצא הכל ולמחוק הכל בכל רגע. ובהדגמה הזאת – שום דבר לא נשלח לשום מקום.", m:"lock" }
+];
+const mock = m => m === "student" ? `<div class="hd">המערכת של נועה · י'2</div><div class="now">עכשיו · מתמטיקה<small>חדר 12 · נשארו 18 דק'</small></div><div class="ex">📝 מבחן אנגלית · עוד 3 ימים</div><div class="ln"><span>11:15 היסטוריה</span><span>→</span></div><div class="ln"><span>12:00 ספרות</span><span>❌ בוטל</span></div><div class="ln"><span>13:45 ביולוגיה</span><span></span></div>`
+ : m === "teacher" ? `<div class="hd">שלום, רונית 👋</div><div class="tch"><b>השיעור הבא: י'2 · מתמטיקה</b>10:30 · חדר 12</div><div class="tch"><b>➕ לקבוע מבחן</b>יופיע לתלמידים מיד</div><div class="tch"><b>🔄 ביטול / החלפה</b>רק הכיתה הזאת תראה</div><div class="tch"><b>📢 הודעה לכיתה</b>שעות שקט: אחרי 19:00</div>`
+ : m === "admin" ? `<div class="hd">לוח מנהל · השבוע</div><div class="kpi"><div><b>92%</b>נכנסו השבוע</div><div><b>4</b>מבחנים בשכבה י'</div><div><b>2</b>כיתות מתחת ליעד נוכחות</div><div><b>11</b>עדכונים נשלחו</div></div><div class="ln"><span>🎯 יעדים: אקלים · נוכחות · בגרות</span></div>`
+ : `<div class="hd">פרטיות ואבטחה</div><div class="lock">🔒 <span>כל בית ספר מופרד לגמרי</span></div><div class="lock">🚫 <span>בלי ציונים, סיסמאות או מיקום</span></div><div class="lock">📦 <span>ייצוא מלא בכל רגע</span></div><div class="lock">🗑️ <span>מחיקה מלאה בבקשה</span></div>`;
+
+const STEPS = [
+ { id:"school", lbl:"פרטי בית הספר" },
+ { id:"char", lbl:"אופי בית הספר" },
+ { id:"grades", lbl:"שכבות וכיתות" },
+ { id:"policy", lbl:"נוכחות ומדיניות" },
+ { id:"goals", lbl:"יעדים" },
+ { id:"emph", lbl:"דגשים" },
+ { id:"data", lbl:"נתונים וכניסות" },
+ { id:"privacy", lbl:"פרטיות" },
+ { id:"rec", lbl:"התוכנית שלך" }
+];
+const opt = (attr, id, ic, n, d, on, radio, tag) => `<button type="button" class="opt${radio ? " radio" : ""}" ${attr}="${esc(id)}" role="${radio ? "radio" : "checkbox"}" aria-checked="${!!on}">${tag ? `<span class="tag">${esc(tag)}</span>` : ""}<span class="ic">${ic}</span><span><b>${esc(n)}</b>${d ? `<span class="d">${esc(d)}</span>` : ""}</span><span class="ck">✓</span></button>`;
+
+function render() {
+  const app = $("app"), bar = $("bar");
+  const total = STEPS.length + 1, pos = S.step === 0 ? 0 : S.step;
+  $("prog").style.width = (pos / total * 100) + "%";
+  if (S.step === 0) {
+    const s = INTRO[S.intro];
+    app.innerHTML = `<div class="intro fade"><div><div class="step-lbl">היכרות · ${S.intro + 1} מתוך ${INTRO.length}</div><h1>${s.t}</h1><p>${s.p}</p><div class="dots">${INTRO.map((_, i) => `<i class="${i === S.intro ? "on" : ""}"></i>`).join("")}</div></div><div class="phone" aria-hidden="true"><div class="scr">${mock(s.m)}</div></div></div>`;
+    bar.innerHTML = `${S.intro ? `<button class="btn ghost" id="bk">הקודם</button>` : `<span class="note">בערך 5 דקות · אפשר לעצור ולהמשיך אחר כך – הכל נשמר</span>`}<button class="btn${S.intro ? " wide" : ""}" id="nx">${S.intro < INTRO.length - 1 ? "הבא" : "בואו נתחיל ←"}</button>`;
+    $("nx").onclick = () => { if (S.intro < INTRO.length - 1) S.intro++; else S.step = 1; save(); render(); scrollTo(0, 0); };
+    if ($("bk")) $("bk").onclick = () => { S.intro--; save(); render(); };
+    return;
+  }
+  const st = STEPS[S.step - 1];
+  app.innerHTML = `<div class="fade"><div class="step-lbl">שלב ${S.step} מתוך ${STEPS.length} · ${st.lbl}</div>${VIEWS[st.id]()}</div>`;
+  bar.innerHTML = `<button class="btn ghost" id="bk">הקודם</button><span class="note" id="nt"></span><button class="btn" id="nx">${S.step < STEPS.length ? "המשך" : "לבנות את האפליקציה ←"}</button>`;
+  $("bk").onclick = () => { S.step--; if (S.step === 0) S.intro = INTRO.length - 1; save(); render(); scrollTo(0, 0); };
+  $("nx").onclick = () => { const e = (CHECK[st.id] || (() => ""))(); if (e) { $("nt").innerHTML = `<span class="err">${esc(e)}</span>`; return; } if (S.step < STEPS.length) { S.step++; save(); render(); scrollTo(0, 0); } else finish(); };
+  (WIRE[st.id] || (() => {}))();
+}
+
+const VIEWS = {
+ school: () => `<h1>נעים להכיר 👋</h1><p class="lead">כמה פרטים בסיסיים. הם מופיעים באפליקציה של התלמידים ובאישורים שיוצאים להורים.</p>
+  <div class="card"><label class="f" for="sn">שם בית הספר</label><input type="text" id="sn" value="${esc(S.school.name)}" placeholder="למשל: תיכון אורט רחובות" autocomplete="organization">
+  <div class="grid2"><div><label class="f" for="ss">סמל מוסד<span class="hint">6 ספרות. עוזר לנו לזהות את בית הספר ולחבר את הנתונים ממשוב</span></label><input type="text" id="ss" inputmode="numeric" maxlength="6" value="${esc(S.school.semel)}" placeholder="000000"></div>
+  <div><label class="f" for="sc">עיר / יישוב</label><input type="text" id="sc" value="${esc(S.school.city)}"></div></div></div>
+  <div class="card"><h2 style="margin-top:0">מי נרשם?</h2><div class="grid2"><div><label class="f" for="sw">שם מלא</label><input type="text" id="sw" value="${esc(S.school.who)}" autocomplete="name"></div>
+  <div><label class="f" for="sr">תפקיד<span class="hint">רק מנהל/ת יכול/ה לאשר את ההקמה. אחרים יכולים להכין, והמנהל מאשר</span></label><select id="sr">${[["principal","מנהל/ת בית הספר"],["deputy","סגן/ית מנהל"],["coord","רכז/ת תקשוב / פדגוגי"],["other","אחר"]].map(([v, l]) => `<option value="${v}" ${S.school.role === v ? "selected" : ""}>${l}</option>`).join("")}</select></div></div>
+  <div class="grid2"><div><label class="f" for="se">מייל<span class="hint">לשם נשלח קישור לאימות שאתם באמת מבית הספר</span></label><input type="email" id="se" dir="ltr" value="${esc(S.school.email)}" autocomplete="email"></div>
+  <div><label class="f" for="sp">טלפון<span class="hint">רק אם יש בעיה בהקמה</span></label><input type="tel" id="sp" dir="ltr" value="${esc(S.school.phone)}" autocomplete="tel"></div></div>
+  <div class="why">בהדגמה הזאת שום פרט לא נשלח. בגרסה האמיתית: אימות במייל של בית הספר לפני שמשהו נפתח לתלמידים.</div></div>`,
+ char: () => `<h1>איזה בית ספר אתם?</h1><p class="lead">זה קובע את ברירות המחדל – לוח חופשות, תפילות, שפה, שבת. הכל אפשר לשנות אחר כך.</p>
+  <h2>פיקוח / סוג</h2><div class="opts two" role="radiogroup">${SECTORS.map(x => opt("data-sec", x.id, x.ic, x.n, x.d, S.sector === x.id, true)).join("")}</div>
+  <h2>מי לומד אצלכם?</h2><div class="opts two" role="radiogroup">${[["boys","👦","בנים"],["girls","👧","בנות"],["mixed","🧑‍🤝‍🧑","מעורב"],["sep","↔️","בנים ובנות בנפרד, באותו בית ספר"]].map(([v, ic, n]) => opt("data-gen", v, ic, n, "", S.gender === v, true)).join("")}</div>
+  <h2>שפת ההוראה</h2><div class="opts two" role="radiogroup">${[["he","🇮🇱","עברית",""],["ar","🌙","ערבית","כל האפליקציה תהיה בערבית"],["both","🔁","עברית וערבית","כל תלמיד בוחר"]].map(([v, ic, n, d]) => opt("data-lang", v, ic, n, d, S.lang === v, true)).join("")}</div>
+  <h2>פנימייה</h2><div class="opts two" role="radiogroup">${[["none","🏠","אין פנימייה",""],["some","🛏️","חלק מהתלמידים בפנימייה","האפליקציה תשאל כל תלמיד אם הוא בפנימייה"],["all","🏨","כולם בפנימייה","זמני פנימייה, יציאות ושבתות לכולם"]].map(([v, ic, n, d]) => opt("data-dorm", v, ic, n, d, S.dorm === v, true)).join("")}</div>
+  <h2>ימי לימוד</h2><div class="opts two" role="radiogroup">${[["5","📅","ראשון – חמישי",""],["6","📅","ראשון – שישי",""],["sat","📅","שני – שבת","למשל בתי ספר נוצריים"],["mixed","🔀","משתנה לפי שכבה",""]].map(([v, ic, n, d]) => opt("data-week", v, ic, n, d, S.week === v, true)).join("")}</div>`,
+ grades: () => `<h1>שכבות וכיתות</h1><p class="lead">סמנו את השכבות שלכם. אם הנתונים מגיעים ממשוב – המספרים מתמלאים לבד ואתם רק מאשרים.</p>
+  <div class="card"><div class="chips" role="group" aria-label="שכבות">${GRADES.map(([g, n]) => `<button type="button" class="chip" data-gr="${g}" aria-pressed="${!!S.grades[g]}">${n}</button>`).join("")}</div></div>
+  ${selGrades().map(([g, n]) => { const o = S.grades[g]; return `<div class="gr"><h3>שכבה ${n} <small>${HIGH.has(g) ? "חטיבה עליונה" : "חטיבת ביניים"}</small></h3>
+   <div class="row"><span>כמה כיתות?</span><span class="stepper"><button type="button" data-st="${g}" data-d="-1" aria-label="פחות">−</button><output>${o.n}</output><button type="button" data-st="${g}" data-d="1" aria-label="יותר">+</button></span></div>
+   <div class="opts two" style="margin-top:10px">${opt("data-gx", g + ":mathG", "📐", "הקבצות במתמטיקה", "כל תלמיד יבחר הקבצה, והמערכת תתאים לו", o.mathG)}${opt("data-gx", g + ":engG", "🔤", "הקבצות באנגלית", "", o.engG)}${HIGH.has(g) ? opt("data-gx", g + ":maj", "🔬", "מגמות", "תלמיד יבחר מגמה – השיעורים שלה יופיעו רק לו", o.maj) : ""}${opt("data-gx", g + ":days", "🗓️", "מערכת שבוע א/ב", "שבועות מתחלפים", o.days)}</div></div>`; }).join("") || `<p class="mini">עוד לא נבחרו שכבות.</p>`}`,
+ policy: () => { const gs = selGrades(); const block = (g, n) => { const p = pol(g); const k = S.samePolicy ? "_all" : g; return `<div class="gr"><h3>${n}</h3>
+   <div class="opts" role="radiogroup">${opt("data-pm", k + ":none", "➖", "אין סף חיסורים", "לא נציג לתלמידים ספירה לאחור של חיסורים", p.mode === "none", true)}${opt("data-pm", k + ":pct", "📉", "יש סף חיסורים במקצוע", "מעבר לסף – התלמיד לא נבחן / יורד ציון. אנחנו נראה לו כמה עוד מותר", p.mode === "pct", true)}${opt("data-pm", k + ":custom", "✍️", "מדיניות אחרת", "למשל לפי מספר שיעורים, או שונה לכל מקצוע", p.mode === "custom", true)}</div>
+   ${p.mode === "pct" ? `<div class="grid2"><div><label class="f">אחוז חיסורים מקסימלי<span class="hint">ברוב בתי הספר 20%–30%, אבל זה שלכם לקבוע</span></label><input type="number" min="5" max="60" step="1" data-pp="${k}" value="${p.pct}"></div><div><label class="f">כמה איחורים = חיסור אחד<span class="hint">0 = איחורים לא נספרים כחיסור</span></label><input type="number" min="0" max="10" data-pl="${k}" value="${p.lates}"></div></div>` : ""}
+   ${p.mode === "custom" ? `<label class="f">תארו במילים<span class="hint">נציג את זה לתלמידים כמו שכתבתם, ונכין התאמה מדויקת בהמשך</span></label><textarea rows="2" data-pc="${k}">${esc(p.txt || "")}</textarea>` : ""}
+   ${p.mode !== "none" ? `<div style="margin-top:10px">${opt("data-ps", k, "👁️", "להציג לכל תלמיד את המצב שלו", "רק התלמיד רואה את שלו. מורים ומחנכים – לפי הרשאות", p.show)}</div>` : ""}</div>`; };
+   return `<h1>נוכחות ומדיניות</h1><p class="lead">בכל בית ספר זה שונה – ולפעמים גם בין השכבות. יש בתי ספר בלי סף בכלל, ויש עם 20%, 25% או 30%. ספרו לנו איך אצלכם.</p>
+   <div class="card">${opt("data-same", "1", "🔗", "אותה מדיניות לכל השכבות", "כבו אם יש הבדל בין חטיבת הביניים לעליונה, או בין שכבות", S.samePolicy)}</div>
+   ${S.samePolicy ? block(null, "כל השכבות") : gs.map(([g, n]) => block(g, "שכבה " + n)).join("")}
+   <div class="why">המספרים עצמם (כמה חיסורים יש לכל תלמיד) מגיעים ממשוב – אנחנו רק מחשבים ומציגים לפי הכלל שלכם.</div>`; },
+ goals: () => `<h1>מה היעדים שלכם השנה?</h1><p class="lead">בחרו עד 5 – כמו בתוכנית העבודה של בית הספר. לפיהם נמליץ רק על מה שבאמת יעזור, בלי להעמיס.</p>
+  <div class="opts two">${GOALS.map(x => opt("data-goal", x.id, x.ic, x.n, x.d, S.goals.includes(x.id))).join("")}</div><p class="mini" id="gc" style="margin-top:10px">נבחרו ${S.goals.length} מתוך 5</p>`,
+ emph: () => { const sug = new Set(EMPH.filter(x => x.for && x.for.includes(S.sector)).map(x => x.id)); const L = EMPH.filter(x => !x.for || sug.has(x.id) || S.emph.includes(x.id) || S.sector === "other");
+   return `<h1>במה בית הספר שלכם מיוחד?</h1><p class="lead">דגשים שמייחדים אתכם. אפשר לבחור כמה שרוצים, או לדלג.</p><div class="opts two">${L.map(x => opt("data-em", x.id, x.ic, x.n, x.d, S.emph.includes(x.id), false, sug.has(x.id) ? "מתאים לכם" : "")).join("")}</div>`; },
+ data: () => `<h1>מאיפה מגיעים הנתונים?</h1><p class="lead">תלמידים, כיתות, מורים ומערכת שעות. המטרה: שלא תצטרכו להקליד כלום.</p>
+  <div class="opts" role="radiogroup">${DATA_SRC.map(x => opt("data-src", x.id, x.ic, x.n, x.d, S.src === x.id, true, x.tag)).join("")}</div>
+  ${S.src === "shahaf" ? `<div class="card" style="margin-top:12px"><label class="f" for="sh">קישור לאתר שחף של בית הספר</label><input type="url" id="sh" dir="ltr" placeholder="https://….shahaf.site" value="${esc(S.shahaf)}"></div>` : ""}
+  <div class="why">חיבור ישיר למשוב יתאפשר רק בשיתוף פעולה רשמי איתם. עד אז – קובץ שאתם מורידים בעצמכם הוא הדרך הבטוחה והחוקית.</div>
+  <h2>איך נכנסים?</h2><div class="opts" role="radiogroup">${opt("data-lg", "codes", "🔑", "קוד אישי לכל תלמיד", "אתם מקבלים קובץ להדפסה עם קוד לכל תלמיד לפי כיתה. בלי מייל ובלי טלפון", S.logins.students === "codes", true, "מומלץ")}${opt("data-lg", "class", "🏷️", "קוד כיתה + שם", "קוד אחד לכל כיתה, התלמיד בוחר את השם שלו. פשוט יותר, פחות מאובטח", S.logins.students === "class", true)}</div>
+  <div class="opts two" style="margin-top:10px">${opt("data-lt", "teachers", "🧑‍🏫", "קישור כניסה לכל מורה", "נשלח למורים אחרי שתאשרו", S.logins.teachers)}${opt("data-lt", "parents", "👪", "כניסה גם להורים", "ההורה רואה רק את הילד שלו", S.logins.parents)}</div>
+  <div class="card" style="margin-top:12px"><label class="f" for="qh">שעות שקט למורים<span class="hint">אחרי השעה הזאת מורים לא מקבלים התראות – הכל מחכה לבוקר</span></label><input type="text" id="qh" dir="ltr" inputmode="numeric" value="${esc(S.quiet)}" placeholder="19:00" style="max-width:140px"></div>`,
+ privacy: () => `<h1>פרטיות – בלי אותיות קטנות</h1><p class="lead">לפני שבונים – מה בדיוק נשמר, ומה לעולם לא.</p>
+  <div class="card"><h2 style="margin-top:0">✅ מה נשמר</h2><ul><li>שם, כיתה, הקבצות ומגמה של כל תלמיד</li><li>מערכת השעות, השינויים, המבחנים וההודעות של בית הספר</li><li>כמה חיסורים במקצוע (רק אם בחרתם סף) – והתלמיד רואה רק את שלו</li><li>מתי נכנסו לאפליקציה (כדי שתראו מי עוד לא התחיל)</li></ul>
+  <h2>🚫 מה לעולם לא נשמר</h2><ul><li>ציונים וסיסמאות של משוב</li><li>מיקום או כתובת IP</li><li>מי שאל שאלה בלי שם, מה הצביעו בסקר, תשובות לצ'ק-אין</li></ul>
+  <h2>📦 השליטה אצלכם</h2><ul><li>כל בית ספר מופרד לגמרי – אף בית ספר לא רואה מידע של אחר</li><li>ייצוא מלא של כל המידע בכל רגע</li><li>מחיקה מלאה בבקשה, תוך 30 יום</li><li>יומן פעולות: מי שינה מה ומתי</li></ul></div>
+  ${opt("data-pv", "1", "🤝", "קראתי והבנתי", "בגרסה האמיתית יצורף הסכם עיבוד מידע מלא לחתימה", S.privacyOk)}`,
+ rec: () => { const L = catalog(), core = L.filter(x => x.kind === "core"), rec = L.filter(x => x.kind === "rec"), ex = L.filter(x => x.kind === "extra");
+   const f = x => `<div class="feat"><span class="ic">${x.ic}</span><span class="tx"><b>${esc(x.n)}</b><span>${esc(x.d)}</span>${x.why ? `<span class="rs">למה: ${esc(x.why)}</span>` : ""}</span>${x.kind === "core" ? `<span class="mini">תמיד</span>` : `<button type="button" class="sw" role="switch" data-ft="${x.id}" aria-checked="${isOn(x)}" aria-label="${esc(x.n)}"></button>`}</div>`;
+   return `<h1>התוכנית של ${esc(S.school.name || "בית הספר שלך")}</h1><p class="lead">לפי מה שסיפרתם. הדלקנו רק מה שמתאים לכם – ואת השאר שאלנו. כל דבר אפשר לשנות בהגדרות בכל רגע.</p>
+   <div class="card"><h3 class="sec-h">🧱 הבסיס <span class="n">${core.length}</span></h3>${core.map(f).join("")}</div>
+   ${rec.length ? `<div class="card"><h3 class="sec-h">🎯 מומלץ לכם <span class="n">${rec.filter(isOn).length} מתוך ${rec.length} דלוקים</span></h3>${rec.map(f).join("")}</div>` : ""}
+   <div class="card"><h3 class="sec-h">➕ רוצים להוסיף גם…? <span class="n">כבוי – רק אם תבחרו</span></h3>${ex.map(f).join("")}</div>
+   <div class="next-up">בשלב הבא בהדגמה: ✨ האפליקציה נבנית מול העיניים, ואחריה סיכום אישי של כל מה שבחרתם והחזון שלכם.</div>`; }
+};
+const CHECK = {
+ school: () => !S.school.name.trim() ? "צריך שם לבית הספר" : S.school.semel && !/^\d{6}$/.test(S.school.semel) ? "סמל מוסד הוא 6 ספרות" : !S.school.who.trim() ? "צריך שם של מי שנרשם" : S.school.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(S.school.email) ? "המייל לא נראה תקין" : "",
+ char: () => !S.sector ? "בחרו סוג בית ספר" : !S.gender ? "בחרו מי לומד אצלכם" : "",
+ grades: () => !selGrades().length ? "בחרו לפחות שכבה אחת" : "",
+ goals: () => !S.goals.length ? "בחרו לפחות יעד אחד" : "",
+ data: () => S.src === "shahaf" && !/^https?:\/\/\S+\.\S+/.test(S.shahaf) ? "הדביקו קישור לאתר שחף" : /^\d{1,2}:\d\d$/.test(S.quiet) ? "" : "שעת שקט בפורמט 19:00",
+ privacy: () => S.privacyOk ? "" : "צריך לאשר שקראתם"
+};
+const bind = (sel, fn) => document.querySelectorAll(sel).forEach(el => el.onclick = () => { fn(el); save(); render(); });
+const WIRE = {
+ school: () => { const m = { sn:"name", ss:"semel", sc:"city", sw:"who", se:"email", sp:"phone" }; for (const [id, k] of Object.entries(m)) $(id).oninput = e => { S.school[k] = e.target.value; save(); }; $("sr").onchange = e => { S.school.role = e.target.value; save(); }; $("sn").focus(); },
+ char: () => { bind("[data-sec]", el => { S.sector = el.dataset.sec; if (["arab","bedouin"].includes(S.sector) && S.lang === "he") S.lang = "ar"; if (["yeshiva","ulpana"].includes(S.sector) && S.dorm === "none") S.dorm = "all"; if (S.sector === "yeshiva") S.gender = "boys"; if (S.sector === "ulpana") S.gender = "girls"; }); bind("[data-gen]", el => S.gender = el.dataset.gen); bind("[data-lang]", el => S.lang = el.dataset.lang); bind("[data-dorm]", el => S.dorm = el.dataset.dorm); bind("[data-week]", el => S.week = el.dataset.week); },
+ grades: () => { bind("[data-gr]", el => { const g = el.dataset.gr; if (S.grades[g]) delete S.grades[g]; else S.grades[g] = { n: 2, mathG: HIGH.has(g), engG: HIGH.has(g), maj: HIGH.has(g), days: false }; }); bind("[data-st]", el => { const o = S.grades[el.dataset.st]; o.n = Math.max(1, Math.min(20, o.n + +el.dataset.d)); }); bind("[data-gx]", el => { const [g, k] = el.dataset.gx.split(":"); S.grades[g][k] = !S.grades[g][k]; }); },
+ policy: () => { bind("[data-same]", () => { S.samePolicy = !S.samePolicy; }); bind("[data-pm]", el => { const [k, m] = el.dataset.pm.split(":"); (S.policy[k] = S.policy[k] || { pct: 30, lates: 3, show: true }).mode = m; }); bind("[data-ps]", el => { const p = S.policy[el.dataset.ps]; p.show = !p.show; });
+   document.querySelectorAll("[data-pp]").forEach(i => i.oninput = () => { S.policy[i.dataset.pp].pct = Math.max(5, Math.min(60, +i.value || 30)); save(); }); document.querySelectorAll("[data-pl]").forEach(i => i.oninput = () => { S.policy[i.dataset.pl].lates = Math.max(0, Math.min(10, +i.value || 0)); save(); }); document.querySelectorAll("[data-pc]").forEach(i => i.oninput = () => { S.policy[i.dataset.pc].txt = i.value.slice(0, 300); save(); }); },
+ goals: () => document.querySelectorAll("[data-goal]").forEach(el => el.onclick = () => { const id = el.dataset.goal, i = S.goals.indexOf(id); if (i >= 0) S.goals.splice(i, 1); else if (S.goals.length >= 5) { $("gc").innerHTML = `<span class="err">אפשר עד 5 – הורידו אחד כדי להוסיף אחר</span>`; return; } else S.goals.push(id); save(); render(); }),
+ emph: () => bind("[data-em]", el => { const id = el.dataset.em, i = S.emph.indexOf(id); if (i >= 0) S.emph.splice(i, 1); else S.emph.push(id); }),
+ data: () => { bind("[data-src]", el => S.src = el.dataset.src); bind("[data-lg]", el => S.logins.students = el.dataset.lg); bind("[data-lt]", el => { const k = el.dataset.lt; S.logins[k] = !S.logins[k]; }); if ($("sh")) $("sh").oninput = e => { S.shahaf = e.target.value.trim(); save(); }; $("qh").oninput = e => { S.quiet = e.target.value.trim(); save(); }; },
+ privacy: () => bind("[data-pv]", () => { S.privacyOk = !S.privacyOk; }),
+ rec: () => document.querySelectorAll("[data-ft]").forEach(b => b.onclick = () => { const f = catalog().find(x => x.id === b.dataset.ft); S.feat[f.id] = !isOn(f); save(); b.setAttribute("aria-checked", isOn(f)); })
+};
+function finish() { $("nt").textContent = "✨ כאן תבוא אנימציית הבנייה והסיכום – בשלב הבא של ההדגמה"; }
+// מצב הדגמה מהיר: ?reset מתחיל מחדש
+if (/[?&]reset\b/.test(location.search)) { S = blank(); save(); history.replaceState(null, "", location.pathname); }
+render();
+</script>
+</body>
+</html>

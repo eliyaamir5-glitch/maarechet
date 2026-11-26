@@ -24,6 +24,8 @@ for (const f of FILES) {
   fs.copyFileSync(src, path.join(OUT, f)); n++;
 }
 for (const f of OPTIONAL) if (fs.existsSync(path.join(ROOT, f))) { fs.copyFileSync(path.join(ROOT, f), path.join(OUT, f)); n++; }
+// 🏫 "המערכת לבתי ספר" – גרסת ההדגמה של הפלטפורמה (דף נפרד, לא קשור לאפליקציה של הישיבה)
+if (fs.existsSync(path.join(ROOT, "platform"))) { fs.mkdirSync(path.join(OUT, "platform"), { recursive: true }); for (const f of fs.readdirSync(path.join(ROOT, "platform"))) { fs.copyFileSync(path.join(ROOT, "platform", f), path.join(OUT, "platform", f)); n++; } }
 // סרטוני הדרכה ותמונות שלהם
 if (fs.existsSync(path.join(ROOT, "media"))) { fs.mkdirSync(path.join(OUT, "media"), { recursive: true }); for (const f of fs.readdirSync(path.join(ROOT, "media"))) { fs.copyFileSync(path.join(ROOT, "media", f), path.join(OUT, "media", f)); n++; } }
 for (const f of fs.readdirSync(path.join(ROOT, "cal"))) { fs.copyFileSync(path.join(ROOT, "cal", f), path.join(OUT, "cal", f)); n++; }
