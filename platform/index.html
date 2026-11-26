@@ -227,6 +227,50 @@ main{position:relative;z-index:1}
 @keyframes phUp{to{opacity:1;transform:none}}
 #hero .hph .lphone{width:100%;box-shadow:0 60px 120px -30px rgba(255,207,51,.35),0 0 0 1px rgba(255,255,255,.08) inset}
 @media (max-height:760px){#hero .hph{display:none}}
+
+/* ===== ✨ האפליקציה נבנית ===== */
+#build{position:fixed;inset:0;z-index:45;background:#0b0c0f;color:#f4f1ea;display:grid;grid-template-columns:1fr auto;align-items:center;gap:60px;padding:40px max(40px,6vw);opacity:0;transition:opacity .5s}
+#build.on{opacity:1}
+@media (max-width:860px){#build{grid-template-columns:1fr;gap:18px;padding:calc(20px + env(safe-area-inset-top,0px)) 18px 20px;align-content:start;overflow:auto}}
+#build .bl{max-width:520px}
+#build .k{font-size:12.5px;letter-spacing:.4px;color:#8d909b;display:flex;align-items:center;gap:8px}#build .k::before{content:"";width:18px;height:2px;background:#ffcf33}
+#build h2{font-size:clamp(26px,4vw,42px);letter-spacing:-1px;margin:10px 0 22px;color:#f4f1ea;line-height:1.1}
+#build ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+#build li{display:flex;gap:12px;align-items:center;font-size:15px;color:#6f727c;padding:6px 0;opacity:0;transform:translateY(8px);transition:opacity .4s,transform .5s var(--ease),color .3s}
+#build li.show{opacity:1;transform:none}#build li.doing{color:#f4f1ea}#build li.ok{color:#c9c7c0}
+#build li .s{width:20px;height:20px;flex:0 0 auto;border-radius:50%;border:2px solid #2c2e36;position:relative}
+#build li.doing .s{border-color:#2c2e36;border-top-color:#ffcf33;animation:spin .7s linear infinite}
+#build li.ok .s{border-color:#ffcf33;background:#ffcf33}#build li.ok .s::after{content:"";position:absolute;left:5px;top:2px;width:5px;height:9px;border:solid #1a1400;border-width:0 2px 2px 0;transform:rotate(45deg)}
+@keyframes spin{to{transform:rotate(360deg)}}
+#build li em{font-style:normal;margin-inline-start:auto;font-size:12.5px;color:#8d909b;font-variant-numeric:tabular-nums}
+#build .pct{display:flex;align-items:center;gap:14px;margin-top:24px}
+#build .pbar{flex:1;height:4px;border-radius:9px;background:#1f2026;overflow:hidden}#build .pbar i{display:block;height:100%;width:0;background:#ffcf33;transition:width .5s var(--ease)}
+#build .pct b{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;min-width:80px;text-align:end}
+#build .skip{position:absolute;top:calc(16px + env(safe-area-inset-top,0px));inset-inline-end:18px;background:transparent;border:1px solid #2c2e36;color:#8d909b;border-radius:99px;padding:6px 14px;cursor:pointer;font-size:13px}
+#build .bp{position:relative}#build .bp .lphone{width:300px;box-shadow:0 60px 120px -30px rgba(255,207,51,.25),0 0 0 1px rgba(255,255,255,.08) inset;transition:transform 1s var(--ease)}
+@media (max-width:860px){#build .bp .lphone{width:220px;margin:0 auto}}
+#build .bp .lscr{background:#f5f3ee}
+#build .sk{background:#e9e5db;border-radius:12px;height:34px;animation:skel 1.2s ease-in-out infinite}
+@keyframes skel{50%{opacity:.5}}
+#build .ready{position:absolute;inset:0;display:grid;place-items:center;text-align:center;opacity:0;pointer-events:none;transition:opacity .6s .2s;background:radial-gradient(circle at 50% 50%,rgba(11,12,15,.6),#0b0c0f 70%)}
+#build.done .ready{opacity:1;pointer-events:auto}#build.done .bl,#build.done .skip{opacity:0;transition:opacity .4s}
+#build.done .bp .lphone{transform:scale(.9) translateY(-30px)}
+#build .ready h3{font-size:clamp(30px,5vw,56px);letter-spacing:-1.2px;margin:0 0 6px;line-height:1.05}#build .ready h3 span{color:#ffcf33}
+#build .ready p{color:#a9abb4;margin:0 0 22px}
+#build .ready .btn{background:#ffcf33;color:#1a1400;font-size:17px;padding:15px 28px}
+#build .spark{position:absolute;width:6px;height:6px;border-radius:50%;background:#ffcf33;pointer-events:none;animation:sp 1.6s var(--ease) forwards}
+@keyframes sp{from{opacity:1;transform:translate(0,0) scale(1)}to{opacity:0;transform:translate(var(--x),var(--y)) scale(.2)}}
+/* ===== סיכום אישי ===== */
+.sum h1 span{color:var(--muted);font-weight:500}
+.letter{font-size:17px;line-height:1.75;color:var(--ink2)}.letter p{margin:0 0 14px}.letter b{color:var(--ink)}
+.vision{position:relative;background:var(--ink);color:var(--bg);border-radius:18px;padding:26px 24px;margin:20px 0;overflow:hidden}
+.vision::before{content:"”";position:absolute;top:-30px;inset-inline-end:14px;font-size:150px;line-height:1;color:var(--acc);opacity:.9;font-family:Georgia,serif}
+.vision small{display:block;font-size:12px;letter-spacing:.4px;opacity:.6;margin-bottom:8px}.vision q{quotes:none;font-size:clamp(19px,2.6vw,24px);line-height:1.45;font-weight:600;display:block;position:relative}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}@media (max-width:560px){.facts{grid-template-columns:1fr 1fr}}
+.facts div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}.facts b{display:block;font-size:28px;letter-spacing:-.8px;font-variant-numeric:tabular-nums}.facts span{font-size:12.5px;color:var(--muted)}
+.todo{counter-reset:t;list-style:none;padding:0;margin:0}.todo li{counter-increment:t;display:flex;gap:14px;padding:12px 0;border-top:1px solid var(--line)}.todo li:first-child{border-top:0}
+.todo li::before{content:counter(t);flex:0 0 auto;width:28px;height:28px;border-radius:50%;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;font-weight:700;font-size:14px}
+.todo b{display:block}.todo span{font-size:13.5px;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -375,7 +419,7 @@ const DATA_SRC = [
 ];
 // ===================== מצב + שמירה =====================
 const LSK = "pfDraft";
-const blank = () => ({ step:0, intro:0, seenHero:false, school:{name:"",semel:"",city:"",who:"",role:"principal",email:"",phone:""}, sector:"", gender:"", lang:"he", dorm:"none", week:"5", grades:{}, samePolicy:true, policy:{}, goals:[], emph:[], src:"mashovx", shahaf:"", logins:{students:"codes",parents:true,teachers:true}, quiet:"19:00", privacyOk:false, feat:{} });
+const blank = () => ({ step:0, intro:0, seenHero:false, built:false, school:{name:"",semel:"",city:"",who:"",role:"principal",email:"",phone:""}, sector:"", gender:"", lang:"he", dorm:"none", week:"5", grades:{}, samePolicy:true, policy:{}, goals:[], emph:[], src:"mashovx", shahaf:"", logins:{students:"codes",parents:true,teachers:true}, quiet:"19:00", privacyOk:false, feat:{} });
 let S; try { S = Object.assign(blank(), JSON.parse(localStorage.getItem(LSK) || "null") || {}); } catch (e) { S = blank(); }
 const save = () => { try { localStorage.setItem(LSK, JSON.stringify(S)); } catch (e) {} };
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -492,7 +536,7 @@ function introSwap() {
 function rail() {
   const pos = S.step === 0 ? 0 : S.step;
   $("prog").style.width = (pos / (STEPS.length + 1) * 100) + "%";
-  $("cnt").textContent = S.step ? `שלב ${S.step} מתוך ${STEPS.length}` : "היכרות";
+  $("cnt").textContent = S.step > STEPS.length ? "סיכום" : S.step ? `שלב ${S.step} מתוך ${STEPS.length}` : "היכרות";
   const ol = $("steps"); if (!ol.children.length) ol.innerHTML = `<span class="fill"></span>` + [{ lbl: "היכרות" }, ...STEPS].map((x, i) => `<li><i>${i || "·"}</i>${x.lbl}</li>`).join("");
   [...ol.querySelectorAll("li")].forEach((li, i) => { li.className = i < pos ? "done" : i === pos ? "cur" : ""; li.querySelector("i").innerHTML = i < pos ? '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="m5 12 5 5 9-10"/></svg>' : (i || "·"); });
   const lis = ol.querySelectorAll("li"), cur = lis[pos]; if (cur) ol.querySelector(".fill").style.height = (cur.offsetTop + 2) + "px";
@@ -514,6 +558,9 @@ function render(dir) {
     introBar(); return;
   }
   live();
+  if (S.step > STEPS.length) { app.innerHTML = `<div class="${cls}">${summaryView()}</div>`; if (dir) stagger(app.firstElementChild); countUp();
+    bar.innerHTML = `<button class="btn ghost" id="bk">${BACK}לערוך תשובות</button><span class="msg"></span><button class="btn" id="again">לראות שוב את הבנייה</button>`;
+    $("bk").onclick = () => go(-1, () => { S.step = STEPS.length; }); $("again").onclick = () => finish(); return; }
   const st = STEPS[S.step - 1];
   app.innerHTML = `<div class="${cls}">${dir ? `<div class="art">${drawIco(st.art)}</div>` : `<div class="art">${ico(st.art)}</div>`}<span class="eyebrow">${st.lbl}</span>${VIEWS[st.id]()}</div>`;
   if (dir) stagger(app.firstElementChild);
@@ -644,7 +691,68 @@ const WIRE = {
  rec: () => document.querySelectorAll("[data-ft]").forEach(b => b.onclick = () => { const f = catalog().find(x => x.id === b.dataset.ft); S.feat[f.id] = !isOn(f); save(); b.setAttribute("aria-checked", isOn(f)); b.closest(".feat").classList.toggle("on", isOn(f)); live(); })
 };
 for (const id of ["mk1", "mk2"]) $(id).innerHTML = ico("table");
-function finish() { $("nt").textContent = "כאן תבוא אנימציית הבנייה והסיכום, בשלב הבא של ההדגמה"; }
+// ✨ האפליקציה נבנית מול העיניים: שלבים אמיתיים לפי מה שבחרו, והטלפון מתמלא תוך כדי
+const SECN = Object.fromEntries(SECTORS.map(x => [x.id, x.n])), GOALN = Object.fromEntries(GOALS.map(x => [x.id, x.n]));
+const nClasses = () => selGrades().reduce((a, [g]) => a + (S.grades[g].n || 0), 0);
+const nKids = () => nClasses() * 30; // הערכה: כ-30 תלמידים בכיתה
+function polText() {
+  const one = p => p.mode === "pct" ? `סף של ${p.pct}% חיסורים${p.lates ? `, ${p.lates} איחורים = חיסור` : ""}` : p.mode === "custom" ? "מדיניות משלכם" : "בלי סף חיסורים";
+  return S.samePolicy ? one(pol()) + " לכל השכבות" : selGrades().map(([g, n]) => `${n}: ${one(pol(g))}`).join(" · ");
+}
+function buildSteps() {
+  const feats = catalog().filter(isOn), gs = selGrades();
+  return [
+    { t: `מקים את "${S.school.name || "בית הספר"}"`, e: SECN[S.sector] || "", k: "h" },
+    { t: `יוצר ${gs.length} שכבות ו-${nClasses()} כיתות`, e: gs.map(x => x[1]).join(" "), k: "gr" },
+    { t: "בונה מערכת שעות לכל כיתה והקבצה", e: S.src === "shahaf" ? "משחף" : S.src === "mashovx" ? "מקובץ משוב" : "", k: "now" },
+    { t: "מגדיר מדיניות נוכחות", e: S.samePolicy ? (pol().mode === "pct" ? pol().pct + "%" : "") : "לפי שכבה", k: "att" },
+    { t: `מחבר ${S.goals.length} יעדים לתכונות`, e: "", k: "goals" },
+    { t: `מדליק ${feats.length} תכונות`, e: "", k: "feat" },
+    { t: `מכין קודים ל-${nKids()} תלמידים`, e: "הערכה", k: "codes" },
+    { t: "מפריד ומאבטח את המידע של בית הספר", e: "", k: "sec" }
+  ];
+}
+function finish() {
+  if (document.getElementById("build")) return;
+  const st = buildSteps(), all = liveHTML(), b = document.createElement("div"); b.id = "build";
+  b.innerHTML = `<button class="skip" type="button">לדלג</button><div class="bl"><span class="k">רגע אחד</span><h2>בונים את האפליקציה של<br>${esc(S.school.name || "בית הספר שלכם")}</h2><ol>${st.map(x => `<li><span class="s"></span><span>${esc(x.t)}</span><em>${esc(x.e)}</em></li>`).join("")}</ol><div class="pct"><div class="pbar"><i></i></div><b>0%</b></div></div>
+    <div class="bp"><div class="lphone"><div class="lscr" id="bscr">${Array.from({ length: 7 }, () => `<div class="sk"></div>`).join("")}</div></div></div>
+    <div class="ready"><div><h3>${esc(S.school.name || "בית הספר")}<br><span>מוכן.</span></h3><p>${nClasses()} כיתות · ${catalog().filter(isOn).length} תכונות · הכל לפי מה שבחרתם</p><button class="btn" type="button" id="toSum">לסיכום שלך${ARROW}</button></div></div>`;
+  document.body.appendChild(b); requestAnimationFrame(() => b.classList.add("on")); document.body.style.overflow = "hidden";
+  const lis = b.querySelectorAll("li"), scr = b.querySelector("#bscr"), bar = b.querySelector(".pbar i"), pct = b.querySelector(".pct b");
+  let shown = 0, timers = [], cur = 0;
+  const fill = n => { const rows = all.slice(0, Math.min(all.length, n)); scr.innerHTML = rows.map(([, h], i) => i === rows.length - 1 ? h.replace(/^<div class="/, '<div class="new ') : h).join("") + Array.from({ length: Math.max(0, 7 - rows.length) }, () => `<div class="sk"></div>`).join(""); };
+  const count = (to, ms) => { const from = cur, t0 = performance.now(); const f = now => { const k = Math.min(1, (now - t0) / ms); cur = Math.round(from + (to - from) * k); pct.textContent = cur + "%"; if (k < 1) requestAnimationFrame(f); }; requestAnimationFrame(f); bar.style.width = to + "%"; };
+  const end = () => { timers.forEach(clearTimeout); lis.forEach(l => l.className = "show ok"); count(100, 300); fill(all.length);
+    setTimeout(() => { b.classList.add("done"); S.built = true; save(); sparks(b); }, 350); };
+  const D = RM ? 60 : 950;
+  st.forEach((x, i) => { timers.push(setTimeout(() => { if (i) lis[i - 1].className = "show ok"; lis[i].className = "show doing"; count(Math.round((i + .5) / st.length * 100), D); fill(Math.round((i + 1) / st.length * all.length)); }, 500 + i * D)); });
+  timers.push(setTimeout(end, 500 + st.length * D));
+  b.querySelector(".skip").onclick = end;
+  b.querySelector("#toSum").onclick = () => { S.step = STEPS.length + 1; save(); b.classList.remove("on"); setTimeout(() => { b.remove(); document.body.style.overflow = ""; render(1); scrollTo(0, 0); }, 450); };
+}
+function sparks(root) { if (RM) return; const r = root.querySelector(".bp").getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 3;
+  for (let i = 0; i < 26; i++) { const d = document.createElement("i"), a = Math.random() * Math.PI * 2, R = 120 + Math.random() * 220; d.className = "spark"; d.style.cssText = `left:${cx}px;top:${cy}px;--x:${Math.cos(a) * R}px;--y:${Math.sin(a) * R}px;animation-delay:${Math.random() * .3}s`; root.appendChild(d); setTimeout(() => d.remove(), 2200); } }
+// 📝 סיכום אישי: מדבר עם המנהל כמו בן אדם, לפי מה שבחר
+const VISION = { climate: "כל תלמיד מרגיש שייך ויודע שיש לו עם מי לדבר", wellbeing: "התלמידים פחות לחוצים ויש להם כלים להתמודד", attendance: "התלמידים מגיעים, ובזמן", bagrut: "כל תלמיד מגיע לבגרות מוכן, עם יותר יחידות", excellence: "מי שרוצה לפרוץ קדימה מקבל את הבמה", social: "התלמידים נותנים מעצמם לקהילה", service: "כל בוגר יוצא לשירות משמעותי", parents: "ההורים שותפים ויודעים מה קורה בזמן", values: "הזהות והערכים שלכם נוכחים בכל יום", digital: "התלמידים משתמשים בטכנולוגיה בתבונה", gaps: "אף תלמיד לא נשאר מאחור", staff: "המורים עובדים פחות קשה ומרגישים יותר טוב" };
+function summaryView() {
+  const feats = catalog().filter(isOn), rec = feats.filter(x => x.kind === "rec"), who = (S.school.who || "").trim().split(" ")[0], gs = selGrades();
+  const vis = S.goals.map(g => VISION[g]).filter(Boolean), visTxt = vis.length ? vis.length === 1 ? vis[0] : vis.slice(0, -1).join(", ") + " ו" + vis[vis.length - 1] : "";
+  const role = { principal: "מנהל/ת", deputy: "סגן/ית מנהל", coord: "רכז/ת", other: "" }[S.school.role] || "";
+  return `<span class="eyebrow">הסיכום שלך</span><div class="sum"><h1>${who ? esc(who) + ", " : ""}הנה מה שבנינו יחד.</h1>
+   <div class="facts"><div><b class="count" data-n="${gs.length}">0</b><span>שכבות</span></div><div><b class="count" data-n="${nClasses()}">0</b><span>כיתות</span></div><div><b class="count" data-n="${feats.length}">0</b><span>תכונות פעילות</span></div></div>
+   ${visTxt ? `<div class="vision"><small>החזון שלכם, במילים שלכם</small><q>בית ספר שבו ${esc(visTxt)}.</q></div>` : ""}
+   <div class="letter"><p><b>${esc(S.school.name || "בית הספר")}</b>${S.school.city ? ` ב${esc(S.school.city)}` : ""} הוא ${esc(SECN[S.sector] || "בית ספר")}${S.gender === "boys" ? " לבנים" : S.gender === "girls" ? " לבנות" : ""}${S.dorm === "all" ? " עם פנימייה" : S.dorm === "some" ? ", וחלק מהתלמידים בפנימייה" : ""}, עם ${gs.map(x => x[1]).join(", ")}. ${role ? `ההקמה נעשתה על ידי ${esc(S.school.who)} (${role}).` : ""}</p>
+   <p><b>נוכחות:</b> ${esc(polText())}. כל תלמיד יראה רק את המצב שלו, והמחנך יקבל התראה לפני שמאוחר.</p>
+   ${S.goals.length ? `<p><b>היעדים שבחרתם:</b> ${S.goals.map(g => esc(GOALN[g])).join(", ")}. בגללם הדלקנו ${rec.length} תכונות שמתאימות בדיוק להם, כמו ${rec.slice(0, 3).map(x => esc(x.n)).join(", ")}${rec.length > 3 ? " ועוד" : ""}.</p>` : ""}
+   <p><b>מה לא הדלקנו:</b> כל מה שלא קשור למטרות שלכם נשאר כבוי, כדי שהאפליקציה תישאר פשוטה. אפשר להדליק כל דבר בהגדרות, בכל רגע.</p></div>
+   <h2>מה עכשיו</h2><div class="card"><ol class="todo"><li><div><b>אימות שאתם מבית הספר</b><span>קישור במייל${S.school.email ? ` ל-${esc(S.school.email)}` : ""}. עד אז שום דבר לא נפתח לתלמידים.</span></div></li>
+   <li><div><b>${S.src === "shahaf" ? "חיבור לאתר שחף" : S.src === "manual" ? "הקלדת המערכת" : "העלאת הקובץ ממשוב"}</b><span>${S.src === "shahaf" ? "המערכת תתעדכן לבד כל ערב." : "תלמידים, כיתות ומערכת שעות נכנסים ומסתדרים לבד."}</span></div></li>
+   <li><div><b>הדפסת הקודים לכיתות</b><span>קובץ עם קוד אישי לכל אחד מכ-${nKids()} תלמידים (הערכה), מסודר לפי כיתה.</span></div></li>
+   <li><div><b>שליחת קישור למורים</b><span>כל מורה מקבל את המערכת שלו ויכול לעדכן את הכיתות שלו.</span></div></li></ol></div>
+   <p class="mini">זו גרסת הדגמה. שום פרט לא נשלח לשום מקום.</p></div>`;
+}
+function countUp() { document.querySelectorAll(".count[data-n]").forEach((el, i) => { const n = +el.dataset.n, t0 = performance.now() + i * 120; const f = now => { const k = Math.max(0, Math.min(1, (now - t0) / 900)); el.textContent = Math.round(n * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(f); }; requestAnimationFrame(f); }); }
 // 🎬 פתיח: מערכת שעות שמתמלאת לבד, קו "עכשיו" עובר, והכותרת עולה מילה אחרי מילה
 function hero() {
   const h = document.createElement("div"); h.id = "hero";
